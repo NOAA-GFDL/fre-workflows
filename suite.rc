@@ -1,0 +1,41 @@
+[meta]
+    title = "Postprocessing Example 1"
+
+[cylc]
+    UTC mode = True
+    [[parameters]]
+        realm = atmos, ocean, land, ice
+
+[scheduling]
+    initial cycle point = 0001
+    final cycle point = 0020
+    [[dependencies]]
+        # do every year
+        [[[P1Y]]]
+            graph = "stage => refineDiag"
+        # do every CHUNK-A (e.g. 5-yr)
+        [[[0005/P5Y]]]
+            graph = """
+refineDiag[-P4Y] & refineDiag[-P3Y] & refineDiag[-P2Y] & refineDiag[-P1Y] & refineDiag =>
+postprocess-A<realm> => analysis-A
+"""
+        # do every CHUNK-B (e.g. 20 yr)
+        [[[0020/P20Y]]]
+            graph = """
+postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
+postprocess-B<realm> => analysis-B
+"""
+
+[runtime]
+    [[root]]
+    [[stage]]
+        script = "sleep 10; echo This is a stage script"
+    [[refineDiag]]
+        script = "sleep 10; echo This is a RD script"
+    [[postprocess-A]]
+        script = "sleep 60; echo This is a PP script for chunk A"
+    [[postprocess-B]]
+        script = "sleep 120; echo This is a PP script for chunk B"
+    [[POSTPROCESS]]
+
+[visualization]
