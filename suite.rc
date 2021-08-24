@@ -1,3 +1,5 @@
+#!jinja2
+
 [meta]
     title = "Postprocessing Example 1"
 
@@ -7,8 +9,8 @@
         realm = atmos, ocean, land, ice
 
 [scheduling]
-    initial cycle point = 0001
-    final cycle point = 0020
+    initial cycle point = {{PP_START}}
+    final cycle point = {{PP_STOP}}
     [[dependencies]]
         # do every year
         [[[P1Y]]]
@@ -28,14 +30,27 @@ postprocess-B<realm> => analysis-B
 
 [runtime]
     [[root]]
+        env-script = "eval $(rose task-env)"
+        script = rose task-run --verbose
+        [[[job]]]
+            submission polling intervals = PT5S
+            execution polling intervals = PT5S, PT10S
+            execution time limit = PT3H
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D
+        [[[environment]]]
     [[stage]]
         script = "sleep 10; echo This is a stage script"
     [[refineDiag]]
         script = "sleep 10; echo This is a RD script"
-    [[postprocess-A]]
-        script = "sleep 60; echo This is a PP script for chunk A"
-    [[postprocess-B]]
-        script = "sleep 120; echo This is a PP script for chunk B"
     [[POSTPROCESS]]
+    [[postprocess-A<realm>]]
+        script = "sleep 60; echo This is a PP script for chunk A"
+    [[postprocess-B<realm>]]
+        script = "sleep 120; echo This is a PP script for chunk B"
+    [[ANALYSIS]]
+    [[analysis-A]]
+    [[analysis-B]]
 
 [visualization]
