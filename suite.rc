@@ -14,7 +14,7 @@
     [[dependencies]]
         # do every year
         [[[P1Y]]]
-            graph = "stage => refineDiag"
+            graph = "pp-starter => stage-history => refineDiag"
         # do every CHUNK-A (e.g. 5-yr)
         [[[0005/P5Y]]]
             graph = """
@@ -30,7 +30,11 @@ postprocess-B<realm> => analysis-B
 
 [runtime]
     [[root]]
-        env-script = "eval $(rose task-env)"
+        init-script = PATH=$PATH:/home/c2b/opt/rose/bin
+        env-script = """
+            eval $(rose task-env)
+            env
+"""
         script = rose task-run --verbose
         [[[job]]]
             submission polling intervals = PT5S
@@ -40,8 +44,14 @@ postprocess-B<realm> => analysis-B
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
         [[[environment]]]
-    [[stage]]
-        script = "sleep 10; echo This is a stage script"
+        [[[directives]]]
+            --comment=xtmp
+    [[pp-starter]]
+    [[stage-history]]
+        pre-script = module load gcp hsm/test
+        [[[job]]]
+            batch system = slurm
+            execution time limit = PT8H
     [[refineDiag]]
         script = "sleep 10; echo This is a RD script"
     [[POSTPROCESS]]
