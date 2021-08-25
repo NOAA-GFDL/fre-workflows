@@ -1,3 +1,5 @@
+#!jinja2
+
 [meta]
     title = "Postprocessing Example 1"
 
@@ -7,12 +9,12 @@
         realm = atmos, ocean, land, ice
 
 [scheduling]
-    initial cycle point = 0001
-    final cycle point = 0020
+    initial cycle point = {{PP_START}}
+    final cycle point = {{PP_STOP}}
     [[dependencies]]
         # do every year
         [[[P1Y]]]
-            graph = "stage => refineDiag"
+            graph = "pp-starter => stage-history => refineDiag"
         # do every CHUNK-A (e.g. 5-yr)
         [[[0005/P5Y]]]
             graph = """
@@ -28,14 +30,37 @@ postprocess-B<realm> => analysis-B
 
 [runtime]
     [[root]]
-    [[stage]]
-        script = "sleep 10; echo This is a stage script"
+        init-script = PATH=$PATH:/home/c2b/opt/rose/bin
+        env-script = """
+            eval $(rose task-env)
+            env
+"""
+        script = rose task-run --verbose
+        [[[job]]]
+            submission polling intervals = PT5S
+            execution polling intervals = PT5S, PT10S
+            execution time limit = PT3H
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D
+        [[[environment]]]
+        [[[directives]]]
+            --comment=xtmp
+    [[pp-starter]]
+    [[stage-history]]
+        pre-script = module load gcp hsm/test
+        [[[job]]]
+            batch system = slurm
+            execution time limit = PT8H
     [[refineDiag]]
         script = "sleep 10; echo This is a RD script"
-    [[postprocess-A]]
-        script = "sleep 60; echo This is a PP script for chunk A"
-    [[postprocess-B]]
-        script = "sleep 120; echo This is a PP script for chunk B"
     [[POSTPROCESS]]
+    [[postprocess-A<realm>]]
+        script = "sleep 60; echo This is a PP script for chunk A"
+    [[postprocess-B<realm>]]
+        script = "sleep 120; echo This is a PP script for chunk B"
+    [[ANALYSIS]]
+    [[analysis-A]]
+    [[analysis-B]]
 
 [visualization]
