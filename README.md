@@ -1,15 +1,13 @@
 # Cylc usage notes:
 - Does not work on workstations (background submit fails)
-- Needs python/2.7.3
+- `module load python/2.7.3 slurm`
 - Add cylc to PATH
 
 `setenv PATH ${PATH}:/home/c2b/opt/cylc/bin`
 
 # Run suite
 
-    cylc register pp .
-    cylc run pp
-    gcylc pp
+    rose suite-run
 
 # Graph task dependencies
 Graph 20 years of tasks

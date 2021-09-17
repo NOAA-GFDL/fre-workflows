@@ -14,18 +14,18 @@
     [[dependencies]]
         # do every year
         [[[P1Y]]]
-            graph = "pp-starter => stage-history => refineDiag"
+            graph = "pp-starter => stage-history"
         # do every CHUNK-A (e.g. 5-yr)
         [[[0005/P5Y]]]
             graph = """
-refineDiag[-P4Y] & refineDiag[-P3Y] & refineDiag[-P2Y] & refineDiag[-P1Y] & refineDiag =>
-postprocess-A<realm> => analysis-A
+stage-history[-P4Y] & stage-history[-P3Y] & stage-history[-P2Y] & stage-history[-P1Y] & stage-history =>
+postprocess-A<realm>
 """
         # do every CHUNK-B (e.g. 20 yr)
         [[[0020/P20Y]]]
             graph = """
 postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
-postprocess-B<realm> => analysis-B
+postprocess-B<realm>
 """
 
 [runtime]
@@ -52,15 +52,10 @@ postprocess-B<realm> => analysis-B
         [[[job]]]
             batch system = slurm
             execution time limit = PT8H
-    [[refineDiag]]
-        script = "sleep 10; echo This is a RD script"
     [[POSTPROCESS]]
     [[postprocess-A<realm>]]
         script = "sleep 60; echo This is a PP script for chunk A"
     [[postprocess-B<realm>]]
         script = "sleep 120; echo This is a PP script for chunk B"
-    [[ANALYSIS]]
-    [[analysis-A]]
-    [[analysis-B]]
 
 [visualization]
