@@ -36,7 +36,8 @@ postprocess-B<realm>
 
 [runtime]
     [[root]]
-        init-script = PATH=$PATH:/home/c2b/opt/rose/bin
+        # this is not right for cylc8 but might be something similar needed
+        #init-script = PATH=$PATH:/home/c2b/opt/rose/bin
         env-script = """
             eval $(rose task-env)
             env
