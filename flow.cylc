@@ -2,11 +2,20 @@
 
 [meta]
     title = "Postprocessing Example 1"
+    description = """
+Postprocessing example that includes Bronx-like functionality,
+and more (such as multiline descriptions!)
+"""
+    URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
-[cylc]
-    UTC mode = True
-    [[parameters]]
-        realm = atmos, ocean, land, ice
+[scheduler]
+    # Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos
+    allow implicit tasks = False
+    # Configure the directories and files to be included in the remote file installation
+    install = app/*, bin/*, etc/*, lib/*
+
+[task parameters]
+    realm = atmos, ocean, land, ice
 
 [scheduling]
     initial cycle point = {{PP_START}}
@@ -36,10 +45,7 @@ postprocess-B<realm>
             env
 """
         script = rose task-run --verbose
-        [[[job]]]
-            submission polling intervals = PT5S
-            execution polling intervals = PT5S, PT10S
-            execution time limit = PT3H
+        platform = pan
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
@@ -49,9 +55,7 @@ postprocess-B<realm>
     [[pp-starter]]
     [[stage-history]]
         pre-script = module load gcp hsm/test
-        [[[job]]]
-            batch system = slurm
-            execution time limit = PT8H
+        execution time limit = PT8H
     [[POSTPROCESS]]
     [[postprocess-A<realm>]]
         script = "sleep 60; echo This is a PP script for chunk A"
