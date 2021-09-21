@@ -1,0 +1,7 @@
+name: cylc
+channels:
+  - conda-forge
+dependencies:
+  - cylc-flow
+  - cylc-uiserver
+  - cylc-rose
