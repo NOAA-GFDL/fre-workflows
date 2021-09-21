@@ -20,19 +20,16 @@ and more (such as multiline descriptions!)
 [scheduling]
     initial cycle point = {{PP_START}}
     final cycle point = {{PP_STOP}}
-    [[dependencies]]
+    [[graph]]
         # do every year
-        [[[P1Y]]]
-            graph = "pp-starter => stage-history"
+        P1Y = "pp-starter => stage-history"
         # do every CHUNK-A (e.g. 5-yr)
-        [[[0005/P5Y]]]
-            graph = """
+        0005/P5Y = """
 stage-history[-P4Y] & stage-history[-P3Y] & stage-history[-P2Y] & stage-history[-P1Y] & stage-history =>
 postprocess-A<realm>
 """
         # do every CHUNK-B (e.g. 20 yr)
-        [[[0020/P20Y]]]
-            graph = """
+        0020/P20Y = """
 postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
 postprocess-B<realm>
 """
