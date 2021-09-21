@@ -57,5 +57,3 @@ postprocess-B<realm>
         script = "sleep 60; echo This is a PP script for chunk A"
     [[postprocess-B<realm>]]
         script = "sleep 120; echo This is a PP script for chunk B"
-
-[visualization]
