@@ -45,20 +45,19 @@ postprocess-B<realm>
             env
 """
         script = rose task-run --verbose
-        platform = pan
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
         [[[environment]]]
-        [[[directives]]]
-            --comment=xtmp
     [[pp-starter]]
-        platform = ws
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
     [[stage-history]]
+        platform = slurm_local
         pre-script = module load gcp hsm/test
         execution time limit = PT8H
+        [[[directives]]]
+            --comment=xtmp
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
