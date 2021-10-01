@@ -22,10 +22,10 @@ and more (such as multiline descriptions!)
     final cycle point = {{PP_STOP}}
     [[graph]]
         # do every year
-        P1Y = "pp-starter => stage-history"
+        P1Y = "pp-starter => stage-history => split-netcdf"
         # do every CHUNK-A (e.g. 5-yr)
         0005/P5Y = """
-stage-history[-P4Y] & stage-history[-P3Y] & stage-history[-P2Y] & stage-history[-P1Y] & stage-history =>
+split-netcdf[-P4Y] & split-netcdf[-P3Y] & split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
 postprocess-A<realm>
 """
         # do every CHUNK-B (e.g. 20 yr)
@@ -61,6 +61,18 @@ postprocess-B<realm>
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
+    [[split-netcdf]]
+        platform = slurm_local
+        pre-script = """
+            module load cdo
+            mkdir -p $outputDir
+"""
+        execution time limit = PT4H
+        [[[directives]]]
+            --comment=xtmp
+        [[[environment]]]
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/cache
     [[POSTPROCESS]]
     [[postprocess-A<realm>]]
         script = "sleep 60; echo This is a PP script for chunk A"
