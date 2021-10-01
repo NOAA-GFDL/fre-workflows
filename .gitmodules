@@ -7,3 +7,6 @@
 [submodule "app/split-netcdf"]
 	path = app/split-netcdf
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/split-netcdf.git
+[submodule "app/make-timeseries"]
+	path = app/make-timeseries
+	url = git@gitlab.gfdl.noaa.gov:fre2/apps/make-timeseries.git
