@@ -24,15 +24,16 @@ and more (such as multiline descriptions!)
         # do every year
         P1Y = "pp-starter => stage-history => split-netcdf"
         # do every CHUNK-A (e.g. 5-yr)
-        0005/P5Y = """
-split-netcdf[-P4Y] & split-netcdf[-P3Y] & split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
-postprocess-A<realm>
+        # this is a temporary workaround below. should be set to the PP_START+CHUNKA
+        {{PP_STOP}}/P3Y = """
+split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
+make-timeseries
 """
         # do every CHUNK-B (e.g. 20 yr)
-        0020/P20Y = """
-postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
-postprocess-B<realm>
-"""
+#        0020/P20Y = """
+#postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
+#postprocess-B<realm>
+#"""
 
 [runtime]
     [[root]]
@@ -72,9 +73,23 @@ postprocess-B<realm>
             --comment=xtmp
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/cache
-    [[POSTPROCESS]]
-    [[postprocess-A<realm>]]
-        script = "sleep 60; echo This is a PP script for chunk A"
-    [[postprocess-B<realm>]]
-        script = "sleep 120; echo This is a PP script for chunk B"
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
+    [[make-timeseries]]
+        platform = slurm_local
+        pre-script = """
+            module load cdo
+            mkdir -p $outputDir
+"""
+        execution time limit = PT2H
+        [[[directives]]]
+            --comment=xtmp
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
+            end = $CYLC_TASK_CYCLE_POINT
+#    [[POSTPROCESS]]
+#    [[postprocess-A<realm>]]
+#        script = "sleep 60; echo This is a PP script for chunk A"
+#    [[postprocess-B<realm>]]
+#        script = "sleep 120; echo This is a PP script for chunk B"
