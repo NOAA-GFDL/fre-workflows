@@ -4,3 +4,6 @@
 [submodule "app/stage-history2"]
 	path = app/stage-history
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/stage-history.git
+[submodule "app/split-netcdf"]
+	path = app/split-netcdf
+	url = git@gitlab.gfdl.noaa.gov:fre2/apps/split-netcdf.git
