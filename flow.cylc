@@ -18,8 +18,8 @@ and more (such as multiline descriptions!)
     realm = atmos, ocean, land, ice
 
 [scheduling]
-    initial cycle point = {{PP_START}}
-    final cycle point = {{PP_STOP}}
+    initial cycle point = {{ PP_START }}
+    final cycle point = {{ PP_STOP }}
     [[graph]]
         # do every year
         P1Y = "pp-starter => stage-history"
@@ -53,11 +53,8 @@ postprocess-B<realm>
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
     [[stage-history]]
-        platform = slurm_local
         pre-script = module load gcp hsm/test
         execution time limit = PT8H
-        [[[directives]]]
-            --comment=xtmp
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
@@ -66,3 +63,6 @@ postprocess-B<realm>
         script = "sleep 60; echo This is a PP script for chunk A"
     [[postprocess-B<realm>]]
         script = "sleep 120; echo This is a PP script for chunk B"
+
+# Site-specific settings
+{% include 'site/' ~ SITE ~ '.cylc' %}
