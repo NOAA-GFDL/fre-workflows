@@ -36,6 +36,7 @@ make-timeseries
 #"""
 
 [runtime]
+    # default config for all tasks
     [[root]]
         init-script = """
             source /home/c2b/miniconda3/etc/profile.d/conda.sh
@@ -49,47 +50,36 @@ make-timeseries
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
-        [[[environment]]]
-    [[pp-starter]]
-        [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}
-    [[stage-history]]
+
+    # base config for tasks to be run on PP/AN
+    [[PPAN]]
         platform = slurm_local
-        pre-script = module load gcp hsm/test
         execution time limit = PT8H
         [[[directives]]]
             --comment=xtmp
+
+    [[pp-starter]]
+        [[[environment]]]
+            historyDir = {{ HISTORY_DIR }}
+
+    [[stage-history]]
+        pre-script = module load gcp hsm/test
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
+
     [[split-netcdf]]
-        platform = slurm_local
-        pre-script = """
-            module load cdo
-            mkdir -p $outputDir
-"""
-        execution time limit = PT4H
-        [[[directives]]]
-            --comment=xtmp
+        inherit = PPAN
+        pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
+
     [[make-timeseries]]
-        platform = slurm_local
-        pre-script = """
-            module load cdo
-            mkdir -p $outputDir
-"""
-        execution time limit = PT2H
-        [[[directives]]]
-            --comment=xtmp
+        inherit = PPAN
+        pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
             end = $CYLC_TASK_CYCLE_POINT
-#    [[POSTPROCESS]]
-#    [[postprocess-A<realm>]]
-#        script = "sleep 60; echo This is a PP script for chunk A"
-#    [[postprocess-B<realm>]]
-#        script = "sleep 120; echo This is a PP script for chunk B"
