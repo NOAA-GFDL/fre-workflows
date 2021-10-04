@@ -51,13 +51,6 @@ make-timeseries
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
 
-    # base config for tasks to be run on PP/AN
-    [[PPAN]]
-        platform = slurm_local
-        execution time limit = PT8H
-        [[[directives]]]
-            --comment=xtmp
-
     [[pp-starter]]
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
@@ -69,14 +62,12 @@ make-timeseries
             ptmpDir = {{ PTMP_DIR }}
 
     [[split-netcdf]]
-        inherit = PPAN
         pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
 
     [[make-timeseries]]
-        inherit = PPAN
         pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
