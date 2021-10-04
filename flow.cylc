@@ -18,8 +18,8 @@ and more (such as multiline descriptions!)
     realm = atmos, ocean, land, ice
 
 [scheduling]
-    initial cycle point = {{PP_START}}
-    final cycle point = {{PP_STOP}}
+    initial cycle point = {{ PP_START }}
+    final cycle point = {{ PP_STOP }}
     [[graph]]
         # do every year
         P1Y = "pp-starter => stage-history => split-netcdf"
@@ -83,3 +83,6 @@ make-timeseries
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
             end = $CYLC_TASK_CYCLE_POINT
+
+# Site-specific settings
+{% include 'site/' ~ SITE ~ '.cylc' %}
