@@ -52,6 +52,7 @@ make-timeseries
             submission timeout = P1D
 
     [[pp-starter]]
+        platform = background
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
 
