@@ -23,12 +23,14 @@ and more (such as multiline descriptions!)
     [[graph]]
         # do every year
         P1Y = "pp-starter => stage-history => split-netcdf"
-        # do every CHUNK-A (e.g. 5-yr)
-        # this is a temporary workaround below. should be set to the PP_START+CHUNKA
-        {{PP_STOP}}/P3Y = """
-split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
-make-timeseries
+        1983/P2Y = """
+split-netcdf[-P1Y] & split-netcdf =>
+make-timeseries-2year
 """
+        1985/P4Y = """
+make-timeseries-2year[-P2Y] & make-timeseries-2year =>
+make-timeseries-4year
+#"""
         # do every CHUNK-B (e.g. 20 yr)
 #        0020/P20Y = """
 #postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
@@ -68,8 +70,18 @@ make-timeseries
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
 
-    [[make-timeseries]]
+    [[make-timeseries-2year]]
         pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key make-timeseries
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
+            end = $CYLC_TASK_CYCLE_POINT
+
+    [[make-timeseries-4year]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
