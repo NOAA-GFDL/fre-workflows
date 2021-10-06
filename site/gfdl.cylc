@@ -1,5 +1,5 @@
 [runtime]
-    [[stage-history]]
-        platform = slurm_local
+    [[root]]
+        platform = slurm
         [[[directives]]]
             --comment=xtmp

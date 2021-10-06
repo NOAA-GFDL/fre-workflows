@@ -22,19 +22,21 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         # do every year
-        P1Y = "pp-starter => stage-history"
+        P1Y = "pp-starter => stage-history => split-netcdf"
         # do every CHUNK-A (e.g. 5-yr)
-        0005/P5Y = """
-stage-history[-P4Y] & stage-history[-P3Y] & stage-history[-P2Y] & stage-history[-P1Y] & stage-history =>
-postprocess-A<realm>
+        # this is a temporary workaround below. should be set to the PP_START+CHUNKA
+        {{PP_STOP}}/P3Y = """
+split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
+make-timeseries
 """
         # do every CHUNK-B (e.g. 20 yr)
-        0020/P20Y = """
-postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
-postprocess-B<realm>
-"""
+#        0020/P20Y = """
+#postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
+#postprocess-B<realm>
+#"""
 
 [runtime]
+    # default config for all tasks
     [[root]]
         init-script = """
             source /home/c2b/miniconda3/etc/profile.d/conda.sh
@@ -48,21 +50,31 @@ postprocess-B<realm>
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
-        [[[environment]]]
+
     [[pp-starter]]
+        platform = background
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
+
     [[stage-history]]
         pre-script = module load gcp hsm/test
-        execution time limit = PT8H
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
-    [[POSTPROCESS]]
-    [[postprocess-A<realm>]]
-        script = "sleep 60; echo This is a PP script for chunk A"
-    [[postprocess-B<realm>]]
-        script = "sleep 120; echo This is a PP script for chunk B"
+
+    [[split-netcdf]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        [[[environment]]]
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
+
+    [[make-timeseries]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
+            end = $CYLC_TASK_CYCLE_POINT
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
