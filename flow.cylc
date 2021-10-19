@@ -22,11 +22,8 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         # do every year
-        P1Y = "pp-starter => stage-history => split-netcdf"
-        1983/P2Y = """
-split-netcdf[-P1Y] & split-netcdf =>
-make-timeseries-2year
-"""
+        P1Y = "pp-starter => stage-history => split-netcdf => rename-split-to-pp"
+        1983/P2Y = "rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2year"
         1985/P4Y = """
 make-timeseries-2year[-P2Y] & make-timeseries-2year =>
 make-timeseries-4year
@@ -70,12 +67,18 @@ make-timeseries-4year
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
 
+    [[rename-split-to-pp]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+
     [[make-timeseries-2year]]
         pre-script = module load cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
             end = $CYLC_TASK_CYCLE_POINT
 
