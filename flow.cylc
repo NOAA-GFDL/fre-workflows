@@ -21,19 +21,9 @@ and more (such as multiline descriptions!)
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-        # do every year
-        P1Y = "pp-starter => stage-history => split-netcdf"
-        # do every CHUNK-A (e.g. 5-yr)
-        # this is a temporary workaround below. should be set to the PP_START+CHUNKA
-        {{PP_STOP}}/P3Y = """
-split-netcdf[-P2Y] & split-netcdf[-P1Y] & split-netcdf =>
-make-timeseries
-"""
-        # do every CHUNK-B (e.g. 20 yr)
-#        0020/P20Y = """
-#postprocess-A<realm>[-P15Y] & postprocess-A<realm>[-P10Y] & postprocess-A<realm>[-P5Y] & postprocess-A<realm> =>
-#postprocess-B<realm>
-#"""
+        P1Y = "pp-starter => stage-history => split-netcdf => rename-split-to-pp"
+        1983/P2Y = "rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2year"
+        1985/P4Y = "make-timeseries-2year => make-timeseries-4year"
 
 [runtime]
     # default config for all tasks
@@ -66,15 +56,33 @@ make-timeseries
         pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
 
-    [[make-timeseries]]
+    [[rename-split-to-pp]]
         pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+
+    [[make-timeseries-2year]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key make-timeseries
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
+            inputChunk = P1Y
+            outputChunk = P2Y
+
+    [[make-timeseries-4year]]
+        pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key make-timeseries
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
-            end = $CYLC_TASK_CYCLE_POINT
+            inputChunk = P2Y
+            outputChunk = P4Y
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
