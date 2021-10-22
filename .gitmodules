@@ -1,12 +1,18 @@
-[submodule "app/pp-starter2"]
+[submodule "app/pp-starter"]
 	path = app/pp-starter
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/pp-starter.git
-[submodule "app/stage-history2"]
+[submodule "app/stage-history"]
 	path = app/stage-history
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/stage-history.git
 [submodule "app/split-netcdf"]
 	path = app/split-netcdf
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/split-netcdf.git
+[submodule "app/rename-split-to-pp"]
+	path = app/rename-split-to-pp
+	url = git@gitlab.gfdl.noaa.gov:fre2/apps/rename-split-to-pp.git
 [submodule "app/make-timeseries"]
 	path = app/make-timeseries
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/make-timeseries.git
+[submodule "app/remap-pp-components"]
+	path = app/remap-pp-components
+	url = git@gitlab.gfdl.noaa.gov:fre2/apps/remap-pp-components.git
