@@ -72,7 +72,7 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
-            begin = $(isodatetime --offset=-1PY $CYLC_TASK_CYCLE_POINT
+            begin = $(isodatetime --offset=-1PY $CYLC_TASK_CYCLE_POINT)
             chunk = P2Y
 
     [[remap-pp-components-4yr]]
@@ -81,7 +81,7 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
-            begin = $(isodatetime --offset=-3PY $CYLC_TASK_CYCLE_POINT
+            begin = $(isodatetime --offset=-3PY $CYLC_TASK_CYCLE_POINT)
             chunk = P4Y
 
     [[make-timeseries-2yr]]
