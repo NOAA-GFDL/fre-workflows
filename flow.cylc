@@ -21,11 +21,10 @@ and more (such as multiline descriptions!)
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-        P1Y = "pp-starter => stage-history => split-netcdf => rename-split-to-pp"
-        1983/P2Y = """
+        P1Y = "pp-starter => stage-history => split-netcdf => rename-split-to-pp => regrid-xy"
+        1922/P2Y = """
 rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
 """
-        1985/P4Y = "make-timeseries-2yr => make-timeseries-4yr => remap-pp-components-4yr"
 
 [runtime]
     # default config for all tasks
@@ -67,16 +66,16 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
 
     [[remap-pp-components-2yr]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
-            begin = $(isodatetime --offset=-1PY $CYLC_TASK_CYCLE_POINT)
+            begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
             chunk = P2Y
 
     [[remap-pp-components-4yr]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
@@ -103,6 +102,14 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
             inputChunk = P2Y
             outputChunk = P4Y
+
+    [[regrid-xy]]
+        pre-script = module load fre/test && mkdir -p $outputDir
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/regrid-xy
+            begin = $CYLC_TASK_CYCLE_POINT
+            chunk = P1Y
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
