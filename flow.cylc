@@ -15,13 +15,16 @@ and more (such as multiline descriptions!)
     install = app/*, bin/*, etc/*, lib/*
 
 [task parameters]
+    # this can be generated after history unpacking but how before?
+    # ls | cut -d. -f2 | sort | uniq | xargs | sed 's/ /, /g'
+    history = atmos_4xdaily, atmos_4xdaily_avg, atmos_daily, atmos_month, atmos_month_aer, atmos_scalar, grid_spec, iceberg_month, ice_daily, ice_month, ice_static, land_daily, land_month, land_month_inst, land_static, land_static_sg, ocean_annual, ocean_month, ocean_month_rho2, ocean_scalar_month, ocean_static, ocean_z_annual, ocean_z_month, river_daily, river_month, river_month_inst, river_static, Vertical_coordinate
     realm = atmos, ocean, land, ice
 
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-        P1Y = "pp-starter => stage-history => split-netcdf => rename-split-to-pp => regrid-xy"
+        P1Y = "pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp => regrid-xy"
         1922/P2Y = """
 rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
 """
@@ -53,11 +56,16 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
 
-    [[split-netcdf]]
+    [[SPLIT-NETCDF]]
         pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key split-netcdf
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
+            component = $CYLC_TASK_PARAM_history
+            date = $CYLC_TASK_CYCLE_POINT
+    [[split-netcdf<history>]]
+        inherit = SPLIT-NETCDF
 
     [[rename-split-to-pp]]
         pre-script = module load cdo && mkdir -p $outputDir
