@@ -24,9 +24,9 @@ and more (such as multiline descriptions!)
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-        P1Y = "pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp => regrid-xy"
+        P1Y = "pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp<history> => regrid-xy"
         1922/P2Y = """
-rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
+#rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
 """
 
 [runtime]
@@ -67,11 +67,15 @@ rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp
     [[split-netcdf<history>]]
         inherit = SPLIT-NETCDF
 
-    [[rename-split-to-pp]]
+    [[RENAME-SPLIT-TO-PP]]
         pre-script = module load cdo && mkdir -p $outputDir
+        script = rose task-run --verbose --app-key rename-split-to-pp
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            component = $CYLC_TASK_PARAM_history
+    [[rename-split-to-pp<history>]]
+        inherit = RENAME-SPLIT-TO-PP
 
     [[remap-pp-components-2yr]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
