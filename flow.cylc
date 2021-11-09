@@ -30,7 +30,7 @@ and more (such as multiline descriptions!)
     [[graph]]
         P1Y = """
 pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp<history>
-rename-split-to-pp<regrid> => regrid-xy<regrid>
+rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
 """
         1922/P2Y = """
 #rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
@@ -134,6 +134,17 @@ rename-split-to-pp<regrid> => regrid-xy<regrid>
             component = $CYLC_TASK_PARAM_regrid
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY
+
+    [[FIX-ASSOCIATED-FILES]]
+        pre-script = module load nco
+        script = rose task-run --verbose --app-key fix-associated-files
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            begin = $CYLC_TASK_CYCLE_POINT
+            chunk = P1Y
+            component = $CYLC_TASK_PARAM_regrid
+    [[fix-associated-files<regrid>]]
+        inherit = FIX-ASSOCIATED-files
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
