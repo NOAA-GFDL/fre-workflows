@@ -144,7 +144,7 @@ rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
             chunk = P1Y
             component = $CYLC_TASK_PARAM_regrid
     [[fix-associated-files<regrid>]]
-        inherit = FIX-ASSOCIATED-files
+        inherit = FIX-ASSOCIATED-FILES
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
