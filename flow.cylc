@@ -21,16 +21,17 @@ and more (such as multiline descriptions!)
     # similarly, how to generate this list?
     # can be done with the regrid-xy Rose configuration
     # rose config --file rose-app.conf --keys | grep -v command | grep -v env | xargs | sed 's/ /, /g'
-    regrid = atmos_4xdaily, atmos_4xdaily_avg, atmos_daily, atmos_month, atmos_month_aer, land_daily, land_month, land_month_inst, river_daily, river_month, river_month_inst
-    realm = atmos, ocean, land, ice
+    regrid = atmos_4xdaily, atmos_4xdaily_avg, atmos_daily, atmos_month, atmos_month_aer, land_daily, land_month, land_month_inst, land_static, land_static_sg, river_daily, river_month, river_month_inst, river_static
+    native = atmos_scalar, grid_spec, iceberg_month, ice_daily, ice_month, ice_static, ocean_annual, ocean_month, ocean_month_rho2, ocean_scalar_month, ocean_static, ocean_z_annual, ocean_z_month, river_daily, river_month, river_month_inst, river_static, Vertical_coordinate
 
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
         P1Y = """
-pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp<history>
-rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
+pp-starter => stage-history
+stage-history => regrid-xy<regrid> => split-netcdf<regrid> => rename-split-to-pp<regrid>
+stage-history => split-netcdf<native> => rename-split-to-pp<native>
 """
         1922/P2Y = """
 #rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
@@ -71,8 +72,20 @@ rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
             component = $CYLC_TASK_PARAM_history
             date = $CYLC_TASK_CYCLE_POINT
-    [[split-netcdf<history>]]
+    [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
+        [[[environment]]]
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            component = $CYLC_TASK_PARAM_native
+    [[SPLIT-NETCDF-REGRID]]
+        inherit = SPLIT-NETCDF
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
+            component = $CYLC_TASK_PARAM_regrid
+    [[split-netcdf<native>]]
+        inherit = SPLIT-NETCDF-NATIVE
+    [[split-netcdf<regrid>]]
+        inherit = SPLIT-NETCDF-REGRID
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -126,10 +139,12 @@ rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
         pre-script = module load fre/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/regrid-xy
+            #inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
+            #outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/regrid-xy
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
             begin = $CYLC_TASK_CYCLE_POINT
-            chunk = P1Y
+            #chunk = P1Y
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             component = $CYLC_TASK_PARAM_regrid
     [[regrid-xy<regrid>]]
