@@ -15,22 +15,20 @@ and more (such as multiline descriptions!)
     install = app/*, bin/*, etc/*, lib/*
 
 [task parameters]
-    # this can be generated after history unpacking but how before?
-    # ls | cut -d. -f2 | sort | uniq | xargs | sed 's/ /, /g'
-    history = atmos_4xdaily, atmos_4xdaily_avg, atmos_daily, atmos_month, atmos_month_aer, atmos_scalar, grid_spec, iceberg_month, ice_daily, ice_month, ice_static, land_daily, land_month, land_month_inst, land_static, land_static_sg, ocean_annual, ocean_month, ocean_month_rho2, ocean_scalar_month, ocean_static, ocean_z_annual, ocean_z_month, river_daily, river_month, river_month_inst, river_static, Vertical_coordinate
-    # similarly, how to generate this list?
-    # can be done with the regrid-xy Rose configuration
-    # rose config --file rose-app.conf --keys | grep -v command | grep -v env | xargs | sed 's/ /, /g'
-    regrid = atmos_4xdaily, atmos_4xdaily_avg, atmos_daily, atmos_month, atmos_month_aer, land_daily, land_month, land_month_inst, river_daily, river_month, river_month_inst
-    realm = atmos, ocean, land, ice
+    # this can be generated from history file easily
+    # e.g. tar -tf /path/to/20040101.nc.tar | cut -d. -f3 | sort | uniq | xargs | sed 's/ /, /g'
+    history = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_global_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_scalar, atmos_static_cmip, atmos_tracer, fire_month, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
+    regrid = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_static_cmip, atmos_tracer, fire_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
+    native = atmos_scalar, atmos_global_cmip, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg
 
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
         P1Y = """
-pp-starter => stage-history => split-netcdf<history> => rename-split-to-pp<history>
-rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
+pp-starter => stage-history
+stage-history => regrid-xy<regrid> => split-netcdf<regrid> => rename-split-to-pp<regrid>
+stage-history => split-netcdf<native> => rename-split-to-pp<native>
 """
         1922/P2Y = """
 #rename-split-to-pp[-P1Y] & rename-split-to-pp => make-timeseries-2yr => remap-pp-components-2yr
@@ -71,8 +69,20 @@ rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
             component = $CYLC_TASK_PARAM_history
             date = $CYLC_TASK_CYCLE_POINT
-    [[split-netcdf<history>]]
+    [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
+        [[[environment]]]
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            component = $CYLC_TASK_PARAM_native
+    [[SPLIT-NETCDF-REGRID]]
+        inherit = SPLIT-NETCDF
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
+            component = $CYLC_TASK_PARAM_regrid
+    [[split-netcdf<native>]]
+        inherit = SPLIT-NETCDF-NATIVE
+    [[split-netcdf<regrid>]]
+        inherit = SPLIT-NETCDF-REGRID
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -126,10 +136,9 @@ rename-split-to-pp<regrid> => fix-associated-files<regrid> => regrid-xy<regrid>
         pre-script = module load fre/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/regrid-xy
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
             begin = $CYLC_TASK_CYCLE_POINT
-            chunk = P1Y
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             component = $CYLC_TASK_PARAM_regrid
     [[regrid-xy<regrid>]]
