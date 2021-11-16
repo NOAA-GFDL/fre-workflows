@@ -1,0 +1,63 @@
+0. History file tarfiles
+
+All component history files for a cycle point within a tarfile
+
+/archive/Larry.Horowitz/ESM4/ESM4.2/ESM4_longamip_D1_am4p2_proto7b_whiteCapsAlbedo_salt_SIS2/gfdl.ncrc3-intel18-prod-openmp/history/20000101.nc.tar
+
+1. Staged component history files
+
+All component history files for a cycle point
+
+hsmget stages one tarfile to /xtmp
+
+/xtmp/Chris.Blanton/ptmp/archive/Larry.Horowitz/ESM4/ESM4.2/ESM4_longamip_D1_am4p2_proto7b_whiteCapsAlbedo_salt_SIS2/gfdl.ncrc3-intel18-prod-openmp/history/20000101.nc/
+- 20000101.aerosol_hourly_cmip.tile1.nc
+- 20000101.aerosol_hourly_cmip.tile2.nc
+- 20000101.aerosol_hourly_cmip.tile3.nc
+- 20000101.aerosol_hourly_cmip.tile4.nc
+- 20000101.aerosol_hourly_cmip.tile5.nc
+- 20000101.aerosol_hourly_cmip.tile6.nc
+
+2. XY regridded history files
+
+Regridded component history files for a cycle point
+
+regrid-xy
+
+$CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
+
+/xtmp/Chris.Blanton/cylc-run/postprocessing/runN/share/history/regrid-xy/20000101.nc/
+- 20000101.aerosol_hourly_cmip.nc
+
+3. Z regridded history files
+
+Regridded component history files for a cycle point
+
+regrid-z
+
+$CYLC_WORKFLOW_SHARE_DIR/history/regrid-xyz/$CYLC_TASK_CYCLE_POINT
+$CYLC_WORKFLOW_SHARE_DIR/history/regrid-z/$CYLC_TASK_CYCLE_POINT
+
+4. Split-out variables
+
+All variables within component history files for a cycle point
+
+split-netcdf
+
+$CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT
+$CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT
+$CYLC_WORKFLOW_SHARE_DIR/split/regrid-z/$CYLC_TASK_CYCLE_POINT
+$CYLC_WORKFLOW_SHARE_DIR/split/regrid-xyz/$CYLC_TASK_CYCLE_POINT
+
+5. Split-out variables, catalogued
+
+rename-split-to-pp
+
+All variables, reorganized from
+- GRID/CYCLE/DATE.COMP.VAR.nc   to
+- GRID/COMP/FREQ/CHUNK/COMP.DATE1-DATE2.VAR.nc
+
+$CYLC_WORKFLOW_SHARE_DIR/shards/native/COMP/FREQ/CHUNK/COMP.DATE1-DATE2.VAR.nc
+$CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/
+$CYLC_WORKFLOW_SHARE_DIR/shards/regrid-z/
+$CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xyz/
