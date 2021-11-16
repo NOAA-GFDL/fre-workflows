@@ -13,6 +13,7 @@ and more (such as multiline descriptions!)
     allow implicit tasks = False
     # Configure the directories and files to be included in the remote file installation
     install = app/*, bin/*, etc/*, lib/*
+    UTC mode = True
 
 [task parameters]
     # this can be generated from history file easily
