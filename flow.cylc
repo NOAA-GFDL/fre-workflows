@@ -36,6 +36,11 @@ rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
 make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap-pp-components-2yr
 """
+        {{ PP_START | add_date_and_duration('P3Y') }}/P4Y = """
+make-timeseries_regrid-2yr<regrid> => make-timeseries_regrid-4yr<regrid>
+make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
+make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
+"""
 
 [runtime]
     # default config for all tasks
@@ -110,18 +115,18 @@ make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
     [[remap-pp-components-2yr]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
-            chunk = P2Y
+            currentChunk = P2Y
     [[remap-pp-components-4yr]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
-            chunk = P4Y
+            currentChunk = P4Y
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
