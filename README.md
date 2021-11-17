@@ -23,3 +23,4 @@
 
 # Other notes
 - Useful Cylc examples from a Cylc developer (https://github.com/oliver-sanders/cylc-examples)
+- data.gov recurrance examples on ISO8601 (https://resources.data.gov/schemas/dcat-us/v1.1/iso8601_guidance/)
