@@ -18,7 +18,8 @@
 # TODOs, ideas
 - task dependency related
   - separate TS and TA, add 
-  - use families to group tasks sensibly
   - Separate tasks where sensible (more granularity the better)
     - e.g. refineDiag tasks could be user-script specific in parallel
-  - Find good example for Jinja usage
+
+# Other notes
+- Useful Cylc examples from a Cylc developer (https://github.com/oliver-sanders/cylc-examples)
