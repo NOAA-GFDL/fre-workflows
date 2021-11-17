@@ -18,7 +18,7 @@ and more (such as multiline descriptions!)
 [task parameters]
     # this can be generated from history file easily
     # e.g. tar -tf /path/to/20040101.nc.tar | cut -d. -f3 | sort | uniq | xargs | sed 's/ /, /g'
-    history = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_global_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_scalar, atmos_static_cmip, atmos_tracer, fire_month, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
+    #history = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_global_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_scalar, atmos_static_cmip, atmos_tracer, fire_month, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
     regrid = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_static_cmip, atmos_tracer, fire_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
     native = atmos_scalar, atmos_global_cmip, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg
 
@@ -34,6 +34,7 @@ stage-history => split-netcdf_native<native> => rename-split-to-pp_native<native
         {{ PP_START | add_date_and_duration('P1Y') }}/P2Y = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
+make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap-pp-components-2yr
 """
 
 [runtime]
@@ -105,22 +106,21 @@ rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
     [[rename-split-to-pp_regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
 
-    [[remap-pp-components-2yr]]
+    [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
+            outputDir = {{ PP_DIR }}
+    [[remap-pp-components-2yr]]
+        inherit = REMAP-PP-COMPONENTS
+        [[[environment]]]
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
             chunk = P2Y
-
     [[remap-pp-components-4yr]]
-        pre-script = module load cdo gcp/test && mkdir -p $outputDir
-        script = rose task-run --verbose --app-key remap-pp-components
+        inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/data
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/data/pp
-            begin = $(isodatetime --offset=-3PY $CYLC_TASK_CYCLE_POINT)
+            begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
             chunk = P4Y
 
     [[MAKE-TIMESERIES]]
