@@ -135,10 +135,12 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
+            component = $CYLC_TASK_PARAM_native
     [[MAKE-TIMESERIES-REGRID]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
+            component = $CYLC_TASK_PARAM_regrid
     [[MAKE-TIMESERIES-2yr]]
         [[[environment]]]
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
