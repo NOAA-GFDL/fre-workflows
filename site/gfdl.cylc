@@ -1,5 +1,5 @@
 [runtime]
     [[root]]
-        platform = slurm
+        platform = ppan
         [[[directives]]]
             --comment=xtmp
