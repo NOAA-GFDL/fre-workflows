@@ -62,6 +62,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             env
 """
         script = rose task-run --verbose
+        execution retry delays = PT1M, PT5M, PT10H
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
