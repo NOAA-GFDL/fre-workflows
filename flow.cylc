@@ -160,6 +160,8 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
+        [[[environment]]]
+            fail_ok_components = grid_spec
     [[MAKE-TIMESERIES-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
