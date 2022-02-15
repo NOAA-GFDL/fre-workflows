@@ -38,6 +38,7 @@ pp-starter = stage-history
 stage-history => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
 stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
 rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
+remap-pp-components-static => combine-statics
 """
         {{ PP_START | add_date_and_duration('P1Y') }}/P2Y = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
@@ -160,6 +161,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -218,6 +220,12 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
         inherit = REGRID-XY
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
+
+    [[combine-statics]]
+        pre-script = module load cdo
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+            outputDir = {{ PP_DIR }}
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
