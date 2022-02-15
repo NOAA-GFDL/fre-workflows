@@ -54,8 +54,12 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
     # default config for all tasks
     [[root]]
         init-script = """
-            source /home/c2b/miniconda3/etc/profile.d/conda.sh
-            conda activate cylc
+            # seems to not be needed
+            #source /home/c2b/miniconda3/etc/profile.d/conda.sh
+            #conda activate cylc
+            . /usr/local/Modules/default/init/bash
+            module load epmt
+            module list
 """
         env-script = """
             eval $(rose task-env)
