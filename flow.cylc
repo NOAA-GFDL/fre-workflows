@@ -146,6 +146,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
+            outputDRS = legacy
     [[remap-pp-components-2yr]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -162,6 +163,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+            outputDRS = default
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -222,7 +224,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             component = $CYLC_TASK_PARAM_regrid_static
 
     [[combine-statics]]
-        pre-script = module load cdo
+        pre-script = module load cdo & mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
