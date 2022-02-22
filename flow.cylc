@@ -40,12 +40,12 @@ stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native
 rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
 remap-pp-components-static => combine-statics
 """
-        {{ PP_START | add_date_and_duration('P1Y') }}/P2Y = """
+        +P1Y/P2Y = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
 make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap-pp-components-2yr
 """
-        {{ PP_START | add_date_and_duration('P3Y') }}/P4Y = """
+        +P3Y/P4Y = """
 make-timeseries_regrid-2yr<regrid>[-P2Y] & make-timeseries_regrid-2yr<regrid> => make-timeseries_regrid-4yr<regrid>
 make-timeseries_native-2yr<native>[-P2Y] & make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
 make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
