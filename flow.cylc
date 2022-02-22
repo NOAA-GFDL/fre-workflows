@@ -58,8 +58,8 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             # seems to not be needed
             #source /home/c2b/miniconda3/etc/profile.d/conda.sh
             #conda activate cylc
-            . /usr/local/Modules/default/init/bash
-            module load epmt
+            #. /usr/local/Modules/default/init/bash
+            #module load epmt
             module list
 """
         env-script = """
@@ -113,7 +113,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             component = $CYLC_TASK_PARAM_regrid_static
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key rename-split-to-pp
     [[RENAME-SPLIT-TO-PP-NATIVE]]
         inherit = RENAME-SPLIT-TO-PP
@@ -224,7 +224,7 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
             component = $CYLC_TASK_PARAM_regrid_static
 
     [[combine-statics]]
-        pre-script = module load cdo & mkdir -p $outputDir
+        pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
