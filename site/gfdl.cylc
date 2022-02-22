@@ -1,5 +1,6 @@
 [runtime]
     [[root]]
-        platform = ppan_remote
+        platform = ppan
         [[[directives]]]
-            --comment=xtmp,epmt
+            #--comment=xtmp,epmt
+            --comment=xtmp
