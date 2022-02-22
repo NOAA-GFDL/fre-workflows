@@ -22,3 +22,6 @@
 [submodule "app/combine-statics"]
 	path = app/combine-statics
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/combine-statics.git
+[submodule "app/mdtf"]
+	path = app/mdtf
+	url = https://gitlab.gfdl.noaa.gov/fre2/apps/mdtf.git

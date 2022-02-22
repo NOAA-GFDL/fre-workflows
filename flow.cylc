@@ -50,6 +50,9 @@ make-timeseries_regrid-2yr<regrid>[-P2Y] & make-timeseries_regrid-2yr<regrid> =>
 make-timeseries_native-2yr<native>[-P2Y] & make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
 make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
 """
+        R1/$ = """
+remap-pp-components-4yr => mdtf
+"""
 
 [runtime]
     # default config for all tasks
@@ -228,6 +231,9 @@ make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
+
+    [[mdtf]]
+        script = rose task-run --verbose --app-key mdtf -C gfdl
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
