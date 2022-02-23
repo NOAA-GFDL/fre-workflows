@@ -1,15 +1,12 @@
 # Instructions
 - mkdir -p ~/.cylc/flow && cp /home/c2b/.cylc/flow/global.cylc ~/.cylc/flow (one-time only)
-- source /home/c2b/miniconda3/etc/profile.d/conda.csh
+- source /nbhome/c2b/miniconda3/etc/profile.d/conda.csh
 - conda activate cylc
+
 # for PPAN:
 - cylc validate .
-- cylc install
-- cylc play postprocessing/run1
-# for workstations
-- cylc validate . -O gfdl-ws
-- cylc install -O gfdl-ws --symlink-dirs="work=/local2/home, share=/local2/home"
-- cylc play postprocessing/run1
+- cylc install --no-run-name
+- cylc play postprocessing
 
 # What is happening?
 - All files in ~/cylc-run/postprocessing/run1: workflow logs, job logs, job scripts, work directories
