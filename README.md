@@ -3,10 +3,30 @@
 - source /nbhome/c2b/miniconda3/etc/profile.d/conda.csh
 - conda activate cylc
 
-# for PPAN:
+# Running
 - cylc validate .
 - cylc install --no-run-name
 - cylc play postprocessing
+
+# Observing
+# Terminal GUI
+- cylc tui postprocessing
+# always nice to see running jobs
+- watch squeue -u $USER --sort=-M --state=r
+# Workflow log
+- tail -f ~/cylc-run/postprocessing/log/workflow/log
+# Report of workflow state
+- cylc workflow-state postprocessing
+# Report of workflow timings
+- cylc report-timings postprocessing
+
+# More usage notes
+# Pause suite
+- cylc stop postprocessing
+# Clean up run dir, log dir, share dir
+- cylc clean postprocessing
+# Many more useful Cylc commands
+- cylc help all
 
 # What is happening?
 - All files in ~/cylc-run/postprocessing/run1: workflow logs, job logs, job scripts, work directories
