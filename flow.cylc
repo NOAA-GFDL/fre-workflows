@@ -34,7 +34,7 @@ stage-history => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-spli
 stage-history => split-netcdf_native<native> => rename-split-to-pp_native<native>
 """
         R1 = """
-pp-starter = stage-history
+pp-starter => stage-history
 stage-history => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
 stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
 rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
@@ -233,7 +233,13 @@ remap-pp-components-4yr => mdtf
             outputDir = {{ PP_DIR }}
 
     [[mdtf]]
-        script = rose task-run --verbose --app-key mdtf -C gfdl
+        # not needed if app-key is mdtf (this is the default)
+        #script = rose task-run --verbose --app-key mdtf
+        pre-script = mkdir -p $MDTF_TMPDIR
+        [[[environment]]]
+            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
+        [[[directives]]]
+            --partition=analysis
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
