@@ -5,5 +5,3 @@ dependencies:
   - cylc-flow
   - cylc-uiserver
   - cylc-rose
-# temporarily needed to avoid soft_unicode / soft_str errors
-  - markupsafe=2.0.1
