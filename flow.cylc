@@ -20,7 +20,9 @@ and more (such as multiline descriptions!)
     # e.g. tar -tf /path/to/20040101.nc.tar | cut -d. -f3 | sort | uniq | xargs | sed 's/ /, /g'
     #history = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_global_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_scalar, atmos_static_cmip, atmos_tracer, fire_month, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
     regrid = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_tracer, fire_month, land_dust, land_month, land_month_cmip, land_month_inst, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, river_daily, river_month, river_month_inst
+    #regrid = aerosol_hourly_cmip, aerosol_month_cmip
     regrid_static = atmos_static_cmip, land_static, land_static_cmip, land_static_sg, river_static, river_static_cmip
+    #regrid_static = atmos_static_cmip, land_static
     native = atmos_scalar, atmos_global_cmip, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst
     native_static = land_static, land_static_cmip, land_static_sg
 
@@ -31,24 +33,34 @@ and more (such as multiline descriptions!)
         P1Y = """
 pp-starter => stage-history
 stage-history => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
+split-netcdf_regrid<regrid> => clean-history-regrid-xy
+rename-split-to-pp_regrid<regrid> => clean-split-regrid-xy
 stage-history => split-netcdf_native<native> => rename-split-to-pp_native<native>
+rename-split-to-pp_native<native> => clean-split-native
 """
         R1 = """
 pp-starter => stage-history
 stage-history => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
+split-netcdf_regrid<regrid_static> => clean-history-regrid-xy
+rename-split-to-pp_regrid<regrid_static> => clean-split-regrid-xy
 stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
+rename-split-to-pp_native<native_static> => clean-split-native
 rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
-remap-pp-components-static => combine-statics
+remap-pp-components-static => clean-shards-static
+remap-pp-components-static => combine-statics => clean-pp-statics
 """
         +P1Y/P2Y = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
 make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap-pp-components-2yr
+make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => clean-shards-1yr
 """
         +P3Y/P4Y = """
 make-timeseries_regrid-2yr<regrid>[-P2Y] & make-timeseries_regrid-2yr<regrid> => make-timeseries_regrid-4yr<regrid>
 make-timeseries_native-2yr<native>[-P2Y] & make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
 make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
+make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => clean-shards-2yr
+remap-pp-components-4yr => clean-shards-4yr
 """
         R1/$ = """
 remap-pp-components-4yr => mdtf
@@ -63,7 +75,7 @@ remap-pp-components-4yr => mdtf
             #conda activate cylc
             #. /usr/local/Modules/default/init/bash
             #module load epmt
-            module list
+            #module list
 """
         env-script = """
             eval $(rose task-env)
@@ -240,6 +252,43 @@ remap-pp-components-4yr => mdtf
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
         [[[directives]]]
             --partition=analysis
+
+    [[CLEAN]]
+        pre-script = "set -x"
+    [[clean-history-regrid-xy]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT"
+    [[clean-pp-statics]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp"
+    [[clean-split-native]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT"
+    [[clean-split-regrid-xy]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT"
+    [[clean-shards-static]]
+        inherit = CLEAN
+        script = """
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
+        """
+    [[clean-shards-1yr]]
+        inherit = CLEAN
+        script = """
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY --offset=-P1Y $CYLC_TASK_CYCLE_POINT)*.nc
+        """
+    [[clean-shards-2yr]]
+        inherit = CLEAN
+        script = """
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P2Y/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P2Y/*.*-$(isodatetime --print-format CCYY --offset=-P2Y $CYLC_TASK_CYCLE_POINT)*.nc
+        """
+    [[clean-shards-4yr]]
+        inherit = CLEAN
+        script = """
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P4Y/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
+        """
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
