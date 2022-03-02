@@ -70,12 +70,9 @@ remap-pp-components-4yr => mdtf
     # default config for all tasks
     [[root]]
         init-script = """
-            # seems to not be needed
-            #source /home/c2b/miniconda3/etc/profile.d/conda.sh
-            #conda activate cylc
-            #. /usr/local/Modules/default/init/bash
-            #module load epmt
-            #module list
+            module load epmt
+            module list
+            epmt check
 """
         env-script = """
             eval $(rose task-env)

@@ -2,5 +2,7 @@
     [[root]]
         platform = ppan
         [[[directives]]]
+            # we want epmt but it does not currently work properly
+            # disabling the clean submit option does work, as a workaround
             #--comment=xtmp,epmt
             --comment=xtmp
