@@ -50,18 +50,18 @@ remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 """
         +P1Y/{{ PP_CHUNK_A }} = """
-rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-2yr<regrid>
-rename-split-to-pp_native<native> => make-timeseries_native-2yr<native>
-make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => remap-pp-components-2yr
-make-timeseries_regrid-2yr<regrid> & make-timeseries_native-2yr<native> => clean-shards-1yr
+rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
+rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
+make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
+make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
 """
         +P3Y/{{ PP_CHUNK_B }} = """
-make-timeseries_regrid-2yr<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-2yr<regrid> => make-timeseries_regrid-4yr<regrid>
-make-timeseries_native-2yr<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
-make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
-make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => clean-shards-2yr
-remap-pp-components-4yr => mdtf
-remap-pp-components-4yr => clean-shards-4yr
+make-timeseries_regrid-chunk1<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-chunk1<regrid> => make-timeseries_regrid-chunk2<regrid>
+make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
+make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
+make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => clean-shards-chunk1
+remap-pp-components-chunk2 => mdtf
+remap-pp-components-chunk2 => clean-shards-chunk2
 """
 
 [runtime]
@@ -157,12 +157,12 @@ remap-pp-components-4yr => clean-shards-4yr
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
             outputDRS = legacy
-    [[remap-pp-components-2yr]]
+    [[remap-pp-components-chunk1]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
             currentChunk = {{ PP_CHUNK_A }}
-    [[remap-pp-components-4yr]]
+    [[remap-pp-components-chunk2]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
@@ -190,32 +190,32 @@ remap-pp-components-4yr => clean-shards-4yr
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-    [[MAKE-TIMESERIES-2yr]]
+    [[MAKE-TIMESERIES-CHUNK1]]
         [[[environment]]]
             begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
             inputChunk = P1Y
             outputChunk = {{ PP_CHUNK_A }}
-    [[MAKE-TIMESERIES-4yr]]
+    [[MAKE-TIMESERIES-CHUNK2]]
         [[[environment]]]
             begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
             inputChunk = {{ PP_CHUNK_A }}
             outputChunk = {{ PP_CHUNK_B }}
-    [[MAKE-TIMESERIES-NATIVE-2yr]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-2yr
-    [[make-timeseries_native-2yr<native>]]
-        inherit = MAKE-TIMESERIES-NATIVE-2yr
-    [[MAKE-TIMESERIES-REGRID-2yr]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-2yr
-    [[make-timeseries_regrid-2yr<regrid>]]
-        inherit = MAKE-TIMESERIES-REGRID-2yr
-    [[MAKE-TIMESERIES-NATIVE-4yr]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-4yr
-    [[make-timeseries_native-4yr<native>]]
-        inherit = MAKE-TIMESERIES-NATIVE-4yr
-    [[MAKE-TIMESERIES-REGRID-4yr]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-4yr
-    [[make-timeseries_regrid-4yr<regrid>]]
-        inherit = MAKE-TIMESERIES-REGRID-4yr
+    [[MAKE-TIMESERIES-NATIVE-CHUNK1]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK1
+    [[make-timeseries_native-chunk1<native>]]
+        inherit = MAKE-TIMESERIES-NATIVE-CHUNK1
+    [[MAKE-TIMESERIES-REGRID-CHUNK1]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK1
+    [[make-timeseries_regrid-chunk1<regrid>]]
+        inherit = MAKE-TIMESERIES-REGRID-CHUNK1
+    [[MAKE-TIMESERIES-NATIVE-chunk2]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK2
+    [[make-timeseries_native-chunk2<native>]]
+        inherit = MAKE-TIMESERIES-NATIVE-chunk2
+    [[MAKE-TIMESERIES-REGRID-chunk2]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK2
+    [[make-timeseries_regrid-chunk2<regrid>]]
+        inherit = MAKE-TIMESERIES-REGRID-chunk2
 
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
@@ -267,19 +267,19 @@ remap-pp-components-4yr => clean-shards-4yr
         script = """
             rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
         """
-    [[clean-shards-1yr]]
+    [[clean-shards-chunk0]]
         inherit = CLEAN
         script = """
             rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
             rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY --offset=-P1Y $CYLC_TASK_CYCLE_POINT)*.nc
         """
-    [[clean-shards-2yr]]
+    [[clean-shards-chunk1]]
         inherit = CLEAN
         script = """
             rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
             rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(isodatetime --print-format CCYY --offset=-{{ PP_CHUNK_A }} $CYLC_TASK_CYCLE_POINT)*.nc
         """
-    [[clean-shards-4yr]]
+    [[clean-shards-chunk2]]
         inherit = CLEAN
         script = """
             rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }}/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
