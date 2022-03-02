@@ -55,7 +55,7 @@ rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
 """
-        +P3Y/{{ PP_CHUNK_B }} = """
+        {{ PP_START | add_date_and_durations(PP_CHUNK_B, '-P1Y') }}/{{ PP_CHUNK_B }} = """
 make-timeseries_regrid-chunk1<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-chunk1<regrid> => make-timeseries_regrid-chunk2<regrid>
 make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
