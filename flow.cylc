@@ -60,10 +60,8 @@ make-timeseries_regrid-2yr<regrid>[-P2Y] & make-timeseries_regrid-2yr<regrid> =>
 make-timeseries_native-2yr<native>[-P2Y] & make-timeseries_native-2yr<native> => make-timeseries_native-4yr<native>
 make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => remap-pp-components-4yr
 make-timeseries_regrid-4yr<regrid> & make-timeseries_native-4yr<native> => clean-shards-2yr
-remap-pp-components-4yr => clean-shards-4yr
-"""
-        R1/$ = """
 remap-pp-components-4yr => mdtf
+remap-pp-components-4yr => clean-shards-4yr
 """
 
 [runtime]
