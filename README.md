@@ -1,6 +1,16 @@
-# Instructions
-- source /nbhome/c2b/miniconda3/etc/profile.d/conda.csh
+# Environment instructions, recommended
+- Add the below to the top of your ~/.cshrc
+setenv PATH ${PATH}:/home/oar.gfdl.sw/conda/miniconda3/envs/cylc/bin
+setenv CYLC_CONF_PATH /home/c2b/git/fre2/system-settings
+
+# Environment instructions, alternate
+- source /home/oar.gfdl.sw/conda/modulefiles
 - conda activate cylc
+- Still need to set CYLC_CONF_PATH somehow for batch jobs
+
+# Checkout PP suite and apps
+- git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
+- cd postprocessing
 
 # Running (on PP/AN)
 - cylc validate .
@@ -13,6 +23,12 @@
 - cylc validate .
 - cylc install --symlink-dirs="work=/local2/home, share=/local2/home" --no-run-name
 - cylc play postprocessing
+
+# Retrieving configuration
+# Configuration for this workflow
+- cylc config postprocessing
+# Global configuration (to be set GFDL admins in the future)
+- cylc config
 
 # Observing
 # Terminal GUI
@@ -40,6 +56,7 @@
 
 # What is happening?
 - All files in ~/cylc-run/postprocessing: workflow logs, job logs, job scripts, work directories
+- share and work directories are symlinked to /xtmp
 
 # More usage notes
 # Reinstall flow.cylc updates but not rose app updates
