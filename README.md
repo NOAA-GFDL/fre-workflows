@@ -1,13 +1,3 @@
-# Environment instructions, recommended
-- Add the below to the top of your ~/.cshrc
-setenv PATH ${PATH}:/home/oar.gfdl.sw/conda/miniconda3/envs/cylc/bin
-setenv CYLC_CONF_PATH /home/c2b/git/fre2/system-settings
-
-# Environment instructions, alternate
-- source /home/oar.gfdl.sw/conda/modulefiles
-- conda activate cylc
-- Still need to set CYLC_CONF_PATH somehow for batch jobs
-
 # Checkout PP suite and apps
 - git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
 - cd postprocessing
@@ -32,6 +22,8 @@ setenv CYLC_CONF_PATH /home/c2b/git/fre2/system-settings
 
 # Observing
 # Terminal GUI
+# Note: on PP/AN, there is a python utf error that is resolved by
+# setenv PYTHONUTF8 1
 - cylc tui postprocessing
 # Running jobs
 - watch squeue -u $USER --sort=-M --state=r
