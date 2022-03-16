@@ -84,7 +84,7 @@ remap-pp-components-chunk2 => clean-shards-chunk2
 
     [[pp-starter]]
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}
+            targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
 
     [[stage-history]]
         pre-script = module load gcp hsm/test
