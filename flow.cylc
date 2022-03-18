@@ -30,7 +30,7 @@ and more (such as multiline descriptions!)
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-        P1Y = """
+        {{ HISTORY_SEGMENT }} = """
 pp-starter => stage-history
 stage-history => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
 split-netcdf_regrid<regrid> => clean-history-regrid-xy
@@ -49,13 +49,13 @@ rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_stat
 remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 """
-        +P1Y/{{ PP_CHUNK_A }} = """
+        +{{ HISTORY_SEGMENT }}/{{ PP_CHUNK_A }} = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
 """
-        {{ PP_START | add_date_and_durations(PP_CHUNK_B, '-P1Y') }}/{{ PP_CHUNK_B }} = """
+        {{ PP_START | add_date_and_durations(PP_CHUNK_B, '-' + HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 make-timeseries_regrid-chunk1<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-chunk1<regrid> => make-timeseries_regrid-chunk2<regrid>
 make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
@@ -160,7 +160,7 @@ remap-pp-components-chunk2 => clean-shards-chunk2
     [[remap-pp-components-chunk1]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            begin = $(cylc date --offset=-P1Y)
+            begin = $(cylc date --offset=-{{ HISTORY_SEGMENT }})
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-chunk2]]
         inherit = REMAP-PP-COMPONENTS
@@ -192,8 +192,8 @@ remap-pp-components-chunk2 => clean-shards-chunk2
             component = $CYLC_TASK_PARAM_regrid
     [[MAKE-TIMESERIES-CHUNK1]]
         [[[environment]]]
-            begin = $(cylc date --offset=-P1Y)
-            inputChunk = P1Y
+            begin = $(cylc date --offset=-{{ HISTORY_SEGMENT }})
+            inputChunk = {{ HISTORY_SEGMENT }}
             outputChunk = {{ PP_CHUNK_A }}
     [[MAKE-TIMESERIES-CHUNK2]]
         [[[environment]]]
@@ -271,8 +271,8 @@ remap-pp-components-chunk2 => clean-shards-chunk2
     [[clean-shards-chunk0]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(cylc date --template CCYY)*.nc
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(cylc date --template CCYY --offset=-P1Y)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }}/*.*-$(cylc date --template CCYY)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }}/*.*-$(cylc date --template CCYY --offset=-{{ HISTORY_SEGMENT }})*.nc
         """
     [[clean-shards-chunk1]]
         inherit = CLEAN
