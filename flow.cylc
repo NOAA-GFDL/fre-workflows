@@ -100,7 +100,7 @@ remap-pp-components-chunk2 => clean-shards-chunk2
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
-            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT
             component = $CYLC_TASK_PARAM_native
     [[SPLIT-NETCDF-REGRID]]
@@ -160,12 +160,12 @@ remap-pp-components-chunk2 => clean-shards-chunk2
     [[remap-pp-components-chunk1]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
+            begin = $(cylc date --offset=-P1Y)
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-chunk2]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
+            begin = $(cylc date --offset=-P3Y)
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS
@@ -192,12 +192,12 @@ remap-pp-components-chunk2 => clean-shards-chunk2
             component = $CYLC_TASK_PARAM_regrid
     [[MAKE-TIMESERIES-CHUNK1]]
         [[[environment]]]
-            begin = $(isodatetime --offset=-P1Y $CYLC_TASK_CYCLE_POINT)
+            begin = $(cylc date --offset=-P1Y)
             inputChunk = P1Y
             outputChunk = {{ PP_CHUNK_A }}
     [[MAKE-TIMESERIES-CHUNK2]]
         [[[environment]]]
-            begin = $(isodatetime --offset=-P3Y $CYLC_TASK_CYCLE_POINT)
+            begin = $(cylc date --offset=-P3Y)
             inputChunk = {{ PP_CHUNK_A }}
             outputChunk = {{ PP_CHUNK_B }}
     [[MAKE-TIMESERIES-NATIVE-CHUNK1]]
@@ -221,7 +221,7 @@ remap-pp-components-chunk2 => clean-shards-chunk2
         pre-script = module load fre/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
-            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(isodatetime --print-format CCYYMMDD $CYLC_TASK_CYCLE_POINT).nc
+            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
@@ -270,19 +270,19 @@ remap-pp-components-chunk2 => clean-shards-chunk2
     [[clean-shards-chunk0]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(isodatetime --print-format CCYY --offset=-P1Y $CYLC_TASK_CYCLE_POINT)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(cylc date --template CCYY)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/P1Y/*.*-$(cylc date --template CCYY --offset=-P1Y)*.nc
         """
     [[clean-shards-chunk1]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(isodatetime --print-format CCYY --offset=-{{ PP_CHUNK_A }} $CYLC_TASK_CYCLE_POINT)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(cylc date --template CCYY)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(cylc date --template CCYY --offset=-{{ PP_CHUNK_A }})*.nc
         """
     [[clean-shards-chunk2]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }}/*.*-$(isodatetime --print-format CCYY $CYLC_TASK_CYCLE_POINT)*.nc
+            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }}/*.*-$(cylc date --template CCYY)*.nc
         """
 
 # Site-specific settings
