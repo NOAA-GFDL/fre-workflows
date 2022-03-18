@@ -240,13 +240,14 @@ remap-pp-components-chunk2 => clean-shards-chunk2
             outputDir = {{ PP_DIR }}
 
     [[mdtf]]
-        # not needed if app-key is mdtf (this is the default)
-        #script = rose task-run --verbose --app-key mdtf
         pre-script = mkdir -p $MDTF_TMPDIR
+        # app does not work currently, so do nothing for now
+        script = """
+            echo Hello!
+            exit 0
+        """
         [[[environment]]]
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
-        [[[directives]]]
-            --partition=analysis
 
     [[CLEAN]]
         pre-script = "set -x"
