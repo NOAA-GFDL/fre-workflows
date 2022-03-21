@@ -265,25 +265,23 @@ remap-pp-components-chunk2 => clean-shards-chunk2
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT"
     [[clean-shards-static]]
         inherit = CLEAN
-        script = """
-            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
-        """
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y"
     [[clean-shards-chunk0]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }}/*.*-$(cylc date --template CCYY)*.nc
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }}/*.*-$(cylc date --template CCYY --offset=-{{ HISTORY_SEGMENT }})*.nc
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ HISTORY_SEGMENT }})*.nc" -delete
         """
     [[clean-shards-chunk1]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(cylc date --template CCYY)*.nc
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }}/*.*-$(cylc date --template CCYY --offset=-{{ PP_CHUNK_A }})*.nc
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ PP_CHUNK_A }})*.nc" -delete
         """
     [[clean-shards-chunk2]]
         inherit = CLEAN
         script = """
-            rm -f $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }}/*.*-$(cylc date --template CCYY)*.nc
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
         """
 
 # Site-specific settings
