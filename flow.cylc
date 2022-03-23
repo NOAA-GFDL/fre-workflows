@@ -28,35 +28,49 @@ and more (such as multiline descriptions!)
         {{ HISTORY_SEGMENT }} = """
 pp-starter => stage-history
 stage-history => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
+{% if CLEAN_WORK %}
 split-netcdf_regrid<regrid> => clean-history-regrid-xy
 rename-split-to-pp_regrid<regrid> => clean-split-regrid-xy
+{% endif %}
 stage-history => split-netcdf_native<native> => rename-split-to-pp_native<native>
+{% if CLEAN_WORK %}
 rename-split-to-pp_native<native> => clean-split-native
+{% endif %}
 """
         R1 = """
 pp-starter => stage-history
 stage-history => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
+{% if CLEAN_WORK %}
 split-netcdf_regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp_regrid<regrid_static> => clean-split-regrid-xy
+{% endif %}
 stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
+{% if CLEAN_WORK %}
 rename-split-to-pp_native<native_static> => clean-split-native
+{% endif %}
 rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
+{% if CLEAN_WORK %}
 remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
+{% endif %}
 """
         +{{ HISTORY_SEGMENT }}/{{ PP_CHUNK_A }} = """
 rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
 rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
+{% if CLEAN_WORK %}
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
+{% endif %}
 """
         {{ PP_START | add_date_and_durations(PP_CHUNK_B, '-' + HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 make-timeseries_regrid-chunk1<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-chunk1<regrid> => make-timeseries_regrid-chunk2<regrid>
 make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
+{% if CLEAN_WORK %}
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => clean-shards-chunk1
-remap-pp-components-chunk2 => mdtf
 remap-pp-components-chunk2 => clean-shards-chunk2
+{% endif %}
+remap-pp-components-chunk2 => mdtf
 """
 
 [runtime]
