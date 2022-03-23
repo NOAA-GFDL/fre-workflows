@@ -2,6 +2,9 @@
 - git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
 - cd postprocessing
 
+# Edit PP configuration
+- vi rose-suite.conf
+
 # Running (on PP/AN)
 - cylc validate .
 # --no-run-name avoids creating runN directories
