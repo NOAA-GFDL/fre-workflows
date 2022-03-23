@@ -70,7 +70,9 @@ make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> =>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => clean-shards-chunk1
 remap-pp-components-chunk2 => clean-shards-chunk2
 {% endif %}
+{% if DO_MDTF %}
 remap-pp-components-chunk2 => mdtf
+{% endif %}
 """
 
 [runtime]
@@ -250,11 +252,6 @@ remap-pp-components-chunk2 => mdtf
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
-        # app does not work currently, so do nothing for now
-        script = """
-            echo Hello!
-            exit 0
-        """
         [[[environment]]]
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 
