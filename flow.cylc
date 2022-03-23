@@ -16,15 +16,10 @@ and more (such as multiline descriptions!)
     UTC mode = True
 
 [task parameters]
-    # this can be generated from history file easily
-    # e.g. tar -tf /path/to/20040101.nc.tar | cut -d. -f3 | sort | uniq | xargs | sed 's/ /, /g'
-    #history = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_global_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_scalar, atmos_static_cmip, atmos_tracer, fire_month, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst, land_static, land_static_cmip, land_static_sg, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, lumip_Lyr, lumip_Lyr_crp, lumip_Lyr_psl, lumip_Lyr_pst, river_daily, river_month, river_month_inst, river_static, river_static_cmip
-    regrid = aerosol_hourly_cmip, aerosol_month_cmip, atmos_co2_month, atmos_diurnal, atmos_diurnal_cmip, atmos_hourly, atmos_level_cmip, atmos_month, atmos_month_aer, atmos_month_cmip, atmos_tracer, fire_month, land_dust, land_month, land_month_cmip, land_month_inst, lumip_Lmon_crp, lumip_Lmon_psl, lumip_Lmon_pst, river_daily, river_month, river_month_inst
-    #regrid = aerosol_hourly_cmip, aerosol_month_cmip
-    regrid_static = atmos_static_cmip, land_static, land_static_cmip, land_static_sg, river_static, river_static_cmip
-    #regrid_static = atmos_static_cmip, land_static
-    native = atmos_scalar, atmos_global_cmip, grid_spec, ice_month, land_dust, land_month, land_month_cmip, land_month_inst
-    native_static = land_static, land_static_cmip, land_static_sg
+    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
+    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
 
 [scheduling]
     initial cycle point = {{ PP_START }}
