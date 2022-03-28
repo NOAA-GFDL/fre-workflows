@@ -1,29 +1,31 @@
-# Checkout PP suite and apps
-- git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
-- cd postprocessing
+# Checkout PP suite and app templates
+1. git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
+1. cd postprocessing
 
-# Edit PP configuration
-- vi rose-suite.conf
+# Try Bronx XML converter
+1. fre-bronx-to-canopy XML.xml
+1. git status
 
-# Running (on PP/AN)
-- cylc validate .
-# --no-run-name avoids creating runN directories
-- cylc install --no-run-name
-- cylc play postprocessing
+# Edit PP configurations
+1. vi rose-suite.conf
+1. vi app/regrid-xy/rose-app.conf
+1. vi app/remap-pp-components/rose-app.conf
 
-# Running on workstation
-# Need corresponding settings in rose-suite.conf also
-- cylc validate .
-- cylc install --symlink-dirs="work=/local2/home, share=/local2/home" --no-run-name
-- cylc play postprocessing
+# Install workflow (on PP/AN)
+1. ssh analysis
+1. cylc validate .
+1. cylc install --no-run-name (--debug) (`--no-run-name avoids creating runN directories`)
 
-# Retrieving configuration
-# Configuration for this workflow
-- cylc config postprocessing
-# Global configuration (to be set GFDL admins in the future)
-- cylc config
+# Optional: Retrieving configuration
+- cylc config postprocessing (`workflow configuration`)
+- cylc config (`global configuration`)
 
-# Observing
+# Start workflow (on PP/AN)
+1. ssh analysis
+1. cylc play postprocessing (--debug)
+
+# Monitoring
+```
 # Terminal GUI
 # Note: on PP/AN, there is a python utf error that is resolved by
 # setenv PYTHONUTF8 1
@@ -31,6 +33,7 @@
 # Running jobs
 - watch squeue -u $USER --sort=-M --state=r
 # Workflow log
+- cylc cat-log postprocessing
 - tail -f ~/cylc-run/postprocessing/log/workflow/log
 # Job scripts, stdout, and stderr
 - ls ~/cylc-run/postprocessing/log/job
@@ -38,14 +41,22 @@
 - cylc workflow-state postprocessing | grep -v succeeded
 # Report of workflow timings
 - cylc report-timings postprocessing
+```
 
-# More usage notes
+# Workflow control
+```
 # Pause suite
 - cylc stop postprocessing
 # Stop a workflow and abandon any jobs
 - cylc stop postprocessing --now
 # Clean up run dir, log dir, share dir
 - cylc clean postprocessing
+# Reinstall flow.cylc updates but not rose app updates
+- cylc play postprocessing
+# to start a particular task
+- cylc trigger postprocessing pp-starter.20030101T0000Z
+```
+
 # Many more useful Cylc commands
 - cylc help all
 
@@ -53,13 +64,12 @@
 - All files in ~/cylc-run/postprocessing: workflow logs, job logs, job scripts, work directories
 - share and work directories are symlinked to /xtmp
 
-# More usage notes
-# Reinstall flow.cylc updates but not rose app updates
-- cylc reinstall postprocessing
-- cylc play postprocessing
-# to start a particular task
-- cylc trigger postprocessing pp-starter.20030101T0000Z
-
 # Other notes
 - Useful Cylc examples from a Cylc developer (https://github.com/oliver-sanders/cylc-examples)
 - data.gov recurrance examples on ISO8601 (https://resources.data.gov/schemas/dcat-us/v1.1/iso8601_guidance/)
+
+# Running on workstation
+# Need corresponding settings in rose-suite.conf also
+- cylc validate .
+- cylc install --symlink-dirs="work=/local2/home, share=/local2/home" --no-run-name
+- cylc play postprocessing
