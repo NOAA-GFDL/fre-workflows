@@ -11,6 +11,9 @@
 1. vi app/regrid-xy/rose-app.conf
 1. vi app/remap-pp-components/rose-app.conf
 
+# Load Cylc
+1. module load cylc/test
+
 # Install workflow (on PP/AN)
 1. ssh analysis
 1. cylc validate .
