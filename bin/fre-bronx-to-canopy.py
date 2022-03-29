@@ -62,6 +62,8 @@ root = tree.getroot()
 # output
 rose_remap = metomi.rose.config.ConfigNode()
 rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
+rose_regrid_xy = metomi.rose.config.ConfigNode()
+rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
 regex_fre_property = re.compile('\$\((\w+)')
 
@@ -131,6 +133,13 @@ for exp in root.iter('experiment'):
                 print("    ", interp)
                 sourcegrid = comp.get('sourceGrid')
                 print("    ", sourcegrid)
+                rose_regrid_xy.set(keys=[label, 'sources'], value=' '.join(sources))
+                sourcegrid_split = sourcegrid.split('-')
+                rose_regrid_xy.set(keys=[label, 'inputGrid'], value=sourcegrid_split[1])
+                rose_regrid_xy.set(keys=[label, 'inputRealm'], value=sourcegrid_split[0])
+                interp_split = interp.split(',')
+                rose_regrid_xy.set(keys=[label, 'outputGridLon'], value=interp_split[1])
+                rose_regrid_xy.set(keys=[label, 'outputGridLat'], value=interp_split[0])
             ++i
 
 
@@ -186,3 +195,7 @@ dumper = metomi.rose.config.ConfigDumper()
 outfile = "app/remap-pp-components/rose-app.conf"
 print("  Writing", outfile)
 dumper(rose_remap, outfile)
+
+outfile = "app/regrid-xy/rose-app.conf"
+print("  Writing", outfile)
+dumper(rose_regrid_xy, outfile)
