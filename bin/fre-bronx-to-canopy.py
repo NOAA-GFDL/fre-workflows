@@ -115,6 +115,10 @@ for exp in root.iter('experiment'):
             print("  Statics")
             print("    ", type, ".static")
             print("    ", ", ".join(sources))
+            rose_remap.set(keys=[label + '.static', 'source'], value=' '.join(sources))
+            rose_remap.set(keys=[label + '.static', 'chunk'], value="P0Y")
+            rose_remap.set(keys=[label + '.static', 'freq'], value="P0Y")
+            rose_remap.set(keys=[label + '.static', 'grid'], value=grid)
 
             if grid == "native":
                 print("  No regridding")
@@ -167,6 +171,8 @@ for keys, sub_node in rose_remap.walk():
         continue
     item = keys[0]
     if item == "env" or item == "command":
+        continue
+    if ".static" in item:
         continue
     freq_legacy = rose_remap.get_value(keys=[item, 'freq'])
     rose_remap.set([item, 'freq'], freq_from_legacy(freq_legacy))
