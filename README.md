@@ -3,8 +3,13 @@
 1. cd postprocessing
 
 # Try Bronx XML converter
-1. fre-bronx-to-canopy XML.xml
-1. git status
+- bin/fre-bronx-to-canopy.py --help
+- module load FRE for frelist
+- XML xinclude support is limited; preprocess with xmllint --xinclude as a workaround
+- Some XMLs not currently supported (i.e. those with FRE properties in the experiment name)
+- After running, set PP_START and PP_STOP in rose-suite.conf, which are the only vars not set
+- Double-check the history and PP directories
+- git status
 
 # Edit PP configurations
 1. vi rose-suite.conf
