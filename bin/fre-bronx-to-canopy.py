@@ -84,7 +84,7 @@ all_components = set()
 
 
 
-print("Running frelist for historyDir/ppDir...")
+print("Running frelist for historyDir/ppDir/gridSpec...")
 cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
 print(">>", cmd)
 process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
@@ -93,8 +93,13 @@ cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml, platform, target
 print(">>", cmd)
 process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
 ppDir = process.stdout.strip()
+cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(xml, platform, target, expname, 'input/dataFile[@label="gridSpec"]')
+print(">>", cmd)
+process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+gridSpec = process.stdout.strip()
 print("  history (input):", historyDir)
 print("  PP (output):    ", ppDir)
+print("  gridSpec:       ", gridSpec)
 rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value=historyDir)
 rose_suite.set(keys=['template variables', 'PP_DIR'], value=ppDir)
 
@@ -188,6 +193,7 @@ for exp in root.iter('experiment'):
                 interp_split = interp.split(',')
                 rose_regrid_xy.set(keys=[type, 'outputGridLon'], value=interp_split[1])
                 rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
+                rose_regrid_xy.set(keys=[type, 'gridSpec'], value=gridSpec)
 
 rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value=' '.join(sorted(all_components)))
 
