@@ -3,6 +3,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 import metomi.rose.config
+import metomi.isodatetime.parsers
 
 # Usage: fre-bronx-to-canopy -x XML -E EXP
 #
@@ -73,7 +74,7 @@ rose_suite.set(keys=['template variables', 'CLEAN_WORK'], value='True')
 rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
 
 regex_fre_property = re.compile('\$\((\w+)')
-
+all_components = set()
 
 
 
@@ -89,6 +90,7 @@ for exp in root.iter('experiment'):
         for comp in exp.iter('component'):
             #print("DEBUG:", comp)
             type = comp.get('type')
+            all_components.add(type)
             print("Component", type)
             i = 1
             if comp.get('xyInterp'):
@@ -156,7 +158,7 @@ for exp in root.iter('experiment'):
                 rose_regrid_xy.set(keys=[type, 'outputGridLon'], value=interp_split[1])
                 rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
 
-
+rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value=' '.join(sorted(all_components)))
 
 
 
@@ -187,8 +189,6 @@ for keys, sub_node in rose_remap.walk():
 
 
 print("\nConverting Bronx date info to ISO8601...")
-freq_from_legacy('annual')
-
 for keys, sub_node in rose_remap.walk():
     if len(keys) != 1:
         continue
@@ -201,6 +201,33 @@ for keys, sub_node in rose_remap.walk():
     rose_remap.set([item, 'freq'], freq_from_legacy(freq_legacy))
     chunk_legacy = rose_remap.get_value(keys=[item, 'chunk'])
     rose_remap.set([item, 'chunk'], chunk_from_legacy(chunk_legacy))
+
+
+print("\nSetting PP chunks...")
+all_chunks = set()
+def duration_to_seconds(duration):
+    dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
+    return dur.get_seconds()
+
+for keys, sub_node in rose_remap.walk():
+    if len(keys) != 1:
+        continue
+    item = keys[0]
+    if item == "env" or item == "command":
+        continue
+    chunk = rose_remap.get_value(keys=[item, 'chunk'])
+    if chunk == 'P0Y':
+        continue
+    all_chunks.add(chunk)
+
+sorted_chunks = list(all_chunks)
+sorted_chunks.sort(key=duration_to_seconds, reverse=False)
+
+print("  Chunks found:", ', '.join(sorted_chunks))
+assert len(sorted_chunks) >= 2
+rose_suite.set(['template variables', 'PP_CHUNK_A'], sorted_chunks[0])
+rose_suite.set(['template variables', 'PP_CHUNK_B'], sorted_chunks[1])
+print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
 
 
 print("\nWriting output files...")
