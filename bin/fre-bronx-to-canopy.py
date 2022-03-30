@@ -72,11 +72,11 @@ rose_regrid_xy = metomi.rose.config.ConfigNode()
 rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
 rose_suite = metomi.rose.config.ConfigNode()
-rose_suite.set(keys=['template variables', 'PTMP_DIR'], value='/xtmp/$USER/ptmp')
+rose_suite.set(keys=['template variables', 'PTMP_DIR'], value="'/xtmp/$USER/ptmp'")
 rose_suite.set(keys=['template variables', 'CLEAN_WORK'], value='True')
 rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
-rose_suite.set(keys=['template variables', 'PP_START'], value='YYYY')
-rose_suite.set(keys=['template variables', 'PP_STOP'], value='YYYY')
+rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
+rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
 
 
 regex_fre_property = re.compile('\$\((\w+)')
@@ -100,8 +100,8 @@ gridSpec = process.stdout.strip()
 print("  history (input):", historyDir)
 print("  PP (output):    ", ppDir)
 print("  gridSpec:       ", gridSpec)
-rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value=historyDir)
-rose_suite.set(keys=['template variables', 'PP_DIR'], value=ppDir)
+rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
+rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
 
 
@@ -119,7 +119,7 @@ for exp in root.iter('experiment'):
             segment = 'P' + segment_time + 'M'
         else:
             raise Exception("Unknown segment units:", segment_units)
-        rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value=segment)
+        rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
         pp = exp.find('postProcess')
         #print("DEBUG:", pp)
@@ -195,7 +195,7 @@ for exp in root.iter('experiment'):
                 rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
                 rose_regrid_xy.set(keys=[type, 'gridSpec'], value=gridSpec)
 
-rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value=' '.join(sorted(all_components)))
+rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(sorted(all_components))))
 
 
 
@@ -262,8 +262,8 @@ sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
 print("  Chunks found:", ', '.join(sorted_chunks))
 assert len(sorted_chunks) >= 2
-rose_suite.set(['template variables', 'PP_CHUNK_A'], sorted_chunks[0])
-rose_suite.set(['template variables', 'PP_CHUNK_B'], sorted_chunks[1])
+rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
+rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[1]))
 print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
 
 
