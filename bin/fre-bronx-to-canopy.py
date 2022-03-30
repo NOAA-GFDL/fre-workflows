@@ -1,6 +1,7 @@
 #!/home/oar.gfdl.sw/conda/miniconda3/envs/cylc/bin/python
 import re
 import sys
+import subprocess
 import xml.etree.ElementTree as ET
 import metomi.rose.config
 import metomi.isodatetime.parsers
@@ -57,6 +58,8 @@ def chunk_from_legacy(legacy_chunk):
 #xml = '/home/Fanrong.Zeng/ncrc/SPEAR_xml/xml/SPEAR_c192_o1_FA_H+ssp119+245+534OS.30mems.newlayout.bronx-19.xml'
 xml = 'expanded.hope.xml'
 expname = 'SPEAR_FA_c192_o1_Scen_SSP119_IC2011_K50_ens_01_03'
+platform = 'gfdl.ncrc3-intel16'
+target = 'repro-openmp'
 
 # input
 tree = ET.parse(xml)
@@ -78,10 +81,24 @@ all_components = set()
 
 
 
+print("Running frelist for historyDir/ppDir...")
+cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
+print(">>", cmd)
+process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+historyDir = process.stdout.strip() + '/history'
+cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml, platform, target, expname)
+print(">>", cmd)
+process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+ppDir = process.stdout.strip()
+print("  history (input):", historyDir)
+print("  PP (output):    ", ppDir)
+rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value=historyDir)
+rose_suite.set(keys=['template variables', 'PP_DIR'], value=ppDir)
+
 
 
 # read XML
-print("Reading XML...\n")
+print("\nReading XML...\n")
 for exp in root.iter('experiment'):
     if exp.get('name') == expname:
         #print("DEBUG:", exp)
