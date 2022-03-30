@@ -1,5 +1,7 @@
 #!jinja2
 
+{% set SITE = 'gfdl' %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
