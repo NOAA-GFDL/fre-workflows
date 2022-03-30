@@ -75,6 +75,9 @@ rose_suite = metomi.rose.config.ConfigNode()
 rose_suite.set(keys=['template variables', 'PTMP_DIR'], value='/xtmp/$USER/ptmp')
 rose_suite.set(keys=['template variables', 'CLEAN_WORK'], value='True')
 rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
+rose_suite.set(keys=['template variables', 'PP_START'], value='YYYY')
+rose_suite.set(keys=['template variables', 'PP_STOP'], value='YYYY')
+
 
 regex_fre_property = re.compile('\$\((\w+)')
 all_components = set()
@@ -102,6 +105,17 @@ print("\nReading XML...\n")
 for exp in root.iter('experiment'):
     if exp.get('name') == expname:
         #print("DEBUG:", exp)
+        segment_node = exp.find('runtime/production/segment')
+        segment_time = segment_node.get('simTime')
+        segment_units = segment_node.get('units')
+        if segment_units == 'years':
+            segment = 'P' + segment_time + 'Y'
+        elif segment_units == 'months':
+            segment = 'P' + segment_time + 'M'
+        else:
+            raise Exception("Unknown segment units:", segment_units)
+        rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value=segment)
+
         pp = exp.find('postProcess')
         #print("DEBUG:", pp)
         for comp in exp.iter('component'):
@@ -250,7 +264,7 @@ print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
 print("\nWriting output files...")
 dumper = metomi.rose.config.ConfigDumper()
 
-outfile = "rose-suite.conf.new"
+outfile = "rose-suite.conf"
 print("  ", outfile)
 dumper(rose_suite, outfile)
 
