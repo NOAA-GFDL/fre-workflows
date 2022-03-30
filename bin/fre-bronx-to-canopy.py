@@ -52,8 +52,10 @@ def chunk_from_legacy(legacy_chunk):
 
 
 #xml = '/home/Sergey.Malyshev/ncrc/lm4p2/xanadu/lm4p2-am4p0pi.xml'
-xml = 'lm4p2-am4p0pi.xml'
-expname = 'lm4p2-am4p0pi'
+#expname = 'lm4p2-am4p0pi'
+#xml = '/home/Fanrong.Zeng/ncrc/SPEAR_xml/xml/SPEAR_c192_o1_FA_H+ssp119+245+534OS.30mems.newlayout.bronx-19.xml'
+xml = 'expanded.hope.xml'
+expname = 'SPEAR_FA_c192_o1_Scen_SSP119_IC2011_K50_ens_01_03'
 
 # input
 tree = ET.parse(xml)
@@ -65,6 +67,11 @@ rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
 rose_regrid_xy = metomi.rose.config.ConfigNode()
 rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
+rose_suite = metomi.rose.config.ConfigNode()
+rose_suite.set(keys=['template variables', 'PTMP_DIR'], value='/xtmp/$USER/ptmp')
+rose_suite.set(keys=['template variables', 'CLEAN_WORK'], value='True')
+rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
+
 regex_fre_property = re.compile('\$\((\w+)')
 
 
@@ -73,80 +80,87 @@ regex_fre_property = re.compile('\$\((\w+)')
 
 
 # read XML
-print("Parsing XML...")
+print("Reading XML...\n")
 for exp in root.iter('experiment'):
     if exp.get('name') == expname:
+        #print("DEBUG:", exp)
         pp = exp.find('postProcess')
+        #print("DEBUG:", pp)
         for comp in exp.iter('component'):
+            #print("DEBUG:", comp)
             type = comp.get('type')
-            print("Processing component", type)
+            print("Component", type)
             i = 1
             if comp.get('xyInterp'):
                 grid = "regrid-xy"
             else:
                 grid = "native"
             comp_source = comp.get('source')
+            #print("DEBUG, comp source is:", comp_source)
             sources = set()
             for ts in comp.iter('timeSeries'):
                 print("  Timeseries", i)
                 if i == 1:
                     label = type
-                    print("    ", type)
+                    #print("    ", type)
                 else:
-                    label = type . i
-                    print("    ", type, i)
+                    label = type + '.' + str(i)
+                    #print("    ", type, i)
                 source = ts.get('source')
                 if source:
-                    print("    ", source)
                     s = source
-                    sources.add(source)
-                else:
-                    print("    ", comp_source)
+                elif comp_source:
                     s = comp_source
-                    sources.add(comp_source)
+                else:
+                    print("WARNING: Skipping a timeSeries with no source and no component source")
+                    continue
+                #print("    ", s)
+                sources.add(s)
+                #print("DEBUG:", sources)
                 rose_remap.set(keys=[label, 'source'], value=s)
                 freq = ts.get('freq')
-                print("    ", freq)
+                #print("    ", freq)
                 rose_remap.set(keys=[label, 'freq'], value=freq)
                 chunk = ts.get('chunkLength')
                 rose_remap.set(keys=[label, 'chunk'], value=chunk)
                 rose_remap.set(keys=[label, 'grid'], value=grid)
-                print("    ", chunk)
-                print("    ", grid)
+                #print("    ", chunk)
+                #print("    ", grid)
+                i = i + 1
 
-            print("  Statics")
-            print("    ", type, ".static")
-            print("    ", ", ".join(sources))
-            rose_remap.set(keys=[label + '.static', 'source'], value=' '.join(sources))
-            rose_remap.set(keys=[label + '.static', 'chunk'], value="P0Y")
-            rose_remap.set(keys=[label + '.static', 'freq'], value="P0Y")
-            rose_remap.set(keys=[label + '.static', 'grid'], value=grid)
+            #print("  Statics")
+            #print("    ", type, ".static")
+            #print("DEBUG", sources)
+            #print("    ", ", ".join(sources))
+            rose_remap.set(keys=[type + '.static', 'source'], value=' '.join(sources))
+            rose_remap.set(keys=[type + '.static', 'chunk'], value="P0Y")
+            rose_remap.set(keys=[type + '.static', 'freq'], value="P0Y")
+            rose_remap.set(keys=[type + '.static', 'grid'], value=grid)
 
             if grid == "native":
-                print("  No regridding")
+                #print("  No regridding")
                 continue
             else:
-                print("  Regridding info")
-                print("    ", type)
-                print("    ", ", ".join(sources))
+                print("  Regridded")
+                #print("    ", type)
+                #print("    ", ", ".join(sources))
                 interp = comp.get('xyInterp')
-                print("    ", interp)
+                #print("    ", interp)
                 sourcegrid = comp.get('sourceGrid')
-                print("    ", sourcegrid)
-                rose_regrid_xy.set(keys=[label, 'sources'], value=' '.join(sources))
+                #print("    ", sourcegrid)
+                rose_regrid_xy.set(keys=[type, 'sources'], value=' '.join(sources))
                 sourcegrid_split = sourcegrid.split('-')
-                rose_regrid_xy.set(keys=[label, 'inputGrid'], value=sourcegrid_split[1])
-                rose_regrid_xy.set(keys=[label, 'inputRealm'], value=sourcegrid_split[0])
+                rose_regrid_xy.set(keys=[type, 'inputGrid'], value=sourcegrid_split[1])
+                rose_regrid_xy.set(keys=[type, 'inputRealm'], value=sourcegrid_split[0])
                 interp_split = interp.split(',')
-                rose_regrid_xy.set(keys=[label, 'outputGridLon'], value=interp_split[1])
-                rose_regrid_xy.set(keys=[label, 'outputGridLat'], value=interp_split[0])
-            ++i
+                rose_regrid_xy.set(keys=[type, 'outputGridLon'], value=interp_split[1])
+                rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
 
 
 
 
 
-print("Looking up FRE properties...")
+print("\nLooking up FRE properties...")
 properties = dict()
 
 for keys, sub_node in rose_remap.walk():
@@ -172,7 +186,7 @@ for keys, sub_node in rose_remap.walk():
         rose_remap = rose_remap.set([item, 'chunk'], properties[name])
 
 
-print("Converting Bronx date info to ISO8601...")
+print("\nConverting Bronx date info to ISO8601...")
 freq_from_legacy('annual')
 
 for keys, sub_node in rose_remap.walk():
@@ -189,13 +203,17 @@ for keys, sub_node in rose_remap.walk():
     rose_remap.set([item, 'chunk'], chunk_from_legacy(chunk_legacy))
 
 
-print("Writing output files...")
+print("\nWriting output files...")
 dumper = metomi.rose.config.ConfigDumper()
 
+outfile = "rose-suite.conf.new"
+print("  ", outfile)
+dumper(rose_suite, outfile)
+
 outfile = "app/remap-pp-components/rose-app.conf"
-print("  Writing", outfile)
+print("  ", outfile)
 dumper(rose_remap, outfile)
 
 outfile = "app/regrid-xy/rose-app.conf"
-print("  Writing", outfile)
+print("  ", outfile)
 dumper(rose_regrid_xy, outfile)
