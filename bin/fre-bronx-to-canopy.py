@@ -35,6 +35,7 @@ def freq_from_legacy(legacy_freq):
         '3hr': 'PT3H',
         '2hr': 'PT2H',
         '1hr': 'PT1H',
+        'hourly': 'PT1H',
         '30min': 'PT30M' }
     return lookup[legacy_freq]
 
@@ -80,25 +81,27 @@ def main(args):
     all_components = set()
 
     print("Running frelist for historyDir/ppDir/gridSpec...")
+    print("If this fails, try running the 'frelist' call manually. Did you module load FRE?\n")
     cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
     print(">>", cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     historyDir = process.stdout.strip() + '/history'
+    print(historyDir)
     cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml, platform, target, expname)
     print(">>", cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     ppDir = process.stdout.strip()
+    print(ppDir)
     cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(xml, platform, target, expname, 'input/dataFile[@label="gridSpec"]')
     print(">>", cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     gridSpec = process.stdout.strip()
-    print("  history (input):", historyDir)
-    print("  PP (output):    ", ppDir)
-    print("  gridSpec:       ", gridSpec)
+    print(gridSpec)
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
     # read XML
+    count_components = 0
     print("\nReading XML...\n")
     for exp in root.iter('experiment'):
         if exp.get('name') == expname:
@@ -117,10 +120,11 @@ def main(args):
             pp = exp.find('postProcess')
             #print("DEBUG:", pp)
             for comp in exp.iter('component'):
+                count_components += 1
                 #print("DEBUG:", comp)
                 type = comp.get('type')
                 all_components.add(type)
-                print("Component", type)
+                #print("Component", type)
                 i = 1
                 if comp.get('xyInterp'):
                     grid = "regrid-xy"
@@ -130,7 +134,7 @@ def main(args):
                 #print("DEBUG, comp source is:", comp_source)
                 sources = set()
                 for ts in comp.iter('timeSeries'):
-                    print("  Timeseries", i)
+                    #print("  Timeseries", i)
                     if i == 1:
                         label = type
                         #print("    ", type)
@@ -143,7 +147,7 @@ def main(args):
                     elif comp_source:
                         s = comp_source
                     else:
-                        print("WARNING: Skipping a timeSeries with no source and no component source")
+                        print("WARNING: Skipping a timeSeries with no source and no component source for", type)
                         continue
                     #print("    ", s)
                     sources.add(s)
@@ -172,7 +176,7 @@ def main(args):
                     #print("  No regridding")
                     continue
                 else:
-                    print("  Regridded")
+                    #print("  Regridded")
                     #print("    ", type)
                     #print("    ", ", ".join(sources))
                     interp = comp.get('xyInterp')
@@ -190,6 +194,14 @@ def main(args):
 
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(sorted(all_components))))
 
+    if count_components:
+        print("PP components:", count_components)
+    else:
+        print("ERROR: No postprocess components found")
+        print("Probably, your XML uses xincludes which are not handled by this script currently.")
+        print("As a workaround, use the xmllint tool with the --xinclude option to rewrite the XML; e.g.")
+        print("    xmllint --xinclude {} > expanded.xml".format(xml))
+        exit(1)
 
     print("\nLooking up FRE properties...")
     properties = dict()
