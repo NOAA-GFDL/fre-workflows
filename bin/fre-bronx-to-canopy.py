@@ -55,6 +55,14 @@ def chunk_from_legacy(legacy_chunk):
     else:
         raise Exception('Unknown time units', match.group(2))
 
+def frelist_xpath(args, xpath):
+    cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(args.xml, args.platform, args.target, args.experiment, xpath)
+    print(">>", cmd)
+    process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+    result = process.stdout.strip()
+    print(result)
+    return(result)
+
 def main(args):
     xml = args.xml
     expname = args.experiment
@@ -93,16 +101,8 @@ def main(args):
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     ppDir = process.stdout.strip()
     print(ppDir)
-    cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(xml, platform, target, expname, 'input/dataFile[@label="gridSpec"]')
-    print(">>", cmd)
-    process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
-    gridSpec = process.stdout.strip()
-    print(gridSpec)
-    cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(xml, platform, target, expname, 'runtime/production/@simTime')
-    print(">>", cmd)
-    process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
-    simTime = process.stdout.strip()
-    print(simTime)
+    gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
+    simTime = frelist_xpath(args, 'runtime/production/@simTime')
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
