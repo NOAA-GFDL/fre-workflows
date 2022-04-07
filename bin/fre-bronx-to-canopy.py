@@ -60,6 +60,7 @@ def main(args):
     expname = args.experiment
     platform = args.platform
     target = args.target
+    debug = args.debug
 
     # input
     tree = ET.parse(xml)
@@ -97,6 +98,11 @@ def main(args):
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     gridSpec = process.stdout.strip()
     print(gridSpec)
+    cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(xml, platform, target, expname, 'runtime/production/@simTime')
+    print(">>", cmd)
+    process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+    simTime = process.stdout.strip()
+    print(simTime)
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
@@ -105,7 +111,8 @@ def main(args):
     print("\nReading XML...\n")
     for exp in root.iter('experiment'):
         if exp.get('name') == expname:
-            #print("DEBUG:", exp)
+            if debug:
+                print("DEBUG: following experiment", exp)
             segment_node = exp.find('runtime/production/segment')
             segment_time = segment_node.get('simTime')
             segment_units = segment_node.get('units')
@@ -118,13 +125,12 @@ def main(args):
             rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
             pp = exp.find('postProcess')
-            #print("DEBUG:", pp)
             for comp in exp.iter('component'):
                 count_components += 1
-                #print("DEBUG:", comp)
                 type = comp.get('type')
                 all_components.add(type)
-                #print("Component", type)
+                if debug:
+                    print("DEBUG: following component", type)
                 i = 1
                 if comp.get('xyInterp'):
                     grid = "regrid-xy"
@@ -191,6 +197,9 @@ def main(args):
                     rose_regrid_xy.set(keys=[type, 'outputGridLon'], value=interp_split[1])
                     rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
                     rose_regrid_xy.set(keys=[type, 'gridSpec'], value=gridSpec)
+        else:
+            if debug:
+                print("DEBUG: Skipping experiment", exp.get('name'))
 
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(sorted(all_components))))
 
@@ -198,9 +207,11 @@ def main(args):
         print("PP components:", count_components)
     else:
         print("ERROR: No postprocess components found")
-        print("Probably, your XML uses xincludes which are not handled by this script currently.")
+        print("\nPossibly, your XML uses xincludes which are not handled by this script currently.")
         print("As a workaround, use the xmllint tool with the --xinclude option to rewrite the XML; e.g.")
         print("    xmllint --xinclude {} > expanded.xml".format(xml))
+        print("\nAnother possibility is that your XML experiment names include FRE properties, which")
+        print("the converter doesn't support currently. Try the --debug option to print the skipped experiments")
         exit(1)
 
     print("\nLooking up FRE properties...")
@@ -260,6 +271,8 @@ def main(args):
             continue
         all_chunks.add(chunk)
 
+    if len(all_chunks) == 1:
+        all_chunks.add('P10Y')
     sorted_chunks = list(all_chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
@@ -291,5 +304,6 @@ if __name__ == '__main__':
     parser.add_argument('--platform', '-p', required=True, help="Platform")
     parser.add_argument('--target', '-t', required=True, help="Target")
     parser.add_argument('--experiment', '-e', required=True, help="Experiment")
+    parser.add_argument('--debug', action='store_true', required=False, help="print additional output")
     args = parser.parse_args()
     main(args)
