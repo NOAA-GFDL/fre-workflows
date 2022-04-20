@@ -90,7 +90,8 @@ remap-pp-components-chunk2 => mdtf
             env
 """
         script = rose task-run --verbose
-        execution retry delays = PT1M, PT5M, PT10M
+        # retries don't make sense yet while testing as they will just delay the failures
+        #execution retry delays = PT1M, PT5M, PT10M
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
