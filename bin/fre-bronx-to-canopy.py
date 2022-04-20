@@ -3,7 +3,6 @@ import argparse
 import re
 import sys
 import subprocess
-import xml.etree.ElementTree as ET
 import metomi.rose.config
 import metomi.isodatetime.parsers
 
@@ -57,7 +56,7 @@ def chunk_from_legacy(legacy_chunk):
 
 def frelist_xpath(args, xpath):
     cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(args.xml, args.platform, args.target, args.experiment, xpath)
-    print(">>", cmd)
+    print(">>", xpath)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     result = process.stdout.strip()
     print(result)
@@ -70,11 +69,6 @@ def main(args):
     target = args.target
     debug = args.debug
 
-    # input
-    tree = ET.parse(xml)
-    root = tree.getroot()
-
-    # output
     rose_remap = metomi.rose.config.ConfigNode()
     rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
     rose_regrid_xy = metomi.rose.config.ConfigNode()
@@ -89,7 +83,7 @@ def main(args):
     regex_fre_property = re.compile('\$\((\w+)')
     all_components = set()
 
-    print("Running frelist for historyDir/ppDir/gridSpec...")
+    print("Running frelist for XML parsing...")
     print("If this fails, try running the 'frelist' call manually. Did you module load FRE?\n")
     cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
     print(">>", cmd)
@@ -106,139 +100,83 @@ def main(args):
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
-    # read XML
-    count_components = 0
-    print("\nReading XML...\n")
-    for exp in root.iter('experiment'):
-        if exp.get('name') == expname:
-            if debug:
-                print("DEBUG: following experiment", exp)
-            segment_node = exp.find('runtime/production/segment')
-            segment_time = segment_node.get('simTime')
-            segment_units = segment_node.get('units')
-            if segment_units == 'years':
-                segment = 'P' + segment_time + 'Y'
-            elif segment_units == 'months':
-                segment = 'P' + segment_time + 'M'
-            else:
-                raise Exception("Unknown segment units:", segment_units)
-            rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
+    comps = frelist_xpath(args, 'postProcess/component/@type').split()
+    rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(comps)))
 
-            pp = exp.find('postProcess')
-            for comp in exp.iter('component'):
-                count_components += 1
-                type = comp.get('type')
-                all_components.add(type)
-                if debug:
-                    print("DEBUG: following component", type)
-                i = 1
-                if comp.get('xyInterp'):
-                    grid = "regrid-xy"
-                else:
-                    grid = "native"
-                comp_source = comp.get('source')
-                #print("DEBUG, comp source is:", comp_source)
-                sources = set()
-                for ts in comp.iter('timeSeries'):
-                    #print("  Timeseries", i)
-                    if i == 1:
-                        label = type
-                        #print("    ", type)
-                    else:
-                        label = type + '.' + str(i)
-                        #print("    ", type, i)
-                    source = ts.get('source')
-                    if source:
-                        s = source
-                    elif comp_source:
-                        s = comp_source
-                    else:
-                        print("WARNING: Skipping a timeSeries with no source and no component source for", type)
-                        continue
-                    #print("    ", s)
-                    sources.add(s)
-                    #print("DEBUG:", sources)
-                    rose_remap.set(keys=[label, 'source'], value=s)
-                    freq = ts.get('freq')
-                    #print("    ", freq)
-                    rose_remap.set(keys=[label, 'freq'], value=freq)
-                    chunk = ts.get('chunkLength')
-                    rose_remap.set(keys=[label, 'chunk'], value=chunk)
-                    rose_remap.set(keys=[label, 'grid'], value=grid)
-                    #print("    ", chunk)
-                    #print("    ", grid)
-                    i = i + 1
+    segment_time = frelist_xpath(args, 'runtime/production/segment/@simTime')
+    segment_units = frelist_xpath(args, 'runtime/production/segment/@units')
+    if segment_units == 'years':
+        segment = 'P' + segment_time + 'Y'
+    elif segment_units == 'months':
+        segment = 'P' + segment_time + 'M'
+    else:
+        raise Exception("Unknown segment units:", segment_units)
+    rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
-                #print("  Statics")
-                #print("    ", type, ".static")
-                #print("DEBUG", sources)
-                #print("    ", ", ".join(sources))
-                rose_remap.set(keys=[type + '.static', 'source'], value=' '.join(sources))
-                rose_remap.set(keys=[type + '.static', 'chunk'], value="P0Y")
-                rose_remap.set(keys=[type + '.static', 'freq'], value="P0Y")
-                rose_remap.set(keys=[type + '.static', 'grid'], value=grid)
-
-                if grid == "native":
-                    #print("  No regridding")
-                    continue
-                else:
-                    #print("  Regridded")
-                    #print("    ", type)
-                    #print("    ", ", ".join(sources))
-                    interp = comp.get('xyInterp')
-                    #print("    ", interp)
-                    sourcegrid = comp.get('sourceGrid')
-                    #print("    ", sourcegrid)
-                    rose_regrid_xy.set(keys=[type, 'sources'], value=' '.join(sources))
-                    sourcegrid_split = sourcegrid.split('-')
-                    rose_regrid_xy.set(keys=[type, 'inputGrid'], value=sourcegrid_split[1])
-                    rose_regrid_xy.set(keys=[type, 'inputRealm'], value=sourcegrid_split[0])
-                    interp_split = interp.split(',')
-                    rose_regrid_xy.set(keys=[type, 'outputGridLon'], value=interp_split[1])
-                    rose_regrid_xy.set(keys=[type, 'outputGridLat'], value=interp_split[0])
-                    rose_regrid_xy.set(keys=[type, 'gridSpec'], value=gridSpec)
+    for comp in comps:
+        comp_source = frelist_xpath(args, 'postProcess/component[@type="{}"]/@source'.format(comp))
+        xyInterp = frelist_xpath(args, 'postProcess/component[@type="{}"]/@xyInterp'.format(comp))
+        sourceGrid = frelist_xpath(args, 'postProcess/component[@type="{}"]/@sourceGrid'.format(comp))
+        if xyInterp:
+            grid = "regrid-xy"
         else:
-            if debug:
-                print("DEBUG: Skipping experiment", exp.get('name'))
+            grid = "native"
+        sources = set()
+        timeseries_count = 0
 
-    rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(sorted(all_components))))
+        results = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[@source]/@*'.format(comp)).split()
+        assert len(results) % 3 == 0
+        for x in range(0, len(results) // 3):
+            x += 1
+            label = comp + '.' + str(x)
+            source = results[1]
+            sources.add(source)
+            rose_remap.set(keys=[label, 'source'], value=source)
+            freq = results[0]
+            rose_remap.set(keys=[label, 'freq'], value=freq)
+            chunk = results[2]
+            rose_remap.set(keys=[label, 'chunk'], value=chunk)
+            rose_remap.set(keys=[label, 'grid'], value=grid)
 
-    if count_components:
-        print("PP components:", count_components)
+        results = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[not(@source)]/@*'.format(comp)).split()
+        assert len(results) % 2 == 0
+        for x in range(0, len(results) // 2):
+            if not comp_source:
+                print("WARNING: Skipping a timeSeries with no source and no component source for", comp)
+                continue
+            x += 1
+            label = comp + '.' + str(x)
+            sources.add(comp_source)
+            rose_remap.set(keys=[label, 'source'], value=comp_source)
+            freq = results[0]
+            rose_remap.set(keys=[label, 'freq'], value=freq)
+            chunk = results[1]
+            rose_remap.set(keys=[label, 'chunk'], value=chunk)
+            rose_remap.set(keys=[label, 'grid'], value=grid)
+
+        rose_remap.set(keys=[comp + '.static', 'source'], value=' '.join(sources))
+        rose_remap.set(keys=[comp + '.static', 'chunk'], value="P0Y")
+        rose_remap.set(keys=[comp + '.static', 'freq'], value="P0Y")
+        rose_remap.set(keys=[comp + '.static', 'grid'], value=grid)
+
+        if grid == "native":
+            continue
+        else:
+            rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
+            sourcegrid_split = sourceGrid.split('-')
+            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=sourcegrid_split[1])
+            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=sourcegrid_split[0])
+            interp_split = xyInterp.split(',')
+            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
+            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
+            rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
+
+    if len(comps) > 0:
+        print("PP components:", len(comps))
     else:
         print("ERROR: No postprocess components found")
-        print("\nPossibly, your XML uses xincludes which are not handled by this script currently.")
-        print("As a workaround, use the xmllint tool with the --xinclude option to rewrite the XML; e.g.")
-        print("    xmllint --xinclude {} > expanded.xml".format(xml))
-        print("\nAnother possibility is that your XML experiment names include FRE properties, which")
-        print("the converter doesn't support currently. Try the --debug option to print the skipped experiments")
         exit(1)
 
-    print("\nLooking up FRE properties...")
-    properties = dict()
-
-    for keys, sub_node in rose_remap.walk():
-        if len(keys) != 1:
-            continue
-        item = keys[0]
-        if item == "env" or item == "command":
-            continue
-        value = rose_remap.get_value(keys=[item, 'chunk'])
-        match = regex_fre_property.match(value)
-        if not match:
-            pass
-        else:
-            name = match.group(1)
-            if name in properties:
-                pass
-            else:
-                string = './property[@name="{}"]'.format(name)
-                results = root.findall(string)
-                assert len(results) == 1
-                properties[name] = results[0].get('value')
-                print("  {}: {}".format(name, properties[name]))
-            rose_remap = rose_remap.set([item, 'chunk'], properties[name])
-    
     print("\nConverting Bronx date info to ISO8601...")
     for keys, sub_node in rose_remap.walk():
         if len(keys) != 1:
@@ -252,7 +190,6 @@ def main(args):
         rose_remap.set([item, 'freq'], freq_from_legacy(freq_legacy))
         chunk_legacy = rose_remap.get_value(keys=[item, 'chunk'])
         rose_remap.set([item, 'chunk'], chunk_from_legacy(chunk_legacy))
-
 
     print("\nSetting PP chunks...")
     all_chunks = set()
@@ -272,6 +209,7 @@ def main(args):
         all_chunks.add(chunk)
 
     if len(all_chunks) == 1:
+        print("WARNING: Only one chunk found; setting CHUNK_B to 10 years as a crude workaround for now")
         all_chunks.add('P10Y')
     sorted_chunks = list(all_chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
@@ -282,7 +220,6 @@ def main(args):
     rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[1]))
     print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
     
-
     print("\nWriting output files...")
     dumper = metomi.rose.config.ConfigDumper()
     
