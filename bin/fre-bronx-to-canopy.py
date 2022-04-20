@@ -129,12 +129,12 @@ def main(args):
         for x in range(0, len(results) // 3):
             x += 1
             label = comp + '.' + str(x)
-            source = results[1]
+            source = results[2]
             sources.add(source)
             rose_remap.set(keys=[label, 'source'], value=source)
             freq = results[0]
             rose_remap.set(keys=[label, 'freq'], value=freq)
-            chunk = results[2]
+            chunk = results[1]
             rose_remap.set(keys=[label, 'chunk'], value=chunk)
             rose_remap.set(keys=[label, 'grid'], value=grid)
 
