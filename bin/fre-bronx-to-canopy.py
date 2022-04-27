@@ -46,7 +46,9 @@ def chunk_from_legacy(legacy_chunk):
 """
     regex = re.compile('(\d+)(\w+)')
     match = regex.match(legacy_chunk)
-    assert match
+    if not match:
+        print("ERROR: Could not convert Bronx chunk to ISO8601 duration:", legacy_chunk)
+        raise Exception
     if match.group(2) == "yr":
         return 'P{}Y'.format(match.group(1))
     elif match.group(2) == 'mo':
@@ -113,7 +115,10 @@ def main(args):
         raise Exception("Unknown segment units:", segment_units)
     rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
+    comp_count = 0
     for comp in comps:
+        comp_count += 1
+        print("Component loop: {} out of {}".format(comp_count, len(comps)))
         comp_source = frelist_xpath(args, 'postProcess/component[@type="{}"]/@source'.format(comp))
         xyInterp = frelist_xpath(args, 'postProcess/component[@type="{}"]/@xyInterp'.format(comp))
         sourceGrid = frelist_xpath(args, 'postProcess/component[@type="{}"]/@sourceGrid'.format(comp))
@@ -124,33 +129,28 @@ def main(args):
         sources = set()
         timeseries_count = 0
 
-        results = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[@source]/@*'.format(comp)).split()
-        assert len(results) % 3 == 0
-        for x in range(0, len(results) // 3):
-            x += 1
-            label = comp + '.' + str(x)
-            source = results[2]
-            sources.add(source)
-            rose_remap.set(keys=[label, 'source'], value=source)
-            freq = results[0]
-            rose_remap.set(keys=[label, 'freq'], value=freq)
-            chunk = results[1]
-            rose_remap.set(keys=[label, 'chunk'], value=chunk)
-            rose_remap.set(keys=[label, 'grid'], value=grid)
+        # get the number of TS nodes
+        results = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries/@freq'.format(comp)).split()
+        timeseries_count = len(results)
 
-        results = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[not(@source)]/@*'.format(comp)).split()
-        assert len(results) % 2 == 0
-        for x in range(0, len(results) // 2):
-            if not comp_source:
+        # loop over the TS nodes
+        for i in range(1, timeseries_count):
+            label = comp + '.' + str(i)
+
+            source = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[{}]/@source'.format(comp, i))
+            if source:
+                sources.add(source)
+                rose_remap.set(keys=[label, 'source'], value=source)
+            elif comp_source:
+                sources.add(comp_source)
+                rose_remap.set(keys=[label, 'source'], value=comp_source)
+            else:
                 print("WARNING: Skipping a timeSeries with no source and no component source for", comp)
                 continue
-            x += 1
-            label = comp + '.' + str(x)
-            sources.add(comp_source)
-            rose_remap.set(keys=[label, 'source'], value=comp_source)
-            freq = results[0]
+
+            freq = freq_from_legacy(frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[{}]/@freq'.format(comp, i)))
+            chunk = chunk_from_legacy(frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[{}]/@chunkLength'.format(comp, i)))
             rose_remap.set(keys=[label, 'freq'], value=freq)
-            chunk = results[1]
             rose_remap.set(keys=[label, 'chunk'], value=chunk)
             rose_remap.set(keys=[label, 'grid'], value=grid)
 
@@ -171,26 +171,6 @@ def main(args):
             rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
             rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
 
-    if len(comps) > 0:
-        print("PP components:", len(comps))
-    else:
-        print("ERROR: No postprocess components found")
-        exit(1)
-
-    print("\nConverting Bronx date info to ISO8601...")
-    for keys, sub_node in rose_remap.walk():
-        if len(keys) != 1:
-            continue
-        item = keys[0]
-        if item == "env" or item == "command":
-            continue
-        if ".static" in item:
-            continue
-        freq_legacy = rose_remap.get_value(keys=[item, 'freq'])
-        rose_remap.set([item, 'freq'], freq_from_legacy(freq_legacy))
-        chunk_legacy = rose_remap.get_value(keys=[item, 'chunk'])
-        rose_remap.set([item, 'chunk'], chunk_from_legacy(chunk_legacy))
-
     print("\nSetting PP chunks...")
     all_chunks = set()
     def duration_to_seconds(duration):
@@ -209,8 +189,12 @@ def main(args):
         all_chunks.add(chunk)
 
     if len(all_chunks) == 1:
-        print("WARNING: Only one chunk found; setting CHUNK_B to 10 years as a crude workaround for now")
-        all_chunks.add('P10Y')
+        def double(match_obj):
+            x = int(match_obj.group(1))
+            return(str(2 * x))
+        new_chunk = re.sub(r"(\d)", double, list(all_chunks)[0])
+        print("WARNING: Only one chunk found; setting CHUNK_B to", new_chunk)
+        all_chunks.add(new_chunk)
     sorted_chunks = list(all_chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
