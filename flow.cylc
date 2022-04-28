@@ -57,8 +57,8 @@ remap-pp-components-static => combine-statics => clean-pp-statics
 {% endif %}
 """
         +{{ HISTORY_SEGMENT }}/{{ PP_CHUNK_A }} = """
-rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
-rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
+rename-split-to-pp_regrid<regrid>[-{{ HISTORY_SEGMENT }}] & rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
+rename-split-to-pp_native<native>[-{{ HISTORY_SEGMENT }}] & rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
 {% if CLEAN_WORK %}
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
