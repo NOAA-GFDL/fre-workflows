@@ -28,8 +28,9 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         {{ HISTORY_SEGMENT }} = """
-pp-starter => stage-history
-stage-history => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
+pp-starter => stage-history & stage-history-refined
+stage-history-refined => stage-history-refined-link
+stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
 {% if CLEAN_WORK %}
 split-netcdf_regrid<regrid> => clean-history-regrid-xy
 rename-split-to-pp_regrid<regrid> => clean-split-regrid-xy
@@ -40,13 +41,14 @@ rename-split-to-pp_native<native> => clean-split-native
 {% endif %}
 """
         R1 = """
-pp-starter => stage-history
-stage-history => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
+pp-starter => stage-history & stage-history-refined
+stage-history-refined => stage-history-refined-link
+stage-history & stage-history-refined-link => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
 {% if CLEAN_WORK %}
 split-netcdf_regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp_regrid<regrid_static> => clean-split-regrid-xy
 {% endif %}
-stage-history => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
+stage-history & stage-history-refined-link => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
 {% if CLEAN_WORK %}
 rename-split-to-pp_native<native_static> => clean-split-native
 {% endif %}
@@ -105,6 +107,20 @@ remap-pp-components-chunk2 => mdtf
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
+
+    [[stage-history-refined]]
+        pre-script = module load gcp hsm/test
+        script = rose task-run --verbose --app-key stage-history
+        [[[environment]]]
+            historyDir = {{ HISTORY_DIR }}_refineDiag
+            ptmpDir = {{ PTMP_DIR }}
+
+    [[stage-history-refined-link]]
+        pre-script = "set -x"
+        script = """
+            cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
+            ln -f ../../history_refineDiag/$(cylc date --template CCYYMMDD).nc/*.nc .
+        """
 
     [[SPLIT-NETCDF]]
         pre-script = module load cdo nco && mkdir -p $outputDir
