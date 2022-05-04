@@ -9,6 +9,7 @@
 - After running, set PP_START and PP_STOP in rose-suite.conf, which are the only vars not set
 - Double-check the history and PP directories
 - If history segment is a year, change HISTORY_SEGMENT from P12M to P1Y (same quantity, but there's a small bug)
+- There may be bug in work-dir cleaning. Turn off to be safe for now
 - "git status" to see the converter output
 
 # Edit PP configurations
