@@ -209,7 +209,7 @@ remap-pp-components-chunk2 => mdtf
         pre-script = module load cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
-            fail_ok_components = grid_spec
+            fail_ok_components = grid_spec lumip_Lyr_psl
     [[MAKE-TIMESERIES-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
