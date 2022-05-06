@@ -87,7 +87,6 @@ make-timeseries_native-chunk1<native>
 make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}]
 {% endfor %}
 => make-timeseries_native-chunk2<native>
-make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
 {% if CLEAN_WORK %}
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => clean-shards-chunk1
