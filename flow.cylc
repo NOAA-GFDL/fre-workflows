@@ -1,6 +1,8 @@
 #!jinja2
 
 {% set SITE = 'gfdl' %}
+{% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
+{% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
 
 [meta]
     title = "Postprocessing Example 1"
@@ -58,16 +60,33 @@ remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 {% endif %}
 """
-        +{{ HISTORY_SEGMENT }}/{{ PP_CHUNK_A }} = """
-rename-split-to-pp_regrid<regrid>[-{{ HISTORY_SEGMENT }}] & rename-split-to-pp_regrid<regrid> => make-timeseries_regrid-chunk1<regrid>
-rename-split-to-pp_native<native>[-{{ HISTORY_SEGMENT }}] & rename-split-to-pp_native<native> => make-timeseries_native-chunk1<native>
+        +{{ PP_CHUNK_A }}/{{ PP_CHUNK_A }} = """
+rename-split-to-pp_regrid<regrid>
+{% for I in range(1, PP_CHUNK_A_COUNT) %}
+& rename-split-to-pp_regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
+{% endfor %}
+=> make-timeseries_regrid-chunk1<regrid>
+rename-split-to-pp_native<native>
+{% for I in range(1, PP_CHUNK_A_COUNT) %}
+& rename-split-to-pp_native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
+{% endfor %}
+=> make-timeseries_native-chunk1<native>
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
 {% if CLEAN_WORK %}
 make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
 {% endif %}
 """
-        {{ PP_START | add_date_and_durations(PP_CHUNK_B, '-' + HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
-make-timeseries_regrid-chunk1<regrid>[-{{ PP_CHUNK_A }}] & make-timeseries_regrid-chunk1<regrid> => make-timeseries_regrid-chunk2<regrid>
+        +{{ PP_CHUNK_B }}/{{ PP_CHUNK_B }} = """
+make-timeseries_regrid-chunk1<regrid>
+{% for I in range(1, PP_CHUNK_B_COUNT) %}
+make-timeseries_regrid-chunk1<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
+{% endfor %}
+=> make-timeseries_regrid-chunk2<regrid>
+make-timeseries_native-chunk1<native>
+{% for I in range(1, PP_CHUNK_B_COUNT) %}
+make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}]
+{% endfor %}
+=> make-timeseries_native-chunk2<native>
 make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}] & make-timeseries_native-chunk1<native> => make-timeseries_native-chunk2<native>
 make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
 {% if CLEAN_WORK %}
