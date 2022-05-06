@@ -113,6 +113,9 @@ def main(args):
         segment = 'P' + segment_time + 'M'
     else:
         raise Exception("Unknown segment units:", segment_units)
+    # P12M is identical to P1Y but the latter looks nicer
+    if segment == 'P12M':
+        segment = 'P1Y'
     rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
     comp_count = 0
