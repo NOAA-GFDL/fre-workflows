@@ -4,12 +4,13 @@
 
 # Try Bronx XML converter
 - bin/fre-bronx-to-canopy.py --help
-- module load FRE for frelist
-- XML xinclude support is limited; preprocess with xmllint --xinclude as a workaround
-- Some XMLs not currently supported (i.e. those with FRE properties in the experiment name)
+- bin/fre-bronx-to-canopy.py -x XML -p PLATFORM -t TARGET -e EXP
+- Takes a long time. module load FRE for frelist first
 - After running, set PP_START and PP_STOP in rose-suite.conf, which are the only vars not set
 - Double-check the history and PP directories
-- git status
+- If history segment is a year, change HISTORY_SEGMENT from P12M to P1Y (same quantity, but there's a small bug)
+- There may be bug in work-dir cleaning. Turn off to be safe for now
+- "git status" to see the converter output
 
 # Edit PP configurations
 1. vi rose-suite.conf
