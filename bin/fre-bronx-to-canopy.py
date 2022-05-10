@@ -137,7 +137,7 @@ def main(args):
         timeseries_count = len(results)
 
         # loop over the TS nodes
-        for i in range(1, timeseries_count):
+        for i in range(1, timeseries_count + 1):
             label = comp + '.' + str(i)
 
             source = frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[{}]/@source'.format(comp, i))
