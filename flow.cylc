@@ -120,14 +120,17 @@ remap-pp-components-chunk2 => mdtf
         [[[environment]]]
             targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
 
-    [[stage-history]]
+    [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
+        [[[directives]]]
+            --time=8:00:00
+    [[stage-history]]
+        inherit = STAGE-HISTORY
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
-
     [[stage-history-refined]]
-        pre-script = module load gcp hsm/test
+        inherit = STAGE-HISTORY
         script = rose task-run --verbose --app-key stage-history
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}_refineDiag
