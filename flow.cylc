@@ -204,6 +204,8 @@ remap-pp-components-chunk2 => mdtf
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
+        [[[directives]]]
+            --time=8:00:00
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
