@@ -1,7 +1,9 @@
 #!jinja2
 
 {% set SITE = 'gfdl' %}
+# calculate the number of history segments per chunk-a
 {% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
+# calculate the number of chunk-a chunks per chunk-b
 {% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
 
 [meta]
@@ -32,10 +34,10 @@ and more (such as multiline descriptions!)
         {{ HISTORY_SEGMENT }} = """
 pp-starter => stage-history & stage-history-refined
 stage-history-refined => stage-history-refined-link
-stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf_regrid<regrid> => rename-split-to-pp_regrid<regrid>
+stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% if CLEAN_WORK %}
-split-netcdf_regrid<regrid> => clean-history-regrid-xy
-rename-split-to-pp_regrid<regrid> => clean-split-regrid-xy
+split-netcdf-regrid<regrid> => clean-history-regrid-xy
+rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
 {% endif %}
 stage-history => split-netcdf_native<native> => rename-split-to-pp_native<native>
 {% if CLEAN_WORK %}
@@ -45,57 +47,59 @@ rename-split-to-pp_native<native> => clean-split-native
         R1 = """
 pp-starter => stage-history & stage-history-refined
 stage-history-refined => stage-history-refined-link
-stage-history & stage-history-refined-link => regrid-xy<regrid_static> => split-netcdf_regrid<regrid_static> => rename-split-to-pp_regrid<regrid_static>
+stage-history & stage-history-refined-link => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
 {% if CLEAN_WORK %}
-split-netcdf_regrid<regrid_static> => clean-history-regrid-xy
-rename-split-to-pp_regrid<regrid_static> => clean-split-regrid-xy
+split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
+rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
 {% endif %}
 stage-history & stage-history-refined-link => split-netcdf_native<native_static> => rename-split-to-pp_native<native_static>
 {% if CLEAN_WORK %}
 rename-split-to-pp_native<native_static> => clean-split-native
 {% endif %}
-rename-split-to-pp_regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
+rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp_native<native_static> => remap-pp-components-static
 {% if CLEAN_WORK %}
 remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 {% endif %}
 """
         +{{ PP_CHUNK_A }}/{{ PP_CHUNK_A }} = """
-rename-split-to-pp_regrid<regrid>
+rename-split-to-pp-regrid<regrid>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
-& rename-split-to-pp_regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
+& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
-=> make-timeseries_regrid-chunk1<regrid>
+=> make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 rename-split-to-pp_native<native>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
 & rename-split-to-pp_native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
-=> make-timeseries_native-chunk1<native>
-make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => remap-pp-components-chunk1
+=> make-timeseries_native-{{ PP_CHUNK_A }}<native>
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries_native-{{ PP_CHUNK_A }}<native> => remap-pp-components-{{ PP_CHUNK_A }}
 {% if CLEAN_WORK %}
-make-timeseries_regrid-chunk1<regrid> & make-timeseries_native-chunk1<native> => clean-shards-chunk0
-{% endif %}
-"""
-        +{{ PP_CHUNK_B }}/{{ PP_CHUNK_B }} = """
-make-timeseries_regrid-chunk1<regrid>
-{% for I in range(1, PP_CHUNK_B_COUNT) %}
-make-timeseries_regrid-chunk1<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
-{% endfor %}
-=> make-timeseries_regrid-chunk2<regrid>
-make-timeseries_native-chunk1<native>
-{% for I in range(1, PP_CHUNK_B_COUNT) %}
-make-timeseries_native-chunk1<native>[-{{ PP_CHUNK_A }}]
-{% endfor %}
-=> make-timeseries_native-chunk2<native>
-make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => remap-pp-components-chunk2
-{% if CLEAN_WORK %}
-make-timeseries_regrid-chunk2<regrid> & make-timeseries_native-chunk2<native> => clean-shards-chunk1
-remap-pp-components-chunk2 => clean-shards-chunk2
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries_native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
 {% endif %}
 {% if DO_MDTF %}
-remap-pp-components-chunk2 => mdtf
+remap-pp-components-{{ PP_CHUNK_B }} => mdtf
 {% endif %}
 """
+{% if PP_CHUNK_B_COUNT > 1 %}
+        +{{ PP_CHUNK_B }}/{{ PP_CHUNK_B }} = """
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
+{% for I in range(1, PP_CHUNK_B_COUNT) %}
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
+{% endfor %}
+=> make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
+make-timeseries_native-{{ PP_CHUNK_A }}<native>
+{% for I in range(1, PP_CHUNK_B_COUNT) %}
+make-timeseries_native-{{ PP_CHUNK_A }}<native>[-{{ PP_CHUNK_A }}]
+{% endfor %}
+=> make-timeseries_native-{{ PP_CHUNK_B }}<native>
+make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries_native-{{ PP_CHUNK_B }}<native> => remap-pp-components-{{ PP_CHUNK_B }}
+{% if CLEAN_WORK %}
+make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries_native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
+remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
+{% endif %}
+"""
+{% endif %}
 
 [runtime]
     # default config for all tasks
@@ -166,9 +170,9 @@ remap-pp-components-chunk2 => mdtf
         inherit = SPLIT-NETCDF-NATIVE
         [[[environment]]]
             component = $CYLC_TASK_PARAM_native_static
-    [[split-netcdf_regrid<regrid>]]
+    [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID
-    [[split-netcdf_regrid<regrid_static>]]
+    [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
@@ -194,12 +198,12 @@ remap-pp-components-chunk2 => mdtf
         inherit = RENAME-SPLIT-TO-PP-NATIVE
         [[[environment]]]
             component = $CYLC_TASK_PARAM_native_static
-    [[rename-split-to-pp_regrid<regrid>]]
+    [[rename-split-to-pp-regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
-    [[rename-split-to-pp_regrid<regrid_static>]]
+    [[rename-split-to-pp-regrid<regrid_static>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_regrid_static
+            component = $CYLC_TASK_PARAM-regrid_static
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
@@ -210,12 +214,12 @@ remap-pp-components-chunk2 => mdtf
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
             outputDRS = legacy
-    [[remap-pp-components-chunk1]]
+    [[remap-pp-components-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(cylc date --offset=-{{ HISTORY_SEGMENT }})
             currentChunk = {{ PP_CHUNK_A }}
-    [[remap-pp-components-chunk2]]
+    [[remap-pp-components-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(cylc date --offset=-P3Y)
@@ -255,20 +259,20 @@ remap-pp-components-chunk2 => mdtf
             outputChunk = {{ PP_CHUNK_B }}
     [[MAKE-TIMESERIES-NATIVE-CHUNK1]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK1
-    [[make-timeseries_native-chunk1<native>]]
+    [[make-timeseries_native-{{ PP_CHUNK_A }}<native>]]
         inherit = MAKE-TIMESERIES-NATIVE-CHUNK1
     [[MAKE-TIMESERIES-REGRID-CHUNK1]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK1
-    [[make-timeseries_regrid-chunk1<regrid>]]
+    [[make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>]]
         inherit = MAKE-TIMESERIES-REGRID-CHUNK1
-    [[MAKE-TIMESERIES-NATIVE-chunk2]]
+    [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK2
-    [[make-timeseries_native-chunk2<native>]]
-        inherit = MAKE-TIMESERIES-NATIVE-chunk2
-    [[MAKE-TIMESERIES-REGRID-chunk2]]
+    [[make-timeseries_native-{{ PP_CHUNK_B }}<native>]]
+        inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}
+    [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK2
-    [[make-timeseries_regrid-chunk2<regrid>]]
-        inherit = MAKE-TIMESERIES-REGRID-chunk2
+    [[make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>]]
+        inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}
 
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
@@ -314,19 +318,19 @@ remap-pp-components-chunk2 => mdtf
     [[clean-shards-static]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y"
-    [[clean-shards-chunk0]]
+    [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ HISTORY_SEGMENT }})*.nc" -delete
         """
-    [[clean-shards-chunk1]]
+    [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ PP_CHUNK_A }})*.nc" -delete
         """
-    [[clean-shards-chunk2]]
+    [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete

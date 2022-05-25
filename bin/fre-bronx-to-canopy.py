@@ -191,20 +191,17 @@ def main(args):
             continue
         all_chunks.add(chunk)
 
-    if len(all_chunks) == 1:
-        def double(match_obj):
-            x = int(match_obj.group(1))
-            return(str(2 * x))
-        new_chunk = re.sub(r"(\d)", double, list(all_chunks)[0])
-        print("WARNING: Only one chunk found; setting CHUNK_B to", new_chunk)
-        all_chunks.add(new_chunk)
     sorted_chunks = list(all_chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
+    assert len(all_chunks) >= 1
     print("  Chunks found:", ', '.join(sorted_chunks))
-    assert len(sorted_chunks) >= 2
-    rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
-    rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[1]))
+    if len(all_chunks) == 1:
+        rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
+        rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[0]))
+    else:
+        rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
+        rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[1]))
     print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
     
     print("\nWriting output files...")
