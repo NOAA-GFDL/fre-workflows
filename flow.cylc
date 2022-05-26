@@ -62,7 +62,8 @@ remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 {% endif %}
 """
-        +{{ PP_CHUNK_A }}/{{ PP_CHUNK_A }} = """
+
+        +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
 rename-split-to-pp-regrid<regrid>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
 & rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
@@ -76,13 +77,17 @@ rename-split-to-pp-native<native>
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => remap-pp-components-{{ PP_CHUNK_A }}
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
+{% if PP_CHUNK_B_COUNT == 1 %}
+remap-pp-components-{{ PP_CHUNK_A }} => clean-shards-{{ PP_CHUNK_A }}
+{% endif %}
 {% endif %}
 {% if DO_MDTF %}
 remap-pp-components-{{ PP_CHUNK_B }} => mdtf
 {% endif %}
 """
+
 {% if PP_CHUNK_B_COUNT > 1 %}
-        +{{ PP_CHUNK_B }}/{{ PP_CHUNK_B }} = """
+        +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
@@ -217,12 +222,12 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
     [[remap-pp-components-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            begin = $(cylc date --offset=-{{ HISTORY_SEGMENT }})
+            begin = $(cylc date --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            begin = $(cylc date --offset=-P3Y)
+            begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS
@@ -247,32 +252,34 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-    [[MAKE-TIMESERIES-CHUNK1]]
+    [[MAKE-TIMESERIES-{{ PP_CHUNK_A }}]]
         [[[environment]]]
-            begin = $(cylc date --offset=-{{ HISTORY_SEGMENT }})
+            begin = $(cylc date --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             inputChunk = {{ HISTORY_SEGMENT }}
             outputChunk = {{ PP_CHUNK_A }}
-    [[MAKE-TIMESERIES-CHUNK2]]
+    [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
+    [[make-timeseries-native-{{ PP_CHUNK_A }}<native>]]
+        inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}
+    [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
+    [[make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>]]
+        inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}
+{% if PP_CHUNK_B_COUNT > 1 %}
+    [[MAKE-TIMESERIES-{{ PP_CHUNK_B }}]]
         [[[environment]]]
-            begin = $(cylc date --offset=-P3Y)
+            begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             inputChunk = {{ PP_CHUNK_A }}
             outputChunk = {{ PP_CHUNK_B }}
-    [[MAKE-TIMESERIES-NATIVE-CHUNK1]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK1
-    [[make-timeseries-native-{{ PP_CHUNK_A }}<native>]]
-        inherit = MAKE-TIMESERIES-NATIVE-CHUNK1
-    [[MAKE-TIMESERIES-REGRID-CHUNK1]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK1
-    [[make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>]]
-        inherit = MAKE-TIMESERIES-REGRID-CHUNK1
     [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-CHUNK2
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
     [[make-timeseries-native-{{ PP_CHUNK_B }}<native>]]
         inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}
     [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}]]
-        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-CHUNK2
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
     [[make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>]]
         inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}
+{% endif %}
 
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
