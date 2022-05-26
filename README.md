@@ -24,16 +24,16 @@
 1. cylc validate .
 1. cylc install --no-run-name (--debug) (`--no-run-name avoids creating runN directories`)
 
-# Optional: Retrieving configuration
-- cylc config postprocessing (`workflow configuration`)
-- cylc config (`global configuration`)
-
 # Start workflow (on PP/AN)
 1. ssh analysis
 1. cylc play postprocessing (--debug)
 
 # Monitoring
 ```
+# GUI
+1. Choose 'jhan' at the PP/AN load balancer
+1. cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
+1. Paste the http location given into your web browser
 # Terminal GUI
 # Note: on PP/AN, there is a python utf error that is resolved by
 # setenv PYTHONUTF8 1
@@ -50,6 +50,10 @@
 # Report of workflow timings
 - cylc report-timings postprocessing
 ```
+
+# Retrieving configuration
+- cylc config postprocessing (`workflow configuration`)
+- cylc config (`global configuration`)
 
 # Workflow control
 ```
