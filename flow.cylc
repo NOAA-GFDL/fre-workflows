@@ -33,6 +33,7 @@ and more (such as multiline descriptions!)
     [[graph]]
         {{ HISTORY_SEGMENT }} = """
 pp-starter => stage-history => REFINE-DIAG:succeed-all => stage-history-refined
+pp-starter => stage-history => PRE-ANALYSIS
 stage-history-refined => stage-history-refined-link
 stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% if CLEAN_WORK %}
