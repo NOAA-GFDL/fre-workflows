@@ -32,7 +32,7 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         {{ HISTORY_SEGMENT }} = """
-pp-starter => stage-history => generate-refineDiag => stage-history-refined
+pp-starter => stage-history => REFINE-DIAG:succeed-all => stage-history-refined
 stage-history-refined => stage-history-refined-link
 stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% if CLEAN_WORK %}
@@ -142,64 +142,26 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
         inherit = STAGE-HISTORY
         script = rose task-run --verbose --app-key stage-history
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}_refineDiag
+            historyDir = {{ HISTORY_DIR_REFINED }}
             ptmpDir = {{ PTMP_DIR }}
 
     [[stage-history-refined-link]]
         pre-script = "set -x"
         script = """
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
-            ln -f ../../history_refineDiag/$(cylc date --template CCYYMMDD).nc/*.nc .
+            ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc date --template CCYYMMDD).nc/*.nc .
         """
 
-    [[generate-refineDiag]]
+    [[PRE-ANALYSIS]]
         pre-script = """
             env
             set -x
+            module load gcp/test
             module load fre/test
             mkdir -p $work $tempCache $refineDiagDir
-            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $oname.nc\/*dummy
-            cd $work
-        """
-        script = """
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/*
+            cd $work/$hsmdate
             ls
-            #echo NOTE: About to source user refineDiag 1
-            #if csh /home/mdteam/DET/analysis/vitals/gfdlvitals_refineDiag.csh; then
-            #    echo NOTE: RefineDiag script exited normally
-            #else
-            #    echo ERROR: RefineDiag script got an error status $?
-            #fi
-            echo NOTE: About to source user refineDiag 2
-            if csh $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_atmos_cmip6.csh; then
-                echo NOTE: RefineDiag script exited normally
-            else
-                echo ERROR: RefineDiag script got an error status $?
-            fi
-        """
-        post-script = """
-            cd $refineDiagDir
-            echo hello zero
-            if ls *nc; then
-                refinedCount=$(ls -1 *nc | wc -l)
-            else
-                refinedCount=0
-            fi
-            echo hello one
-            if [[ $refinedCount ]]; then
-                for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
-                done
-            fi
-            echo hello two
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc ]]; then
-                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $oname/\*
-                mv -f * $TMPDIR/modify_refineDiag
-                mv -f $TMPDIR/modify_refineDiag/* .
-                rm -rf $TMPDIR/modify_refineDiag
-            fi
-            echo hello three
-            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $refineDiagDir $oname
-            echo hello four
         """
         [[[environment]]]
             name = {{ EXPERIMENT }}
@@ -210,6 +172,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             archive = is-this-needed
             scriptName = $CYLC_TASK_LOG_DIR/job
             oname = $(cylc date --template CCYYMMDD)
+            hsmdate = $oname.nc
             ptmpDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}
             histDir = {{ HISTORY_DIR }}
             platform = {{ PLATFORM }}
@@ -217,7 +180,56 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             segment_months = {{ HISTORY_SEGMENT }}
             basedate = is-this-needed
             gridspec = {{ GRID_SPEC }}
-            refineDiagDir = $TMPDIR/history_refineDiag
+            refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
+    [[REFINE-DIAG]]
+        inherit = PRE-ANALYSIS
+        post-script = """
+            cd $refineDiagDir
+            if ls *nc; then
+                refinedCount=$(ls -1 *nc | wc -l)
+            else
+                refinedCount=0
+            fi
+            if [[ $refinedCount > 0 ]]; then
+                for file in $(ls -1 *nc); do
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                done
+            else
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\*
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
+        """
+    [[refineDiag-atmos]]
+        inherit = REFINE-DIAG
+        script = """
+            ls
+            echo NOTE: About to source user script
+            if csh $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_atmos_cmip6.csh; then
+                echo NOTE: User script exited normally
+            else
+                echo ERROR: User script got an error status $?
+                exit 1
+            fi
+        """
+    [[preAnalysis-vitals]]
+        inherit = PRE-ANALYSIS
+        script = """
+            ls
+            echo NOTE: About to source user script
+            if csh $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_data_stager_globalAve.csh; then
+                echo NOTE: User script exited normally
+            else
+                echo ERROR: User script got an error status $?
+                exit 1
+            fi
+        """
 
     [[SPLIT-NETCDF]]
         pre-script = module load cdo nco && mkdir -p $outputDir
