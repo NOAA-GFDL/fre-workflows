@@ -16,15 +16,15 @@
 #                            # input directory = `cwd`
 ###################################################################
 
-set CODE_DIRECTORY = ./atmos_refine_scripts
+set CODE_DIRECTORY = $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/atmos_refine_scripts
 
-set xmlDir = $rtsxml:h
-set refineDiagScriptDir = $xmlDir/awg_include/refineDiag
-cp -r $refineDiagScriptDir/$CODE_DIRECTORY $CODE_DIRECTORY
-chmod +x $CODE_DIRECTORY/refineDiag_atmos.csh
-chmod +x $CODE_DIRECTORY/refine_fields.pl
-chmod +x $CODE_DIRECTORY/check4ptop.pl
-chmod +x $CODE_DIRECTORY/module_init_3_1_6.pl
+#set xmlDir = $rtsxml:h
+#set refineDiagScriptDir = $xmlDir/awg_include/refineDiag
+#cp -r $refineDiagScriptDir/$CODE_DIRECTORY $CODE_DIRECTORY
+#chmod +x $CODE_DIRECTORY/refineDiag_atmos.csh
+#chmod +x $CODE_DIRECTORY/refine_fields.pl
+#chmod +x $CODE_DIRECTORY/check4ptop.pl
+#chmod +x $CODE_DIRECTORY/module_init_3_1_6.pl
 
 
 # check that output directory is defined
