@@ -218,7 +218,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             fi
         """
 {% endif %}
-{% if DO_PREANALYSIS %}
+{% if DO_PREANALYSIS and PREANALYSIS_NAME is defined and PREANALYSIS_SCRIPT is defined %}
     [[preAnalysis-{{ PREANALYSIS_NAME }}]]
         inherit = PRE-ANALYSIS
         script = """
