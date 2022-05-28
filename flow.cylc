@@ -32,32 +32,28 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         {{ HISTORY_SEGMENT }} = """
-pp-starter => stage-history & stage-history-refined
-stage-history-refined => stage-history-refined-link
-stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+pp-starter => STAGE-HISTORY
+{% if DO_REFINEDIAG %}
+stage-history => REFINE-DIAG
+{% endif %}
+STAGE-HISTORY:succeed-all => PRE-ANALYSIS
+STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
 {% if CLEAN_WORK %}
 split-netcdf-regrid<regrid> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
-{% endif %}
-stage-history => split-netcdf-native<native> => rename-split-to-pp-native<native>
-{% if CLEAN_WORK %}
 rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
 """
         R1 = """
-pp-starter => stage-history & stage-history-refined
-stage-history-refined => stage-history-refined-link
-stage-history & stage-history-refined-link => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
+pp-starter => STAGE-HISTORY
+STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
+STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static
 {% if CLEAN_WORK %}
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-{% endif %}
-stage-history & stage-history-refined-link => split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
-{% if CLEAN_WORK %}
 rename-split-to-pp-native<native_static> => clean-split-native
-{% endif %}
-rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static
-{% if CLEAN_WORK %}
 remap-pp-components-static => clean-shards-static
 remap-pp-components-static => combine-statics => clean-pp-statics
 {% endif %}
@@ -138,19 +134,104 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
+{% if HISTORY_DIR_REFINED is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         script = rose task-run --verbose --app-key stage-history
-        [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}_refineDiag
-            ptmpDir = {{ PTMP_DIR }}
-
-    [[stage-history-refined-link]]
-        pre-script = "set -x"
-        script = """
+        post-script = """
+            # a disagreemable workaround to use PTMP as a data input location
+            # assumes no name collisions, and pollutes PTMP
+            set -x
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
-            ln -f ../../history_refineDiag/$(cylc date --template CCYYMMDD).nc/*.nc .
+            ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc date --template CCYYMMDD).nc/*.nc .
         """
+        [[[environment]]]
+            historyDir = {{ HISTORY_DIR_REFINED }}
+            ptmpDir = {{ PTMP_DIR }}
+{% endif %}
+
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            env
+            set -x
+            module load gcp/test
+            module load fre/test
+            mkdir -p $work $tempCache $refineDiagDir
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/*
+            cd $work/$hsmdate
+            ls
+        """
+        [[[environment]]]
+            name = {{ EXPERIMENT }}
+            rtsxml = no-more-xml
+            work = $TMPDIR/work
+            tempCache = $TMPDIR/tempCache
+            root = $CYLC_WORKFLOW_RUN_DIR
+            archive = is-this-needed
+            scriptName = $CYLC_TASK_LOG_DIR/job
+            oname = $(cylc date --template CCYYMMDD)
+            hsmdate = $oname.nc
+            ptmpDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}
+            histDir = {{ HISTORY_DIR }}
+            platform = {{ PLATFORM }}
+            target = {{ TARGET }}
+            segment_months = {{ HISTORY_SEGMENT }}
+            basedate = is-this-needed
+            gridspec = {{ GRID_SPEC }}
+            refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
+{% if DO_REFINEDIAG %}
+    [[REFINE-DIAG]]
+        inherit = PRE-ANALYSIS
+        post-script = """
+            cd $refineDiagDir
+            if ls *nc; then
+                refinedCount=$(ls -1 *nc | wc -l)
+            else
+                refinedCount=0
+            fi
+            if [[ $refinedCount > 0 ]]; then
+                for file in $(ls -1 *nc); do
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                done
+            else
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\*
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
+        """
+    [[refineDiag-{{ REFINEDIAG_NAME }}]]
+        inherit = REFINE-DIAG
+        script = """
+            ls
+            echo NOTE: About to source user script
+            if csh {{ REFINEDIAG_SCRIPT }}; then
+                echo NOTE: User script exited normally
+            else
+                echo ERROR: User script got an error status $?
+                exit 1
+            fi
+        """
+{% endif %}
+{% if DO_PREANALYSIS and PREANALYSIS_NAME is defined and PREANALYSIS_SCRIPT is defined %}
+    [[preAnalysis-{{ PREANALYSIS_NAME }}]]
+        inherit = PRE-ANALYSIS
+        script = """
+            ls
+            echo NOTE: About to source user script
+            if csh {{ PREANALYSIS_SCRIPT }}; then
+                echo NOTE: User script exited normally
+            else
+                echo ERROR: User script got an error status $?
+                exit 1
+            fi
+        """
+{% endif %}
 
     [[SPLIT-NETCDF]]
         pre-script = module load cdo nco && mkdir -p $outputDir
