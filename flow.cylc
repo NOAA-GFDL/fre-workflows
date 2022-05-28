@@ -138,16 +138,16 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         script = rose task-run --verbose --app-key stage-history
-        [[[environment]]]
-            historyDir = {{ HISTORY_DIR_REFINED }}
-            ptmpDir = {{ PTMP_DIR }}
-    [[stage-history-refined-link]]
-        inherit = STAGE-HISTORY
-        pre-script = "set -x"
-        script = """
+        post-script = """
+            # a disagreemable workaround to use PTMP as a data input location
+            # assumes no name collisions, and pollutes PTMP
+            set -x
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc date --template CCYYMMDD).nc/*.nc .
         """
+        [[[environment]]]
+            historyDir = {{ HISTORY_DIR_REFINED }}
+            ptmpDir = {{ PTMP_DIR }}
 {% endif %}
 
     [[PRE-ANALYSIS]]
