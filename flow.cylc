@@ -207,24 +207,24 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             fi
             hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
         """
-    [[refineDiag-atmos]]
+    [[refineDiag-{{ REFINEDIAG_NAME }}]]
         inherit = REFINE-DIAG
         script = """
             ls
             echo NOTE: About to source user script
-            if csh $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_atmos_cmip6.csh; then
+            if csh {{ REFINEDIAG_SCRIPT }}; then
                 echo NOTE: User script exited normally
             else
                 echo ERROR: User script got an error status $?
                 exit 1
             fi
         """
-    [[preAnalysis-vitals]]
+    [[preAnalysis-{{ PREANALYSIS_NAME }}]]
         inherit = PRE-ANALYSIS
         script = """
             ls
             echo NOTE: About to source user script
-            if csh $CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_data_stager_globalAve.csh; then
+            if csh {{ PREANALYSIS_SCRIPT }}; then
                 echo NOTE: User script exited normally
             else
                 echo ERROR: User script got an error status $?
