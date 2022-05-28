@@ -32,9 +32,11 @@ and more (such as multiline descriptions!)
     final cycle point = {{ PP_STOP }}
     [[graph]]
         {{ HISTORY_SEGMENT }} = """
-pp-starter => stage-history => REFINE-DIAG:succeed-all => stage-history-refined
+pp-starter => stage-history
+{% if DO_REFINEDIAG %}
+stage-history => REFINE-DIAG:succeed-all => stage-history-refined => stage-history-refined-link
+{% endif %}
 pp-starter => stage-history => PRE-ANALYSIS
-stage-history-refined => stage-history-refined-link
 stage-history & stage-history-refined-link => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% if CLEAN_WORK %}
 split-netcdf-regrid<regrid> => clean-history-regrid-xy
@@ -182,6 +184,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             basedate = is-this-needed
             gridspec = {{ GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
+{% if DO_REFINEDIAG %}
     [[REFINE-DIAG]]
         inherit = PRE-ANALYSIS
         post-script = """
@@ -219,6 +222,8 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
                 exit 1
             fi
         """
+{% endif %}
+{% if DO_PREANALYSIS %}
     [[preAnalysis-{{ PREANALYSIS_NAME }}]]
         inherit = PRE-ANALYSIS
         script = """
@@ -231,6 +236,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
                 exit 1
             fi
         """
+{% endif %}
 
     [[SPLIT-NETCDF]]
         pre-script = module load cdo nco && mkdir -p $outputDir
