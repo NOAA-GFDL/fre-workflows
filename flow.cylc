@@ -152,6 +152,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             ptmpDir = {{ PTMP_DIR }}
 {% endif %}
 
+{% if DO_REFINEDIAG %}
     [[PRE-ANALYSIS]]
         pre-script = """
             env
@@ -181,6 +182,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             basedate = is-this-needed
             gridspec = {{ GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
+{% endif %}
 {% if DO_REFINEDIAG %}
     [[REFINE-DIAG]]
         inherit = PRE-ANALYSIS
