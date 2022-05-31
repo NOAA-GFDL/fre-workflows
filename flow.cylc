@@ -152,7 +152,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             ptmpDir = {{ PTMP_DIR }}
 {% endif %}
 
-{% if DO_REFINEDIAG %}
+{% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
         pre-script = """
             env
