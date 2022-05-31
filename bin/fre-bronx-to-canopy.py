@@ -81,6 +81,8 @@ def main(args):
     rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
     rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
     rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
+    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
+    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
     regex_fre_property = re.compile('\$\((\w+)')
     all_components = set()
