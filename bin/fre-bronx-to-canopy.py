@@ -93,6 +93,7 @@ def main(args):
     print(">>", cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     historyDir = process.stdout.strip() + '/history'
+    historyDirRefined = historyDir + '_refineDiag'
     print(historyDir)
     cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml, platform, target, expname)
     print(">>", cmd)
@@ -102,6 +103,7 @@ def main(args):
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
+    rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
