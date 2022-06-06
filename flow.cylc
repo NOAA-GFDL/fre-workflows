@@ -26,6 +26,7 @@ and more (such as multiline descriptions!)
     regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
     native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
     native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
+    component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
 
 [scheduling]
     initial cycle point = {{ PP_START }}
@@ -72,15 +73,15 @@ rename-split-to-pp-native<native>
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => remap-pp-components-{{ PP_CHUNK_A }}
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
 {% if PP_CHUNK_B_COUNT == 1 %}
-remap-pp-components-{{ PP_CHUNK_A }} => clean-shards-{{ PP_CHUNK_A }}
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 {% endif %}
 {% endif %}
 {% if DO_MDTF %}
-remap-pp-components-{{ PP_CHUNK_B }} => mdtf
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => mdtf
 {% endif %}
 """
 
@@ -88,18 +89,18 @@ remap-pp-components-{{ PP_CHUNK_B }} => mdtf
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
+& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
-make-timeseries-native-{{ PP_CHUNK_A }}<native>[-{{ PP_CHUNK_A }}]
+& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
-make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => remap-pp-components-{{ PP_CHUNK_B }}
+make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
-remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
 {% endif %}
 """
 {% endif %}
@@ -306,16 +307,21 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
             outputDRS = legacy
-    [[remap-pp-components-{{ PP_CHUNK_A }}]]
+            component = $CYLC_TASK_PARAM_component
+    [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             currentChunk = {{ PP_CHUNK_A }}
-    [[remap-pp-components-{{ PP_CHUNK_B }}]]
+    [[remap-pp-components-{{ PP_CHUNK_A }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
+    [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             currentChunk = {{ PP_CHUNK_B }}
+    [[remap-pp-components-{{ PP_CHUNK_B }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -323,6 +329,7 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDRS = default
+            component =
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -416,19 +423,22 @@ remap-pp-components-{{ PP_CHUNK_B }} => clean-shards-{{ PP_CHUNK_B }}
         inherit = CLEAN
         script = """
 {% for I in range(0, PP_CHUNK_A_COUNT) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
 {% endfor %}
         """
     [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
 {% for I in range(0, PP_CHUNK_B_COUNT) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset=-{{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
 {% endfor %}
         """
     [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
         """
 
