@@ -2,15 +2,17 @@ import re
 import os
 import metomi.rose.config
 
-def form_task_parameters(grid_type, temporal_type, pp_components):
+def form_task_parameters(grid_type, temporal_type, pp_components_str):
     """Form the task parameter list based on the grid type, the temporal type,
     and the desired pp component(s)
 
     Arguments:
         grid_type (str): One of: native or regrid-xy
         temporal_type (str): One of: temporal or static
-        pp_component (str): all, or a comma-separated list
+        pp_component (str): all, or a space-separated list
 """
+    pp_components = pp_components_str.split()
+    # print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
