@@ -337,7 +337,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         pre-script = module load cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
-            fail_ok_components = grid_spec lumip_Lyr_psl
+            fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
     [[MAKE-TIMESERIES-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
