@@ -36,9 +36,10 @@ and more (such as multiline descriptions!)
 pp-starter => STAGE-HISTORY
 {% if DO_REFINEDIAG %}
 stage-history => REFINE-DIAG
+REFINE-DIAG:succeed-all => stage-history-refined
 {% endif %}
 {% if DO_PREANALYSIS %}
-STAGE-HISTORY:succeed-all => PRE-ANALYSIS
+stage-history => PRE-ANALYSIS
 {% endif %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
