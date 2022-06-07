@@ -147,6 +147,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             # a disagreemable workaround to use PTMP as a data input location
             # assumes no name collisions, and pollutes PTMP
             set -x
+            # possible nfs lag issue here
+            sleep 5
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc date --template CCYYMMDD).nc/*.nc .
         """
