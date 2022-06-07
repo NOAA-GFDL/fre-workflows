@@ -159,7 +159,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         [[[environment]]]
             historyDir = {{ HISTORY_DIR_REFINED }}
             ptmpDir = {{ PTMP_DIR }}
-{% endif %}
     [[stage-history-refined-link]]
         script = """
             # a disagreemable workaround to use PTMP as a data input location
@@ -168,6 +167,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc date --template CCYYMMDD).nc/*.nc .
         """
+{% endif %}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
