@@ -8,7 +8,6 @@
 - Takes a long time. module load FRE for frelist first
 - After running, set PP_START and PP_STOP in rose-suite.conf, which are the only vars not set
 - Double-check the history and PP directories
-- There may be bug in work-dir cleaning. Turn off to be safe for now
 - "git status" to see the converter output
 
 # Edit PP configurations
@@ -74,6 +73,41 @@
 # to start a particular task
 - cylc trigger postprocessing//<CYCLE-POINT>/<task-name>
 ```
+
+# Graphing task dependencies
+It's often helpful to visually see the task dependencies, and Cylc provides excellent graphing capability. A introduction is on the Cylc webpage (https://cylc.github.io/cylc-doc/8.0b3/html/tutorial/scheduling/graphing.html)
+
+To see all the currently configured date (cycle point) range,
+
+    cylc graph .
+
+If you have trouble displaying the graphs through your X11 forwarding,
+try saving the png file to disk and then viewing from the workstation:
+
+    cylc graph . -o ~/cylc-graph.png
+    display ~/cylc-graph.png
+
+You may be overwhelmed by the task graph, especially a large range of dates or many history files. Reducing the time range is an option; e.g. to show just one segment,
+
+    cylc graph . 1979 1979
+
+Aside from reducing the time range, limiting the task parameters (history files and pp component lists) is a good approach. If you are only interested in graphing, simply edit the `flow.cylc` to replace the task paramaters with one each (any name will do). This won't run, but will make an easier graph to read. For example, change this (line 25ish):
+
+    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
+    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
+    component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
+
+to
+
+    regrid =        regrid-history-file
+    regrid_static = regrid-static-history-file
+    native =        native-history-file
+    native_static = native-static-history-file
+    component  =    one-component
+
+and then rerun the `cylc graph`
 
 # Many more useful Cylc commands
 - cylc help all
