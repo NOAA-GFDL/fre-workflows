@@ -185,6 +185,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => ANALYSIS-{{ PP_CHUNK_A }}
 """
 
 
@@ -230,6 +231,7 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
 {% endif %}
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 """
 {% endif %}
 
@@ -542,6 +544,37 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
+
+    [[ANALYSIS]]
+        pre-script = """
+            env
+            mkdir -p $outputDir $out_dir
+            rose task-run --verbose --app-key analysis
+        """
+        [[[environment]]]
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
+            yr2 = $(cylc date --template=CCYY)
+            out_dir = {{ ANALYSIS_DIR }}
+    [[ANALYSIS-{{ PP_CHUNK_A }}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+    [[ANALYSIS-{{ PP_CHUNK_B }}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+    [[analysis-test]]
+        inherit = ANALYSIS-{{ PP_CHUNK_A }}
+        script = """
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/mdtf_gfdl.csh.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/mdtf_gfdl.csh.$yr1-$yr2
+        """
+        [[[environment]]]
+            component = atmos_cmip
+            frequency = monthly
+            chunksize = 2yr
+            in_data_dir = {{ PP_DIR }}/$component/ts/$frequency/$chunksize
+            staticfile = {{ PP_DIR }}/$component/$component.static.nc
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
