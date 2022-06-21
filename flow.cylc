@@ -563,18 +563,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
-    [[analysis-test]]
-        inherit = ANALYSIS-{{ PP_CHUNK_A }}
-        script = """
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/mdtf_gfdl.csh.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/mdtf_gfdl.csh.$yr1-$yr2
-        """
-        [[[environment]]]
-            component = atmos_cmip
-            frequency = monthly
-            chunksize = 2yr
-            in_data_dir = {{ PP_DIR }}/$component/ts/$frequency/$chunksize
-            staticfile = {{ PP_DIR }}/$component/$component.static.nc
+    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR) }}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
