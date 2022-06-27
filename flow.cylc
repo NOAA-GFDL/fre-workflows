@@ -85,6 +85,9 @@ rename-split-to-pp-native<native>
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
+#Invoke Jinja triggers to fill in remap-pp-components dependencies (PP component and source name dependencies. See JinjaFilters for more info
+make-timeseries-regrid-{{ PP_CHUNK_A }}_atmos_diurnal => remap-pp-components-{{ PP_CHUNK_A }}_{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
+
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
 {% if PP_CHUNK_B_COUNT == 1 %}
