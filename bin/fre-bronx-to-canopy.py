@@ -83,6 +83,9 @@ def main(args):
     rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
     rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
     rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
+    rose_suite.set(keys=['template variables', 'EXPERIMENT'], value="'{}'".format(expname))
+    rose_suite.set(keys=['template variables', 'PLATFORM'], value="'{}'".format(platform))
+    rose_suite.set(keys=['template variables', 'TARGET'], value="'{}'".format(target))
 
     regex_fre_property = re.compile('\$\((\w+)')
     all_components = set()
@@ -177,6 +180,7 @@ def main(args):
             rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
             rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
             rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
+            rose_suite.set(keys=['template variables', 'GRID_SPEC'], value="'{}'".format(gridSpec))
 
     print("\nSetting PP chunks...")
     all_chunks = set()
