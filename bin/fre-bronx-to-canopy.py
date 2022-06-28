@@ -81,8 +81,19 @@ def main(args):
     rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
     rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
     rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
-    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
-    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
+
+    if args.do_refined:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
+        rose_suite.set(keys=['template variables', 'REFINEDIAG_NAME'], value="'atmos'") # Currently arbitrary value and only 1 value by default at this time.
+    else:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
+
+    if args.do_preanalysis:
+        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='True')
+        rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'], value="'vitals'")
+    else:
+        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
+
     rose_suite.set(keys=['template variables', 'EXPERIMENT'], value="'{}'".format(expname))
     rose_suite.set(keys=['template variables', 'PLATFORM'], value="'{}'".format(platform))
     rose_suite.set(keys=['template variables', 'TARGET'], value="'{}'".format(target))
@@ -108,6 +119,28 @@ def main(args):
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
+
+    if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
+       refineDiag_cmd = "frelist -x {} -p {} -t {} {} --evaluate postProcess/refineDiag/@script".format(xml, platform, target, expname)
+       refineDiag_process = subprocess.run(refineDiag_cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
+       str_output = "'" + refineDiag_process.stdout + "'"
+       proc_output_list = str_output.replace(",", "','").replace(" ", "','").replace("\n", "").split(",")
+
+       preanalysis = "refineDiag_data_stager_globalAve.csh"
+       preanalysis_path = None
+       try:
+           preanalysis_path = proc_output_list.pop([idx for idx, substr in enumerate(proc_output_list) if preanalysis in substr][0])
+       except IndexError:
+           pass
+           
+       refineDiag_scripts = ",".join(proc_output_list)
+       rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPT'], value=refineDiag_scripts)
+
+    if rose_suite.get_value(keys=['template variables', 'DO_PREANALYSIS']) == "True":
+        if preanalysis_path is not None:
+            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value=preanalysis_path)
+        else:
+            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value="''")
 
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(comps)))
@@ -228,11 +261,16 @@ def main(args):
     dumper(rose_regrid_xy, outfile)
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description="FRE Bronx-to-Canopy converter")
     parser.add_argument('--xml', '-x', required=True, help="Bronx XML")
     parser.add_argument('--platform', '-p', required=True, help="Platform")
     parser.add_argument('--target', '-t', required=True, help="Target")
     parser.add_argument('--experiment', '-e', required=True, help="Experiment")
+    parser.add_argument('--do_refined', action='store_true', default=False, help="Process refineDiag scripts")
+    parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Process preanalysis scripts")
     parser.add_argument('--debug', action='store_true', required=False, help="print additional output")
+
     args = parser.parse_args()
     main(args)
+
