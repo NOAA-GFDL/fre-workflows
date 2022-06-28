@@ -79,8 +79,16 @@ def main(args):
     rose_suite.set(keys=['template variables', 'PTMP_DIR'], value="'/xtmp/$USER/ptmp'")
     rose_suite.set(keys=['template variables', 'CLEAN_WORK'], value='True')
     rose_suite.set(keys=['template variables', 'DO_MDTF'], value='False')
-    rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
-    rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
+    
+    if args.pp_start is not None:
+        rose_suite.set(keys=['template variables', 'PP_START'], value="'" + str(args.pp_start) + "'")
+    else:
+        rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
+
+    if args.pp_stop is not None:
+        rose_suite.set(keys=['template variables', 'PP_STOP'], value="'" + str(args.pp_stop) + "'")
+    else:
+        rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
 
     if args.do_refined:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
@@ -269,6 +277,8 @@ if __name__ == '__main__':
     parser.add_argument('--experiment', '-e', required=True, help="Experiment")
     parser.add_argument('--do_refined', action='store_true', default=False, help="Process refineDiag scripts")
     parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Process preanalysis scripts")
+    parser.add_argument('--pp_start', help="Starting year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
+    parser.add_argument('--pp_stop', help="Ending year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
     parser.add_argument('--debug', action='store_true', required=False, help="print additional output")
 
     args = parser.parse_args()
