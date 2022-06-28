@@ -3,6 +3,7 @@ import argparse
 import re
 import sys
 import subprocess
+import logging
 import metomi.rose.config
 import metomi.isodatetime.parsers
 
@@ -14,6 +15,9 @@ import metomi.isodatetime.parsers
 # - app/remap-pp-components/rose-app.conf
 # - app/regrid-xy/rose-app.conf
 #
+
+logging_format = '%(asctime)s  %(levelname)s: %(message)s'
+
 
 def freq_from_legacy(legacy_freq):
     """Return ISO8601 duration given Bronx-style frequencies
@@ -47,21 +51,22 @@ def chunk_from_legacy(legacy_chunk):
     regex = re.compile('(\d+)(\w+)')
     match = regex.match(legacy_chunk)
     if not match:
-        print("ERROR: Could not convert Bronx chunk to ISO8601 duration:", legacy_chunk)
-        raise Exception
+        logging.error("Could not convert Bronx chunk to ISO8601 duration: " + legacy_chunk)
+        raise ValueError
     if match.group(2) == "yr":
         return 'P{}Y'.format(match.group(1))
     elif match.group(2) == 'mo':
         return 'P{}M'.format(match.group(1))
     else:
-        raise Exception('Unknown time units', match.group(2))
+        logging.error("Unknown time units " + match.group(2))
+        raise ValueError
 
 def frelist_xpath(args, xpath):
     cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(args.xml, args.platform, args.target, args.experiment, xpath)
-    print(">>", xpath)
+    logging.info(">> " + xpath)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     result = process.stdout.strip()
-    print(result)
+    logging.info(result)
     return(result)
 
 def main(args):
@@ -69,7 +74,6 @@ def main(args):
     expname = args.experiment
     platform = args.platform
     target = args.target
-    debug = args.debug
 
     rose_remap = metomi.rose.config.ConfigNode()
     rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
@@ -109,24 +113,27 @@ def main(args):
     regex_fre_property = re.compile('\$\((\w+)')
     all_components = set()
 
-    print("Running frelist for XML parsing...")
-    print("If this fails, try running the 'frelist' call manually. Did you module load FRE?\n")
+    logging.info("Running frelist for XML parsing...")
+    logging.info("If this fails, try running the 'frelist' call manually. Did you module load FRE?\n")
     cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
-    print(">>", cmd)
+    logging.info(">> " + cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     historyDir = process.stdout.strip() + '/history'
     historyDirRefined = historyDir + '_refineDiag'
-    print(historyDir)
+    logging.info(historyDir)
     cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml, platform, target, expname)
-    print(">>", cmd)
+    logging.info(">> " + cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     ppDir = process.stdout.strip()
-    print(ppDir)
+    logging.info(ppDir)
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
     rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
+
+    preanalysis = "refineDiag_data_stager_globalAve.csh"
+    preanalysis_path = None
 
     if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
        refineDiag_cmd = "frelist -x {} -p {} -t {} {} --evaluate postProcess/refineDiag/@script".format(xml, platform, target, expname)
@@ -134,8 +141,6 @@ def main(args):
        str_output = "'" + refineDiag_process.stdout + "'"
        proc_output_list = str_output.replace(",", "','").replace(" ", "','").replace("\n", "").split(",")
 
-       preanalysis = "refineDiag_data_stager_globalAve.csh"
-       preanalysis_path = None
        try:
            preanalysis_path = proc_output_list.pop([idx for idx, substr in enumerate(proc_output_list) if preanalysis in substr][0])
        except IndexError:
@@ -155,12 +160,15 @@ def main(args):
 
     segment_time = frelist_xpath(args, 'runtime/production/segment/@simTime')
     segment_units = frelist_xpath(args, 'runtime/production/segment/@units')
+
     if segment_units == 'years':
         segment = 'P' + segment_time + 'Y'
     elif segment_units == 'months':
         segment = 'P' + segment_time + 'M'
     else:
-        raise Exception("Unknown segment units:", segment_units)
+        logging.error("Unknown segment units: " + segment_units)
+        raise ValueError
+
     # P12M is identical to P1Y but the latter looks nicer
     if segment == 'P12M':
         segment = 'P1Y'
@@ -169,7 +177,7 @@ def main(args):
     comp_count = 0
     for comp in comps:
         comp_count += 1
-        print("Component loop: {} out of {}".format(comp_count, len(comps)))
+        logging.info("Component loop: {} out of {}".format(comp_count, len(comps)))
         comp_source = frelist_xpath(args, 'postProcess/component[@type="{}"]/@source'.format(comp))
         xyInterp = frelist_xpath(args, 'postProcess/component[@type="{}"]/@xyInterp'.format(comp))
         sourceGrid = frelist_xpath(args, 'postProcess/component[@type="{}"]/@sourceGrid'.format(comp))
@@ -196,7 +204,7 @@ def main(args):
                 sources.add(comp_source)
                 rose_remap.set(keys=[label, 'source'], value=comp_source)
             else:
-                print("WARNING: Skipping a timeSeries with no source and no component source for", comp)
+                logging.warning("WARNING: Skipping a timeSeries with no source and no component source for " + comp)
                 continue
 
             freq = freq_from_legacy(frelist_xpath(args, 'postProcess/component[@type="{}"]/timeSeries[{}]/@freq'.format(comp, i)))
@@ -223,7 +231,10 @@ def main(args):
             rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
             rose_suite.set(keys=['template variables', 'GRID_SPEC'], value="'{}'".format(gridSpec))
 
-    print("\nSetting PP chunks...")
+    if args.verbose:
+        print("")
+    logging.info("Setting PP chunks...")
+
     all_chunks = set()
     def duration_to_seconds(duration):
         dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
@@ -244,43 +255,62 @@ def main(args):
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
     assert len(all_chunks) >= 1
-    print("  Chunks found:", ', '.join(sorted_chunks))
+    logging.info("  Chunks found: " + ', '.join(sorted_chunks))
     if len(all_chunks) == 1:
         rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
         rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[0]))
     else:
         rose_suite.set(['template variables', 'PP_CHUNK_A'], "'{}'".format(sorted_chunks[0]))
         rose_suite.set(['template variables', 'PP_CHUNK_B'], "'{}'".format(sorted_chunks[1]))
-    print("  Chunks used: ", ', '.join(sorted_chunks[0:2]))
-    
-    print("\nWriting output files...")
+    logging.info("  Chunks used: " + ', '.join(sorted_chunks[0:2]))
+   
+    if args.verbose:
+        print("") 
+    logging.info("Writing output files...")
+
     dumper = metomi.rose.config.ConfigDumper()
     
     outfile = "rose-suite.conf"
-    print("  ", outfile)
+    logging.info("  " + outfile)
     dumper(rose_suite, outfile)
 
     outfile = "app/remap-pp-components/rose-app.conf"
-    print("  ", outfile)
+    logging.info("  " + outfile)
     dumper(rose_remap, outfile)
 
     outfile = "app/regrid-xy/rose-app.conf"
-    print("  ", outfile)
+    logging.info("  " + outfile)
     dumper(rose_regrid_xy, outfile)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="FRE Bronx-to-Canopy converter")
-    parser.add_argument('--xml', '-x', required=True, help="Bronx XML")
-    parser.add_argument('--platform', '-p', required=True, help="Platform")
-    parser.add_argument('--target', '-t', required=True, help="Target")
-    parser.add_argument('--experiment', '-e', required=True, help="Experiment")
-    parser.add_argument('--do_refined', action='store_true', default=False, help="Process refineDiag scripts")
-    parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Process preanalysis scripts")
-    parser.add_argument('--pp_start', help="Starting year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
-    parser.add_argument('--pp_stop', help="Ending year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
-    parser.add_argument('--debug', action='store_true', required=False, help="print additional output")
+    parser.add_argument('--xml', '-x', required=True, help="Required. The Bronx XML")
+    parser.add_argument('--platform', '-p', required=True, help="Required. The Bronx XML Platform")
+    parser.add_argument('--target', '-t', required=True, help="Required. The Bronx XML Target")
+    parser.add_argument('--experiment', '-e', required=True, help="Required. The Bronx XML Experiment")
+    parser.add_argument('--do_refined', action='store_true', default=False, help="Optional. Process refineDiag scripts")
+    parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Optional. Process preanalysis scripts")
+    parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
+    parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
+    parser.add_argument('--verbose', '-v', action='store_true', help="Optional. Displayed detailed output")
+    parser.add_argument('--quiet', '-q', action='store_true', help="Optional. Display only fatal errors")
 
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO, format=logging_format)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR, format=logging_format)
+    else:
+        logging.basicConfig(level=logging.WARNING, format=logging_format)
+
+    if args.do_preanalysis and not args.do_refined:
+        logging.warning("Setting 'PREANALYSIS_SCRIPT' to an empty string in rose-suite.conf. Please change this value after the converter has run.")
+    if (args.pp_start is not None and args.pp_stop is None) or (args.pp_stop is not None and args.pp_start is None):
+        logging.warning("Only 1 PP start/stop year was specified. After the converter has run, please edit any default 'YYYY' values within your rose-suite.conf.")
+    if not args.pp_start and not args.pp_stop:
+        logging.warning("No PP start/stop year was specified. After the converter has run, please edit the default 'YYYY' values within your rose-suite.conf")
+
     main(args)
 
