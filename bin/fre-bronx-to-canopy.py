@@ -128,9 +128,19 @@ def main(args):
     logging.info(ppDir)
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
-    rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
-    rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
-    rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
+
+    if args.historydir is not None:
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(args.historydir))
+    else:
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR'], value="'{}'".format(historyDir))
+    if args.refinedir is not None:
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(args.refinedir))
+    else:
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
+    if args.ppdir is not None:
+        rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(args.ppdir))
+    else:
+        rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
     preanalysis_script = "refineDiag_data_stager_globalAve.csh"
     preanalysis_path_xml = None
@@ -309,9 +319,12 @@ if __name__ == '__main__':
     parser.add_argument('--platform', '-p', required=True, help="Required. The Bronx XML Platform")
     parser.add_argument('--target', '-t', required=True, help="Required. The Bronx XML Target")
     parser.add_argument('--experiment', '-e', required=True, help="Required. The Bronx XML Experiment")
+    parser.add_argument('--historydir', help="Optional. History directory to reference. If not specified, the XML's default will be used.")
+    parser.add_argument('--refinedir', help="Optional. History refineDiag directory to reference. If not specified, the XML's default will be used.")
+    parser.add_argument('--ppdir', help="Optional. Postprocessing directory to reference. If not specified, the XML's default will be used.")
     parser.add_argument('--do_refinediag', action='store_true', default=False, help="Optional. Process refineDiag scripts")
-    parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, default value is '0000' and must be changed in rose-suite.conf")
-    parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, default value is '0000' and must be changed in rose-suite.conf")
+    parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, a default value of '0000' will be set and must be changed in rose-suite.conf")
+    parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, a default value of '0000' will be set and must be changed in rose-suite.conf")
     parser.add_argument('--validate', action='store_true', help="Optional. Run the Cylc validator immediately after conversion")
     parser.add_argument('--verbose', '-v', action='store_true', help="Optional. Display detailed output")
     parser.add_argument('--quiet', '-q', action='store_true', help="Optional. Display only serious messages and/or errors")
