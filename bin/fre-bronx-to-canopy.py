@@ -18,7 +18,9 @@ import metomi.isodatetime.parsers
 #
 
 logging_format = '%(asctime)s  %(levelname)s: %(message)s'
-
+cylc_refined_scripts = ["check4ptop.pl", "module_init_3_1_6.pl", "plevel_mask.ncl", 
+                        "refineDiag_atmos.csh", "refine_fields.pl", "surface_albedo.ncl", 
+                        "tasminmax.ncl", "tracer_refine.ncl", "refineDiag_atmos_cmip6.csh"]
 
 def freq_from_legacy(legacy_freq):
     """Return ISO8601 duration given Bronx-style frequencies
@@ -130,8 +132,9 @@ def main(args):
     rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'], value="'{}'".format(historyDirRefined))
     rose_suite.set(keys=['template variables', 'PP_DIR'], value="'{}'".format(ppDir))
 
-    preanalysis = "refineDiag_data_stager_globalAve.csh"
-    preanalysis_path = None
+    preanalysis_script = "refineDiag_data_stager_globalAve.csh"
+    preanalysis_path_xml = None
+    preanalysis_path_cylc = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_data_stager_globalAve.csh'"
 
     if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
        refineDiag_cmd = "frelist -x {} -p {} -t {} {} --evaluate postProcess/refineDiag/@script".format(xml, platform, target, expname)
@@ -140,16 +143,37 @@ def main(args):
        proc_output_list = str_output.replace(",", "','").replace(" ", "','").replace("\n", "").split(",")
 
        try:
-           preanalysis_path = proc_output_list.pop([idx for idx, substr in enumerate(proc_output_list) if preanalysis in substr][0])
+           preanalysis_path_xml = proc_output_list.pop([idx for idx, substr in enumerate(proc_output_list) if preanalysis_script in substr][0])
        except IndexError:
            pass
+
+       # The following loop assigns the Cylc workflow directory location for refineDiag scripts instead of the XML-based one, if it exists.
+       for cylc_refined_script in cylc_refined_scripts:
+           for idx, xml_script_path in enumerate(proc_output_list):
+               if cylc_refined_script in xml_script_path:
+                   if cylc_refined_script == "refineDiag_atmos_cmip6.csh":
+                       proc_output_list[idx] = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/{}'".format(cylc_refined_script)
+                   else:
+                       proc_output_list[idx] = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/atmos_refine_scripts/{}'".format(cylc_refined_script)
            
        refineDiag_scripts = ",".join(proc_output_list)
+       if len(refineDiag_scripts) == 0:
+           refineDiag_scripts = "''"
+
        rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPT'], value=refineDiag_scripts)
+       if rose_suite.get_value(keys=['template variables', 'REFINEDIAG_SCRIPT']) == "''":
+           if rose_suite.get_value(keys=['template variables', 'DO_PREANALYSIS']) == "True":
+               logging.warning("Writing only the preanalysis refineDiag script...")
+           else:
+               logging.warning("No refineDiag scripts written. Check your XML to see if the <refineDiag> tag exists or is commented out.")
 
     if rose_suite.get_value(keys=['template variables', 'DO_PREANALYSIS']) == "True":
-        if preanalysis_path is not None:
-            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value=preanalysis_path)
+        if preanalysis_path_xml is not None:
+            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value=preanalysis_path_cylc)
+        else:
+            # Case where there's no preanalysis script in XML but other refineDiag scripts exist
+            rose_suite.unset(keys=['template variables', 'PREANALYSIS_NAME'])
+            rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value="False")
 
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(comps)))
