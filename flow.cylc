@@ -563,7 +563,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
-    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR) }}
+    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_CHUNK_A, PP_CHUNK_B) }}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
