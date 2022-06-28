@@ -1,6 +1,7 @@
 #!/home/oar.gfdl.sw/conda/miniconda3/envs/cylc/bin/python
 import argparse
 import re
+import os
 import sys
 import subprocess
 import logging
@@ -114,7 +115,7 @@ def main(args):
     all_components = set()
 
     logging.info("Running frelist for XML parsing...")
-    logging.info("If this fails, try running the 'frelist' call manually. Did you module load FRE?\n")
+    logging.info("If this fails, try running the 'frelist' call manually.\n")
     cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml, platform, target, expname)
     logging.info(">> " + cmd)
     process = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
@@ -293,10 +294,25 @@ if __name__ == '__main__':
     parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Optional. Process preanalysis scripts")
     parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
     parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
+    parser.add_argument('--validate', action='store_true', help="Optional. Run the Cylc validator immediately after conversion")
     parser.add_argument('--verbose', '-v', action='store_true', help="Optional. Displayed detailed output")
-    parser.add_argument('--quiet', '-q', action='store_true', help="Optional. Display only fatal errors")
+    parser.add_argument('--quiet', '-q', action='store_true', help="Optional. Display only serious messages and/or errors")
 
     args = parser.parse_args()
+
+    fre_path = '/home/fms/local/opt/fre-commands/bronx-19/bin'
+    fre_test_path = '/home/fms/local/opt/fre-commands/test/bin'
+    cylc_path = '/home/fms/fre-canopy/system-settings/bin'
+    cylc_loaded = False
+
+    if not (fre_path in os.getenv('PATH') or fre_test_path in os.getenv('PATH')):
+        raise EnvironmentError("Cannot run the XML converter because FRE Bronx isn't loaded. Please load the latest FRE Bronx module and try again.")
+    
+    if args.validate:
+        if cylc_path in os.getenv('PATH'):
+            cylc_loaded = True
+        else:
+            raise EnvironmentError("Cannot run the validator tool because the Cylc module isn't loaded. Please run 'module load cylc/test' and try again.")
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO, format=logging_format)
@@ -313,4 +329,13 @@ if __name__ == '__main__':
         logging.warning("No PP start/stop year was specified. After the converter has run, please edit the default 'YYYY' values within your rose-suite.conf")
 
     main(args)
+
+    if cylc_loaded:
+        if args.verbose:
+            print("")
+        logging.info("Running the Cylc validator tool...")
+        try:
+            subprocess.run("cylc validate .", shell=True, check=True)
+        except subprocess.CalledProcessError:
+            logging.error("Errant values in rose-suite.conf or other Cylc errors. Please check your configuration and run the validator again separately.")
 
