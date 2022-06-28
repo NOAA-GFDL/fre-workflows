@@ -88,23 +88,20 @@ def main(args):
     if args.pp_start is not None:
         rose_suite.set(keys=['template variables', 'PP_START'], value="'" + str(args.pp_start) + "'")
     else:
-        rose_suite.set(keys=['template variables', 'PP_START'], value="'YYYY'")
+        rose_suite.set(keys=['template variables', 'PP_START'], value="'0000'")
 
     if args.pp_stop is not None:
         rose_suite.set(keys=['template variables', 'PP_STOP'], value="'" + str(args.pp_stop) + "'")
     else:
-        rose_suite.set(keys=['template variables', 'PP_STOP'], value="'YYYY'")
+        rose_suite.set(keys=['template variables', 'PP_STOP'], value="'0000'")
 
-    if args.do_refined:
+    if args.do_refinediag:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
         rose_suite.set(keys=['template variables', 'REFINEDIAG_NAME'], value="'atmos'") # Currently arbitrary value and only 1 value by default at this time.
-    else:
-        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
-
-    if args.do_preanalysis:
         rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='True')
         rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'], value="'vitals'")
     else:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
         rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
     rose_suite.set(keys=['template variables', 'EXPERIMENT'], value="'{}'".format(expname))
@@ -153,8 +150,6 @@ def main(args):
     if rose_suite.get_value(keys=['template variables', 'DO_PREANALYSIS']) == "True":
         if preanalysis_path is not None:
             rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value=preanalysis_path)
-        else:
-            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'], value="''")
 
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'], value="'{}'".format(' '.join(comps)))
@@ -290,12 +285,11 @@ if __name__ == '__main__':
     parser.add_argument('--platform', '-p', required=True, help="Required. The Bronx XML Platform")
     parser.add_argument('--target', '-t', required=True, help="Required. The Bronx XML Target")
     parser.add_argument('--experiment', '-e', required=True, help="Required. The Bronx XML Experiment")
-    parser.add_argument('--do_refined', action='store_true', default=False, help="Optional. Process refineDiag scripts")
-    parser.add_argument('--do_preanalysis', action='store_true', default=False, help="Optional. Process preanalysis scripts")
-    parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
-    parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, default value is 'YYYY' and must be changed in rose-suite.conf")
+    parser.add_argument('--do_refinediag', action='store_true', default=False, help="Optional. Process refineDiag scripts")
+    parser.add_argument('--pp_start', help="Optional. Starting year of postprocessing. If not specified, default value is '0000' and must be changed in rose-suite.conf")
+    parser.add_argument('--pp_stop', help="Optional. Ending year of postprocessing. If not specified, default value is '0000' and must be changed in rose-suite.conf")
     parser.add_argument('--validate', action='store_true', help="Optional. Run the Cylc validator immediately after conversion")
-    parser.add_argument('--verbose', '-v', action='store_true', help="Optional. Displayed detailed output")
+    parser.add_argument('--verbose', '-v', action='store_true', help="Optional. Display detailed output")
     parser.add_argument('--quiet', '-q', action='store_true', help="Optional. Display only serious messages and/or errors")
 
     args = parser.parse_args()
@@ -321,14 +315,25 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING, format=logging_format)
 
-    if args.do_preanalysis and not args.do_refined:
-        logging.warning("Setting 'PREANALYSIS_SCRIPT' to an empty string in rose-suite.conf. Please change this value after the converter has run.")
     if (args.pp_start is not None and args.pp_stop is None) or (args.pp_stop is not None and args.pp_start is None):
-        logging.warning("Only 1 PP start/stop year was specified. After the converter has run, please edit any default 'YYYY' values within your rose-suite.conf.")
+        logging.warning("Only 1 PP start/stop year was specified. After the converter has run, please edit the default '0000' values within your rose-suite.conf.")
     if not args.pp_start and not args.pp_stop:
-        logging.warning("No PP start/stop year was specified. After the converter has run, please edit the default 'YYYY' values within your rose-suite.conf")
+        logging.warning("No PP start/stop year was specified. After the converter has run, please edit the default '0000' values within your rose-suite.conf")
+
+    if args.pp_start is not None and args.pp_stop is not None:
+        if len(args.pp_start) < 4 and int(args.pp_start) > 0:
+            args.pp_start = '0' * (4 - len(args.pp_start)) + args.pp_start
+        if len(args.pp_stop) < 4 and int(args.pp_stop) > 0:
+            args.pp_stop = '0' * (4 - len(args.pp_stop)) + args.pp_stop
+        if int(args.pp_start) >= int(args.pp_stop):
+            logging.warning("Your PP_START date is equal to or later than your PP_STOP date. Please revise these values in your configuration after the converter has run.")
+        if len(args.pp_start) > 4 or len(args.pp_stop) > 4 or int(args.pp_start) <=0 or int(args.pp_stop) <= 0:
+            logging.warning("At least one of your PP_start or PP_stop years does not make sense. Please revise this value in your configuration after the converter has run.")
 
     main(args)
+    if args.verbose:
+        print("")
+    logging.info("XML conversion complete!")
 
     if cylc_loaded:
         if args.verbose:
@@ -338,4 +343,6 @@ if __name__ == '__main__':
             subprocess.run("cylc validate .", shell=True, check=True)
         except subprocess.CalledProcessError:
             logging.error("Errant values in rose-suite.conf or other Cylc errors. Please check your configuration and run the validator again separately.")
+        finally:
+            logging.info("Validation step complete!")
 
