@@ -87,8 +87,8 @@ rename-split-to-pp-native<native>
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
 
-{{ "regrid-xy" | form_remap_dep('temporal', 'P5Y', PP_COMPONENTS) }}
-{{ "native" | form_remap_dep('temporal', 'P5Y', PP_COMPONENTS) }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
 
 
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
