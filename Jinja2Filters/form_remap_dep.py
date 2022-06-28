@@ -24,14 +24,21 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
 
        @return tbd
     """
-    pp_components = pp_components_str.split(' ')[0]
+    pp_components = pp_components_str.split(' ')
+    if(grid_type == "regrid-xy"):
+      grid = "regrid"
+    else:
+      grid = grid_type 
     #print(pp_components)
     #print(chunk) 
     ########################
     dict_group_source={}
     remap_comp = None 
-    pp_comp = 'atmos_scalar' 
-    # print("DEBUG: desired pp components:", pp_components)
+    pp_comp = 'atmos_scalar'
+    print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
+    print("pp_components: ", pp_components)
+    remap_dep_stmt = "" 
+    #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
@@ -47,17 +54,18 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
             continue
         comp = regex_pp_comp.match(item).group()
         #print("DEBUG: Examining", item, comp)
-
-        if pp_components in comp:
+        res = [pp_comp for pp_comp in pp_components if(pp_comp in comp)]
+        #[print(pp_comp) for pp_comp in pp_components]
+        if bool(res) == True:
                 print("Found PP component",pp_components," in header ", comp)
-                #print("DEBUG2: comp is not in pp_components", pp_components, "and", comp)
         else:
+        #        print("skip")
                 continue
         #print("DEBUG: Examining", item, comp)
 
         # skip if grid type is not desired
         if node.get_value(keys=[item, 'grid']) != grid_type:
-        #    print("DEBUG: Skipping as not right grid")
+            print("DEBUG: Skipping as not right grid")
             continue
         # skip if temporal type is not desired
         freq = node.get_value(keys=[item, 'freq'])
@@ -67,13 +75,13 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
                 continue
         elif (temporal_type == "temporal"):
             if 'P0Y' in freq:
-                #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
+                print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
                 continue
         else:
             raise Exception("Unknown temporal type:", temporal_type)
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
         if 'P5Y' not in chunk_from_config:
-                #print("DEBUG: Skipping as P5Y is requested, no P5Y here", chunk)
+                print("DEBUG: Skipping as P5Y is requested, no P5Y here", chunk)
                 continue
         results = results + node.get_value(keys=[item, 'source']).split()
         remap_comp = comp
@@ -85,7 +93,12 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
          #print("remap-pp-components-{{ PP_CHUNK_A }}_"+key) #get corresponding pp comp
          #print("source names", value) 
          #print("make-timeseries-regrid-{{ PP_CHUNK_A }}_"+', '.join(answer))
-         pp_comp = key 
-    return(pp_comp) 
+         #TODO make multi source per component a single line definition
+          for src in value: 
+               makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+               remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
+               remap_dep_stmt = remap_dep_stmt + "\n{} => {}".format(makets_stmt,remap_stmt)
+               print(remap_dep_stmt)
+          pp_comp = key
+    return(remap_dep_stmt) #+remap_dep_stmt)
 
-#print(form('native', 'temporal', 'land atmos land_cubic'))
