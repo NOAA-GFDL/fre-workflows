@@ -115,7 +115,8 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
-
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) }}
 
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
