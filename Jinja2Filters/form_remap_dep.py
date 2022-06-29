@@ -34,14 +34,13 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
     ########################
     dict_group_source={}
     remap_comp = None 
-    pp_comp = 'atmos_scalar'
     print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
-    print("pp_components: ", pp_components)
     remap_dep_stmt = "" 
     #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
+    makets_stmt = ""
     regex_pp_comp = re.compile('^\w+')
     for keys, sub_node in node.walk():
         # only target the keys
@@ -54,18 +53,15 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
             continue
         comp = regex_pp_comp.match(item).group()
         #print("DEBUG: Examining", item, comp)
-        res = [pp_comp for pp_comp in pp_components if(pp_comp in comp)]
-        #[print(pp_comp) for pp_comp in pp_components]
-        if bool(res) == True:
-                print("Found PP component",pp_components," in header ", comp)
-        else:
-        #        print("skip")
-                continue
+        #res = [pp_comp for pp_comp in pp_components if(pp_comp in comp)]
+        if comp not in pp_components:
+          #print(comp, " not in", pp_components)
+          continue
         #print("DEBUG: Examining", item, comp)
 
         # skip if grid type is not desired
         if node.get_value(keys=[item, 'grid']) != grid_type:
-            print("DEBUG: Skipping as not right grid")
+            #print("DEBUG: Skipping as not right grid")
             continue
         # skip if temporal type is not desired
         freq = node.get_value(keys=[item, 'freq'])
@@ -89,16 +85,15 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
     if remap_comp is not None:
        dict_group_source[remap_comp] = answer 
     if dict_group_source:
-      for key, value in dict_group_source.items(): 
-         #print("remap-pp-components-{{ PP_CHUNK_A }}_"+key) #get corresponding pp comp
-         #print("source names", value) 
-         #print("make-timeseries-regrid-{{ PP_CHUNK_A }}_"+', '.join(answer))
-         #TODO make multi source per component a single line definition
-          for src in value: 
-               makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
-               remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
-               remap_dep_stmt = remap_dep_stmt + "\n{} => {}".format(makets_stmt,remap_stmt)
-               print(remap_dep_stmt)
-          pp_comp = key
-    return(remap_dep_stmt) #+remap_dep_stmt)
+          for key, value in dict_group_source.items(): 
+              for src in value:
+                  if(makets_stmt != ''): 
+                    makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
+                  else:
+                    makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+ 
+          remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
+          remap_dep_stmt = remap_dep_stmt + "\n{} => {}".format(makets_stmt,remap_stmt)
+    print(remap_dep_stmt)
+    return(remap_dep_stmt)
 
