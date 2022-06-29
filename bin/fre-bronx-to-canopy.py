@@ -160,30 +160,31 @@ def main(args):
 
     logging.info("Running frelist for XML parsing...")
     logging.info("If this fails, try running the 'frelist' call manually.\n")
-    cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml,
-                                                           platform,
-                                                           target,
-                                                           expname)
-    logging.info(">> {}".format(cmd))
-    process = subprocess.run(cmd,
-                             shell=True,
-                             check=True,
-                             capture_output=True,
-                             universal_newlines=True)
-    historyDir = process.stdout.strip() + '/history'
+    fetch_history_cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml,
+                                                                         platform,
+                                                                         target,
+                                                                         expname)
+    logging.info(">> {}".format(fetch_history_cmd))
+    fetch_history_process = subprocess.run(fetch_history_cmd,
+                                           shell=True,
+                                           check=True,
+                                           capture_output=True,
+                                           universal_newlines=True)
+    historyDir = fetch_history_process.stdout.strip() + '/history'
     historyDirRefined = historyDir + '_refineDiag'
     logging.info(historyDir)
-    cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml,
-                                                               platform,
-                                                               target,
-                                                               expname)
-    logging.info(">> {}".format(cmd))
-    process = subprocess.run(cmd,
-                             shell=True,
-                             check=True,
-                             capture_output=True,
-                             universal_newlines=True)
-    ppDir = process.stdout.strip()
+
+    fetch_pp_cmd = "frelist -x {} -p {} -t {} {} -d postProcess".format(xml,
+                                                                        platform,
+                                                                        target,
+                                                                        expname)
+    logging.info(">> {}".format(fetch_pp_cmd))
+    fetch_pp_process = subprocess.run(fetch_pp_cmd,
+                                      shell=True,
+                                      check=True,
+                                      capture_output=True,
+                                      universal_newlines=True)
+    ppDir = fetch_pp_process.stdout.strip()
     logging.info(ppDir)
 
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
