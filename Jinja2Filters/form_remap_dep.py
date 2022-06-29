@@ -1,15 +1,15 @@
 import re
 import os
 import metomi.rose.config
-"""!   form_remap_dep parses the remap_pp_components rose-app.conf and uses input from rose-suite.conf in the form of
+"""! form_remap_dep parses the remap_pp_components rose-app.conf and uses input from rose-suite.conf in the form of
 env variables and returns the pp component and source name dependencies for remap_pp_components task execution. For insta
 \nce, for an atmos PP component that requires the regridded atmos_month and regridded atmos_daily history files, this Jin
-\jaFilter when called within flow.cylc helps identify this dependency to complete the corresponding task graph '''
+\jaFilter when called within flow.cylc helps identify this dependency to complete the corresponding task graph. This JinjaFilter ensures a remap-pp-component only waits for the dependent make-timeseries tasks such that the succeeded components output are made available in the final destination. 
+See form_remap_dep invocations from flow.cylc  '''
 """
 # @file form_remap_dep.py
 # Author(s)
 # Created by A.Radhakrishnan on 06/27/2022
-# - Modified by XX
 # Credit MSD workflow team
  
 def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
