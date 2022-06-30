@@ -86,8 +86,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
         if remap_comp is not None:
            #If the same PP component is mapped to several sources per rose-app.conf, we make it a list and append values so we don't replace the key's value 
          if remap_comp in dict_group_source.keys():
-              dict_group_source[remap_comp] = [dict_group_source[remap_comp]] 
-              dict_group_source[remap_comp].append(answer)     
+              dict_group_source[remap_comp].append(answer[0])    
          else:
               dict_group_source[remap_comp] = answer 
     if dict_group_source:
