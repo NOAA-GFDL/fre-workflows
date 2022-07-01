@@ -10,9 +10,10 @@ import metomi.rose.config
 import metomi.isodatetime.parsers
 
 #
-# Usage: fre-bronx-to-canopy -x XML -e EXP -p PLATFORM -t TARGET
+# Primary Usage: fre-bronx-to-canopy -x XML -e EXP -p PLATFORM -t TARGET
+# 
 #
-# Will overwrite 3 files:
+# The Bronx-to-Canopy XML converter overwrites 3 files:
 # - rose-suite.conf
 # - app/remap-pp-components/rose-app.conf
 # - app/regrid-xy/rose-app.conf
@@ -32,12 +33,15 @@ CYLC_REFINED_SCRIPTS = ["check4ptop.pl",
                         "tracer_refine.ncl",
                         "refineDiag_atmos_cmip6.csh"
                        ]
+CYLC_REFINED_DIR = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag'"
+PREANALYSIS_SCRIPT = "refineDiag_data_stager_globalAve.csh"
+
 
 def freq_from_legacy(legacy_freq):
     """Return ISO8601 duration given Bronx-style frequencies
 
     Arguments:
-        legacy_freq (str)
+        1. legacy_freq[str]: The Bronx frequency
     """
     lookup = {
         'annual': 'P1Y',
@@ -61,7 +65,7 @@ def chunk_from_legacy(legacy_chunk):
     """Return ISO8601 duration given Bronx-style chunk
 
     Arguments:
-        legacy_chunk (str)
+        1. legacy_chunk[str]: The Bronx chunk
     """
     regex = re.compile('(\d+)(\w+)')
     match = regex.match(legacy_chunk)
@@ -79,6 +83,13 @@ def chunk_from_legacy(legacy_chunk):
         raise ValueError
 
 def frelist_xpath(args, xpath):
+    """Returns filepaths of FRE XML elements that use X-path notation
+       using Bronx's 'frelist' command via Python's 'subprocess' module
+
+    Arguments:
+        1. args[str]: Argparse user-input arguments
+        2. xpath[str]: X-path (XML) notation required by 'frelist'
+    """
     cmd = "frelist -x {} -p {} -t {} {} --evaluate '{}'".format(args.xml,
                                                                 args.platform,
                                                                 args.target,
@@ -95,22 +106,46 @@ def frelist_xpath(args, xpath):
     return(result)
 
 def duration_to_seconds(duration):
+    """Returns the conversion of a chunk duration to seconds
+
+    Arguments: 
+        1. duration[str]: The original chunk duration
+    """
     dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
     return dur.get_seconds()
 
 
 def main(args):
+    """The meat of the converter
+
+       Arguments: 
+           1. args[argparse Namespace]: Arguments given at the command line
+
+       Tasks:
+           1. Generate key-value pairs for the rose-suite.conf.
+           2. Generate content for the regrid-xy app
+           3. Generate content for the remap-pp-components app
+    """
     xml = args.xml
     expname = args.experiment
     platform = args.platform
     target = args.target
 
+    ##########################################################################
+    # Set up default configurations for regrid-xy and remap-pp-components
+    ##########################################################################
     rose_remap = metomi.rose.config.ConfigNode()
     rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
 
     rose_regrid_xy = metomi.rose.config.ConfigNode()
     rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
+    ##########################################################################
+    # Create the rose-suite config and begin setting up key-value pairs
+    # Note: All strings inside the rose-suite configuration MUST be quoted.
+    # Note: The exception to the 'quote' rule is boolean values.
+    # Note: Addition of quotes will appear as "'" in the code.
+    ##########################################################################
     rose_suite = metomi.rose.config.ConfigNode()
     rose_suite.set(keys=['template variables', 'PTMP_DIR'],
                    value="'/xtmp/$USER/ptmp'")
@@ -158,6 +193,13 @@ def main(args):
     regex_fre_property = re.compile('\$\((\w+)')
     all_components = set()
 
+    ##########################################################################
+    # Run 'frelist' in the background to fetch the default history directory,
+    # the default history_refineDiag directory, and the default PP directory,
+    # all of which have been set in the XML. If the custom arguments for these
+    # directory variables have not been set by the user at the command line,
+    # the XML's default paths will be inserted into rose-suite.conf.
+    ##########################################################################
     logging.info("Running frelist for XML parsing...")
     logging.info("If this fails, try running the 'frelist' call manually.\n")
     fetch_history_cmd = "frelist -x {} -p {} -t {} {} -d archive".format(xml,
@@ -209,12 +251,22 @@ def main(args):
         rose_suite.set(keys=['template variables', 'PP_DIR'],
                        value="'{}'".format(ppDir))
 
-    CYLC_REFINED_DIR = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag'"
-    PREANALYSIS_SCRIPT = "refineDiag_data_stager_globalAve.csh"
+    ##########################################################################
+    # Process the refineDiag scripts into the rose-suite configuration from
+    # the <refineDiag> tags in the XML. There is one special <refineDiag>
+    # script that contains its own key-value pair: PREANALYSIS. Everything
+    # else gets processed into a list of strings under the REFINEDIAG_SCRIPT
+    # rose-suite setting. Also, if a script referenced can also be found in
+    # Canopy's centralized refineDiag repository, located in the
+    # $CYLC_WORKFLOW_DIR/etc/refineDiag, then THOSE references will be used.
+    # Otherwise, the reference will be whatever path the XML finds.
+    ##########################################################################
     preanalysis_path_xml = None
     preanalysis_path_cylc = "{}'/{}'".format(CYLC_REFINED_DIR,
                                              PREANALYSIS_SCRIPT)
 
+    # Only need to retrieve the refineDiag scripts if the --do_refinediag setting
+    # has been enabled on the command line by the user.
     if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
        refineDiag_cmd = ("frelist -x {} -p {} -t {} {} "                               \
                          "--evaluate postProcess/refineDiag/@script".format(xml,
@@ -227,12 +279,18 @@ def main(args):
                                            check=True,
                                            capture_output=True,
                                            universal_newlines=True)
+
+       # Place the subprocess output (the retrieved refineDiag scripts) into a
+       # comma-separated list of single-quoted strings, deleting unwanted characters
        str_output = "'{}'".format(refineDiag_process.stdout)
        proc_output_list = str_output.replace(",", "','")                               \
                           .replace(" ", "','")                                         \
                           .replace("\n", "")                                           \
                           .split(",")
 
+       # Pop out and retrieve the special 'preanalysis' script from the list of
+       # other captured refineDiag script, if it has been found. A list comprehension
+       # seems to work well for this case
        try:
            preanalysis_path_xml = proc_output_list.pop(                                \
                [idx for idx, substr in enumerate(proc_output_list)                     \
@@ -240,8 +298,13 @@ def main(args):
        except IndexError:
            pass
 
-       # The following loop assigns the Cylc workflow directory location 
+       # The following nested loop assigns the Cylc workflow directory location 
        # for refineDiag scripts instead of the XML-based one, if it exists.
+       # Additionally, there are 2 levels within the Cylc location: 
+       # CYLC_WORKFLOW_DIR/etc/refineDiag and
+       # CYLC_WORKFLOW_DIR/etc/refineDiag/atmos_refine_scripts. If the script that
+       # we've identified is 'refineDiag_atmos_cmip6.csh', we will reference the
+       # former location. Otherwise, we will reference the latter location.
        for cylc_refined_script in CYLC_REFINED_SCRIPTS:
            for idx, xml_script_path in enumerate(proc_output_list):
                if cylc_refined_script in xml_script_path:
@@ -253,6 +316,11 @@ def main(args):
                                                .format(CYLC_REFINED_DIR,
                                                        cylc_refined_script)
            
+       # Write out the final list of refineDiag scripts as a list of comma-separated,
+       # single-quoted strings. If there are none found by this point, i.e. the
+       # <refineDiag> were commented out in the XML or none exist (yet the user
+       # selected --do_refineDiag), then write out an empty string and display 
+       # a warning to the user.
        refineDiag_scripts = ",".join(proc_output_list)
        if not refineDiag_scripts:
            refineDiag_scripts = "''"
@@ -281,6 +349,7 @@ def main(args):
             rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
                            value="False")
 
+    # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'],
                    value="'{}'".format(' '.join(comps)))
@@ -302,6 +371,8 @@ def main(args):
     rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'],
                    value="'{}'".format(segment))
 
+    # Loop over all of the PP components, fetching the sources, xyInterp, 
+    # and sourceGrid.
     comp_count = 0
     for comp in comps:
         comp_count += 1
@@ -324,12 +395,13 @@ def main(args):
         sources = set()
         timeseries_count = 0
 
-        # get the number of TS nodes
+        # Get the number of TS nodes
         results = frelist_xpath(args, '{}/timeSeries/@freq'                            \
                                       .format(pp_comp_xpath_header)).split()
         timeseries_count = len(results)
 
-        # loop over the TS nodes
+        # Loop over the TS nodes and write out the frequency, chunklength, and
+        # grid to the remap-pp-components Rose app configuration
         for i in range(1, timeseries_count + 1):
             label = "{}.{}".format(comp, str(i))
 
@@ -365,6 +437,8 @@ def main(args):
         if grid == "native":
             continue
         else:
+            # Write out values to the 'regrid-xy' Rose app as well as the
+            # 'GRID_SPEC' value to the rose-suite configuration.
             rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
 
             sourcegrid_split = sourceGrid.split('-')
@@ -379,6 +453,7 @@ def main(args):
             rose_suite.set(keys=['template variables', 'GRID_SPEC'],
                            value="'{}'".format(gridSpec))
 
+    # Process all of the found PP chunks into the rose-suite configuration
     if args.verbose:
         print("")
     logging.info("Setting PP chunks...")
@@ -414,6 +489,7 @@ def main(args):
                        "'{}'".format(sorted_chunks[1]))
     logging.info("  Chunks used: {}".format(', '.join(sorted_chunks[0:2])))
    
+    # Write out the final configurations.
     if args.verbose:
         print("") 
     logging.info("Writing output files...")
@@ -474,6 +550,10 @@ if __name__ == '__main__':
 
     cylc_loaded = False
 
+    ##########################################################################
+    # Check the OS environment. Exit if FRE has not been loaded or Cylc has
+    # not been loaded (if using the --validate option).
+    ##########################################################################
     if not (FRE_PATH in os.getenv('PATH') or FRE_TEST_PATH in os.getenv('PATH')):
         raise EnvironmentError("Cannot run the XML converter because FRE Bronx "       \
                                "isn't loaded. Please load the latest FRE Bronx "       \
@@ -487,6 +567,7 @@ if __name__ == '__main__':
                                    "the Cylc module isn't loaded. Please "             \
                                    "run 'module load cylc/test' and try again.")
 
+    # Logging settings. The default is throwing only warning messages
     if args.verbose:
         logging.basicConfig(level=logging.INFO, format=LOGGING_FORMAT)
     elif args.quiet:
@@ -494,6 +575,9 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING, format=LOGGING_FORMAT)
 
+    # Alert the user if only 1 or zero PP years are given as an option, and 
+    # notify them that a default of '0000' for those years will be set in the
+    # rose-suite configuration
     if (args.pp_start is not None and args.pp_stop is None)                            \
         or (args.pp_stop is not None and args.pp_start is None):
 
@@ -505,6 +589,10 @@ if __name__ == '__main__':
                         "After the converter has run, please edit the "                \
                         "default '0000' values within your rose-suite.conf")
 
+    # These series of conditionals takes into account input from the user 
+    # (for the PP_START and PP_STOP year) that is not 4 digits or other
+    # nonsensical years. The rose-suite config requires 4 digits for years
+    # and if the year is under '1000' (but > 0), then leading zeros must be used.
     if args.pp_start is not None and args.pp_stop is not None:
         if len(args.pp_start) < 4 and int(args.pp_start) > 0:
             args.pp_start = '0' * (4 - len(args.pp_start)) + args.pp_start
@@ -529,6 +617,9 @@ if __name__ == '__main__':
         print("")
     logging.info("XML conversion complete!")
 
+    # Run the Cylc validator tool on the current directory if conditions are met.
+    # Note: the user must be running the converter in the parent Cylc Workflow
+    # Directory if the validator is run.
     if cylc_loaded:
         if args.verbose:
             print("")
