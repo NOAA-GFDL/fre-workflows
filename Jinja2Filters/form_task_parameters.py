@@ -32,8 +32,8 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         # skip if pp component not desired
         if "all" not in pp_components:
             #print("DEBUG: PP COMP", pp_components, "COMP is", comp)
-            if comp not in pp_components:
-                #print("DEBUG2: comp is not in pp_components", pp_components, "and", comp)
+            if comp not in pp_components: 
+       		#print("DEBUG2: comp not in pp_components", pp_components, "and", comp)
                 continue
         #print("DEBUG: Examining", item, comp)
 
@@ -61,3 +61,4 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
     return(', '.join(answer))
 
 #print(form_task_parameters('native', 'temporal', 'land atmos land_cubic'))
+
