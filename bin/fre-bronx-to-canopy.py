@@ -33,7 +33,7 @@ CYLC_REFINED_SCRIPTS = ["check4ptop.pl",
                         "tracer_refine.ncl",
                         "refineDiag_atmos_cmip6.csh"
                        ]
-CYLC_REFINED_DIR = "'\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag'"
+CYLC_REFINED_DIR = "\\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag"
 PREANALYSIS_SCRIPT = "refineDiag_data_stager_globalAve.csh"
 
 
@@ -262,7 +262,7 @@ def main(args):
     # Otherwise, the reference will be whatever path the XML finds.
     ##########################################################################
     preanalysis_path_xml = None
-    preanalysis_path_cylc = "{}'/{}'".format(CYLC_REFINED_DIR,
+    preanalysis_path_cylc = "'{}/{}'".format(CYLC_REFINED_DIR,
                                              PREANALYSIS_SCRIPT)
 
     # Only need to retrieve the refineDiag scripts if the --do_refinediag setting
@@ -309,10 +309,10 @@ def main(args):
            for idx, xml_script_path in enumerate(proc_output_list):
                if cylc_refined_script in xml_script_path:
                    if cylc_refined_script == "refineDiag_atmos_cmip6.csh":
-                       proc_output_list[idx] = "{}'/{}'".format(CYLC_REFINED_DIR,
+                       proc_output_list[idx] = "'{}/{}'".format(CYLC_REFINED_DIR,
                                                                 cylc_refined_script)
                    else:
-                       proc_output_list[idx] = "{}'/atmos_refine_scripts/{}'"          \
+                       proc_output_list[idx] = "'{}/atmos_refine_scripts/{}'"          \
                                                .format(CYLC_REFINED_DIR,
                                                        cylc_refined_script)
            
