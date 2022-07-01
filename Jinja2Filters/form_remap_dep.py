@@ -12,6 +12,7 @@ See form_remap_dep invocations from flow.cylc  '''
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
+ 
 def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
@@ -35,7 +36,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
     dict_group_source={}
     remap_comp = None 
     print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
-    remap_dep_stmt = "" 
+    remap_dep = "" 
     #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
@@ -79,21 +80,27 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
         if 'P5Y' not in chunk_from_config:
                 print("DEBUG: Skipping as P5Y is requested, no P5Y here", chunk)
                 continue
-        results = results + node.get_value(keys=[item, 'source']).split()
+        results = node.get_value(keys=[item, 'source']).split()
         remap_comp = comp
-    answer = sorted(list(set(results)))
-    if remap_comp is not None:
-       dict_group_source[remap_comp] = answer 
+        answer = sorted(list(set(results)))
+        if remap_comp is not None:
+           #If the same PP component is mapped to several sources per rose-app.conf, we make it a list and append values so we don't replace the key's value 
+         if remap_comp in dict_group_source.keys():
+              dict_group_source[remap_comp].append(answer[0])    
+         else:
+              dict_group_source[remap_comp] = answer 
     if dict_group_source:
-          for key, value in dict_group_source.items(): 
+          for key, value in dict_group_source.items():
+              makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
                     makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
                   else:
                     makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
  
-          remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
-          remap_dep_stmt = remap_dep_stmt + "\n{} => {}".format(makets_stmt,remap_stmt)
-    print(remap_dep_stmt)
-    return(remap_dep_stmt)
+              remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
+              remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
+              remap_dep += """{} 
+              """.format(remap_dep_stmt)
+    return(remap_dep)
 
