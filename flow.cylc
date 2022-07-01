@@ -85,7 +85,6 @@ rename-split-to-pp-native<native>
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
 
 {{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
 {{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
@@ -114,7 +113,6 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
-make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
 {{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) }}
 {{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) }}
 
