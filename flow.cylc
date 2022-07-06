@@ -552,9 +552,15 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
             rose task-run --verbose --app-key analysis
         """
         [[[environment]]]
+            # internally-used vars
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
+            FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
+            FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
+            # fre-analysis template vars
             yr2 = $(cylc date --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
+            descriptor = {{ EXPERIMENT }}
+            fremodule = fre/test
     [[ANALYSIS-{{ PP_CHUNK_A }}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -563,7 +569,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
-    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_CHUNK_A, PP_CHUNK_B) }}
+    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
