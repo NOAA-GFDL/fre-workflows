@@ -2,13 +2,14 @@ import re
 import os
 import metomi.rose.config
 
-def form_analysis_tasks(pp_components, pp_dir, default_chunk1, default_chunk2):
+def form_analysis_tasks(pp_components, pp_dir, start_year, default_chunk1, default_chunk2):
     """Form the analysis tasks from app/analysis/rose-app.conf
 
     Arguments:
         pp_component (str): all, or a space-separated list
                             analysis scripts depending on others will be skipped
         pp_dir (str): absolute filepath root (up to component, not including)
+        start_year (str): will use at yr1 if cumulative mode on
         default_chunk[12] (str): default chunks to use if analysis script does not care
 """
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/analysis/rose-app.conf'
@@ -36,30 +37,49 @@ def form_analysis_tasks(pp_components, pp_dir, default_chunk1, default_chunk2):
                     continue
         #print("DEBUG: Still examining", item)
 
+        item_script = os.path.basename(node.get_value(keys=[item, 'script']))
         item_freq = node.get_value(keys=[item, 'freq'])
         item_chunks_str = node.get_value(keys=[item, 'chunk'])
         if item_chunks_str:
             item_chunks = item_chunks_str.split()
         else:
             item_chunks = [default_chunk1, default_chunk2]
+        item_cumulative_str = node.get_value(keys=[item, 'cumulative'])
+        if item_cumulative_str and bool(item_cumulative_str):
+            item_cumulative = False
+        else:
+            item_cumulative = True
+
+        # write the task family
+        results += """
+            [[{item}]]
+                script = '''
+                    chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+                    $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+                '''
+                [[[environment]]]
+                        component = {comp}
+                        freq = {freq}
+                        staticfile = {pp_dir}/{comp}/{comp}.static.nc
+                        scriptLabel = {item}
+            """.format(item=item, item_script=item_script, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
         # write the tasks
         for chunk in item_chunks:
             results += """
-                [[{item}]]
-                    inherit = ANALYSIS-{chunk}
-                    script = '''
-                        chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item}.$yr1-$yr2
-                        $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item}.$yr1-$yr2
-                    '''
+                [[{item}-{chunk}]]
+                    inherit = ANALYSIS-{chunk}, {item}
                     [[[environment]]]
-                        component = {comp}
-                        frequency = {freq}
-                        chunksize = {chunk}
                         in_data_dir = {pp_dir}/{comp}/ts/{freq}/{chunk}
-                        staticfile = {pp_dir}/{comp}/{comp}.static.nc
             """.format(item=item, chunk=chunk, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
+        # if cumulative NOT false, then set yr1 to the pp start
+        if item_cumulative:
+            results += """
+                        yr1 = {yr1}
+            """.format(yr1=start_year)
+
+    #print("DEBUG: returning", results)
     return(results)
 
-#print(form_analysis_tasks('all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', 'P2Y', 'P4Y'))
+#print(form_analysis_tasks('all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '2000', 'P2Y', 'P4Y'))
