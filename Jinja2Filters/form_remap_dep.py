@@ -78,7 +78,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
             raise Exception("Unknown temporal type:", temporal_type)
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
         if chunk not in chunk_from_config:
-               print("DEBUG: Skipping as {} is requested, but not in rose-config {}:".format(chunk, chunk_from_config))
+               print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
                continue
 
         results = node.get_value(keys=[item, 'source']).split()
