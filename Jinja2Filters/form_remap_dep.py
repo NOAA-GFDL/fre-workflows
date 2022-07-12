@@ -23,7 +23,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
        @param chunk (str): e.g P5Y for 5-year time series 
        @param pp_component (str): all, or a space-separated list
 
-       @return tbd
+       @return remap_dep (multiline str) with Jinja formatting listing source-pp dependencies  
     """
     pp_components = pp_components_str.split(' ')
     if(grid_type == "regrid-xy"):
@@ -77,9 +77,10 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
         else:
             raise Exception("Unknown temporal type:", temporal_type)
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
-        if 'P5Y' not in chunk_from_config:
-                print("DEBUG: Skipping as P5Y is requested, no P5Y here", chunk)
-                continue
+        if chunk not in chunk_from_config:
+               print("DEBUG: Skipping as {} is requested, but not in rose-config {}:".format(chunk, chunk_from_config))
+               continue
+
         results = node.get_value(keys=[item, 'source']).split()
         remap_comp = comp
         answer = sorted(list(set(results)))
