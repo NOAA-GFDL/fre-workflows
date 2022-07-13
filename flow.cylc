@@ -86,11 +86,20 @@ rename-split-to-pp-native<native>
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
+#Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf
+
 {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
-{% if form_remap_dep_PP_CHUNK_A_regrid == "" %}
+{% if not form_remap_dep_PP_CHUNK_A_regrid %}
 {{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}   
 {% endif %}
 {{  form_remap_dep_PP_CHUNK_A_regrid  }}
+
+{% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{% if not form_remap_dep_PP_CHUNK_A_native == "" %}
+{{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}
+{% endif %}
+{{  form_remap_dep_PP_CHUNK_A_native  }}
+
 
 
 {{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
@@ -124,14 +133,14 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
 {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
  
-{% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
+{% if not form_remap_dep_PP_CHUNK_B_regrid %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }} 
 {% endif %}  
 {{ form_remap_dep_PP_CHUNK_B_regrid }}
 
 {% set form_remap_dep_PP_CHUNK_B_regrid  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
 
-{% if form_remap_dep_PP_CHUNK_B_native == "" %}
+{% if not form_remap_dep_PP_CHUNK_B_native %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }}
 {% endif %}
  
