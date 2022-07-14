@@ -1,79 +1,133 @@
 #!jinja2
 
+# Store site-specific flow.cylc configuration in a site/ subdirectory.
+# The site-specific file is included at the end of this file.
+# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)
+# Jinja code between single brackets (i.e. {% code %}) is run.
+# Jinja code with two brackets (i.e. {{ code }}) is printed.
 {% set SITE = 'gfdl' %}
-# calculate the number of history segments per chunk-a
+# Calculate the number of history segments per chunk-a
 {% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
-# calculate the number of chunk-a chunks per chunk-b
+# Calculate the number of chunk-a chunks per chunk-b
 {% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
 
 [meta]
     title = "Postprocessing Example 1"
     description = """
 Postprocessing example that includes Bronx-like functionality,
-and more (such as multiline descriptions!)
 """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
 [scheduler]
-    # Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos
+    # Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos.
+    # (For prototyping and graphing, change this to True.)
     allow implicit tasks = False
     # Configure the directories and files to be included in the remote file installation
     install = app/*, bin/*, etc/*, lib/*
     UTC mode = True
 
 [task parameters]
+# The task parameters (except for component) depend on configuration in Rose apps,
+# so custom Jinja triggers are used to form the lists. Cylc and custom Jinja triggers have these rules:
+# 1. Triggers live in Jinja2Filters/ and must be python
+# 2. The trigger filename must be <trigger-name>.py
+# 3. In the file, trigger must be defined as a function with the same name
+# 4. First argument is passed through as a pipe, and the rest are passed through in the trigger arguments.
+# More info:
+# The python loaded within Cylc has access to some useful Cylc utilities (e.g. metomi.isodatetime.parsers).
+# For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded.
     regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
     regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
     native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
     native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
+    # Standard Jinja2 triggers are also available (e.g. "replace")
     component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
 
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
+
+        # Graph strings are organized by recurrence interval-- when to run the tasks.
+        # Currently, we use 4 intervals: every history-file segment, once (for statics),
+        # every chunk-a, and every chunk-b.
         {{ HISTORY_SEGMENT }} = """
+# Within a recurrence interval, task dependencies are specified with => (depends on), & (and), and | (or).
+# Tasks in a dependency can be single tasks, task families (by convention, in all caps),
+# or "ensembles" expanded by the parameters above.
+# All tasks in the STAGE-HISTORY family (staging history and staging history-refined) are started
+# once the pp-starter task succeeds.
 pp-starter => STAGE-HISTORY
+# Jinja is useful to include or exclude parts of the configuration. In this case, the lines between
+# if DO_REFINEDIAG and endif are used or not used, depending on the value of DO_REFINEDIAG (in rose-suite.conf).
+# All template variables in rose-suite.conf are available as Jinja variables.
+# If refineDiag generation is desired (DO_REFINEDIAG is True), then add these two task dependencies:
+# 1. All tasks in the REFINE-DIAG task family are started once the stage-history task succeeds.
+# 2. stage-history-refined task is started once all the refineDiag tasks succeed.
 {% if DO_REFINEDIAG %}
 stage-history => REFINE-DIAG
 REFINE-DIAG:succeed-all => stage-history-refined
 {% endif %}
+# If preAnalysis is desired (vitals calculations is the canonical case), then start all PRE-ANALYSIS tasks
+# once the stage-history task succeeds.
 {% if DO_PREANALYSIS %}
 stage-history => PRE-ANALYSIS
 {% endif %}
+# If task families are on the left side of the => then a qualifier must be used (e.g. :succeed-all)
+# The angle brackets define the "ensemble" axis, the task paramaters defined above.
+# The next two lines set the major processing for the native and regrid (horizontal regridding) lists of history files.
+# Each history file to be regridded should be regridded once staging is done; then should be split and cataloged
+# (into a standard shards directory set by ISO8601 frequencies and chunks).
+# Each history file needed for native grid processing is similar, except skipping the regridding.
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
+# If HISTORY_DIR_REFINED is set, then use the next 3 lines.
+# After all staging is done, then hard link the refined history files to the history file location (not a great solution).
+# Regridding and splitting native history files should not start until the history-refined output is available.
 {% if HISTORY_DIR_REFINED is defined %}
-STAGE-HISTORY:succeed-all => stage-history-refined-link
+STAGE-HISTORY:succeed-all  => stage-history-refined-link
 stage-history-refined-link => regrid-xy<regrid>
 stage-history-refined-link => split-netcdf-native<native>
 {% endif %}
+# If work-dir cleaning is desired, then remove what should now be safe to remove.
+# Once regridded history files are split, then the regridded history files can be removed.
+# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed.
 {% if CLEAN_WORK %}
-split-netcdf-regrid<regrid> => clean-history-regrid-xy
+split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
 rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
 """
+
+        # The R1 interval is a special interval that runs only once, so it's useful for statics.
         R1 = """
+# The static processing is similar to the "every history segment" processing, except uses different history file lists.
 pp-starter => STAGE-HISTORY
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
-rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static
+# After cataloging the regridded and native statics, remap them to pp components as desired
+rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+# Similarly, if the history-refined is used, then don't process until the history-refined staging is done.
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all => stage-history-refined-link
 stage-history-refined-link => regrid-xy<regrid_static>
 stage-history-refined-link => split-netcdf-native<native_static>
 {% endif %}
+# If work-dir cleaning is set, then remove what should now be safe to remove.
 {% if CLEAN_WORK %}
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
 rename-split-to-pp-native<native_static> => clean-split-native
 remap-pp-components-static => clean-shards-static
-remap-pp-components-static => combine-statics => clean-pp-statics
+combine-statics => clean-pp-statics
 {% endif %}
 """
 
+        # Run the tasks to process CHUNK-A every CHUNK-A, starting after CHUNK-A time
         +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
+# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |
+# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding.
+# This Jinja for loop expands to do this.
 rename-split-to-pp-regrid<regrid>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
 & rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
@@ -84,20 +138,29 @@ rename-split-to-pp-native<native>
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
+# Once all (native and regridded) make-timeseries tasks succeed, then run all tasks in the REMAP-PP_COMPONENTS-CHUNK-A task family
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
+# If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards.
+# However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
+# If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).
+# In the usual case where CHUNK-B is larger than CHUNK-A, do not remove CHUNK-A shards yet as they will be used in CHUNK-B processing.
 {% if PP_CHUNK_B_COUNT == 1 %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 {% endif %}
 {% endif %}
+# If MDTF is requested, then run it after all pp components have finished
 {% if DO_MDTF %}
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => mdtf
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
 """
 
+# If only one pp chunk is used, then skip the CHUNK-B processing.
 {% if PP_CHUNK_B_COUNT > 1 %}
+        # Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
+# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding.
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
@@ -108,7 +171,10 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
+# Remap/save all the components after all make-timeseries tasks have succeeded.
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
+# If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
+# and remove CHUNK-B shards once the final products are saved.
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
