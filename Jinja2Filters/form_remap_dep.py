@@ -103,5 +103,10 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
               remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
               remap_dep += """{} 
               """.format(remap_dep_stmt)
+    try:
+      if not remap_dep:
+          raise ValueError('Exception')
+    except ValueError as e:
+          print(e)
     return(remap_dep)
 
