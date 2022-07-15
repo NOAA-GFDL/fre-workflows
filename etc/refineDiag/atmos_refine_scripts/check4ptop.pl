@@ -7,9 +7,9 @@ use perl qw(module);
 
 my ($ifile,$opt) = @ARGV;
 
-# load ncarg if needed
-if (!grep /^ncarg\/.*/, split/:/, $ENV{"LOADEDMODULES"}) {
-  module ("load", "ncarg/6.2.1");
+# load NCL if needed
+if (!grep /^ncl\/.*/, split/:/, $ENV{"LOADEDMODULES"}) {
+  module ("load", "ncl");
 }
 
 my $flag = "False"; $flag = "True" if $opt;
