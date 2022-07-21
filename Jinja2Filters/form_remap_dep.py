@@ -35,7 +35,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
     ########################
     dict_group_source={}
     remap_comp = None 
-    print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
+    #print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
     remap_dep = "" 
     #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
@@ -72,13 +72,13 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
                 continue
         elif (temporal_type == "temporal"):
             if 'P0Y' in freq:
-                print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
+                #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
                 continue
         else:
             raise Exception("Unknown temporal type:", temporal_type)
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
         if chunk not in chunk_from_config:
-               print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
+               #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
                continue
 
         results = node.get_value(keys=[item, 'source']).split()
