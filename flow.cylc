@@ -99,6 +99,7 @@ rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
 """
 
+        # Recurrence interval definition for statics. (Runs once)
         # The R1 interval is a special interval that runs only once, so it's useful for statics.
         R1 = """
 # The static processing is similar to the "every history segment" processing, except uses different history file lists.
