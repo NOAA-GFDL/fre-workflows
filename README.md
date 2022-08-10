@@ -18,9 +18,13 @@
 # Load Cylc
 1. module load cylc/test
 
+# Validate configuration
+1. rose macro --suite-only              # List validation scripts (for rose-suite.conf)
+1. rose macro --validate --suite-only   # Run validation scripts (for rose-suite.conf)
+1. cylc validate .                      # Validate Cylc+Rose configuration
+
 # Install workflow (on PP/AN)
 1. ssh analysis
-1. cylc validate .
 1. cylc install --no-run-name (`--no-run-name avoids creating runN directories`)
 
 # Start workflow (on PP/AN)
