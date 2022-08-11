@@ -3,8 +3,9 @@
 # Store site-specific flow.cylc configuration in a site/ subdirectory.
 # The site-specific file is included at the end of this file.
 # (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)
-# Jinja code between single brackets (i.e. {% code %}) is run.
-# Jinja code with two brackets (i.e. {{ code }}) is printed.
+# Jinja code between single brackets is run.
+# Jinja code with two brackets is printed.
+# The single bracket form can be commented: {# code #}
 {% set SITE = 'gfdl' %}
 # Calculate the number of history segments per chunk-a
 {% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
@@ -143,6 +144,24 @@ rename-split-to-pp-native<native>
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
 # If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards.
 # However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.
+
+#Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf
+{% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{{ form_remap_dep_PP_CHUNK_A_regrid }}
+{% if form_remap_dep_PP_CHUNK_A_regrid == "" %}
+{{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}   
+{% endif %}
+{{  form_remap_dep_PP_CHUNK_A_regrid  }}
+
+{% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{% if form_remap_dep_PP_CHUNK_A_native == "" %}
+{{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}
+{% endif %}
+{{  form_remap_dep_PP_CHUNK_A_native  }}
+
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
+
+
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
 # If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).
@@ -176,6 +195,24 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
 # If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
 # and remove CHUNK-B shards once the final products are saved.
+
+######Throw validation exception if PP_CHUNK_B is not in rose-app.conf
+
+{% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
+ 
+{% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
+{{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }} 
+{% endif %}  
+{{ form_remap_dep_PP_CHUNK_B_regrid }}
+
+{% set form_remap_dep_PP_CHUNK_B_regrid  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
+
+{% if form_remap_dep_PP_CHUNK_B_native == "" %}
+{{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }}
+{% endif %}
+ 
+{{ form_remap_dep_PP_CHUNK_B_native }}
+
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
