@@ -5,6 +5,7 @@ import metomi.rose.macro
 class RefineDiagChecker(metomi.rose.macro.MacroBase):
 
     """Checks options related to refineDiag:
+       Uses: meta/rose-meta.conf
     1. If either refinediag or preanalysis is switched on, then experiment, gridspec, platform, and target must be set
     2. If refinediag is switched on, then refinediagdir must be set, and must be writable
     3. If refinediag is switched on, then refinediag_script and refinediag_name must be set
