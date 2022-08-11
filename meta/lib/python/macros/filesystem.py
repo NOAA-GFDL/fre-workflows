@@ -7,6 +7,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
 
     """Checks selected directories and files for readability/writability, if they are set:
     readable: GRID_SPEC, HISTORY_DIR, HISTORY_DIR_REFINED, PREANALYSIS_SCRIPT, REFINEDIAG_SCRIPT
+    uses: meta/rose-meta.conf config 
     writable: PTMP_DIR, PP_DIR
     """
 
