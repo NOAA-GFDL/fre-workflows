@@ -20,7 +20,7 @@
 
 # Validate configuration
 1. rose macro --suite-only              # List validation scripts (for rose-suite.conf)
-1. rose macro --validate --suite-only   # Run validation scripts (for rose-suite.conf)
+1. rose macro --validate --suite-only   # Run validation scripts (for rose-suite.conf), uses meta/rose-meta.conf
 1. cylc validate .                      # Validate Cylc+Rose configuration
 
 # Install workflow (on PP/AN)
