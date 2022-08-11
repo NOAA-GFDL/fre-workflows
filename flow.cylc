@@ -48,10 +48,14 @@ Postprocessing example that includes Bronx-like functionality,
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     [[graph]]
-
         # Graph strings are organized by recurrence interval-- when to run the tasks.
         # Currently, we use 4 intervals: every history-file segment, once (for statics),
         # every chunk-a, and every chunk-b.
+
+
+        #
+        # Recurrence interval: every history-file segment
+        #
         {{ HISTORY_SEGMENT }} = """
 # Within a recurrence interval, task dependencies are specified with => (depends on), & (and), and | (or).
 # Tasks in a dependency can be single tasks, task families (by convention, in all caps),
@@ -100,7 +104,10 @@ rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
 """
 
-        # Recurrence interval definition for statics. (Runs once)
+
+        #
+        # Recurrence interval: run only once
+        #
         # The R1 interval is a special interval that runs only once, so it's useful for statics.
         R1 = """
 # The static processing is similar to the "every history segment" processing, except uses different history file lists.
@@ -125,6 +132,10 @@ combine-statics => clean-pp-statics
 {% endif %}
 """
 
+
+        #
+        # Recurrence interval: every CHUNK-A
+        #
         # Run the tasks to process CHUNK-A every CHUNK-A, starting after CHUNK-A time
         +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
 # Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |
@@ -176,6 +187,10 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
 """
 
+
+#
+# Recurrence interval: every CHUNK-B
+#
 # If only one pp chunk is used, then skip the CHUNK-B processing.
 {% if PP_CHUNK_B_COUNT > 1 %}
         # Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time
