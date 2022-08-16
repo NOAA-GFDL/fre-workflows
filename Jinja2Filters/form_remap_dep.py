@@ -65,19 +65,21 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
             #print("DEBUG: Skipping as not right grid")
             continue
         # skip if temporal type is not desired
+        # freq is optional, so if it does not exist then continue on
         freq = node.get_value(keys=[item, 'freq'])
         if temporal_type == "static":
-            if 'P0Y' not in freq:
+            if freq and 'P0Y' not in freq:
                 #print("DEBUG: Skipping as static is requested, no P0Y here", freq)
                 continue
         elif (temporal_type == "temporal"):
-            if 'P0Y' in freq:
+            if freq and 'P0Y' in freq:
                 #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
                 continue
         else:
             raise Exception("Unknown temporal type:", temporal_type)
+        # chunk is optional, so if it does not exist then continue on
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
-        if chunk not in chunk_from_config:
+        if chunk_from_config and chunk not in chunk_from_config:
                #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
                continue
 
