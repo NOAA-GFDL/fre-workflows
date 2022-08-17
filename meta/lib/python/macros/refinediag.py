@@ -30,6 +30,8 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
         # If refinediag is on, then refinediagdir must be writable
         if do_refinediag:
             refine_dir = config.get_value(['template variables', 'HISTORY_DIR_REFINED'])
+            # resolve $USER or ${USER}
+            refine_dir = re.sub('\${?USER}?', os.environ['USER'], refine_dir)
             if refine_dir:
                 # First do a mkdir -p which will pass if it exists but not writable
                 # Then test the directory writability
