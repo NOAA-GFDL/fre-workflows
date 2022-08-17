@@ -18,13 +18,22 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
         # Check if refinediag/preanalysis switches are set
         do_refinediag = config.get_value(['template variables', 'DO_REFINEDIAG'])
         do_preanalysis = config.get_value(['template variables', 'DO_PREANALYSIS'])
+        if do_refinediag == "True":
+            do_refinediag = bool(1)
+        else:
+            do_refinediag = bool(0)
+        if do_preanalysis == "True":
+            do_preanalysis = bool(1)
+        else:
+            do_preanalysis = bool(0)
 
         # If refinediag is on, then refinediagdir must be writable
-        if do_refinediag == True:
-            refine_dir = config.get_value(['template variables', 'HISTORY_DIR_REFINED']).strip('"')
+        if do_refinediag:
+            refine_dir = config.get_value(['template variables', 'HISTORY_DIR_REFINED'])
             if refine_dir:
                 # First do a mkdir -p which will pass if it exists but not writable
                 # Then test the directory writability
+                refine_dir = refine_dir.strip('"')
                 try:
                     os.makedirs(refine_dir, exist_ok=True)
                     if os.access(refine_dir, os.W_OK):
@@ -41,7 +50,7 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
                     "HISTORY_DIR_REFINED must be set when DO_REFINEDIAG is on")
 
         # If either refinediag or preanalysis is on, then experiment/gridspec/platform/target must also be set
-        if do_refinediag == True or do_preanalysis == True:
+        if do_refinediag or do_preanalysis:
             required = ['EXPERIMENT', 'PLATFORM', 'TARGET', 'GRID_SPEC']
             for item in required:
                 if config.get_value(['template variables', item]):
@@ -52,7 +61,7 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
                         f"{item} must be set if either DO_REFINEDIAG or DO_PREANALYSIS is set")
 
         # If refinediag is on, then refinediag_script and refinediag_name must also be set
-        if do_refinediag == True:
+        if do_refinediag:
             required = ['REFINEDIAG_SCRIPT', 'REFINEDIAG_NAME']
             for item in required:
                 if config.get_value(['template variables', item]):
@@ -63,7 +72,7 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
                         f"{item} must be set if DO_REFINEDIAG is set")
 
         # If preanalysis is on, then preanalysis_script and preanalysis_name must also be set
-        if do_preanalysis == True:
+        if do_preanalysis:
             required = ['PREANALYSIS_SCRIPT', 'PREANALYSIS_NAME']
             for item in required:
                 if config.get_value(['template variables', item]):
