@@ -380,13 +380,13 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = SPLIT-NETCDF
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             component = $CYLC_TASK_PARAM_native
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
     [[split-netcdf-native<native>]]
@@ -408,13 +408,13 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[RENAME-SPLIT-TO-PP-NATIVE]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             component = $CYLC_TASK_PARAM_native
     [[RENAME-SPLIT-TO-PP-REGRID]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
@@ -512,7 +512,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             component = $CYLC_TASK_PARAM_regrid
@@ -538,16 +538,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         pre-script = "set -x"
     [[clean-history-regrid-xy]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT"
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy"
     [[clean-pp-statics]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp"
     [[clean-split-native]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/split/native/$CYLC_TASK_CYCLE_POINT"
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native"
     [[clean-split-regrid-xy]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT"
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy"
     [[clean-shards-static]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y"
