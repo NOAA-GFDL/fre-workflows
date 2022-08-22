@@ -38,8 +38,12 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         #print("DEBUG: Examining", item, comp)
 
         # skip if grid type is not desired
-        if node.get_value(keys=[item, 'grid']) != grid_type:
-            #print("DEBUG: Skipping as not right grid")
+        # some grid types (i.e. regrid-xy) have subtypes (i.e. 1deg, 2deg)
+        # in remap-pp-components/rose-app.conf the grid type and subgrid is specified as "regrid-xy/1deg" (e.g.).
+        # So we will strip off after the slash and the remainder is the grid type
+        candidate_grid_type = re.sub('\/.*', '', node.get_value(keys=[item, 'grid']))
+        if candidate_grid_type != grid_type:
+            #print("DEBUG: Skipping as not right grid; got", candidate_grid_type, "and wanted", grid_type)
             continue
 
         # skip if temporal type is not desired
