@@ -170,8 +170,6 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 {% endif %}
 {{  form_remap_dep_PP_CHUNK_A_native  }}
 
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) }}
-
 
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
@@ -220,7 +218,7 @@ make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_C
 {% endif %}  
 {{ form_remap_dep_PP_CHUNK_B_regrid }}
 
-{% set form_remap_dep_PP_CHUNK_B_regrid  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
+{% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
 
 {% if form_remap_dep_PP_CHUNK_B_native == "" %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }}
