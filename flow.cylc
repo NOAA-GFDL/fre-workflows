@@ -388,6 +388,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/history/regrid-xy/$CYLC_TASK_CYCLE_POINT
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT
             component = $CYLC_TASK_PARAM_regrid
+            use_subdirs = 1
     [[split-netcdf-native<native>]]
         inherit = SPLIT-NETCDF-NATIVE
     [[split-netcdf-native<native_static>]]
@@ -416,6 +417,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/split/regrid-xy/$CYLC_TASK_CYCLE_POINT
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
+            use_subdirs = 1
     [[rename-split-to-pp-native<native>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
     [[rename-split-to-pp-native<native_static>]]
@@ -477,6 +479,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
+            use_subdirs = 1
     [[MAKE-TIMESERIES-{{ PP_CHUNK_A }}]]
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
