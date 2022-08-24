@@ -1,0 +1,1 @@
+ls opt | sed 's/rose-suite-//' | sed 's/.conf//'
