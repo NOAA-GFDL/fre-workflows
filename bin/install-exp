@@ -1,0 +1,10 @@
+#!/bin/csh -f
+source $MODULESHOME/init/csh
+module load cylc
+set echo
+cylc validate -O $1 .
+if ($status) then
+    echo "ERROR in validation"
+    exit 1
+endif
+cylc install -O $1 --workflow-name $1
