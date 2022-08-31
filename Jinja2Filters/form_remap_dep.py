@@ -13,7 +13,7 @@ See form_remap_dep invocations from flow.cylc  '''
 # Credit MSD workflow team
  
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
+def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, optional_config):
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
@@ -38,7 +38,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
     #print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
     remap_dep = "" 
     #print("DEBUG: desired pp components:", pp_components)
-    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
+    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/opt/rose-app-' + optional_config + '.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
     makets_stmt = ""
