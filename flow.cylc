@@ -151,11 +151,8 @@ rename-split-to-pp-native<native>
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
-# Once all (native and regridded) make-timeseries tasks succeed, then run all tasks in the REMAP-PP_COMPONENTS-CHUNK-A task family
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
-# If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards.
-# However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.
 
+# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 #Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf
 {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, CONFIG_COMPS) %}
 {{ form_remap_dep_PP_CHUNK_A_regrid }}
@@ -170,7 +167,8 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 {% endif %}
 {{  form_remap_dep_PP_CHUNK_A_native  }}
 
-
+# If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards.
+# However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
 # If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).
@@ -204,13 +202,9 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
-# Remap/save all the components after all make-timeseries tasks have succeeded.
-make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
-# If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
-# and remove CHUNK-B shards once the final products are saved.
 
+# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 ######Throw validation exception if PP_CHUNK_B is not in rose-app.conf
-
 {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, CONFIG_COMPS) %}
  
 {% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
@@ -226,6 +220,8 @@ make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_C
  
 {{ form_remap_dep_PP_CHUNK_B_native }}
 
+# If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
+# and remove CHUNK-B shards once the final products are saved.
 {% if CLEAN_WORK %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
