@@ -172,7 +172,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 
 
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> => clean-shards-{{ HISTORY_SEGMENT }}
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
 # If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).
 # In the usual case where CHUNK-B is larger than CHUNK-A, do not remove CHUNK-A shards yet as they will be used in CHUNK-B processing.
 {% if PP_CHUNK_B_COUNT == 1 %}
