@@ -223,7 +223,7 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 # If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
 # and remove CHUNK-B shards once the final products are saved.
 {% if CLEAN_WORK %}
-make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> => clean-shards-{{ PP_CHUNK_A }}
+make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
 {% endif %}
 """
