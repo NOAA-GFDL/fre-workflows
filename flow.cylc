@@ -176,6 +176,10 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 {% if PP_CHUNK_B_COUNT == 1 %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 {% endif %}
+# If work-dir cleaning is desired, and CHUNK-A is equal to the history segment, and CHUNK-B == CHUNK-A, then
+# remove the shards after remapping
+{% elif CLEAN_WORK and PP_CHUNK_B == PP_CHUNK_A %}
+make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
 {% endif %}
 # If MDTF is requested, then run it after all pp components have finished
 {% if DO_MDTF %}
