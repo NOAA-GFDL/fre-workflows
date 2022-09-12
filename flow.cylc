@@ -552,7 +552,10 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy"
     [[clean-shards-static]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y"
+        script = """
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/P0Y
+        """
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
