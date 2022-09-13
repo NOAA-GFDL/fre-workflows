@@ -18,10 +18,10 @@ Experiments with already created pp configurations are in the `opt/` directory, 
 
 ```
 >bin/list-exps
-c96L33_am4p0_cmip6Diag      # 1,2-yr chunks, read from refinediag dir, many comps, vitals on
-c192L33_am4p0_cmip6Diag     # similar but c192 experiment
-c96L33_am4p0                # 2-yr chunk, otherwise similar
-c96L65_am4p0_cmip6Diag      # 8-day regression output (does not completely work; see notes below)
+c192L33_am4p0_cmip6Diag     # 4-day regression output
+c96L65_am4p0_cmip6Diag      # 8-day regression output
+c96L33_am4p0                # 2 years
+c96L33_am4p0_cmip6Diag      # 2 years
 ```
 
 Pick one of the experiments, to replace in `<exp-name>` usage in the following steps.
