@@ -52,7 +52,8 @@ The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the 
 ```
 >ssh analysis
 
-# choose "jhan" at the load balancer prompt
+# choose "jhan" at the load balancer prompt. Please note that this connects you to an107 node. 
+#CD into your pp.am5 directory where you cloned postprocessing repository initially.
 
 >bin/start-gui              # cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 ```
