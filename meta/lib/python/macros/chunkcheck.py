@@ -18,8 +18,12 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
        		PP_CHUNK_A must be a multiple of HISTORY_SEGMENT
        		PP_CHUNK_B is optional. PP_CHUNK_A is set to PP_CHUNK_B if the latter is absent 
     """
-    def is_formatted_well(self, pp_chunk_a):
-               
+    def is_formatted_well(self, chunk):
+              pattern = 'P\d+Y'
+              False if re.fullmatch(pattern, chunk) else True
+
+   def is_multiple_of(self,chunk,chunkref):
+        True if(chunk[1] % chunkref[1]) == 0) else False
 
     def validate(self, config, meta_config=None):
         """Return a list of errors, if any."""
