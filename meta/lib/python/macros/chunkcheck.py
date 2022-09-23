@@ -21,11 +21,13 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
     def is_formatted_well(self, chunk):
               '''Takes in the chunk value and returns True or False based on the formatting '''
               pattern = 'P\d+Y'
-              False if re.fullmatch(pattern, chunk) else True
+              ret = True if (re.fullmatch(pattern, chunk)) else  False 
+              return ret
 
     def is_multiple_of(self,chunk,chunkref):
         '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter''' 
-        True if(((int)(chunk[2]) % (int)(chunkref[2])) == 0) else False
+        ret = True if(((int)(chunk[2]) % (int)(chunkref[2])) == 0) else False
+        return ret
 
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
@@ -45,7 +47,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         else:
                            #Make sure PP_CHUNK_A is formatted as expected, check corresponding function
                            if(self.is_formatted_well(pp_chunk_a) == False):
-                               self.add_report('Please check the value of PP_CHUNK_A and its formatting')
+                               self.add_report('Please check the value of PP_CHUNK_A and its formatting',pp_chunk_a)
                            #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
                            if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
                                self.add_report(pp_chunk_a, "needs to be a multiple of ", history_seg)
