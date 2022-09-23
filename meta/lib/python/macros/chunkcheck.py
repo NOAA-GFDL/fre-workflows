@@ -21,11 +21,11 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
     def is_formatted_well(self, chunk):
               '''Takes in the chunk value and returns True or False based on the formatting '''
               pattern = 'P\d+Y'
-              return False if re.fullmatch(pattern, chunk) else return True
+              False if re.fullmatch(pattern, chunk) else True
 
-   def is_multiple_of(self,chunk,chunkref):
+    def is_multiple_of(self,chunk,chunkref):
         '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter''' 
-        return True if(chunk[1] % chunkref[1]) == 0) else return False
+        True if(((int)(chunk[2]) % (int)(chunkref[2])) == 0) else False
 
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
@@ -41,7 +41,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         #Raise error if PP_CHUNK_A value is not set
         if not pp_chunk_a:  
                    self.add_report('template variables', 
-                                    pp_chunk_a, "must exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
+                                    pp_chunk_a, "PP_CHUNK_A-- must exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
         else:
                            #Make sure PP_CHUNK_A is formatted as expected, check corresponding function
                            if(self.is_formatted_well(pp_chunk_a) == False):
@@ -50,7 +50,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                            if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
                                self.add_report(pp_chunk_a, "needs to be a multiple of ", history_seg)
                            #If PP_CHUNK_B value is not set, assign PP_CHUNK_A to it 
-			   if not pp_chunk_b:		
+                           if not pp_chunk_b:		
                                pp_chunk_b = pp_chunk_a
                            else: 
                                #If PP_CHUNK_B value exists, check formatting and ensure its a multiple of PP_CHUNK_A
