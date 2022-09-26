@@ -20,8 +20,9 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
     """
     def is_formatted_well(self, chunk):
               '''Takes in the chunk value and returns True or False based on the formatting '''
-              pattern = 'P\d+Y'
-              ret = True if (re.fullmatch(pattern, chunk)) else  False 
+              pattern = r'[P]\d{1,3}[YDM]'
+              chunk = re.sub('"', '', chunk)
+              ret = False if (re.match(pattern, chunk) is None) else True
               return ret
 
     def is_multiple_of(self,chunk,chunkref):
