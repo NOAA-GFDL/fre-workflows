@@ -22,12 +22,19 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
               '''Takes in the chunk value and returns True or False based on the formatting '''
               pattern = r'[P]\d{1,3}[YDM]'
               chunk = re.sub('"', '', chunk)
-              ret = False if (re.match(pattern, chunk) is None) else True
+              ret = False if (re.fullmatch(pattern, chunk) is None) else True
               return ret
 
     def is_multiple_of(self,chunk,chunkref):
-        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter''' 
-        ret = True if(((int)(chunk[2]) % (int)(chunkref[2])) == 0) else False
+        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
+       #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT 
+        ppchunk_digits = re.search(r'\d+', chunk)
+        ppchunk = ppchunk_digits.group(0)
+ 
+        refchunk_digits = re.search(r'\d+', chunkref) 
+        refchunk = refchunk_digits.group(0)
+   
+        ret = True if(((int)(ppchunk) % (int)(refchunk)) == 0) else False
         return ret
 
     def validate(self, config, meta_config=None):
