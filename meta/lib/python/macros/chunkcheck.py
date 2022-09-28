@@ -47,9 +47,10 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
             history_seg = config.get_value(['template variables', 'HISTORY_SEGMENT'])
         except:
             self.add_report('Please check if values exist for PP_CHUNK_A PP_CHUNK_B HISTORY_SEGMENT in rose-suite.conf for your experiment') 
-       
+        pp_chunk_a = pp_chunk_a.strip('\"')
+        pp_chunk_b = pp_chunk_b.strip('\"')  
         #Raise error if PP_CHUNK_A value is not set
-        if not pp_chunk_a:  
+        if not pp_chunk_a: 
                    self.add_report('template variables', 
                                     pp_chunk_a, "PP_CHUNK_A-- must exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
         else:
@@ -59,14 +60,13 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                            #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
                            if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
                                self.add_report(pp_chunk_a, "needs to be a multiple of ", history_seg)
-                           #If PP_CHUNK_B value is not set, assign PP_CHUNK_A to it 
-                           if not pp_chunk_b:		
+                           #If iP_CHUNK_B value is not set, assign PP_CHUNK_A to it 
+                           if not pp_chunk_b or pp_chunk_b == "":		
                                pp_chunk_b = pp_chunk_a
                            else: 
                                #If PP_CHUNK_B value exists, check formatting and ensure its a multiple of PP_CHUNK_A
                                if(self.is_formatted_well(pp_chunk_b) == False):
                                     self.add_report('Please check the value of PP_CHUNK_B and its formatting') 
-                       
                                if(self.is_multiple_of(pp_chunk_b,pp_chunk_a) == False):
                                     self.add_report(pp_chunk_b, "needs to be a multiple of ", pp_chunk_a)
  
