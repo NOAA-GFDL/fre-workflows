@@ -61,7 +61,8 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                            if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
                                self.add_report(pp_chunk_a, "needs to be a multiple of ", history_seg)
                            #If iP_CHUNK_B value is not set, assign PP_CHUNK_A to it 
-                           if not pp_chunk_b or pp_chunk_b == "":		
+                           if not pp_chunk_b or pp_chunk_b == "":
+                               print("Note: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")  		
                                pp_chunk_b = pp_chunk_a
                            else: 
                                #If PP_CHUNK_B value exists, check formatting and ensure its a multiple of PP_CHUNK_A
