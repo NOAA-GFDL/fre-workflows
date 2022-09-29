@@ -31,10 +31,11 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
        ppd = pp_duration.get_days_and_seconds()
        historyseg_duration = parse.DurationParser().parse(chunkref)
        hsd = historyseg_duration.get_days_and_seconds()
-       hsd_days = hsd[0] 
-       if(hsd_days % 365 == 0) & (ppd[0] % 365 != 0):
-           hsd_days = hsd_days - (5 * (hsd_days/365) )   
-       ret = True if(((int)(ppd[0]) % (int)(hsd_days)) == 0) else False
+       ppd_days = ppd[0] 
+       if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
+           ppd_days = ppd_days - (5 * (ppd_days/365) )  
+           print("Setting ",ppd[0],"to ",ppd_days) 
+       ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
        return ret
 
     def validate(self, config, meta_config=None):
