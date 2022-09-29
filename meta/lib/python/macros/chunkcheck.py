@@ -10,6 +10,7 @@ chunkcheck.py (rose) validates the values of PP_CHUNK_A and PP_CHUNK_B in rose-s
 # Author(s)
 # Created by A.Radhakrishnan on 09/20/2022 
 # Credit MSD workflow team
+import metomi.isodatetime.parsers as parse
 
 class ChunkChecker(metomi.rose.macro.MacroBase):
 
@@ -18,24 +19,23 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
        		PP_CHUNK_A must be a multiple of HISTORY_SEGMENT
        		PP_CHUNK_B is optional. PP_CHUNK_A is set to PP_CHUNK_B if the latter is absent 
     """
-    def is_formatted_well(self, chunk):
-              '''Takes in the chunk value and returns True or False based on the formatting '''
-              pattern = r'[P]\d{1,3}[YDM]'
-              chunk = re.sub('"', '', chunk)
-              ret = False if (re.fullmatch(pattern, chunk) is None) else True
-              return ret
 
     def is_multiple_of(self,chunk,chunkref):
-        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
-       #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT 
-        ppchunk_digits = re.search(r'\d+', chunk)
-        ppchunk = ppchunk_digits.group(0)
- 
-        refchunk_digits = re.search(r'\d+', chunkref) 
-        refchunk = refchunk_digits.group(0)
-   
-        ret = True if(((int)(ppchunk) % (int)(refchunk)) == 0) else False
-        return ret
+       '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
+       #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT
+       try: 
+          pp_duration = parse.DurationParser().parse(chunk)
+       except Exception as e:
+          self.add_report('Please check the value of chunk specifications and its formatting',pp_chunk_a)
+          raise(e) 
+       ppd = pp_duration.get_days_and_seconds()
+       historyseg_duration = parse.DurationParser().parse(chunkref)
+       hsd = historyseg_duration.get_days_and_seconds()
+       hsd_days = hsd[0] 
+       if(hsd_days % 365 == 0) & (ppd[0] % 365 != 0):
+           hsd_days = hsd_days - (5 * (hsd_days/365) )   
+       ret = True if(((int)(ppd[0]) % (int)(hsd_days)) == 0) else False
+       return ret
 
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
@@ -48,15 +48,13 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         except:
             self.add_report('Please check if values exist for PP_CHUNK_A PP_CHUNK_B HISTORY_SEGMENT in rose-suite.conf for your experiment') 
         pp_chunk_a = pp_chunk_a.strip('\"')
-        pp_chunk_b = pp_chunk_b.strip('\"')  
+        pp_chunk_b = pp_chunk_b.strip('\"') 
+        history_seg = history_seg.strip('\"') 
         #Raise error if PP_CHUNK_A value is not set
         if not pp_chunk_a: 
                    self.add_report('template variables', 
                                     pp_chunk_a, "PP_CHUNK_A-- must exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
         else:
-                           #Make sure PP_CHUNK_A is formatted as expected, check corresponding function
-                           if(self.is_formatted_well(pp_chunk_a) == False):
-                               self.add_report('Please check the value of PP_CHUNK_A and its formatting',pp_chunk_a)
                            #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
                            if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
                                self.add_report(pp_chunk_a, "needs to be a multiple of ", history_seg)
@@ -65,9 +63,6 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                                print("Note: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")  		
                                pp_chunk_b = pp_chunk_a
                            else: 
-                               #If PP_CHUNK_B value exists, check formatting and ensure its a multiple of PP_CHUNK_A
-                               if(self.is_formatted_well(pp_chunk_b) == False):
-                                    self.add_report('Please check the value of PP_CHUNK_B and its formatting') 
                                if(self.is_multiple_of(pp_chunk_b,pp_chunk_a) == False):
                                     self.add_report(pp_chunk_b, "needs to be a multiple of ", pp_chunk_a)
  
