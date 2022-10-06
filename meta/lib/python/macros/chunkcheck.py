@@ -2,6 +2,7 @@
 import os
 import re
 import metomi.rose.macro
+import metomi.isodatetime.parsers as parse
 
 """
 chunkcheck.py (rose) validates the values of PP_CHUNK_A and PP_CHUNK_B in rose-suite.conf. See class ChunkChecker for details. 
@@ -10,7 +11,6 @@ chunkcheck.py (rose) validates the values of PP_CHUNK_A and PP_CHUNK_B in rose-s
 # Author(s)
 # Created by A.Radhakrishnan on 09/20/2022 
 # Credit MSD workflow team
-import metomi.isodatetime.parsers as parse
 
 class ChunkChecker(metomi.rose.macro.MacroBase):
 
