@@ -23,19 +23,21 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
     def is_multiple_of(self,chunk,chunkref):
        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
        #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT
+       pp_duration = None
+       ret = False
        try: 
           pp_duration = parse.DurationParser().parse(chunk)
        except Exception as e:
-          self.add_report('Please check the value of chunk specifications and its formatting',pp_chunk_a)
-          raise(e) 
-       ppd = pp_duration.get_days_and_seconds()
-       historyseg_duration = parse.DurationParser().parse(chunkref)
-       hsd = historyseg_duration.get_days_and_seconds()
-       ppd_days = ppd[0] 
-       if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
-           ppd_days = ppd_days - (5 * (ppd_days/365) )  
-           print("Setting ",ppd[0],"to ",ppd_days) 
-       ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
+          self.add_report('template variables',"PP_CHUNK_A(or B)",chunk,'Please check the value of chunk specifications and its formatting')
+       if(pp_duration is not None): 
+           ppd = pp_duration.get_days_and_seconds()
+           historyseg_duration = parse.DurationParser().parse(chunkref)
+           hsd = historyseg_duration.get_days_and_seconds()
+           ppd_days = ppd[0] 
+           if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
+               ppd_days = ppd_days - (5 * (ppd_days/365) )  
+               print("Setting ",ppd[0],"to ",ppd_days) 
+           ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
        return ret
 
     def validate(self, config, meta_config=None):
@@ -60,7 +62,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                 self.add_report('template variables',"PP_CHUNK_A",pp_chunk_a, "Duration in days needs to be a multiple of HISTORY_SEGMENT({history_seg})")
             #If P_CHUNK_B value is not set, assign PP_CHUNK_A to it 
             if not pp_chunk_b or pp_chunk_b == "":
-                print("Note: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")	
+                print("INFO: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")	
                 pp_chunk_b = pp_chunk_a
             else: 
                 if(self.is_multiple_of(pp_chunk_b,pp_chunk_a) == False):
