@@ -47,22 +47,22 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
             pp_chunk_b = config.get_value(['template variables', 'PP_CHUNK_B'])
             history_seg = config.get_value(['template variables', 'HISTORY_SEGMENT'])
         except:
-            self.add_report('Please check if values exist for PP_CHUNK_A PP_CHUNK_B HISTORY_SEGMENT in rose-suite.conf for your experiment') 
+            print('Please check if values exist for PP_CHUNK_A PP_CHUNK_B HISTORY_SEGMENT in rose-suite.conf for your experiment') 
         pp_chunk_a = pp_chunk_a.strip('\"')
         pp_chunk_b = pp_chunk_b.strip('\"') 
-        history_seg = history_seg.strip('\"') 
+        history_seg = history_seg.strip('\"')
         #Raise error if PP_CHUNK_A value is not set
-        if not pp_chunk_a: 
+        if not pp_chunk_a:
             self.add_report('template variables',"PP_CHUNK_A",pp_chunk_a," MUST exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
         else:
             #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
             if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
-                self.add_report('template variables',"PP_CHUNK_A", f"{pp_chunk_a} duration in days needs to be a multiple of HISTORY_SEGMENT({history_seg})")
+                self.add_report('template variables',"PP_CHUNK_A",pp_chunk_a, "Duration in days needs to be a multiple of HISTORY_SEGMENT({history_seg})")
             #If P_CHUNK_B value is not set, assign PP_CHUNK_A to it 
             if not pp_chunk_b or pp_chunk_b == "":
                 print("Note: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")	
                 pp_chunk_b = pp_chunk_a
             else: 
                 if(self.is_multiple_of(pp_chunk_b,pp_chunk_a) == False):
-                    self.add_report("template variables","PP_CHUNK_B", f"{pp_chunk_b} duration in days needs to be a multiple of PP_CHUNK_A ({pp_chunk_a})")
+                    self.add_report("template variables","PP_CHUNK_B", pp_chunk_b, "Duration in days needs to be a multiple of PP_CHUNK_A ({pp_chunk_a})")
         return self.reports
