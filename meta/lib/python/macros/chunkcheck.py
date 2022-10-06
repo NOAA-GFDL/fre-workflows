@@ -53,7 +53,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         history_seg = history_seg.strip('\"') 
         #Raise error if PP_CHUNK_A value is not set
         if not pp_chunk_a: 
-            self.add_report('template variables',"PP_CHUNK_A", " MUST exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
+            self.add_report('template variables',"PP_CHUNK_A",pp_chunk_a," MUST exist and set to ISO8601 duration of the desired post-processed output. e.g P1Y for one year chunk")
         else:
             #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
             if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
