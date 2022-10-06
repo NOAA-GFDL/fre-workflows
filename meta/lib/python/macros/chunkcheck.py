@@ -3,6 +3,7 @@ import os
 import re
 import metomi.rose.macro
 import metomi.isodatetime.parsers as parse
+import sys
 
 """
 chunkcheck.py (rose) validates the values of PP_CHUNK_A and PP_CHUNK_B in rose-suite.conf. See class ChunkChecker for details. 
@@ -20,25 +21,29 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
        		PP_CHUNK_B is optional. PP_CHUNK_A is set to PP_CHUNK_B if the latter is absent 
     """
 
-    def is_multiple_of(self,chunk,chunkref):
+    def is_multiple_of(self,chunk,chunkref=None):
        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
        #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT
        pp_duration = None
-       chunkref = None
        ret = False
+       historyseg_duration = None
        try: 
           pp_duration = parse.DurationParser().parse(chunk)
        except Exception as e:
           self.add_report('template variables',"PP_CHUNK_A(or B)",chunk,'Please check the value of chunk specifications and its formatting')
        if(pp_duration is not None and chunkref is not None): 
            ppd = pp_duration.get_days_and_seconds()
-           historyseg_duration = parse.DurationParser().parse(chunkref)
-           hsd = historyseg_duration.get_days_and_seconds()
-           ppd_days = ppd[0] 
-           if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
-               ppd_days = ppd_days - (5 * (ppd_days/365) )  
-               print("Setting ",ppd[0],"to ",ppd_days) 
-           ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
+           try:
+               historyseg_duration = parse.DurationParser().parse(chunkref)
+           except Exception as e :
+               self.add_report('template variables',"HISTORY_SEGMENT",chunkref,e)
+           if(historyseg_duration is not None):
+               hsd = historyseg_duration.get_days_and_seconds()
+               ppd_days = ppd[0] 
+               if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
+                   ppd_days = ppd_days - (5 * (ppd_days/365) )  
+                   print("Setting ",ppd[0],"to ",ppd_days) 
+               ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
        return ret
 
     def validate(self, config, meta_config=None):
