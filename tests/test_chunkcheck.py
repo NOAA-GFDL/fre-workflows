@@ -23,7 +23,7 @@ def testf_is_multiple_of():
    output = cc.is_multiple_of('P5D','P1W')
    assert output == False
 
-def testf_suiteload():
+def testf_validate():
    '''load a suite with validation issue '''
    config_node = ConfigNode()
    cc = ChunkChecker()
@@ -33,7 +33,7 @@ def testf_suiteload():
    output = cc.validate(config)
    assert "MUST exist and needs to be a multiple of HISTORY_SEGMENT" in str(output)
 
-def tests_suiteload():
+def tests_validate():
    '''load a suite with validation issue '''
    config_node = ConfigNode()
    cc = ChunkChecker()
