@@ -343,18 +343,30 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             fi
             hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
         """
-    [[refineDiag-{{ REFINEDIAG_NAME }}]]
-        inherit = REFINE-DIAG
-        script = """
-            ls
-            echo NOTE: About to source user script
-            if csh {{ REFINEDIAG_SCRIPT }}; then
-                echo NOTE: User script exited normally
-            else
-                echo ERROR: User script got an error status $?
-                exit 1
-            fi
-        """
+
+        {# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
+        {# Create a 'macro' function to reduce code repeat #}
+        {% macro exec_refine(script_name) -%}
+            inherit = REFINE-DIAG
+            script = """
+                ls
+                echo NOTE: About to source user script
+                if csh {{ script_name }}; then
+                    echo NOTE: User script exited normally
+                else
+                    echo ERROR: User script got an error status $?
+                    exit 1
+                fi  
+            """ 
+        {%- endmacro %}
+        
+        {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
+        {% set refineDiag_scripts = REFINEDIAG_SCRIPT.split(' ') %}
+        {% for refineDiag_path in refineDiag_scripts %}
+            [[{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
+                {{ exec_refine(refineDiag_path) }}
+        {% endfor %}
+
 {% endif %}
 {% if DO_PREANALYSIS and PREANALYSIS_NAME is defined and PREANALYSIS_SCRIPT is defined %}
     [[preAnalysis-{{ PREANALYSIS_NAME }}]]
