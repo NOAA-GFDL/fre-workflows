@@ -1,0 +1,27 @@
+{
+    "defaults": {
+        "table_id": "day",
+        "frequency": "day",
+        "realm": "atmos",
+        "history_file": "atmos_daily",
+        "inputGrid": "cubedsphere",
+        "xyInterp": "360,576",
+        "gridSpec": "/archive/h1g/mdt/awg/input/grid/c192_OM4_025_grid_No_mg_drag_v20160808.tar",
+        "interpMethod": "conserve_order2"
+    },
+    "variable_entry": {
+        "pr": {
+            "dimensions": "longitude latitude time",
+            "model_module": "moist",
+            "model_variable": "precip"
+        },
+        "ta": {
+            "dimensions": "longitude latitude plev19 time",
+            "model_module": "plev19"
+        },
+        "omega": {
+            "dimensions": "longitude latitude plev19 time",
+            "model_module": "plev19"
+        }
+    }
+}
