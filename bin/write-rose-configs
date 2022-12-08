@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# write-rose-configs
+# This script accepts an in-house, so-far-undocumented, extended
+# CMOR table format, and writes the Rose app configurations for
+# regrid-xy and remap-pp-components.
 import argparse
 import json
 import metomi.rose.config as rose
