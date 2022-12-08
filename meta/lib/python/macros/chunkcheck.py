@@ -21,52 +21,79 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
        		PP_CHUNK_B is optional. PP_CHUNK_A is set to PP_CHUNK_B if the latter is absent 
     """
 
-    def is_multiple_of(self,chunk,chunkref=None):
-       '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
-       #extract numbers from PP_CHUNK_A,B or HISTORY_SEGMENT
-       pp_duration = None
-       ret = False
-       historyseg_duration = None
-       try: 
-          pp_duration = parse.DurationParser().parse(chunk)
-       except Exception as e:
-          self.add_report('template variables',"PP_CHUNK_A(or B)",chunk,'Please check the value of chunk specifications and its formatting')
-       if(pp_duration is not None and chunkref is not None): 
-           ppd = pp_duration.get_days_and_seconds()
-           try:
-               historyseg_duration = parse.DurationParser().parse(chunkref)
-           except Exception as e :
-               self.add_report('template variables',"HISTORY_SEGMENT",chunkref,e)
-           if(historyseg_duration is not None):
-               hsd = historyseg_duration.get_days_and_seconds()
-               ppd_days = ppd[0] 
-               if(ppd_days % 365 == 0) & (hsd[0] % 365 != 0):
-                   ppd_days = ppd_days - (5 * (ppd_days/365) )  
-                   print("Setting ",ppd[0],"to ",ppd_days) 
-               ret = True if(((int)(ppd_days) % (int)(hsd[0])) == 0) else False
-       return ret
+    def is_multiple_of(self, big_chunk, small_chunk):
+        '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
+        big_chunk_days = big_chunk.get_days_and_seconds()[0]
+        small_chunk_days = small_chunk.get_days_and_seconds()[0]
+        if big_chunk_days % small_chunk_days == 0:
+            return True
+        else:
+            return False
 
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
 
-        #Get values of PP_CHUNK_A,B and HISTORY_SEGMENT from rose_suite.conf 
-        try:
-            pp_chunk_a = config.get_value(['template variables', 'PP_CHUNK_A'])
-            pp_chunk_b = config.get_value(['template variables', 'PP_CHUNK_B'])
-            history_seg = config.get_value(['template variables', 'HISTORY_SEGMENT'])
-        except:
-            print('Please check if values exist for PP_CHUNK_A PP_CHUNK_B HISTORY_SEGMENT in rose-suite.conf for your experiment') 
-        pp_chunk_a = pp_chunk_a.strip('\"')
-        pp_chunk_b = pp_chunk_b.strip('\"') 
-        history_seg = history_seg.strip('\"')
-        #Make sure the PP chunk is a multiple of the history segment value PP chunk is a multiple of the history segment value 
-        if(self.is_multiple_of(pp_chunk_a,history_seg) == False):
-           self.add_report('template variables',"PP_CHUNK_A",pp_chunk_a, "Duration in days MUST exist and needs to be a multiple of HISTORY_SEGMENT:"+history_seg)
-        #If P_CHUNK_B value is not set, assign PP_CHUNK_A to it 
-        if not pp_chunk_b or pp_chunk_b == "":
-            print("INFO: No value found for PP_CHUNK_B. Workflow will assign PP_CHUNK_A to PP_CHUNK_B")	
-            pp_chunk_b = pp_chunk_a
-        else: 
-            if(self.is_multiple_of(pp_chunk_b,pp_chunk_a) == False):
-                self.add_report("template variables","PP_CHUNK_B", pp_chunk_b, "Duration in days (if exists) needs to be a multiple of PP_CHUNK_A:"+pp_chunk_a)
+        # If PP_COMPONENTS is not set, assume we're in the default config and exit
+        if not config.get_value(['template variables', 'PP_COMPONENTS']):
+            return self.reports
+
+        # history_segment and pp_chunk_a are required and must be iso8601-parsable
+        # if missing, add reports and exit early
+        history_segment = config.get_value(['template variables', 'HISTORY_SEGMENT'])
+        history_segment_duration = None
+        if history_segment:
+            history_segment = history_segment.strip('\"')
+            try:
+                history_segment_duration = parse.DurationParser().parse(history_segment)
+            except:
+                self.add_report(
+                    'template variables', 'HISTORY_SEGMENT', history_segment,
+                    "Could not be parsed as ISO8601 duration")
+        else:
+            self.add_report(
+                'template variables', "HISTORY_SEGMENT", history_segment,
+                "Required and not set")
+
+        pp_chunk_a = config.get_value(['template variables', 'PP_CHUNK_A'])
+        pp_chunk_a_duration = None
+        if pp_chunk_a:
+            pp_chunk_a = pp_chunk_a.strip('\"')
+            try:
+                pp_chunk_a_duration = parse.DurationParser().parse(pp_chunk_a)
+            except:
+                self.add_report(
+                    'template variables', 'PP_CHUNK_A', pp_chunk_a,
+                    "Could not be parsed as ISO8601 duration")
+        else:
+            self.add_report(
+                'template variables', "PP_CHUNK_A", pp_chunk_a,
+                "Required and not set")
+
+        if not history_segment_duration or not pp_chunk_a_duration:
+            return self.reports
+
+
+        # check chunk_a and history_segment consistency
+        if not self.is_multiple_of(pp_chunk_a_duration, history_segment_duration):
+            self.add_report(
+                'template variables', "PP_CHUNK_A", pp_chunk_a,
+                f"Must be a multiple of HISTORY_SEGMENT ({history_segment})")
+
+        # if chunk_b is set, check chunk_a and chunk_b consistency
+        pp_chunk_b = config.get_value(['template variables', 'PP_CHUNK_B'])
+        if pp_chunk_b:
+            pp_chunk_b = pp_chunk_b.strip('\"') 
+            pp_chunk_b_duration = None
+            try:
+                pp_chunk_b_duration = parse.DurationParser().parse(pp_chunk_b)
+            except:
+                self.add_report(
+                    'template variables', 'PP_CHUNK_B', pp_chunk_b,
+                    "Could not be parsed as ISO8601 duration")
+            if pp_chunk_b_duration:
+                if not self.is_multiple_of(pp_chunk_b_duration, pp_chunk_a_duration):
+                    self.add_report(
+                        "template variables", "PP_CHUNK_B", pp_chunk_b,
+                        f"If set, PP_CHUNK_B must be a multiple of PP_CHUNK_A ({pp_chunk_a})")
+
         return self.reports

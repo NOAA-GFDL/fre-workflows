@@ -361,15 +361,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         {%- endmacro %}
         
         {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
-        {% set refineDiag_scripts = REFINEDIAG_SCRIPT.split(' ') %}
+        {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
         {% for refineDiag_path in refineDiag_scripts %}
-            [[{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
+            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
                 {{ exec_refine(refineDiag_path) }}
         {% endfor %}
 
 {% endif %}
-{% if DO_PREANALYSIS and PREANALYSIS_NAME is defined and PREANALYSIS_SCRIPT is defined %}
-    [[preAnalysis-{{ PREANALYSIS_NAME }}]]
+{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] %}
+    [[preAnalysis-{{ preanalysis_name }}]]
         inherit = PRE-ANALYSIS
         script = """
             ls
