@@ -314,7 +314,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             target = {{ TARGET }}
             segment_months = {{ HISTORY_SEGMENT }}
             basedate = is-this-needed
-            gridspec = {{ GRID_SPEC }}
+            gridspec = {{ PP_GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
 {% endif %}
 {% if DO_REFINEDIAG %}
