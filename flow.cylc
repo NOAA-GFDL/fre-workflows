@@ -453,7 +453,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
             component = $CYLC_TASK_PARAM_component
-            ROSE_APP_OPT_CONF_KEYS = {{ CONFIG_COMPS }}
     [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -530,7 +529,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             component = $CYLC_TASK_PARAM_regrid
-            ROSE_APP_OPT_CONF_KEYS = {{ CONFIG_REGRID }}
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY
     [[regrid-xy<regrid_static>]]
