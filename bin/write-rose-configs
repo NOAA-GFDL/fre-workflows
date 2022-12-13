@@ -25,15 +25,16 @@ def process_file (input_file):
     regrid_file = 'app/regrid-xy/rose-app.conf'
     config_node = rose.load(regrid_file)
 
-    # Write info to regrid config
+    # Write info to regrid config if regridding is requested
     comp = input_json['Header']['table_id']
-    config_node.set([comp, 'inputGrid'], input_json['Header']['inputGrid'])
-    config_node.set([comp, 'inputRealm'], input_json['Header']['realm'])
     try:
         xyInterp = input_json['Header']['xyInterp']
     except:
         xyInterp = None
     if xyInterp:
+        config_node.set([comp, 'inputGrid'], input_json['Header']['inputGrid'])
+        config_node.set([comp, 'inputRealm'], input_json['Header']['realm'])
+        config_node.set([comp, 'sources'], " ".join(input_json['Header']['history_files']))
         if xyInterp == "default":
             config_node.set([comp, 'outputGridType'], "default")
         else:
@@ -41,11 +42,10 @@ def process_file (input_file):
             config_node.set([comp, 'outputGridLat'], lat_lon[0])
             config_node.set([comp, 'outputGridLon'], lat_lon[1])
             config_node.set([comp, 'outputGridType'], lat_lon[0] + '_' + lat_lon[1])
-    config_node.set([comp, 'sources'], " ".join(input_json['Header']['history_files']))
-    try:
-        config_node.set([comp, 'interpMethod'], input_json['Header']['interpMethod'])
-    except:
-        pass
+        try:
+            config_node.set([comp, 'interpMethod'], input_json['Header']['interpMethod'])
+        except:
+            pass
     #print(config_node)
 
     # Save regrid config
@@ -58,14 +58,34 @@ def process_file (input_file):
     config_node = rose.load(remap_file)
 
     # Write info to remap config
+    # If component already exists in remap config, then append to source
+    # and verify grid is the same
+    try:
+        old_grid = config_node.get([comp, 'grid']).value
+    except:
+        old_grid = None
+    try:
+        old_sources_list = config_node.get([comp, 'source']).value
+        sources = set(old_sources_list.split(" "))
+    except:
+        sources = set()
+
     if xyInterp:
         if xyInterp == "default":
-            config_node.set([comp, 'grid'], 'regrid-xy/' + 'default')
+            new_grid = 'regrid-xy/' + 'default'
         else:
-            config_node.set([comp, 'grid'], 'regrid-xy/' + lat_lon[0] + '_' + lat_lon[1])
+            new_grid = 'regrid-xy/' + lat_lon[0] + '_' + lat_lon[1]
     else:
-        config_node.set([comp, 'grid'], 'native')
-    config_node.set([comp, 'source'], " ".join(input_json['Header']['history_files']))
+        new_grid = 'native'
+
+    if old_grid and old_grid != new_grid:
+        raise Exception("Component must have only one grid:", old_grid, new_grid)
+
+    for hf in input_json['Header']['history_files']:
+        sources.add(hf)
+
+    config_node.set([comp, 'grid'], new_grid)
+    config_node.set([comp, 'source'], " ".join(list(sources)))
 
     # Save remap config
     f = open(remap_file, 'w')
