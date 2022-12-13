@@ -12,6 +12,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('input_files', type=str, nargs='+')
 args = parser.parse_args()
 
+def check_consistency(one, two):
+    """If two is set, then two.value must be equal to one"""
+    if two:
+        if one == two.value:
+            pass
+        else:
+            raise Exception("Consistency violation:", one, two)
+
 def process_file (input_file):
     """Append to regrid-xy and remap-pp-component config files"""
 
@@ -26,26 +34,44 @@ def process_file (input_file):
     config_node = rose.load(regrid_file)
 
     # Write info to regrid config if regridding is requested
+    # If component already exists in remap config, then append to sources
+    # and verify grid, realm, lat, lon, type, interp-method are the same if set
     comp = input_json['Header']['table_id']
     try:
         xyInterp = input_json['Header']['xyInterp']
     except:
         xyInterp = None
     if xyInterp:
+        check_consistency(input_json['Header']['inputGrid'], config_node.get([comp, 'inputGrid']))
         config_node.set([comp, 'inputGrid'], input_json['Header']['inputGrid'])
+        check_consistency(input_json['Header']['realm'], config_node.get([comp, 'inputRealm']))
         config_node.set([comp, 'inputRealm'], input_json['Header']['realm'])
-        config_node.set([comp, 'sources'], " ".join(input_json['Header']['history_files']))
+        try:
+            old_sources_list = config_node.get([comp, 'sources']).value
+            sources = set(old_sources_list.split(" "))
+        except:
+            sources = set()
+        for hf in input_json['Header']['history_files']:
+            sources.add(hf)
+        config_node.set([comp, 'sources'], " ".join(list(sources)))
         if xyInterp == "default":
+            check_consistency("default", config_node.get([comp, 'outputGridType']))
             config_node.set([comp, 'outputGridType'], "default")
         else:
             lat_lon = input_json['Header']['xyInterp'].split(',')
+            check_consistency(lat_lon[0], config_node.get([comp, 'outputGridLat']))
             config_node.set([comp, 'outputGridLat'], lat_lon[0])
+            check_consistency(lat_lon[1], config_node.get([comp, 'outputGridLon']))
             config_node.set([comp, 'outputGridLon'], lat_lon[1])
+            check_consistency(lat_lon[0] + '_' + lat_lon[1], config_node.get([comp, 'outputGridType']))
             config_node.set([comp, 'outputGridType'], lat_lon[0] + '_' + lat_lon[1])
         try:
-            config_node.set([comp, 'interpMethod'], input_json['Header']['interpMethod'])
+            interp_method = input_json['Header']['interpMethod']
         except:
-            pass
+            interp_method = None
+        if interp_method:
+            check_consistency(interp_method, config_node.get([comp, 'interpMethod']))
+            config_node.set([comp, 'interpMethod'], interp_method)
     #print(config_node)
 
     # Save regrid config
@@ -79,7 +105,7 @@ def process_file (input_file):
         new_grid = 'native'
 
     if old_grid and old_grid != new_grid:
-        raise Exception("Component must have only one grid:", old_grid, new_grid)
+        raise Exception("Component must have only one grid:", comp, old_grid, new_grid)
 
     for hf in input_json['Header']['history_files']:
         sources.add(hf)
