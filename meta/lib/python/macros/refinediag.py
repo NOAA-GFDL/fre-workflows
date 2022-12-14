@@ -54,7 +54,7 @@ class RefineDiagChecker(metomi.rose.macro.MacroBase):
 
         # If either refinediag or preanalysis is on, then experiment/gridspec/platform/target must also be set
         if do_refinediag or do_preanalysis:
-            required = ['EXPERIMENT', 'PLATFORM', 'TARGET', 'GRID_SPEC']
+            required = ['EXPERIMENT', 'PLATFORM', 'TARGET', 'PP_GRID_SPEC']
             for item in required:
                 if config.get_value(['template variables', item]):
                     pass

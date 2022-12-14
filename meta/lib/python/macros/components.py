@@ -12,20 +12,12 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
     def validate(self, config, meta_config=None):
         """Return a list of errors, if any."""
 
-        # Retrieve the CONFIG_COMPS setting, which is a pointer to the desired remap-pp-component configuration
-        config_key = config.get_value(['template variables', 'CONFIG_COMPS'])
-
-        # If it does not exist, then skip- probably in the default settings which lack the CONFIG_COMPS setting
-        if config_key:
-            config_key = config_key.strip('"')
-        else:
+        # If PP_COMPONENTS is not set, assume we're in the default config and exit
+        if not config.get_value(['template variables', 'PP_COMPONENTS']):
             return self.reports
 
         # Read the Rose app configuration specified by config_key
-        # NOTE: Next line is a workaround. We want to use the load_with_opts to handle the configuration overrides but the function does not exist
-        # https://metomi.github.io/rose/2019.01.2/html/api/configuration/api.html#rose.config.ConfigLoader.load_with_opts
-        # The main problem is that the main config file is ignored, and it should be the defaults.
-        path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/remap-pp-components/opt/rose-app-' + config_key + '.conf'
+        path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/remap-pp-components/rose-app.conf'
         node = metomi.rose.config.load(path_to_conf)
 
         # Retrieve the Rose app components
