@@ -26,7 +26,22 @@ c96L33_am4p0_cmip6Diag      # 2 years
 
 Pick one of the experiments, to replace in `<exp-name>` usage in the following steps.
 
-3. Validate and install the configuration
+3. Convert the Variable Group files to the regrid and remap Rose app config files
+
+```
+>bin/write-rose-configs opt/variable-groups/*
+```
+
+4. Validate the configuration
+
+```
+>rose macro --validate
+```
+All warnings or errors should be fixed. If the fix is in the Variable Group files, then
+rerun the previous step. The validation scripts check for experiment and Rose app
+configurations only.
+
+5. Validate and install the configuration
 
 ```
 >bin/install-exp <exp>      # cylc validate -O $1 && cylc install -O $1 --workflow-name $1
@@ -36,7 +51,7 @@ This installs the workflow run directory in `~/cylc-run/<exp-name>/runN`, where 
 The `--no-run-name` option simplifies the behavior at the cost of no future unique runs (it would install to `~/cylc-run/<exp-name>`). The various `cylc` commands act on the most recent `runN` by default, so in practice the usage is similar.
 
 
-4. Start the workflow
+6. Start the workflow
 
 ```
 >cylc play <exp-name>
@@ -48,11 +63,11 @@ c96L33_am4p0/run1: workflow1.princeton.rdhpcs.noaa.gov PID=13280
 The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the login banner).
 
 
-5. Start the GUI (optional)
+7. Start the GUI (optional)
 ```
 >ssh analysis
 
-# choose "jhan" at the load balancer prompt. Please note that this connects you to an107 node. 
+# choose "jhan" (or "jhanbigmem") at the load balancer prompt. Please note that this connects you to an107 (or an201) nodes. 
 #CD into your pp.am5 directory where you cloned postprocessing repository initially.
 
 >bin/start-gui              # cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
