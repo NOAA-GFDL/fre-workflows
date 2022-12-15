@@ -2,7 +2,7 @@ import re
 import os
 import metomi.rose.config
 
-def form_task_parameters(grid_type, temporal_type, pp_components_str, optional_config):
+def form_task_parameters(grid_type, temporal_type, pp_components_str):
     """Form the task parameter list based on the grid type, the temporal type,
     and the desired pp component(s)
 
@@ -10,14 +10,10 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, optional_c
         grid_type (str): One of: native or regrid-xy
         temporal_type (str): One of: temporal or static
         pp_component (str): all, or a space-separated list
-        optional_config (str): label for the Rose optional configuration to use
 """
     pp_components = pp_components_str.split()
     # print("DEBUG: desired pp components:", pp_components)
-    # NOTE: Next line is a workaround. We want to use the load_with_opts to handle the configuration overrides but the function does not exist
-    # https://metomi.github.io/rose/2019.01.2/html/api/configuration/api.html#rose.config.ConfigLoader.load_with_opts
-    # The main problem is that the main config file is ignored, and it should be the defaults.
-    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/opt/rose-app-' + optional_config + '.conf'
+    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
     regex_pp_comp = re.compile('^\w+')
@@ -70,4 +66,3 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, optional_c
     return(', '.join(answer))
 
 #print(form_task_parameters('native', 'temporal', 'land atmos land_cubic'))
-

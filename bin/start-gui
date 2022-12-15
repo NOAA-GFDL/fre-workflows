@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $(hostname) != an107 ]]; then
+if [[ $(hostname) != an107 && $(hostname) != an201 ]]; then
     echo Must be on jhan/an107
     exit 1
 fi

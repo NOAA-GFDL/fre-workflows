@@ -37,10 +37,10 @@ Postprocessing example that includes Bronx-like functionality,
 # More info:
 # The python loaded within Cylc has access to some useful Cylc utilities (e.g. metomi.isodatetime.parsers).
 # For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded.
-    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS, CONFIG_COMPS) }}
-    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS, CONFIG_COMPS) }}
-    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS, CONFIG_COMPS) }}
-    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS, CONFIG_COMPS) }}
+    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
+    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
+    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
     # Standard Jinja2 triggers are also available (e.g. "replace")
     component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
 
@@ -154,14 +154,14 @@ rename-split-to-pp-native<native>
 
 # Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 #Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf
-{% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, CONFIG_COMPS) %}
+{% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
 {{ form_remap_dep_PP_CHUNK_A_regrid }}
 {% if form_remap_dep_PP_CHUNK_A_regrid == "" %}
 {{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}   
 {% endif %}
 {{  form_remap_dep_PP_CHUNK_A_regrid  }}
 
-{% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, CONFIG_COMPS) %}
+{% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
 {% if form_remap_dep_PP_CHUNK_A_native == "" %}
 {{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}
 {% endif %}
@@ -210,14 +210,14 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
 # Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 ######Throw validation exception if PP_CHUNK_B is not in rose-app.conf
-{% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, CONFIG_COMPS) %}
+{% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
  
 {% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }} 
 {% endif %}  
 {{ form_remap_dep_PP_CHUNK_B_regrid }}
 
-{% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, CONFIG_COMPS) %}
+{% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
 
 {% if form_remap_dep_PP_CHUNK_B_native == "" %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }}
@@ -316,7 +316,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
             target = {{ TARGET }}
             segment_months = {{ HISTORY_SEGMENT }}
             basedate = is-this-needed
-            gridspec = {{ GRID_SPEC }}
+            gridspec = {{ PP_GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
 {% endif %}
 {% if DO_REFINEDIAG %}
@@ -363,15 +363,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         {%- endmacro %}
         
         {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
-        {% set refineDiag_scripts = REFINEDIAG_SCRIPT.split(' ') %}
+        {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
         {% for refineDiag_path in refineDiag_scripts %}
-            [[{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
+            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
                 {{ exec_refine(refineDiag_path) }}
         {% endfor %}
 
 {% endif %}
-{% if DO_PREANALYSIS and PREANALYSIS_NAME is defined and PREANALYSIS_SCRIPT is defined %}
-    [[preAnalysis-{{ PREANALYSIS_NAME }}]]
+{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] %}
+    [[preAnalysis-{{ preanalysis_name }}]]
         inherit = PRE-ANALYSIS
         script = """
             ls
@@ -453,8 +454,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
-            component = $CYLC_TASK_PARAM_component
-            ROSE_APP_OPT_CONF_KEYS = {{ CONFIG_COMPS }}
+            components = $CYLC_TASK_PARAM_component
     [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -475,7 +475,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
-            component =
+            components = {{ PP_COMPONENTS }}
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
@@ -531,7 +531,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             component = $CYLC_TASK_PARAM_regrid
-            ROSE_APP_OPT_CONF_KEYS = {{ CONFIG_REGRID }}
+            gridSpec = {{ PP_GRID_SPEC }}
+            defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY
     [[regrid-xy<regrid_static>]]
