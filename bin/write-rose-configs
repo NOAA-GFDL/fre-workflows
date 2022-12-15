@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/app/conda/miniconda/envs/cylc/bin/python
 # write-rose-configs
 # This script accepts an in-house, so-far-undocumented, extended
 # CMOR table format, and writes the Rose app configurations for
