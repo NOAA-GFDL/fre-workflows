@@ -2,16 +2,25 @@ import re
 import os
 import metomi.rose.config
 
-def form_analysis_tasks(pp_components, pp_dir, start_year, default_chunk1, default_chunk2):
+def strtobool(val): 
+    """Convert string true/false to boolean"""
+    if val.lower().startswith("t"): 
+        return True 
+    elif val.lower().startswith("f"): 
+        return False 
+    raise argparse.ArgumentTypeError("invalid boolean value: {!r}".format(val))
+
+def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, default_chunk2):
     """Form the analysis tasks from app/analysis/rose-app.conf
 
     Arguments:
-        pp_component (str): all, or a space-separated list
+        pp_components_str (str): all, or a space-separated list
                             analysis scripts depending on others will be skipped
         pp_dir (str): absolute filepath root (up to component, not including)
         start_year (str): will use at yr1 if cumulative mode on
         default_chunk[12] (str): default chunks to use if analysis script does not care
 """
+    pp_components = pp_components_str.split()
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/analysis/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = ""
@@ -25,30 +34,37 @@ def form_analysis_tasks(pp_components, pp_dir, start_year, default_chunk1, defau
         if item == "env" or item == "command":
             continue
 
+        # get the required pp components for the analysis script
         item_comps = node.get_value(keys=[item, 'components']).split()
-        #print("DEBUG: Examining", item, item_comps)
 
-        # skip if pp component not desired
+        # skip this analysis script if pp component not requested
+        #print("DEBUG: Examining", item, item_comps)
         if "all" not in pp_components:
-            #print("DEBUG: PP COMP", pp_components, "COMP is", item_comps)
             for comp in item_comps:
                 if comp not in pp_components:
-                    #print("DEBUG2: comp is not in pp_components", pp_components, "and", comp)
                     continue
         #print("DEBUG: Still examining", item)
 
+        # get the mandatory options: script path and frequency
         item_script = os.path.basename(node.get_value(keys=[item, 'script']))
         item_freq = node.get_value(keys=[item, 'freq'])
+
+        # get the optional option chunksize
+        # if not set, use the main pp chunks
         item_chunks_str = node.get_value(keys=[item, 'chunk'])
         if item_chunks_str:
             item_chunks = item_chunks_str.split()
         else:
             item_chunks = [default_chunk1, default_chunk2]
+
+        # get the optional cumulative option
+        # cumulative option is the entire pp range, not just this chunk
+        # default is off
         item_cumulative_str = node.get_value(keys=[item, 'cumulative'])
-        if item_cumulative_str and bool(item_cumulative_str):
-            item_cumulative = False
+        if item_cumulative_str:
+            item_cumulative = strtobool(item_cumulative_str)
         else:
-            item_cumulative = True
+            item_cumulative = False
 
         # write the task family
         results += """
@@ -58,22 +74,24 @@ def form_analysis_tasks(pp_components, pp_dir, start_year, default_chunk1, defau
                     $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
                 '''
                 [[[environment]]]
-                        component = {comp}
-                        freq = {freq}
-                        staticfile = {pp_dir}/{comp}/{comp}.static.nc
-                        scriptLabel = {item}
+                    component = {comp}
+                    freq = {freq}
+                    staticfile = {pp_dir}/{comp}/{comp}.static.nc
+                    scriptLabel = {item}
             """.format(item=item, item_script=item_script, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
         # write the tasks
         for chunk in item_chunks:
-            results += """
-                [[{item}-{chunk}]]
-                    inherit = ANALYSIS-{chunk}, {item}
-                    [[[environment]]]
-                        in_data_dir = {pp_dir}/{comp}/ts/{freq}/{chunk}
+            # only write the tasks if the chunk is one of the Cylc PP chunks
+            if chunk == default_chunk1 or chunk == default_chunk2:
+                results += """
+            [[{item}-{chunk}]]
+                inherit = ANALYSIS-{chunk}, {item}
+                [[[environment]]]
+                    in_data_dir = {pp_dir}/{comp}/ts/{freq}/{chunk}
             """.format(item=item, chunk=chunk, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
-        # if cumulative NOT false, then set yr1 to the pp start
+        # if cumulative, then set yr1 to the pp start
         if item_cumulative:
             results += """
                         yr1 = {yr1}
@@ -82,4 +100,4 @@ def form_analysis_tasks(pp_components, pp_dir, start_year, default_chunk1, defau
     #print("DEBUG: returning", results)
     return(results)
 
-#print(form_analysis_tasks('all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '2000', 'P2Y', 'P4Y'))
+#print(form_analysis_tasks('all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '2000', 'P1Y', 'P4Y'))
