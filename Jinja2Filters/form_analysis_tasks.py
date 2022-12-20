@@ -4,11 +4,11 @@ import metomi.rose.config
 
 def strtobool(val): 
     """Convert string true/false to boolean"""
-    if val.lower().startswith("t"): 
+    if val.lower().startswith("t") or val.lower().startswith("y"): 
         return True 
-    elif val.lower().startswith("f"): 
+    elif val.lower().startswith("f") or val.lower().startswith("n"): 
         return False 
-    raise argparse.ArgumentTypeError("invalid boolean value: {!r}".format(val))
+    raise Exception("invalid boolean value: {!r}".format(val))
 
 def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, default_chunk2):
     """Form the analysis tasks from app/analysis/rose-app.conf
