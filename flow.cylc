@@ -146,6 +146,10 @@ STAGE-HISTORY:succeed-all =>                             split-netcdf-native<nat
 # After cataloging the regridded and native statics, remap them to pp components as desired
 {% if NATIVE_STATIC|length and REGRID_STATIC|length %} 
 rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+{% elif NATIVE_STATIC|length %} 
+rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+{% elif REGRID_STATIC|length %} 
+rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
 {% endif %}
 
 # Similarly, if the history-refined is used, then don't process until the history-refined staging is done.
