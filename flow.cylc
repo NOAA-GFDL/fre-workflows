@@ -38,15 +38,29 @@ Postprocessing example that includes Bronx-like functionality,
 # More info:
 # The python loaded within Cylc has access to some useful Cylc utilities (e.g. metomi.isodatetime.parsers).
 # For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded.
-
-    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
+{% set DO_REGRID = False %}
 {% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) %}
-    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
-{% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) %}
-    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
+
+{% if REGRID|length %}
+    {% set DO_REGRID = True %}
+    regrid = {{ REGRID }}
+    {% if DO_STATICS %}
+    {% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) %}
+    regrid_static = {{ REGRID_STATIC }}
+    {% endif %}
+{% endif %}
+
+{% set DO_NATIVE = False %}
 {% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS) %}
-    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
-{% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS) %}
+
+{% if NATIVE|length %}
+    {% set DO_NATIVE = True %}
+    native = {{ NATIVE }}
+    {% if DO_STATICS %}
+    {% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS) %}
+    native_static = {{ NATIVE_STATIC }}
+    {% endif %}
+{% endif %}
 
     # Standard Jinja2 triggers are also available (e.g. "replace")
     component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
@@ -54,17 +68,14 @@ Postprocessing example that includes Bronx-like functionality,
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
+    # Graph strings are organized by recurrence interval-- when to run the tasks.
+    # Currently, we use 4 intervals: every history-file segment, once (for statics),
+    # every chunk-a, and every chunk-b.
     [[graph]]
-        # Graph strings are organized by recurrence interval-- when to run the tasks.
-        # Currently, we use 4 intervals: every history-file segment, once (for statics),
-        # every chunk-a, and every chunk-b.
-
-
         #
         # Recurrence interval: every history-file segment
         #
         {{ HISTORY_SEGMENT }} = """
-
 # Within a recurrence interval, task dependencies are specified with => (depends on), & (and), and | (or).
 # Tasks in a dependency can be single tasks, task families (by convention, in all caps),
 # or "ensembles" expanded by the parameters above.
@@ -96,35 +107,44 @@ stage-history => PRE-ANALYSIS
 # Each history file to be regridded should be regridded once staging is done; then should be split and cataloged
 # (into a standard shards directory set by ISO8601 frequencies and chunks).
 # Each history file needed for native grid processing is similar, except skipping the regridding.
-{% if REGRID|length %} 
+{% if DO_REGRID %} 
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% endif %}
-{% if NATIVE|length %} 
+
+{% if DO_NATIVE %} 
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
 {% endif %}
+
 # If HISTORY_DIR_REFINED is set, then use the next 3 lines.
 # After all staging is done, then hard link the refined history files to the history file location (not a great solution).
 # Regridding and splitting native history files should not start until the history-refined output is available.
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all  => stage-history-refined-link
-{% if REGRID|length %} 
+
+{% if DO_REGRID %} 
 stage-history-refined-link => regrid-xy<regrid>
 {% endif %}
-{% if NATIVE|length %} 
+
+{% if DO_NATIVE %} 
 stage-history-refined-link => split-netcdf-native<native>
 {% endif %}
+
 {% endif %}
+
 # If work-dir cleaning is desired, then remove what should now be safe to remove.
 # Once regridded history files are split, then the regridded history files can be removed.
 # Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed.
 {% if CLEAN_WORK %}
-{% if REGRID|length %}
+
+{% if DO_REGRID %}
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
 {% endif %}
-{% if NATIVE|length %} 
+
+{% if DO_NATIVE %} 
 rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
+
 {% endif %}
 """
 
@@ -136,44 +156,58 @@ rename-split-to-pp-native<native> => clean-split-native
         R1 = """
 # The static processing is similar to the "every history segment" processing, except uses different history file lists.
 pp-starter => STAGE-HISTORY
-{% if REGRID_STATIC|length %}
+{% if DO_STATICS %}
+
+{% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
 {% endif %}
-{% if NATIVE_STATIC|length %} 
+
+{% if DO_NATIVE %} 
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
 {% endif %}
 
 # After cataloging the regridded and native statics, remap them to pp components as desired
-{% if NATIVE_STATIC|length and REGRID_STATIC|length %} 
+{% if DO_NATIVE and DO_REGRID %} 
 rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-{% elif NATIVE_STATIC|length %} 
+{% elif DO_NATIVE %} 
 rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-{% elif REGRID_STATIC|length %} 
+{% elif DO_REGRID %} 
 rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
+{% endif %}
+
 {% endif %}
 
 # Similarly, if the history-refined is used, then don't process until the history-refined staging is done.
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all => stage-history-refined-link
-{% if REGRID_STATIC|length %} 
+{% if DO_STATICS %} 
+
+{% if DO_REGRID %} 
 stage-history-refined-link => regrid-xy<regrid_static>
 {% endif %}
-{% if NATIVE_STATIC|length %} 
+
+{% if DO_NATIVE %} 
 stage-history-refined-link => split-netcdf-native<native_static>
+{% endif %}
+
 {% endif %}
 {% endif %}
 
 # If work-dir cleaning is set, then remove what should now be safe to remove.
-{% if CLEAN_WORK %}
-{% if REGRID_STATIC|length %}
+{% if CLEAN_WORK and DO_STATICS %}
+
+{% if DO_REGRID %}
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
 {% endif %}
-{% if NATIVE_STATIC|length %} 
+
+{% if DO_NATIVE %} 
 rename-split-to-pp-native<native_static> => clean-split-native
 {% endif %}
+
 remap-pp-components-static => clean-shards-static
 combine-statics => clean-pp-statics
+
 {% endif %}
 """
 
@@ -187,44 +221,66 @@ combine-statics => clean-pp-statics
 # Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |
 # The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding.
 # This Jinja for loop expands to do this.
-{% if REGRID|length %}
+{% if DO_REGRID %}
+
 rename-split-to-pp-regrid<regrid>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
 & rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
+
 {% endif %}
 
-{% if NATIVE|length %} 
+{% if DO_NATIVE %} 
+
 rename-split-to-pp-native<native>
 {% for I in range(1, PP_CHUNK_A_COUNT) %}
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
+
 {% endif %}
 
 # Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 #Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf
+{% if DO_REGRID %}
+
 {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{% if form_remap_dep_PP_CHUNK_A_regrid == "" %}
+{{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}   
+{% endif %}
 {{  form_remap_dep_PP_CHUNK_A_regrid  }}
 
+{% endif %}
+
+
+{% if DO_NATIVE %}
+
 {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{% if form_remap_dep_PP_CHUNK_A_native == "" %}
+{{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}
+{% endif %}
 {{  form_remap_dep_PP_CHUNK_A_native  }}
+
+{% endif %}
 
 # If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards.
 # However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.
-{% if NATIVE|length and REGRID|length %} 
+{% if DO_NATIVE and DO_REGRID %} 
 {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
+
 # If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).
 # In the usual case where CHUNK-B is larger than CHUNK-A, do not remove CHUNK-A shards yet as they will be used in CHUNK-B processing.
 {% if PP_CHUNK_B_COUNT == 1 %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 {% endif %}
+
 # If work-dir cleaning is desired, and CHUNK-A is equal to the history segment, and CHUNK-B == CHUNK-A, then
 # remove the shards after remapping
 {% elif CLEAN_WORK and PP_CHUNK_B == PP_CHUNK_A %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
+
 {% endif %}
 {% endif %}
 
@@ -242,29 +298,43 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% if PP_CHUNK_B_COUNT > 1 %}
         # Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
+
 # The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding.
-{% if REGRID|length %} 
+{% if DO_REGRID %} 
+
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
+
 {% endif %}
-{% if NATIVE|length %} 
+
+
+{% if DO_NATIVE %} 
+
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% for I in range(1, PP_CHUNK_B_COUNT) %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
 {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
+
 {% endif %}
 
 # Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep
 ######Throw validation exception if PP_CHUNK_B is not in rose-app.conf
+{% if DO_REGRID %}
+
 {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
 {% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
 {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }} 
 {% endif %}  
 {{ form_remap_dep_PP_CHUNK_B_regrid }}
+
+{% endif %}
+
+
+{% if DO_NATIVE %}
 
 {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
 {% if form_remap_dep_PP_CHUNK_B_native == "" %}
@@ -272,9 +342,11 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% endif %} 
 {{ form_remap_dep_PP_CHUNK_B_native }}
 
+{% endif %}
+
 # If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created,
 # and remove CHUNK-B shards once the final products are saved.
-{% if CLEAN_WORK and NATIVE|length and REGRID|length %}
+{% if CLEAN_WORK and DO_NATIVE and DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
 {% endif %}
@@ -437,12 +509,17 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = rose task-run --verbose --app-key split-netcdf
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
+
+{% if DO_NATIVE %}
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc date --template CCYYMMDD).nc
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             component = $CYLC_TASK_PARAM_native
+{% endif %}
+
+{% if DO_REGRID %}
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
@@ -450,36 +527,47 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
-{% if NATIVE|length %}
+{% endif %}
+
+{% if DO_NATIVE %}
+
     [[split-netcdf-native<native>]]
         inherit = SPLIT-NETCDF-NATIVE
-{% endif %}
-{% if NATIVE_STATIC|length %}
+{% if DO_STATICS %}
     [[split-netcdf-native<native_static>]]
         inherit = SPLIT-NETCDF-NATIVE
         [[[environment]]]
             component = $CYLC_TASK_PARAM_native_static
 {% endif %}
-{% if REGRID|length %} 
+
+{% endif %}
+
+{% if DO_REGRID %} 
+
     [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID
-{% endif %}
-{% if REGRID_STATIC|length %}
+{% if DO_STATICS %}
     [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
 {% endif %}
 
+{% endif %}
+
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load netcdf-c cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key rename-split-to-pp
+{% if DO_NATIVE %}
     [[RENAME-SPLIT-TO-PP-NATIVE]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             component = $CYLC_TASK_PARAM_native
+{% endif %}
+
+{% if DO_REGRID %}
     [[RENAME-SPLIT-TO-PP-REGRID]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
@@ -487,25 +575,33 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
-{% if NATIVE|length %}
+{% endif %}
+
+{% if DO_NATIVE %}
+
     [[rename-split-to-pp-native<native>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
-{% endif %}
-{% if NATIVE_STATIC|length %} 
+{% if DO_STATICS %} 
     [[rename-split-to-pp-native<native_static>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
         [[[environment]]]
             component = $CYLC_TASK_PARAM_native_static
 {% endif %}
-{% if REGRID|length %} 
+
+{% endif %}
+
+
+{% if DO_REGRID %} 
+
     [[rename-split-to-pp-regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
-{% endif %}
-{% if REGRID_STATIC|length %}
+{% if DO_STATICS %}
     [[rename-split-to-pp-regrid<regrid_static>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
+{% endif %}
+
 {% endif %}
 
     [[REMAP-PP-COMPONENTS]]
@@ -531,6 +627,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
+
+{% if DO_STATICS %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -538,60 +636,75 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             components = {{ PP_COMPONENTS }}
+{% endif %}
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
             fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
+
+{% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             component = $CYLC_TASK_PARAM_native
+{% endif %}
+
+{% if DO_REGRID %}
     [[MAKE-TIMESERIES-REGRID]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
+{% endif %}
+
     [[MAKE-TIMESERIES-{{ PP_CHUNK_A }}]]
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             inputChunk = {{ HISTORY_SEGMENT }}
             outputChunk = {{ PP_CHUNK_A }}
+
+{% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
-{% if NATIVE|length %}
     [[make-timeseries-native-{{ PP_CHUNK_A }}<native>]]
         inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}
 {% endif %}
+
+{% if DO_REGRID %}
     [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
-{% if REGRID|length %}
     [[make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>]]
         inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}
 {% endif %}
+
 {% if PP_CHUNK_B_COUNT > 1 %}
     [[MAKE-TIMESERIES-{{ PP_CHUNK_B }}]]
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             inputChunk = {{ PP_CHUNK_A }}
             outputChunk = {{ PP_CHUNK_B }}
+
+{% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
-{% if NATIVE|length %}
     [[make-timeseries-native-{{ PP_CHUNK_B }}<native>]]
         inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}
- {% endif %}
+{% endif %}
+
+{% if DO_REGRID %} 
     [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
-{% if REGRID|length %} 
     [[make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>]]
         inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}
 {% endif %}
+
 {% endif %}
 
+{% if DO_REGRID %} 
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
@@ -603,22 +716,25 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             component = $CYLC_TASK_PARAM_regrid
             gridSpec = {{ PP_GRID_SPEC }}
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
-{% if REGRID|length %} 
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY
-{% endif %}
-{% if REGRID_STATIC|length %}
+
+{% if DO_STATICS %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
 {% endif %}
 
+{% endif %}
+
+{% if DO_STATICS %}
     [[combine-statics]]
         pre-script = module load cdo && mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
+{% endif %}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
@@ -627,51 +743,77 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
     [[CLEAN]]
         pre-script = "set -x"
+
+{% if DO_REGRID %}
     [[clean-history-regrid-xy]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy"
+{% endif %}
+
+{% if DO_STATICS %}
     [[clean-pp-statics]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp"
+{% endif %}
+
+{% if DO_NATIVE %}
     [[clean-split-native]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native"
+{% endif %}
+
+{% if DO_REGRID %}
     [[clean-split-regrid-xy]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy"
+{% endif %}
+
+{% if DO_STATICS %}
     [[clean-shards-static]]
         inherit = CLEAN
         script = """
             rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
+{% if DO_REGRID %}
             rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/P0Y
+{% endif %}
         """
+{% endif %}
+
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
 {% for I in range(0, PP_CHUNK_A_COUNT) %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
+{% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
+{% endif %}
 {% endfor %}
         """
+
     [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
 {% for I in range(0, PP_CHUNK_B_COUNT) %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
+{% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
+{% endif %}
 {% endfor %}
         """
+
     [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
+{% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
+{% endif %}
         """
 
 # Site-specific settings
