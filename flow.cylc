@@ -204,16 +204,16 @@ combine-statics => clean-pp-statics
 # This Jinja for loop expands to do this.
 {% if DO_REGRID %}
 rename-split-to-pp-regrid<regrid>
-    {% for I in range(1, PP_CHUNK_A_COUNT) %}
-& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
+    {% for CHUNK in range(1, PP_CHUNK_A_COUNT) %}
+& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }}]
     {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% endif %}
 
 {% if DO_NATIVE %} 
 rename-split-to-pp-native<native>
-    {% for I in range(1, PP_CHUNK_A_COUNT) %}
-& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-I) }}]
+    {% for CHUNK in range(1, PP_CHUNK_A_COUNT) %}
+& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }}]
     {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% endif %}
@@ -286,8 +286,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding.
     {% if DO_REGRID %} 
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
-        {% for I in range(1, PP_CHUNK_B_COUNT) %}
-& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
+        {% for CHUNK in range(1, PP_CHUNK_B_COUNT) %}
+& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
         {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
     {% endif %}
@@ -295,8 +295,8 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 
     {% if DO_NATIVE %} 
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
-        {% for I in range(1, PP_CHUNK_B_COUNT) %}
-& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-I)}}]
+        {% for CHUNK in range(1, PP_CHUNK_B_COUNT) %}
+& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
         {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
     {% endif %}
@@ -746,12 +746,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
-{% for I in range(0, PP_CHUNK_A_COUNT) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
+{% for CHUNK in range(0, PP_CHUNK_A_COUNT) %}
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc" -delete
     {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-I) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc" -delete
     {% endif %}
 {% endfor %}
         """
@@ -759,12 +759,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
-{% for I in range(0, PP_CHUNK_B_COUNT) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
+{% for CHUNK in range(0, PP_CHUNK_B_COUNT) %}
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
     {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-I) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
     {% endif %}
 {% endfor %}
         """
