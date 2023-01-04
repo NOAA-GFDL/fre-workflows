@@ -570,6 +570,19 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+    {# Create cumulative analysis task families for each CHUNK-A, for the entire PP range #}
+    {# The below variable definition and for loop is confusing and needs to be explained #}
+    {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_A) | string | duration_as('s') / (PP_CHUNK_A | duration_as('s')) %}
+    {% for x in range(0, total_segments | int) %}
+        {% set cumulative_duration = PP_CHUNK_A | multiply_duration(x) %}
+        {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
+    [[ANALYSIS-CUMULATIVE-{{ enddate | string | strftime('%Y%m%d') }}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = {{ PP_START | strftime('%Y') }}
+            yr2 = {{ enddate | string | strftime('%Y') }}
+    {% endfor %}
+
     {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
 
     [[mdtf]]
