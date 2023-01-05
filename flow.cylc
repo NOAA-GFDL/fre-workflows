@@ -38,24 +38,22 @@ Postprocessing example that includes Bronx-like functionality,
 {# More info:												       #}
 {# The python loaded within Cylc has access to some useful Cylc utilities (e.g. metomi.isodatetime.parsers).   #}
 {# For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded. #}
-{% set DO_REGRID = False %}
 {% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) %}
-{% if REGRID|length %}
-    {% set DO_REGRID = True %}
+{% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) %}
+{% set DO_REGRID = REGRID|length %}
+{% if DO_REGRID %}
     regrid = {{ REGRID }}
     {% if DO_STATICS %}
-       {% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) %}
     regrid_static = {{ REGRID_STATIC }}
     {% endif %}
 {% endif %}
 
-{% set DO_NATIVE = False %}
 {% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS) %}
-{% if NATIVE|length %}
-    {% set DO_NATIVE = True %}
+{% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS) %}
+{% set DO_NATIVE = NATIVE|length %}
+{% if DO_NATIVE %}
     native = {{ NATIVE }}
-    {% if DO_STATICS %}
-       {% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS) %}
+    {% if DO_STATICS %}       
     native_static = {{ NATIVE_STATIC }}
     {% endif %}
 {% endif %}
