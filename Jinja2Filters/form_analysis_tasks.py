@@ -86,11 +86,19 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
         item_end_str = node.get_value(keys=[item,'end'])
         #print("DEBUG:", item_start_str, item_end_str)
         if item_start_str:
-            item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
+            try:
+                item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
+            except:
+                print("WARNING: Could not parse ISO8601 start date", item_start_str)
+                item_start = None
         else:
             item_start = None
         if item_end_str:
-            item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
+            try:
+                item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
+            except:
+                print("WARNING: Could not parse ISO8601 end date", item_end_str)
+                item_end = None
         else:
             item_end = None
         if item_start and item_end:
