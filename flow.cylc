@@ -11,11 +11,16 @@
 {% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
 # Calculate the number of chunk-a chunks per chunk-b
 {% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
+# Calculate the number of chunk-a chunks total
+{% set PP_CHUNK_A_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_A) | int %}
+# Calculate the number of chunk-b chunks total
+{% set PP_CHUNK_B_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_B) | int %}
 
 [meta]
     title = "Postprocessing Example 1"
     description = """
 Postprocessing example that includes Bronx-like functionality,
+{{ PP_CHUNK_A_COUNT_TOTAL }}
 """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
@@ -185,6 +190,9 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_C
 {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
+# Launch the per-interval task family after all components have been saved.
+# Note that this is inefficient as each analysis script needs only a subset of the available components.
+# To be improved later
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => ANALYSIS-{{ PP_CHUNK_A }}
 """
 
@@ -234,6 +242,35 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 """
 {% endif %}
+
+#
+# Recurrence intervals for cumulative analysis tasks
+# Starting each PP_CHUNK_A after PP_START, launch the
+# ANALYSIS-CUMULATIVE-YYYYMMDD task family, which depends
+# on all the ANALYSIS-PP_CHUNK_A tasks
+#
+{% for I in range(0, PP_CHUNK_A_COUNT_TOTAL + 1) %}
+    {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_A | string | multiply_duration(I) | string) | string %}
+        R1/{{ this_date }} = """
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all
+    {% for J in range(1, I+1) %}
+& REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}[{{ PP_CHUNK_A | multiply_duration(-J)}}]:succeed-all
+    {% endfor %}
+=> ANALYSIS-CUMULATIVE-{{ PP_CHUNK_A }}-{{ this_date | strftime('%Y%m%d') }}
+"""
+{% endfor %}
+
+# Same for CHUNK-B
+{% for I in range(0, PP_CHUNK_B_COUNT_TOTAL + 1) %}
+    {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_B | string | multiply_duration(I) | string) | string %}
+        R1/{{ this_date }} = """
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
+    {% for J in range(1, I+1) %}
+& REMAP-PP-COMPONENTS-{{ PP_CHUNK_B}}[{{ PP_CHUNK_B | multiply_duration(-J)}}]:succeed-all
+    {% endfor %}
+=> ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ this_date | strftime('%Y%m%d') }}
+"""
+{% endfor %}
 
 [runtime]
     # default config for all tasks
