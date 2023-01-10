@@ -347,6 +347,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 # ANALYSIS-CUMULATIVE-YYYYMMDD task family, which depends
 # on all the ANALYSIS-PP_CHUNK_A tasks
 #
+# commenting out the cumulative stuff for now
+{% if False %}
 {% for I in range(0, PP_CHUNK_A_COUNT_TOTAL + 1) %}
     {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_A | string | multiply_duration(I) | string) | string %}
         R1/{{ this_date }} = """
@@ -369,6 +371,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
 => ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ this_date | strftime('%Y%m%d') }}
 """
 {% endfor %}
+{% endif %}
 
 [runtime]
     # default config for all tasks
@@ -761,18 +764,36 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+
+    # commenting out this cumulative stuff for now
+    {% if False %}
     {# Create cumulative analysis task families for each CHUNK-A, for the entire PP range #}
     {# The below variable definition and for loop is confusing and needs to be explained #}
     {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_A) | string | duration_as('s') / (PP_CHUNK_A | duration_as('s')) %}
     {% for x in range(0, total_segments | int) %}
         {% set cumulative_duration = PP_CHUNK_A | multiply_duration(x) %}
         {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
-    [[ANALYSIS-CUMULATIVE-{{ enddate | string | strftime('%Y%m%d') }}]]
+    [[ANALYSIS-CUMULATIVE-{{ PP_CHUNK_A }}-{{ enddate | string | strftime('%Y%m%d') }}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = {{ PP_START | strftime('%Y') }}
             yr2 = {{ enddate | string | strftime('%Y') }}
     {% endfor %}
+    {% endif %}
+
+    # Same for CHUNK-B
+    {% if False %}
+    {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_B) | string | duration_as('s') / (PP_CHUNK_B | duration_as('s')) %}
+    {% for x in range(0, total_segments | int) %}
+        {% set cumulative_duration = PP_CHUNK_B | multiply_duration(x) %}
+        {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
+    [[ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ enddate | string | strftime('%Y%m%d') }}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = {{ PP_START | strftime('%Y') }}
+            yr2 = {{ enddate | string | strftime('%Y') }}
+    {% endfor %}
+    {% endif %}
 
     {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
 

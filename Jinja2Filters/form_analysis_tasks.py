@@ -48,7 +48,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             skip_item = 0
             for comp in item_comps:
                 if comp not in pp_components:
-                    print(f"NOTE: Skipping package '{item}' as it requests a component not available: '{comp}'")
+                    print(f"NOTE: Skipping package '{item}' as it requests a component not available: '{comp}'\n")
                     skip_item = 1
                     continue
             if skip_item:
@@ -77,6 +77,8 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             item_cumulative = strtobool(item_cumulative_str)
         else:
             item_cumulative = False
+        # turn off the cumulative stuff for now
+        item_cumulative = False
         if item_cumulative:
             start_time = metomi.isodatetime.parsers.TimePointParser().parse(start_year + '-01-01')
             print("NOTE: Using cumulative range, starting from:", start_time)
