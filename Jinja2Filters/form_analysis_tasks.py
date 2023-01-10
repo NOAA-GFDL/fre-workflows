@@ -150,9 +150,9 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
                 print("NOTE: Using cumulative for chunk", chunk)
                 results += """
     {header}
-        inherit = ANALYSIS-CUMULATIVE-{date2}, {item}
+        inherit = ANALYSIS-CUMULATIVE-{chunk}-{date2}, {item}
         {tail}
-                """.format(item=item, header=header, tail=tail, date2=metomi.isodatetime.dumpers.TimePointDumper().strftime(start_time, '%Y%m%d'))
+                """.format(item=item, header=header, tail=tail, chunk=chunk, date2=metomi.isodatetime.dumpers.TimePointDumper().strftime(start_time, '%Y%m%d'))
 
             # every chunk
             else:
