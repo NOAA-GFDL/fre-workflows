@@ -233,10 +233,11 @@ rename-split-to-pp-native<native>
     {{  form_remap_dep_PP_CHUNK_A_native  }}
 {% endif %}
 
-{# If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards. #}
-{# However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.        #}
-{% if DO_NATIVE and DO_REGRID %} 
-    {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
+{# If work-dir cleaning is desired, and (CHUNK-A is larger than the history segment, or, only one pp chunk is specified), remove (prerequisite) history shards. #}
+{# If instead CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.                              #}
+{% if CLEAN_WORK %}
+    {% if PP_CHUNK_A != HISTORY_SEGMENT or PP_CHUNK_B == PP_CHUNK_A %}
+
         {% if DO_NATIVE and DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
         {% elif DO_NATIVE %}
@@ -245,22 +246,12 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUN
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
         {% endif %}
 
-{# If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).                 #}
-{# In the usual case where CHUNK-B is larger than CHUNK-A, do not remove CHUNK-A shards yet as they will be used in CHUNK-B processing. #}
-        {% if PP_CHUNK_B_COUNT == 1 %}
+{# If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping). #}
+{# If CHUNK-B were larger than CHUNK-A, do not remove CHUNK-A shards as they will be used in CHUNK-B processing.        #}
+        {% if PP_CHUNK_B == PP_CHUNK_A %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
         {% endif %}
 
-{# If work-dir cleaning is desired, and CHUNK-A is equal to the history segment, and CHUNK-B == CHUNK-A, then #}
-{# remove the shards after remapping                                                                          #}
-    {% elif CLEAN_WORK and PP_CHUNK_B == PP_CHUNK_A %}
-        {% if DO_NATIVE and DO_REGRID %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_NATIVE %}
-make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_REGRID %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% endif %}
     {% endif %}
 {% endif %}
 
