@@ -12,6 +12,14 @@
 {# Calculate the number of chunk-a chunks per chunk-b #}
 {% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
 
+{% set DO_CHUNK_B_PP = False %}
+{% if REQUEST_CHUNK_B_PP and PP_CHUNK_B_COUNT > 1 %}
+    {% set DO_CHUNK_B_PP = True %}
+{% elif REQUEST_CHUNK_B_PP %}
+    {{ raise("ERROR: You've requested a secondary PP output size, but the secondary size is too small!") }}
+    {{ raise("ERROR: PP_CHUNK_B must be at least twice as large as PP_CHUNK_A!") }}
+{% endif %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -266,7 +274,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # Recurrence interval: every CHUNK-B
 #
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
-{% if PP_CHUNK_B_COUNT > 1 %}
+{% if DO_CHUNK_B_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
@@ -579,6 +587,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-{{ PP_CHUNK_A }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
+{% if DO_CHUNK_B_PP %}
     [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -586,6 +595,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
+{% endif %}
 
 {% if DO_STATICS %}
     [[remap-pp-components-static]]
@@ -638,7 +648,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}
 {% endif %}
 
-{% if PP_CHUNK_B_COUNT > 1 %}
+{% if DO_CHUNK_B_PP %}
     [[MAKE-TIMESERIES-{{ PP_CHUNK_B }}]]
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
@@ -756,16 +766,18 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endfor %}
         """
 
+{% if DO_CHUNK_B_PP %}
     [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
-{% if DO_REGRID %}
+    {% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
-{% endif %}
+    {% endif %}
         """
+{% endif %}
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
