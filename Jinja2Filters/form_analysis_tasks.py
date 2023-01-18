@@ -1,5 +1,6 @@
-import re
 import os
+import re
+import sys
 import metomi.rose.config
 import metomi.isodatetime.parsers
 import metomi.isodatetime.dumpers
@@ -38,7 +39,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
 
         # consider adding analysis script to workflow
         # if not adding, write a note why
-        print(f"NOTE: Considering adding '{item}' to workflow")
+        sys.stderr.write(f"NOTE: Considering analysis script '{item}'\n")
 
         # get the required pp components for the analysis script
         item_comps = node.get_value(keys=[item, 'components']).split()
@@ -48,7 +49,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             skip_item = 0
             for comp in item_comps:
                 if comp not in pp_components:
-                    print(f"NOTE: Skipping package '{item}' as it requests a component not available: '{comp}'\n")
+                    sys.stderr.write(f"NOTE: Skipping package '{item}' as it requests a component not available: '{comp}'\n")
                     skip_item = 1
                     continue
             if skip_item:
@@ -81,7 +82,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
         item_cumulative = False
         if item_cumulative:
             start_time = metomi.isodatetime.parsers.TimePointParser().parse(start_year + '-01-01')
-            print("NOTE: Using cumulative range, starting from:", start_time)
+            sys.stderr.write(f"NOTE: Using cumulative range, starting from {start_time}\n")
 
         # get the optional start/end options
         item_start_str = node.get_value(keys=[item, 'start'])
@@ -91,7 +92,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             try:
                 item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
             except:
-                print("WARNING: Could not parse ISO8601 start date", item_start_str)
+                sys.stderr.write(f"WARNING: Could not parse ISO8601 start date {item_start_str}")
                 item_start = None
         else:
             item_start = None
@@ -99,12 +100,12 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             try:
                 item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
             except:
-                print("WARNING: Could not parse ISO8601 end date", item_end_str)
+                sys.stderr.write(f"WARNING: Could not parse ISO8601 end date {item_end_str}")
                 item_end = None
         else:
             item_end = None
         if item_start and item_end:
-            print("NOTE: Using defined date range:", item_start, item_end)
+            sys.stderr.write(f"NOTE: Using defined date range: {item_start} to {item_end}")
 
         # write the analysis script task(s), one for each chunk
         # each analysis script inherits from an analysis script family
@@ -114,15 +115,15 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
         added_a_chunk = 0
         for chunk in item_chunks:
             # in all cases, need to add in suitable in_data_dir corresponding to the PP output
-            header = f"[[{item}-{chunk}]]"
+            header = f"[[analysis-{item}-{chunk}]]"
             tail = """
         [[[environment]]]
             in_data_dir = {pp_dir}/{comp}/ts/{freq}/{chunk}
-            """.format(item=item, chunk=chunk, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
+            """.format(chunk=chunk, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
             # skip the chunk if it's not available as TS chunks
             if chunk != default_chunk1 and chunk != default_chunk2:
-                print("NOTE: Skipping chunk", chunk)
+                sys.stderr.write(f"NOTE: Skipping chunk {chunk}\n")
                 continue
 
             # 3 main cases: defined year range, cumulative, and every-chunk
@@ -130,7 +131,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             if item_start and item_end:
                 added_a_chunk = 1
                 this_range = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y%m%d') + '_' + metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y%m%d')
-                print("NOTE: Using defined year range for chunk", chunk)
+                sys.stderr.write(f"NOTE: Using defined year range for chunk {chunk}\n")
                 results += f"""
     {header}
         inherit = ANALYSIS-{this_range}, {item}
@@ -149,7 +150,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             # cumulative
             elif item_cumulative:
                 added_a_chunk = 1
-                print("NOTE: Using cumulative for chunk", chunk)
+                sys.stderr.write(f"NOTE: Using cumulative for chunk {chunk}\n")
                 results += """
     {header}
         inherit = ANALYSIS-CUMULATIVE-{chunk}-{date2}, {item}
@@ -159,22 +160,22 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             # every chunk
             else:
                 added_a_chunk = 1
-                print("NOTE: Using regular chunks for chunk", chunk)
+                sys.stderr.write(f"NOTE: Using regular chunks for chunk {chunk}\n")
                 results += f"""
     {header}
-        inherit = ANALYSIS-{chunk}, {item}
+        inherit = ANALYSIS-{chunk}, analysis-{item}
         {tail}
                 """
 
         # chunk not available: skip with a message
         if not added_a_chunk:
-            print(f"NOTE: Skipping package '{item}' as it requests pp chunks not available")
+            sys.stderr.write(f"NOTE: Skipping package '{item}' as it requests pp chunks not available")
             continue
         
         # write the analysis script family
-        print(f"NOTE: Adding analysis script task family for '{item}'")
+        sys.stderr.write(f"NOTE: Adding analysis script task family for '{item}'\n")
         results += """
-    [[{item}]]
+    [[analysis-{item}]]
         script = '''
             chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
             $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
@@ -186,7 +187,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             scriptLabel = {item}
         """.format(item=item, item_script=item_script, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
-        print(f"NOTE: Ending processing of '{item}'\n")
+        sys.stderr.write(f"NOTE: Ending processing of '{item}'\n\n")
 
     #print("DEBUG: returning", results)
     return(results)
