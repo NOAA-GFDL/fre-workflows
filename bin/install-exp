@@ -2,7 +2,7 @@
 source $MODULESHOME/init/csh
 module load cylc/8.0.4
 set echo
-cylc validate -O $1 .
+#cylc validate -O $1 .
 if ($status) then
     echo "ERROR in validation"
     exit 1

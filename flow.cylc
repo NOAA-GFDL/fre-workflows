@@ -13,11 +13,11 @@
 {% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
 
 {% set DO_CHUNK_B_PP = False %}
-{% if REQUEST_CHUNK_B_PP and PP_CHUNK_B_COUNT > 1 %}
+{% if REQUEST_CHUNK_B_PP and PP_CHUNK_B_COUNT > 0 %}
     {% set DO_CHUNK_B_PP = True %}
 {% elif REQUEST_CHUNK_B_PP %}
     {{ raise("ERROR: You've requested a secondary PP output size, but the secondary size is too small!") }}
-    {{ raise("ERROR: PP_CHUNK_B must be at least twice as large as PP_CHUNK_A!") }}
+    {{ raise("ERROR: PP_CHUNK_B must be at least as large as PP_CHUNK_A!") }}
 {% endif %}
 
 [meta]
@@ -232,7 +232,6 @@ rename-split-to-pp-native<native>
     {{  form_remap_dep_PP_CHUNK_A_regrid  }}
 {% endif %}
 
-
 {% if DO_NATIVE %}
     {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
     {% if form_remap_dep_PP_CHUNK_A_native == "" %}
@@ -256,7 +255,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUN
 
 {# If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping). #}
 {# If CHUNK-B were larger than CHUNK-A, do not remove CHUNK-A shards as they will be used in CHUNK-B processing.        #}
-        {% if PP_CHUNK_B == PP_CHUNK_A %}
+        {% if PP_CHUNK_A != HISTORY_SEGMENT and PP_CHUNK_B_COUNT == 1 %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
         {% endif %}
 
@@ -274,7 +273,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # Recurrence interval: every CHUNK-B
 #
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
-{% if DO_CHUNK_B_PP %}
+{% if DO_CHUNK_B_PP and PP_CHUNK_B_COUNT > 1 %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
