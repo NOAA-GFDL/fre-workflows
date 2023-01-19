@@ -20,7 +20,6 @@
     title = "Postprocessing Example 1"
     description = """
 Postprocessing example that includes Bronx-like functionality,
-{{ PP_CHUNK_A_COUNT_TOTAL }}
 """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
