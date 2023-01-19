@@ -756,14 +756,21 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
             fremodule = fre/test
+            WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
+            hist_dir = {{ HISTORY_DIR }}
+            gridspecfile = {{ PP_GRID_SPEC }}
     [[ANALYSIS-{{ PP_CHUNK_A }}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            {% set datachunk_float = PP_CHUNK_A | duration_as('weeks') / 52 %}
+            datachunk = {{ datachunk_float | int }}
     [[ANALYSIS-{{ PP_CHUNK_B }}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            {% set datachunk_float = PP_CHUNK_B | duration_as('weeks') / 52 %}
+            datachunk = {{ datachunk_float | int }}
 
     # commenting out this cumulative stuff for now
     {% if False %}
