@@ -7,10 +7,16 @@
 {# The site-specific file (stored in site/ subdir) is included at the end of this file.	              #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows) #}
 {% set SITE = 'gfdl' %}
-{# Calculate the number of history segments per chunk-a #}
-{% set PP_CHUNK_A_COUNT = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
-{# Calculate the number of chunk-a chunks per chunk-b #}
-{% set PP_CHUNK_B_COUNT = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
+
+{# Calculate the number of history segments per a-chunk #}
+{% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
+
+{# Calculate the number of a-chunks per b-chunk (if desired) #}
+{% set DO_SECONDARY_PP = False %}
+{% if PP_CHUNK_B is defined and PP_CHUNK_B != PP_CHUNK_A %}
+    {% set CHUNK_AS_PER_CHUNK_B = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
+    {% set DO_SECONDARY_PP = True %}
+{% endif %}
 
 [meta]
     title = "Postprocessing Example 1"
@@ -100,7 +106,7 @@ stage-history => PRE-ANALYSIS
 {# The angle brackets define the "ensemble" axis, the task paramaters defined above.					 #}
 {# The next two lines set the major processing for the native and regrid (horizontal regridding) lists of history files. #}
 {# Each history file to be regridded should be regridded once staging is done; then should be split and cataloged	 #}
-{# (into a standard shards directory set by ISO8601 frequencies and chunks).						 #}
+{# (into a standard shards directory set by ISO8601 frequencies ).						 #}
 {# Each history file needed for native grid processing is similar, except skipping the regridding.                       #}
 {% if DO_REGRID %} 
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
@@ -192,7 +198,7 @@ combine-statics => clean-pp-statics
         #
         # Recurrence interval: every CHUNK-A
         #
-        {# Run the tasks to process CHUNK-A every CHUNK-A, starting after CHUNK-A time #}
+        {# Run the tasks to process CHUNK-A every CHUNK-A, starting after PP_CHUNK_A #}
         +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
 
 {# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |                   #}
@@ -200,68 +206,42 @@ combine-statics => clean-pp-statics
 {# This Jinja for loop expands to do this.                                                                #}
 {% if DO_REGRID %}
 rename-split-to-pp-regrid<regrid>
-    {% for CHUNK in range(1, PP_CHUNK_A_COUNT) %}
-& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }}]
+    {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
+& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% endif %}
 
 {% if DO_NATIVE %} 
 rename-split-to-pp-native<native>
-    {% for CHUNK in range(1, PP_CHUNK_A_COUNT) %}
-& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }}]
+    {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
+& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {% endif %}
 
-{# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
-{# Throw cylc validate exceptions if PP_CHUNK_A is not in rose-app.conf                                      #}
 {% if DO_REGRID %}
     {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
-    {% if form_remap_dep_PP_CHUNK_A_regrid == "" %}
-        {{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}   
-    {% endif %}
     {{  form_remap_dep_PP_CHUNK_A_regrid  }}
 {% endif %}
 
-
 {% if DO_NATIVE %}
     {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
-    {% if form_remap_dep_PP_CHUNK_A_native == "" %}
-        {{ raise("You configured a PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please check PP_CHUNK_A in rose-suite.conf") }}
-    {% endif %}
     {{  form_remap_dep_PP_CHUNK_A_native  }}
 {% endif %}
 
-{# If work-dir cleaning is desired, and CHUNK-A is larger than the history segment, then remove the (prerequisite) history segment shards. #}
-{# However, if CHUNK-A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.        #}
-{% if DO_NATIVE and DO_REGRID %} 
-    {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
-        {% if DO_NATIVE and DO_REGRID %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_NATIVE %}
-make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_REGRID %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% endif %}
+{# If work-dir cleaning is desired, and (chunk A is larger than the history segment, or, only one pp size is specified), remove (prerequisite) history shards. #}
+{# If instead chunk A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.                              #}
+{% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 
-{# If only one pp chunk is used (CHUNK-B is equal to CHUNK-A), then remove the CHUNK-A shards after saving (remapping).                 #}
-{# In the usual case where CHUNK-B is larger than CHUNK-A, do not remove CHUNK-A shards yet as they will be used in CHUNK-B processing. #}
-        {% if PP_CHUNK_B_COUNT == 1 %}
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% endif %}
-
-{# If work-dir cleaning is desired, and CHUNK-A is equal to the history segment, and CHUNK-B == CHUNK-A, then #}
-{# remove the shards after remapping                                                                          #}
-    {% elif CLEAN_WORK and PP_CHUNK_B == PP_CHUNK_A %}
-        {% if DO_NATIVE and DO_REGRID %}
+    {% if DO_NATIVE and DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_NATIVE %}
+    {% elif DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% elif DO_REGRID %}
+    {% elif DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-        {% endif %}
     {% endif %}
+
 {% endif %}
 
 {# If MDTF is requested, then run it after all pp components have finished #}
@@ -275,14 +255,14 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # Recurrence interval: every CHUNK-B
 #
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
-{% if PP_CHUNK_B_COUNT > 1 %}
+{% if DO_SECONDARY_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
     {% if DO_REGRID %} 
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
-        {% for CHUNK in range(1, PP_CHUNK_B_COUNT) %}
+        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
         {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
@@ -291,7 +271,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 
     {% if DO_NATIVE %} 
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
-        {% for CHUNK in range(1, PP_CHUNK_B_COUNT) %}
+        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
         {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
@@ -301,18 +281,12 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {# Throw validation exception if PP_CHUNK_B is not in rose-app.conf                                          #}
     {% if DO_REGRID %}
         {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
-        {% if form_remap_dep_PP_CHUNK_B_regrid == "" %}
-            {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }} 
-        {% endif %}  
         {{ form_remap_dep_PP_CHUNK_B_regrid }}
     {% endif %}
 
 
     {% if DO_NATIVE %}
         {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
-        {% if form_remap_dep_PP_CHUNK_B_native == "" %}
-            {{ raise("You configured a second PP chunk, but no corresponding PP requests were found in app/remap-pp-component/rose-app.conf; please remove the CHUNK-B setting or set CHUNK-B to CHUNK-A") }}
-        {% endif %} 
         {{ form_remap_dep_PP_CHUNK_B_native }}
     {% endif %}
 
@@ -588,6 +562,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-{{ PP_CHUNK_A }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}
+{% if DO_SECONDARY_PP %}
     [[REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
@@ -595,6 +570,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
+{% endif %}
 
 {% if DO_STATICS %}
     [[remap-pp-components-static]]
@@ -647,7 +623,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}
 {% endif %}
 
-{% if PP_CHUNK_B_COUNT > 1 %}
+{% if DO_SECONDARY_PP %}
     [[MAKE-TIMESERIES-{{ PP_CHUNK_B }}]]
         [[[environment]]]
             begin = $(cylc date --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
@@ -742,12 +718,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
-{% for CHUNK in range(0, PP_CHUNK_A_COUNT) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc" -delete
+{% for SEGMENT in range(0, HIST_SEGMENTS_PER_CHUNK_A) %}
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
     {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-CHUNK) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
     {% endif %}
 {% endfor %}
         """
@@ -755,26 +731,37 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
-{% for CHUNK in range(0, PP_CHUNK_B_COUNT) %}
+{% if DO_SECONDARY_PP %}
+    {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
-    {% if DO_REGRID %}
+        {% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
+        {% endif %}
+    {% endfor %}
+{% else %}
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
+    {% if DO_REGRID %}
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
     {% endif %}
-{% endfor %}
+{% endif %}
         """
 
+{% if DO_SECONDARY_PP %}
     [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
-{% if DO_REGRID %}
+    {% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc date --template CCYY)*.nc" -delete
-{% endif %}
+    {% endif %}
         """
+{% endif %}
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}

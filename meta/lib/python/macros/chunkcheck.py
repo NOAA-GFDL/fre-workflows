@@ -91,6 +91,10 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
                     'template variables', 'PP_CHUNK_B', pp_chunk_b,
                     "Could not be parsed as ISO8601 duration")
             if pp_chunk_b_duration:
+                if (pp_chunk_b_duration == pp_chunk_a_duration):
+                    self.add_report(                        
+                        "template variables", "PP_CHUNK_B", pp_chunk_b, 
+                        f"If set, PP_CHUNK_B must not be equivalent to PP_CHUNK_A ({pp_chunk_a})")
                 if not self.is_multiple_of(pp_chunk_b_duration, pp_chunk_a_duration):
                     self.add_report(
                         "template variables", "PP_CHUNK_B", pp_chunk_b,
