@@ -5,5 +5,4 @@ if [[ $(hostname) != an107 && $(hostname) != an201 ]]; then
     exit 1
 fi
 
-module load cylc
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
