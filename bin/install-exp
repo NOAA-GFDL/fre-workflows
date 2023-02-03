@@ -1,7 +1,7 @@
 #!/bin/csh -f
 source $MODULESHOME/init/csh
 set echo
-cylc validate --check-circular -o flow_$1.cylc -O $1 .
+cylc validate --check-circular -O $1 .
 if ($status) then
     echo "ERROR in validation"
     exit 1
