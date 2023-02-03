@@ -13,7 +13,7 @@ def strtobool(val):
         return False 
     raise Exception("invalid boolean value: {!r}".format(val))
 
-def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, default_chunk2):
+def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, default_chunk2=None):
     """Form the analysis tasks from app/analysis/rose-app.conf
 
     Arguments:
@@ -67,8 +67,10 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
         item_chunks_str = node.get_value(keys=[item, 'chunk'])
         if item_chunks_str:
             item_chunks = item_chunks_str.split()
-        else:
+        elif default_chunk2:
             item_chunks = [default_chunk1, default_chunk2]
+        else:
+            item_chunks = [default_chunk1]
 
         # get the optional cumulative option
         # cumulative option is the entire pp range, not just this chunk
