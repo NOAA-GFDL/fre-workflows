@@ -16,12 +16,12 @@
 {% if PP_CHUNK_B is defined and PP_CHUNK_B != PP_CHUNK_A %}
     {% set CHUNK_AS_PER_CHUNK_B = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
     {% set DO_SECONDARY_PP = True %}
+    # Calculate the number of chunk-b chunks total
+    {% set PP_CHUNK_B_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_B) | int %}
 {% endif %}
 
 # Calculate the number of chunk-a chunks total
 {% set PP_CHUNK_A_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_A) | int %}
-# Calculate the number of chunk-b chunks total
-{% set PP_CHUNK_B_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_B) | int %}
 
 [meta]
     title = "Postprocessing Example 1"
@@ -741,12 +741,14 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             {% set datachunk_float = PP_CHUNK_A | duration_as('weeks') / 52 %}
             datachunk = {{ datachunk_float | int }}
+    {% if DO_SECONDARY_PP %}
     [[ANALYSIS-{{ PP_CHUNK_B }}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             {% set datachunk_float = PP_CHUNK_B | duration_as('weeks') / 52 %}
             datachunk = {{ datachunk_float | int }}
+    {% endif %}
 
     # commenting out this cumulative stuff for now
     {% if False %}
@@ -778,7 +780,11 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
     {% endfor %}
     {% endif %}
 
+    {% if DO_SECONDARY_PP %}
     {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
+    {% else %}
+    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A) }}
+    {% endif %}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
