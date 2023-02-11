@@ -75,6 +75,8 @@ Postprocessing example that includes Bronx-like functionality,
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
+    # max number of active cycle points (default 5)
+    runahead limit = P10
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
