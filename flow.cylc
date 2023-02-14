@@ -27,6 +27,9 @@
     title = "Postprocessing Example 1"
     description = """
 Postprocessing example that includes Bronx-like functionality,
+{% if DO_SECONDARY_PP %}
+pp-chunk-b-count-total is {{ PP_CHUNK_B_COUNT_TOTAL }}
+{% endif %}
 """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
@@ -324,7 +327,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 # on all the ANALYSIS-PP_CHUNK_A tasks
 #
 # commenting out the cumulative stuff for now
-{% if False %}
 {% for I in range(0, PP_CHUNK_A_COUNT_TOTAL + 1) %}
     {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_A | string | multiply_duration(I) | string) | string %}
         R1/{{ this_date }} = """
@@ -337,16 +339,17 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all
 {% endfor %}
 
 # Same for CHUNK-B
-{% for I in range(0, PP_CHUNK_B_COUNT_TOTAL + 1) %}
-    {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_B | string | multiply_duration(I) | string) | string %}
+{% if DO_SECONDARY_PP %}
+    {% for I in range(0, PP_CHUNK_B_COUNT_TOTAL + 1) %}
+        {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_B | string | multiply_duration(I) | string) | string %}
         R1/{{ this_date }} = """
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
-    {% for J in range(1, I+1) %}
+        {% for J in range(1, I+1) %}
 & REMAP-PP-COMPONENTS-{{ PP_CHUNK_B}}[{{ PP_CHUNK_B | multiply_duration(-J)}}]:succeed-all
-    {% endfor %}
+        {% endfor %}
 => ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ this_date | strftime('%Y%m%d') }}
 """
-{% endfor %}
+    {% endfor %}
 {% endif %}
 
 [runtime]
@@ -752,8 +755,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             datachunk = {{ datachunk_float | int }}
     {% endif %}
 
-    # commenting out this cumulative stuff for now
-    {% if False %}
     {# Create cumulative analysis task families for each CHUNK-A, for the entire PP range #}
     {# The below variable definition and for loop is confusing and needs to be explained #}
     {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_A) | string | duration_as('s') / (PP_CHUNK_A | duration_as('s')) %}
@@ -766,26 +767,25 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             yr1 = {{ PP_START | strftime('%Y') }}
             yr2 = {{ enddate | string | strftime('%Y') }}
     {% endfor %}
-    {% endif %}
 
     # Same for CHUNK-B
-    {% if False %}
-    {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_B) | string | duration_as('s') / (PP_CHUNK_B | duration_as('s')) %}
-    {% for x in range(0, total_segments | int) %}
-        {% set cumulative_duration = PP_CHUNK_B | multiply_duration(x) %}
-        {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
+    {% if DO_SECONDARY_PP %}
+        {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_B) | string | duration_as('s') / (PP_CHUNK_B | duration_as('s')) %}
+        {% for x in range(0, total_segments | int) %}
+            {% set cumulative_duration = PP_CHUNK_B | multiply_duration(x) %}
+            {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
     [[ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ enddate | string | strftime('%Y%m%d') }}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = {{ PP_START | strftime('%Y') }}
             yr2 = {{ enddate | string | strftime('%Y') }}
-    {% endfor %}
+        {% endfor %}
     {% endif %}
 
     {% if DO_SECONDARY_PP %}
-    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
+        {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
     {% else %}
-    {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A) }}
+        {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A) }}
     {% endif %}
 
     [[mdtf]]

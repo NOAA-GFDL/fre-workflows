@@ -80,8 +80,6 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
             item_cumulative = strtobool(item_cumulative_str)
         else:
             item_cumulative = False
-        # turn off the cumulative stuff for now
-        item_cumulative = False
         if item_cumulative:
             start_time = metomi.isodatetime.parsers.TimePointParser().parse(start_year + '-01-01')
             sys.stderr.write(f"NOTE: Using cumulative range, starting from {start_time}\n")
@@ -155,7 +153,7 @@ def form_analysis_tasks(pp_components_str, pp_dir, start_year, default_chunk1, d
                 sys.stderr.write(f"NOTE: Using cumulative for chunk {chunk}\n")
                 results += """
     {header}
-        inherit = ANALYSIS-CUMULATIVE-{chunk}-{date2}, {item}
+        inherit = ANALYSIS-CUMULATIVE-{chunk}-{date2}, analysis-{item}
         {tail}
                 """.format(item=item, header=header, tail=tail, chunk=chunk, date2=metomi.isodatetime.dumpers.TimePointDumper().strftime(start_time, '%Y%m%d'))
 
