@@ -311,6 +311,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     # default config for all tasks
     [[root]]
         init-script = """
+            module use -a /home/fms/local/modulefiles
             module load epmt
             module list
             epmt check
@@ -318,7 +319,11 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         env-script = """
             eval $(rose task-env)
             env
+			unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
             epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:{{ PP_START }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
+            export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
+            export LD_PRELOAD=$PAPIEX_LD_PRELOAD
+            export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
 """
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
