@@ -1,131 +1,124 @@
-# Checkout PP suite and app templates
-1. git clone --recursive git@gitlab.gfdl.noaa.gov:fre2/workflows/postprocessing.git 
-1. cd postprocessing
+# Instructions to post-process AM5 history files
 
-# Bronx XML converter available
-- bin/fre-bronx-to-canopy.py --help
-- bin/fre-bronx-to-canopy.py -x XML -p PLATFORM -t TARGET -e EXP
-- Takes a long time. module load FRE for frelist first
-- After running, set PP_START and PP_STOP in rose-suite.conf, which are the only vars not set
-- Double-check the history and PP directories
-- "git status" to see the converter output
+0. Clone/checkout workflow and apps
 
-# Edit PP configurations
-1. vi rose-suite.conf
-1. vi app/regrid-xy/rose-app.conf
-1. vi app/remap-pp-components/rose-app.conf
-
-# Load Cylc
-1. module load cylc/test
-
-# Validate configuration
-1. rose macro --suite-only              # List validation scripts (for rose-suite.conf)
-1. rose macro --validate --suite-only   # Run validation scripts (for rose-suite.conf), uses meta/rose-meta.conf
-1. cylc validate .                      # Validate Cylc+Rose configuration
-
-# Install workflow (on PP/AN)
-1. ssh analysis
-1. cylc install --no-run-name (`--no-run-name avoids creating runN directories`)
-
-# Start workflow (on PP/AN)
-1. ssh analysis
-1. cylc play postprocessing
-
-# Monitoring
 ```
-# GUI
-1. ssh analysis, and choose 'jhan' at the PP/AN load balancer
-2. cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
-3. Paste the http location given into your web browser
-
-# Terminal GUI
-# Note: on PP/AN, there is a python utf error that is resolved by
-- setenv PYTHONUTF8 1
-- cylc tui postprocessing
-
-# Running jobs
-- watch squeue -u $USER --sort=-M --state=r
-
-# Workflow log
-- cylc cat-log postprocessing
-
-# Job scripts, stdout, and stderr (respectively)
-- cylc cat-log postprocessing//<CYCLE-POINT>/<task-name> -f j
-- cylc cat-log postprocessing//<CYCLE-POINT>/<task-name> -f o
-- cylc cat-log postprocessing//<CYCLE-POINT>/<task-name> -f e
-
-# Running, submitted, or failed tasks (jobs)
-- cylc workflow-state postprocessing | grep -v succeeded
-# Report of workflow timings
-- cylc report-timings postprocessing
+git clone --recursive https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp.am5
+cd pp.am5
 ```
 
-# Workflow and global configuration (respectively)
-- cylc config postprocessing (`workflow configuration`)
-- cylc config (`global configuration`)
+1. Load Cylc
 
-# Workflow control
 ```
-# Pause suite
-- cylc stop postprocessing
-# Stop a workflow and abandon any jobs
-- cylc stop postprocessing --now
-# Clean up run dir, log dir, share dir
-- cylc clean postprocessing
-# Reinstall flow.cylc updates but not rose app updates
-- cylc play postprocessing
-# to start a particular task
-- cylc trigger postprocessing//<CYCLE-POINT>/<task-name>
+module load cylc
 ```
 
-# Graphing task dependencies
-It's often helpful to visually see the task dependencies, and Cylc provides excellent graphing capability. A introduction is on the Cylc webpage (https://cylc.github.io/cylc-doc/8.0b3/html/tutorial/scheduling/graphing.html)
+2. List available postprocess configurations
 
-To see all the currently configured date (cycle point) range,
+Experiments with already created pp configurations are in the `opt/` directory, in the form `rose-suite-<exp-name>.conf`
 
-    cylc graph .
+```
+>bin/list-exps
+am5_c96L33_amip     # 1 year and 6 year ouput
+am5_c96L65_amip     # 8-day output
+am5_c384L33_amip    # 8-day output
+```
 
-If you have trouble displaying the graphs through your X11 forwarding,
-try saving the png file to disk and then viewing from the workstation:
+Pick one of the experiments, to replace in `<exp-name>` usage in later steps.
 
-    cylc graph . -o ~/cylc-graph.png
-    display ~/cylc-graph.png
+3. Convert the Variable Group files to the regrid and remap Rose app config files
 
-You may be overwhelmed by the task graph, especially a large range of dates or many history files. Reducing the time range is an option; e.g. to show just one segment,
+```
+bin/write-rose-configs opt/variable-groups/*
+```
 
-    cylc graph . 1979 1979
+4. Validate the configuration
 
-Aside from reducing the time range, limiting the task parameters (history files and pp component lists) is a good approach. If you are only interested in graphing, simply edit the `flow.cylc` to replace the task paramaters with one each (any name will do). This won't run, but will make an easier graph to read. For example, change this (line 25ish):
+```
+rose macro --validate
+```
 
-    regrid =        {{ "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS) }}
-    regrid_static = {{ "regrid-xy" | form_task_parameters('static', PP_COMPONENTS) }}
-    native =        {{ "native" | form_task_parameters('temporal', PP_COMPONENTS) }}
-    native_static = {{ "native" | form_task_parameters('static', PP_COMPONENTS) }}
-    component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
+All warnings or errors should be fixed. If the fix is in the Variable Group files, then
+rerun the previous step. The validation scripts check for experiment and Rose app
+configurations only.
 
-to
+5. Validate and install the configuration
 
-    regrid =        regrid-history-file
-    regrid_static = regrid-static-history-file
-    native =        native-history-file
-    native_static = native-static-history-file
-    component  =    one-component
+```
+bin/install-exp <exp-name>      # cylc validate and install steps
+```
 
-and then rerun the `cylc graph`
+This installs the workflow run directory in `~/cylc-run/<exp-name>/runN`, where N is an incrementing number (like FRE --unique). The various `cylc` commands act on the most recent `runN` by default.
 
-# Many more useful Cylc commands
-- cylc help all
+6. Start the workflow
 
-# What is happening?
-- All files in ~/cylc-run/postprocessing: workflow logs, job logs, job scripts, work directories
-- share and work directories are symlinked to /xtmp
+```
+cylc play <exp-name>
+...
+2022-08-19T16:55:52Z INFO - Extracting job.sh to /home/Chris.Blanton/cylc-run/c96L33_am4p0/run1/.service/etc/job.sh
+c96L33_am4p0/run1: workflow1.princeton.rdhpcs.noaa.gov PID=13280
+```
 
-# Other notes
-- Useful Cylc examples from a Cylc developer (https://github.com/oliver-sanders/cylc-examples)
-- data.gov recurrance examples on ISO8601 (https://resources.data.gov/schemas/dcat-us/v1.1/iso8601_guidance/)
+The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the login banner).
 
-# How to run on workstation (may need updating)
-# Also, need corresponding settings in rose-suite.conf
-- cylc validate .
-- cylc install --symlink-dirs="work=/local2/home, share=/local2/home" --no-run-name
-- cylc play postprocessing
+7. Start the GUI (optional)
+
+```
+ssh analysis            # choose "jhan" (or "jhanbigmem") at the load balancer promp
+cd /path/to/your/pp.am5 # dir created in the initial clone step
+bin/start-gui           # cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
+```
+
+Navigate to one of the two links printed to screen in your web browser
+
+6. Examine workflow tasks and timings
+
+Show the state of all tasks with the `workflow-state` command.
+```
+cylc workflow-state <exp-name>
+```
+
+If multiple workflows exist under the same `<exp-name>`, a specific run dir can be specified like e.g. `<exp-name>/run2` to limit the ouput to only `run2` tasks.
+
+Show the current state of the workflow:
+```
+cylc scan -t rich --colour-blind
+```
+
+Report task timings:
+```
+cylc report-timings <exp-name>
+```
+
+Print job log to screen:
+```
+cylc cat-log <exp-name>//<cycle-point>/<task-name>
+```
+
+Print job error log to screen:
+```
+cylc cat-log -f e <exp-name>//<cycle-point>/<task-name>
+```
+
+7. More on validation
+
+The Rose validation scripts act on all experiments.
+
+```
+rose macro --validate --suite-only
+```
+
+Try changing something to a nonsense value and see if the validator barks.
+
+8. Manually trigger some tasks to see 8-day pp output (c96L65_am4p0_cmip6Diag)
+
+Currently, for the first recurrence, more components are grouped together in unnecessary dependence for statics.
+This could be improved, but for now the remap-pp-component tasks that write to /archive will not start until all
+slow or doomed tasks finish.
+
+Try triggering via the GUI or command line. For the GUI, click the X next to the color icon, then select Trigger.
+For the command line,
+
+```
+cylc trigger <exp-name>//<cycle-point>/<task-name>
+```
