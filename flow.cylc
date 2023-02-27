@@ -59,7 +59,7 @@ Postprocessing example that includes Bronx-like functionality,
 {% set DO_NATIVE = NATIVE|length %}
 {% if DO_NATIVE %}
     native = {{ NATIVE }}
-    {% if DO_STATICS %}       
+    {% if DO_STATICS %}
     native_static = {{ NATIVE_STATIC }}
     {% endif %}
 {% endif %}
@@ -110,11 +110,11 @@ stage-history => PRE-ANALYSIS
 {# Each history file to be regridded should be regridded once staging is done; then should be split and cataloged	 #}
 {# (into a standard shards directory set by ISO8601 frequencies ).						 #}
 {# Each history file needed for native grid processing is similar, except skipping the regridding.                       #}
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
 {% endif %}
 
-{% if DO_NATIVE %} 
+{% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
 {% endif %}
 
@@ -123,10 +123,10 @@ STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> =>
 {# Regridding and splitting native history files should not start until the history-refined output is available.            #}
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all  => stage-history-refined-link
-    {% if DO_REGRID %} 
+    {% if DO_REGRID %}
 stage-history-refined-link => regrid-xy<regrid>
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 stage-history-refined-link => split-netcdf-native<native>
     {% endif %}
 {% endif %}
@@ -139,7 +139,7 @@ stage-history-refined-link => split-netcdf-native<native>
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 rename-split-to-pp-native<native> => clean-split-native
     {% endif %}
 {% endif %}
@@ -156,15 +156,15 @@ pp-starter => STAGE-HISTORY
     {% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
     {% endif %}
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
-    {% if DO_NATIVE and DO_REGRID %} 
+    {% if DO_NATIVE and DO_REGRID %}
 rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_NATIVE %} 
+    {% elif DO_NATIVE %}
 rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_REGRID %} 
+    {% elif DO_REGRID %}
 rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
     {% endif %}
 {% endif %}
@@ -172,11 +172,11 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all => stage-history-refined-link
-    {% if DO_STATICS %} 
-        {% if DO_REGRID %} 
+    {% if DO_STATICS %}
+        {% if DO_REGRID %}
 stage-history-refined-link => regrid-xy<regrid_static>
         {% endif %}
-        {% if DO_NATIVE %} 
+        {% if DO_NATIVE %}
 stage-history-refined-link => split-netcdf-native<native_static>
         {% endif %}
     {% endif %}
@@ -188,7 +188,7 @@ stage-history-refined-link => split-netcdf-native<native_static>
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 rename-split-to-pp-native<native_static> => clean-split-native
     {% endif %}
 remap-pp-components-static => clean-shards-static
@@ -214,7 +214,7 @@ rename-split-to-pp-regrid<regrid>
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% endif %}
 
-{% if DO_NATIVE %} 
+{% if DO_NATIVE %}
 rename-split-to-pp-native<native>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
@@ -262,7 +262,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
-    {% if DO_REGRID %} 
+    {% if DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
@@ -271,7 +271,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
     {% endif %}
 
 
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
@@ -315,16 +315,18 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             module load epmt
             module list
             epmt check
-"""
+        """
         env-script = """
             eval $(rose task-env)
             env
+            export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
+            export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
             epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:{{ PP_START }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
             export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
-"""
+        """
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
@@ -374,7 +376,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             module load gcp/test
             module load fre/test
             mkdir -p $work $tempCache $refineDiagDir
-            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/*
+            export PAPIEX_TAGS="op:hsmget;op_instance:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/* ; unset PAPIEX_TAGS
             cd $work/$hsmdate
             ls
         """
@@ -416,12 +418,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 exit 1
             fi
             if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\*
+                export PAPIEX_TAGS="op:hsmget;op_instance:2" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset PAPIEX_TAGS
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
-            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
+			export PAPIEX_TAGS="op:hsmget;op_instance:3" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
         """
 {# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
 {# Create a 'macro' function to reduce code repeat #}
@@ -435,9 +437,9 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 else
                     echo ERROR: User script got an error status $?
                     exit 1
-                fi  
-            """ 
-    {%- endmacro %}        
+                fi
+            """
+    {%- endmacro %}
 {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
     {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
     {% for refineDiag_path in refineDiag_scripts %}
@@ -498,7 +500,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
     [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID
     {% if DO_STATICS %}
@@ -535,7 +537,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% if DO_NATIVE %}
     [[rename-split-to-pp-native<native>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
-    {% if DO_STATICS %} 
+    {% if DO_STATICS %}
     [[rename-split-to-pp-native<native_static>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
         [[[environment]]]
@@ -543,7 +545,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
     [[rename-split-to-pp-regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
     {% if DO_STATICS %}
