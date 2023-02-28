@@ -16,20 +16,12 @@
 {% if PP_CHUNK_B is defined and PP_CHUNK_B != PP_CHUNK_A %}
     {% set CHUNK_AS_PER_CHUNK_B = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
     {% set DO_SECONDARY_PP = True %}
-    # Calculate the number of chunk-b chunks total
-    {% set PP_CHUNK_B_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_B) | int %}
 {% endif %}
-
-# Calculate the number of chunk-a chunks total
-{% set PP_CHUNK_A_COUNT_TOTAL = PP_STOP | subtract_dates(PP_START) | string | divide_durations(PP_CHUNK_A) | int %}
 
 [meta]
     title = "Postprocessing Example 1"
     description = """
 Postprocessing example that includes Bronx-like functionality,
-{% if DO_SECONDARY_PP %}
-pp-chunk-b-count-total is {{ PP_CHUNK_B_COUNT_TOTAL }}
-{% endif %}
 """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
@@ -67,7 +59,7 @@ pp-chunk-b-count-total is {{ PP_CHUNK_B_COUNT_TOTAL }}
 {% set DO_NATIVE = NATIVE|length %}
 {% if DO_NATIVE %}
     native = {{ NATIVE }}
-    {% if DO_STATICS %}       
+    {% if DO_STATICS %}
     native_static = {{ NATIVE_STATIC }}
     {% endif %}
 {% endif %}
@@ -147,7 +139,7 @@ stage-history-refined-link => split-netcdf-native<native>
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 rename-split-to-pp-native<native> => clean-split-native
     {% endif %}
 {% endif %}
@@ -164,15 +156,15 @@ pp-starter => STAGE-HISTORY
     {% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
     {% endif %}
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
-    {% if DO_NATIVE and DO_REGRID %} 
+    {% if DO_NATIVE and DO_REGRID %}
 rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_NATIVE %} 
+    {% elif DO_NATIVE %}
 rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_REGRID %} 
+    {% elif DO_REGRID %}
 rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
     {% endif %}
 {% endif %}
@@ -180,11 +172,11 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
 {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all => stage-history-refined-link
-    {% if DO_STATICS %} 
-        {% if DO_REGRID %} 
+    {% if DO_STATICS %}
+        {% if DO_REGRID %}
 stage-history-refined-link => regrid-xy<regrid_static>
         {% endif %}
-        {% if DO_NATIVE %} 
+        {% if DO_NATIVE %}
 stage-history-refined-link => split-netcdf-native<native_static>
         {% endif %}
     {% endif %}
@@ -196,7 +188,7 @@ stage-history-refined-link => split-netcdf-native<native_static>
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
     {% endif %}
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 rename-split-to-pp-native<native_static> => clean-split-native
     {% endif %}
 remap-pp-components-static => clean-shards-static
@@ -222,7 +214,7 @@ rename-split-to-pp-regrid<regrid>
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
 {% endif %}
 
-{% if DO_NATIVE %} 
+{% if DO_NATIVE %}
 rename-split-to-pp-native<native>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
@@ -261,7 +253,9 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # Launch the per-interval task family after all components have been saved.
 # Note that this is inefficient as each analysis script needs only a subset of the available components.
 # To be improved later
+{% if DO_ANALYSIS and 'are-there-per-interval-tasks' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => ANALYSIS-{{ PP_CHUNK_A }}
+{% endif %}
 """
 
 
@@ -274,7 +268,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => ANALYSIS-{{ PP_CHUNK_A }}
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
-    {% if DO_REGRID %} 
+    {% if DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
@@ -283,7 +277,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
     {% endif %}
 
 
-    {% if DO_NATIVE %} 
+    {% if DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
@@ -297,7 +291,6 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
         {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
         {{ form_remap_dep_PP_CHUNK_B_regrid }}
     {% endif %}
-
 
     {% if DO_NATIVE %}
         {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
@@ -322,34 +315,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 
 #
 # Recurrence intervals for cumulative analysis tasks
-# Starting each PP_CHUNK_A after PP_START, launch the
-# ANALYSIS-CUMULATIVE-YYYYMMDD task family, which depends
-# on all the ANALYSIS-PP_CHUNK_A tasks
 #
-# commenting out the cumulative stuff for now
-{% for I in range(0, PP_CHUNK_A_COUNT_TOTAL + 1) %}
-    {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_A | string | multiply_duration(I) | string) | string %}
-        R1/{{ this_date }} = """
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all
-    {% for J in range(1, I+1) %}
-& REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}[{{ PP_CHUNK_A | multiply_duration(-J)}}]:succeed-all
-    {% endfor %}
-=> ANALYSIS-CUMULATIVE-{{ PP_CHUNK_A }}-{{ this_date | strftime('%Y%m%d') }}
-"""
-{% endfor %}
-
-# Same for CHUNK-B
-{% if DO_SECONDARY_PP %}
-    {% for I in range(0, PP_CHUNK_B_COUNT_TOTAL + 1) %}
-        {% set this_date = PP_START | add_date_and_duration(PP_CHUNK_B | string | multiply_duration(I) | string) | string %}
-        R1/{{ this_date }} = """
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
-        {% for J in range(1, I+1) %}
-& REMAP-PP-COMPONENTS-{{ PP_CHUNK_B}}[{{ PP_CHUNK_B | multiply_duration(-J)}}]:succeed-all
-        {% endfor %}
-=> ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ this_date | strftime('%Y%m%d') }}
-"""
-    {% endfor %}
+{% if DO_ANALYSIS %}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+    {% if DO_SECONDARY_PP %}
+    {{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+    {% endif %}
 {% endif %}
 
 [runtime]
@@ -397,7 +368,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             ptmpDir = {{ PTMP_DIR }}
     [[stage-history-refined-link]]
         script = """
-            {# a disagreemable workaround to use PTMP as a data input location #}
+            {# a disagreeable workaround to use PTMP as a data input location #}
             {# assumes no name collisions, and pollutes PTMP                   #}
             set -x
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
@@ -721,6 +692,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             outputDir = {{ PP_DIR }}
 {% endif %}
 
+{% if DO_ANALYSIS %}
     [[ANALYSIS]]
         pre-script = """
             env
@@ -733,7 +705,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
             FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
             # fre-analysis template vars
-            yr2 = $(cylc date --template=CCYY)
+            yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
             fremodule = fre/test
@@ -743,50 +715,32 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all
     [[ANALYSIS-{{ PP_CHUNK_A }}]]
         inherit = ANALYSIS
         [[[environment]]]
-            yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            yr1 = $(cylc cycle-point --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
             {% set datachunk_float = PP_CHUNK_A | duration_as('weeks') / 52 %}
             datachunk = {{ datachunk_float | int }}
     {% if DO_SECONDARY_PP %}
     [[ANALYSIS-{{ PP_CHUNK_B }}]]
         inherit = ANALYSIS
         [[[environment]]]
-            yr1 = $(cylc date --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            yr1 = $(cylc cycle-point --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
             {% set datachunk_float = PP_CHUNK_B | duration_as('weeks') / 52 %}
             datachunk = {{ datachunk_float | int }}
     {% endif %}
 
-    {# Create cumulative analysis task families for each CHUNK-A, for the entire PP range #}
-    {# The below variable definition and for loop is confusing and needs to be explained #}
-    {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_A) | string | duration_as('s') / (PP_CHUNK_A | duration_as('s')) %}
-    {% for x in range(0, total_segments | int) %}
-        {% set cumulative_duration = PP_CHUNK_A | multiply_duration(x) %}
-        {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
-    [[ANALYSIS-CUMULATIVE-{{ PP_CHUNK_A }}-{{ enddate | string | strftime('%Y%m%d') }}]]
-        inherit = ANALYSIS
-        [[[environment]]]
-            yr1 = {{ PP_START | strftime('%Y') }}
-            yr2 = {{ enddate | string | strftime('%Y') }}
-    {% endfor %}
-
-    # Same for CHUNK-B
-    {% if DO_SECONDARY_PP %}
-        {% set total_segments = PP_STOP | subtract_dates(PP_START) | string | add_durations(PP_CHUNK_B) | string | duration_as('s') / (PP_CHUNK_B | duration_as('s')) %}
-        {% for x in range(0, total_segments | int) %}
-            {% set cumulative_duration = PP_CHUNK_B | multiply_duration(x) %}
-            {% set enddate = PP_START | add_date_and_duration(cumulative_duration | string) %}
-    [[ANALYSIS-CUMULATIVE-{{ PP_CHUNK_B }}-{{ enddate | string | strftime('%Y%m%d') }}]]
-        inherit = ANALYSIS
-        [[[environment]]]
-            yr1 = {{ PP_START | strftime('%Y') }}
-            yr2 = {{ enddate | string | strftime('%Y') }}
-        {% endfor %}
-    {% endif %}
+    # cumulative analysis task definitions
+    {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
 
     {% if DO_SECONDARY_PP %}
-        {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A, PP_CHUNK_B) }}
-    {% else %}
-        {{ PP_COMPONENTS | form_analysis_tasks(PP_DIR, PP_START, PP_CHUNK_A) }}
+        {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
     {% endif %}
+
+    # per-interval analysis task definitions
+    {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+
+    {% if DO_SECONDARY_PP %}
+        {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+    {% endif %}
+{% endif %}
 
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
