@@ -13,7 +13,7 @@ def str_to_bool(val):
         return False 
     raise Exception("invalid boolean value: {!r}".format(val))
 
-def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, default_chunk):
+def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, default_chunk, analysis_only=False):
     """Return analysis-related information from app/analysis/rose-app.conf
 
     Arguments:
@@ -28,6 +28,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         start_str (str): will use at yr1 if cumulative mode on
         stop_str (str): last cycle point to process
         default_chunk (str): default chunk to use if analysis script does not care
+        analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
 """
     # convert strings to date objects
     start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
@@ -208,14 +209,19 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
                     # finally add the task graph
                     #print("ok date is", date)
                     results_cumulative_graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
-                    results_cumulative_graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+                    if not analysis_only:
+                        results_cumulative_graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
                     d = date
                     i = -1
                     while d > start + chunk:
-                        results_cumulative_graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                        if not analysis_only:
+                            results_cumulative_graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
                         i -= 1
                         d -= chunk
-                    results_cumulative_graph += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                    if analysis_only:
+                        results_cumulative_graph += f"            ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                    else:
+                        results_cumulative_graph += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
                     results_cumulative_graph += f"        \"\"\"\n"
 
                     date += chunk
