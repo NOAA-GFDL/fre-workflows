@@ -5,7 +5,7 @@ import metomi.rose.config
 import metomi.isodatetime.parsers
 import metomi.isodatetime.dumpers
 
-def strtobool(val): 
+def str_to_bool(val): 
     """Convert string true/false to boolean"""
     if val.lower().startswith("t") or val.lower().startswith("y"): 
         return True 
@@ -13,33 +13,52 @@ def strtobool(val):
         return False 
     raise Exception("invalid boolean value: {!r}".format(val))
 
-def get_analysis_info(pp_components_str, pp_dir, start_str, stop_str, default_chunk1_str, default_chunk2_str=None):
-    """Form the analysis tasks from app/analysis/rose-app.conf
+def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, default_chunk):
+    """Return analysis-related information from app/analysis/rose-app.conf
 
     Arguments:
+        info_type:
+            are-there-per-interval-tasks            Returns true or false
+            per-interval-task-definitions           Returns task environments for per-interval tasks
+            cumulative-task-graph                   Returns task graph for cumulative tasks
+            cumulative-task-definitions             Returns task environments for cumulaive tasks
         pp_components_str (str): all, or a space-separated list
                             analysis scripts depending on others will be skipped
         pp_dir (str): absolute filepath root (up to component, not including)
         start_str (str): will use at yr1 if cumulative mode on
         stop_str (str): last cycle point to process
-        default_chunk[12] (str): default chunks to use if analysis script does not care
+        default_chunk (str): default chunk to use if analysis script does not care
 """
     # convert strings to date objects
     start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
     stop = metomi.isodatetime.parsers.TimePointParser().parse(stop_str)
     sys.stderr.write(f"ANALYSIS: from {start} to {stop}\n")
-    default_chunk1 = metomi.isodatetime.parsers.DurationParser().parse(default_chunk1_str)
-    sys.stderr.write(f"ANALYSIS: default chunk1 is {default_chunk1}\n")
-    if default_chunk2_str:
-        default_chunk2 = metomi.isodatetime.parsers.DurationParser().parse(default_chunk2_str)
-        sys.stderr.write(f"ANALYSIS: default chunk2 is {default_chunk2}\n")
+    default_chunk = metomi.isodatetime.parsers.DurationParser().parse(default_chunk)
+    sys.stderr.write(f"ANALYSIS: default chunk is {default_chunk}\n")
 
+    # split the pp_components into a list
     pp_components = pp_components_str.split()
+
+    # locate the analysis Rose configuration
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/analysis/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
 
-    # build up the results multiline string that will contain the analysis task
-    results = ""
+    # check which information is requested
+    if info_type == 'are-there-per-interval-tasks':
+        sys.stderr.write(f"ANALYSIS: Mode: Will check if there are per-interval tasks and return True or False\n")
+    elif info_type == 'per-interval-task-definitions':
+        sys.stderr.write(f"ANALYSIS: Mode: Will return per-interval task definitions\n")
+    elif info_type == 'cumulative-task-graph':
+        sys.stderr.write(f"ANALYSIS: Mode: Will return cumulative task graph\n")
+    elif info_type == 'cumulative-task-definitions':
+        sys.stderr.write(f"ANALYSIS: Mode: Will return cumulative task definitions\n")
+    else:
+        raise Exception(f"Invalid information type: {info_type}")
+
+    # build up the task graph and task definition results multiline string that will be returned
+    results_interval_definition = ""
+    results_cumulative_definition = ""
+    results_cumulative_graph = ""
 
     # loop over the analysis scripts listed in the config file
     for keys, sub_node in node.walk():
@@ -82,9 +101,10 @@ def get_analysis_info(pp_components_str, pp_dir, start_str, stop_str, default_ch
         item_chunks_str = node.get_value(keys=[item, 'chunk'])
         if item_chunks_str:
             item_chunks = item_chunks_str.split()
-        elif default_chunk2_str:
-            item_chunks = [default_chunk1, default_chunk2]
         else:
+            item_chunks = [default_chunk]
+
+        # get the optional start and stop
         item_start_str = node.get_value(keys=[item, 'start'])
         item_end_str = node.get_value(keys=[item,'end'])
         #print("DEBUG:", item_start_str, item_end_str)
@@ -106,13 +126,30 @@ def get_analysis_info(pp_components_str, pp_dir, start_str, stop_str, default_ch
             item_end = None
         if item_start and item_end:
             sys.stderr.write(f"NOTE: Using defined date range: {item_start} to {item_end}")
+            sys.stderr.write(f"NOTE: not implemented yet")
+            continue
 
-        # write the analysis script task(s), one for each chunk
-        # each analysis script inherits from an analysis script family
-        # and a scheduler family
-        # the scheduler family looks like ANALYSIS-XXX, where XXX is a defined date request
-        # that sets yr1 and inherits from ANALYSIS. ANALYSIS-CHUNK-A/B are in flow.cylc already
-        added_a_chunk = 0
+        # get the optional cumulative option
+        item_cumulative = node.get_value(keys=[item, 'cumulative'])
+        if item_cumulative:
+            item_cumulative = str_to_bool(item_cumulative)
+        else:
+            item_cumulative = False
+
+        # retrieve the needed information, one of
+        #   per-interval-task-definitions
+        #       Includes analysis script family and the tasks. Scheduler family is in flow.cylc
+        #   cumulative-task-graph
+        #       Write related task graph strings for cumulative tasks
+        #   cumulative-task-definitions
+        #       Includes analysis script family, scheduler family, and the tasks
+        #   are-there-per-interval-tasks
+        #       Returns True or False if 'per-interval-task-definitions' is non-empty or empty
+
+        # set added_a_task variable if a task definition is used.
+        # if so, the analysis script task family will be created later also
+        added_a_task = 0
+
         for chunk in item_chunks:
             # in all cases, need to add in suitable in_data_dir corresponding to the PP output
             header = f"[[analysis-{item}-{chunk}]]"
@@ -122,81 +159,78 @@ def get_analysis_info(pp_components_str, pp_dir, start_str, stop_str, default_ch
             """.format(chunk=chunk, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
 
             # skip the chunk if it's not available as TS chunks
-            if chunk != default_chunk1 and chunk != default_chunk2:
+            if chunk != default_chunk:
                 sys.stderr.write(f"NOTE: Skipping chunk {chunk}\n")
                 continue
 
-            # 3 main cases: defined year range, cumulative, and every-chunk
-            # defined year range
-            if item_start and item_end:
-                added_a_chunk = 1
-                this_range = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y%m%d') + '_' + metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y%m%d')
-                sys.stderr.write(f"NOTE: Using defined year range for chunk {chunk}\n")
-                results += f"""
-    {header}
-        inherit = ANALYSIS-{this_range}, {item}
-        {tail}
-                """
-                yr1 = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y')
-                yr2 = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y')
-                results += f"""
-    [[ANALYSIS-{this_range}]]
-        inherit = ANALYSIS
-        [[[environment]]]
-            yr1 = {yr1}
-            yr2 = {yr2}
-                """
-
             # cumulative
-            elif item_cumulative:
-                added_a_chunk = 1
+            if item_cumulative:
                 sys.stderr.write(f"NOTE: Using cumulative for chunk {chunk}\n")
-                results += """
-    {header}
-        inherit = ANALYSIS-CUMULATIVE-{chunk}-{date2}, analysis-{item}
-        {tail}
-                """.format(item=item, header=header, tail=tail, chunk=chunk, date2=metomi.isodatetime.dumpers.TimePointDumper().strftime(start_time, '%Y%m%d'))
 
             # every chunk
             else:
-                added_a_chunk = 1
+                added_a_task = 1
                 sys.stderr.write(f"NOTE: Using regular chunks for chunk {chunk}\n")
-                results += f"""
+                results_interval_definition += f"""
     {header}
         inherit = ANALYSIS-{chunk}, analysis-{item}
         {tail}
-                sys.stderr.write(f"NOTE: Using cumulative for chunk {chunk}\n")
+                """
 
-                # loop over the dates
-                date = start
+            # if cumulative, add the scheduler family
+            # loop over the dates
+            if item_cumulative:
+                oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
+                date = start + chunk - oneyear
+                #print(f"DEBUG: start {start} and stop {stop}")
                 while date <= stop:
-                    date_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y%m%d')
+                    date_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')
+
+                    # add the task definition
                     header = f"[[analysis-{item}-{chunk}-{date_str}]]"
-                    date += chunk
-                    results += f"""
+                    added_a_task = 1
+                    results_cumulative_definition += f"""
     {header}
         inherit = ANALYSIS-CUMULATIVE-{chunk}-{date_str}, analysis-{item}
         {tail}
-                """
+                    """
 
-            # every chunk
-            else:
-                added_a_chunk = 1
-                sys.stderr.write(f"NOTE: Using regular chunks for chunk {chunk}\n")
-                results += f"""
-    {header}
-        inherit = ANALYSIS-{chunk}, analysis-{item}
-        {tail}
-                """
+                    # add the scheduler family
+                    results_cumulative_definition += f"""
+    [[ANALYSIS-CUMULATIVE-{chunk}-{date_str}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')}
+            yr2 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}
+            datachunk = {chunk.years}
+                    """
+
+                    # finally add the task graph
+                    #print("ok date is", date)
+                    results_cumulative_graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+                    results_cumulative_graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+                    d = date
+                    i = -1
+                    while d > start + chunk:
+                        results_cumulative_graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                        i -= 1
+                        d -= chunk
+                    results_cumulative_graph += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                    results_cumulative_graph += f"        \"\"\"\n"
+
+                    date += chunk
+                    #print("now date is", date)
+                    #print(f"is {date} less than or equal to {stop}")
+
 
         # chunk not available: skip with a message
-        if not added_a_chunk:
+        if not added_a_task:
             sys.stderr.write(f"NOTE: Skipping package '{item}' as it requests pp chunks not available")
             continue
         
         # write the analysis script family
-        sys.stderr.write(f"NOTE: Adding analysis script task family for '{item}'\n")
-        results += """
+        if added_a_task:
+            analysis_family = """
     [[analysis-{item}]]
         script = '''
             chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
@@ -208,10 +242,23 @@ def get_analysis_info(pp_components_str, pp_dir, start_str, stop_str, default_ch
             staticfile = {pp_dir}/{comp}/{comp}.static.nc
             scriptLabel = {item}
         """.format(item=item, item_script=item_script, comp=item_comps[0], freq=item_freq, pp_dir=pp_dir)
+            if item_cumulative:
+                results_cumulative_definition += analysis_family
+            else:
+                results_interval_definition += analysis_family
 
-        sys.stderr.write(f"NOTE: Ending processing of '{item}'\n\n")
+        sys.stderr.write(f"NOTE: Ending processing of '{item}'\n")
 
-    #print("DEBUG: returning", results)
-    return(results)
+    if info_type == 'are-there-per-interval-tasks':
+        if results_interval_definition:
+            return True
+        else:
+            return False
+    elif info_type == 'per-interval-task-definitions':
+        return results_interval_definition
+    elif info_type == 'cumulative-task-graph':
+        return results_cumulative_graph
+    elif info_type == 'cumulative-task-definitions':
+        return results_cumulative_definition
 
-#print(form_analysis_tasks('atmos', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '2000', 'P1Y', 'P4Y'))
+#print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
