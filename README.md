@@ -18,7 +18,7 @@ module load cylc
 Experiments with already created pp configurations are in the `opt/` directory, in the form `rose-suite-<exp-name>.conf`
 
 ```
->bin/list-exps
+bin/list-exps
 am5_c96L33_amip     # 1 year and 6 year ouput
 am5_c96L65_amip     # 8-day output
 am5_c384L33_amip    # 8-day output
