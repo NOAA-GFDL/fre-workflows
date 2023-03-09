@@ -376,7 +376,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             module load gcp/test
             module load fre/test
             mkdir -p $work $tempCache $refineDiagDir
-            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/* ; unset PAPIEX_TAGS
+            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
             cd $work/$hsmdate
             ls
         """
@@ -418,12 +418,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 exit 1
             fi
             if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
                 export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset PAPIEX_TAGS
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
-			export PAPIEX_TAGS="op:hsmget;op_instance:3;op_is_canopy:1" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
+			export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
         """
 {# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
 {# Create a 'macro' function to reduce code repeat #}
