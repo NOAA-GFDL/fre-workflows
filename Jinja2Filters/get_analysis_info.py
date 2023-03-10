@@ -22,6 +22,8 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
             per-interval-task-definitions           Returns task environments for per-interval tasks
             cumulative-task-graph                   Returns task graph for cumulative tasks
             cumulative-task-definitions             Returns task environments for cumulaive tasks
+            defined-task-graph                      Returns task graph for defined-interval tasks
+            defined-task-definitions                REturns task environments for defined-interval tasks
         pp_components_str (str): all, or a space-separated list
                             analysis scripts depending on others will be skipped
         pp_dir (str): absolute filepath root (up to component, not including)
@@ -53,6 +55,10 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         sys.stderr.write(f"ANALYSIS: Mode: Will return cumulative task graph\n")
     elif info_type == 'cumulative-task-definitions':
         sys.stderr.write(f"ANALYSIS: Mode: Will return cumulative task definitions\n")
+    elif info_type == 'defined-interval-task-graph':
+        sys.stderr.write(f"ANALYSIS: Mode: Will return defined-interval task graph\n")
+    elif info_type == 'defined-interval-task-definitions':
+        sys.stderr.write(f"ANALYSIS: Mode: Will return defined-interval task definitions\n")
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
@@ -60,6 +66,8 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
     results_interval_definition = ""
     results_cumulative_definition = ""
     results_cumulative_graph = ""
+    results_defined_definition = ""
+    results_defined_graph = ""
 
     # loop over the analysis scripts listed in the config file
     for keys, sub_node in node.walk():
@@ -168,6 +176,9 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
             if item_cumulative:
                 sys.stderr.write(f"NOTE: Using cumulative for chunk {chunk}\n")
 
+            elif item_start and item_end:
+                sys.stderr.write(f"NOTE: Using defined interval for {chunk}\n")
+
             # every chunk
             else:
                 added_a_task = 1
@@ -267,4 +278,4 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
     elif info_type == 'cumulative-task-definitions':
         return results_cumulative_definition
 
-#print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
+print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
