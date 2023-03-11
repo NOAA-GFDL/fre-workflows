@@ -97,7 +97,7 @@ def get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop):
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval")
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
             sys.stderr.write(f"ANALYSIS: {item}: Will run from {start} (cumulative)\n")
@@ -164,7 +164,7 @@ def get_cumulative_graph(node, pp_components, pp_dir, chunk, start, stop, analys
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval")
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
             sys.stderr.write(f"ANALYSIS: {item}: Will run from {start} (cumulative)\n")
@@ -212,10 +212,10 @@ def get_interval_definitions(node, pp_components, pp_dir, chunk):
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval")
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative")
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
             sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
@@ -237,6 +237,77 @@ def get_interval_definitions(node, pp_components, pp_dir, chunk):
         """
 
         sys.stderr.write(f"NOTE: Ending processing of '{item}'\n")
+
+    return(results)
+
+def get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, analysis_only):
+    """
+    loop over the analysis scripts listed in the config file
+    build up the task graph or task definition results multiline string that will be returned
+    """
+    results = ""
+
+    for keys, sub_node in node.walk():
+        # retrieve information about the script
+        item_info = get_item_info(node, keys, pp_components)
+        if item_info:
+            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+        else:
+            continue
+
+        # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
+        if item_start and item_end:
+            pass
+        elif item_cumulative:
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
+            continue
+        else:
+            sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
+            continue
+
+        # if requested year range is outside the workflow range, then skip
+        item_start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y')
+        item_end_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y')
+        start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
+        stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(stop, '%Y')
+        if item_start < start or item_end > stop:
+            sys.stderr.write(f"ANALYSIS: {item}: Defined-inteval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
+            continue
+
+        # locate the nearest enclosing chunks
+        d1 = start
+        while d1 <= item_start - chunk:
+            d1 += chunk
+        d2 = stop
+        while d2 >= item_end + chunk:
+            d2 -= chunk
+        sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str}\n")
+        print(f"DEBUG: {d1} and {d2}")
+
+        # add the analysis script details that don't depend on time
+        results += f"""
+    [[analysis-{item}]]
+        inherit = ANALYSIS-{item_start_str}_{item_end_str}
+        script = '''
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+        '''
+        [[[environment]]]
+            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
+            component = {item_comps[0]}
+            freq = {item_freq}
+            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
+            scriptLabel = {item}
+            datachunk = {chunk.years}
+        """
+
+        results += f"""
+    [[ANALYSIS-{item_start_str}_{item_end_str}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = {item_start_str}
+            yr2 = {item_end_str}
+        """
 
     return(results)
 
@@ -299,6 +370,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         sys.stderr.write(f"ANALYSIS: Will return defined-interval task graph only\n")
     elif info_type == 'defined-interval-task-definitions':
         sys.stderr.write(f"ANALYSIS: Will return defined-interval task definitions only\n")
+        return(get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, analysis_only))
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
@@ -308,3 +380,5 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
 
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', True))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
+
+print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
