@@ -77,19 +77,14 @@ Postprocessing example that includes Bronx-like functionality,
     {# every chunk-a, and every chunk-b.                                              #}
     [[graph]]
 {% if DO_ANALYSIS_ONLY %}
-    {% if 'are-there-per-interval-tasks' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) %}
-        +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
-ANALYSIS-{{ PP_CHUNK_A }}
-        """
-    {% endif %}
-    {% if DO_SECONDARY_PP and 'are-there-per-interval-tasks' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) %}
-        +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
-ANALYSIS-{{ PP_CHUNK_B }}
-        """
-    {% endif %}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% if DO_SECONDARY_PP %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
 {{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+    {% else %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% endif %}
 {% else %}
         #
@@ -266,12 +261,6 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUN
 {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
-# Launch the per-interval task family after all components have been saved.
-# Note that this is inefficient as each analysis script needs only a subset of the available components.
-# To be improved later
-{% if DO_ANALYSIS and 'are-there-per-interval-tasks' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) %}
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => ANALYSIS-{{ PP_CHUNK_A }}
-{% endif %}
 """
 
 
@@ -325,19 +314,23 @@ make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUN
         {% endif %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
     {% endif %}
-REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
 """
 {% endif %}
 
 #
-# Recurrence intervals for cumulative analysis tasks
+# Recurrence intervals for analysis tasks
 #
 {% if DO_ANALYSIS %}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
     {% if DO_SECONDARY_PP %}
-    {{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+    {% else %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% endif %}
-{% endif %}
+{% else %}
 
 {% endif %}
 
@@ -730,33 +723,14 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => ANALYSIS-{{ PP_CHUNK_B }}
             WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
-    [[ANALYSIS-{{ PP_CHUNK_A }}]]
-        inherit = ANALYSIS
-        [[[environment]]]
-            yr1 = $(cylc cycle-point --template=CCYY --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
-            {% set datachunk_float = PP_CHUNK_A | duration_as('weeks') / 52 %}
-            datachunk = {{ datachunk_float | int }}
-    {% if DO_SECONDARY_PP %}
-    [[ANALYSIS-{{ PP_CHUNK_B }}]]
-        inherit = ANALYSIS
-        [[[environment]]]
-            yr1 = $(cylc cycle-point --template=CCYY --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
-            {% set datachunk_float = PP_CHUNK_B | duration_as('weeks') / 52 %}
-            datachunk = {{ datachunk_float | int }}
-    {% endif %}
-
-    # cumulative analysis task definitions
-    {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-
-    {% if DO_SECONDARY_PP %}
-        {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
-    {% endif %}
-
-    # per-interval analysis task definitions
-    {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-
     {% if DO_SECONDARY_PP %}
         {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+        {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+        {{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+    {% else %}
+        {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+        {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+        {{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
     {% endif %}
 {% endif %}
 
