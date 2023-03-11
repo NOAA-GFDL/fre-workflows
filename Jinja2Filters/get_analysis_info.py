@@ -240,12 +240,13 @@ def get_interval_definitions(node, pp_components, pp_dir, chunk):
 
     return(results)
 
-def get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, analysis_only):
+def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False):
     """
     loop over the analysis scripts listed in the config file
     build up the task graph or task definition results multiline string that will be returned
     """
-    results = ""
+    defs = ""
+    graph = ""
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
@@ -284,8 +285,8 @@ def get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, ana
         sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str}\n")
         print(f"DEBUG: {d1} and {d2}")
 
-        # add the analysis script details that don't depend on time
-        results += f"""
+        # set the task definitions`
+        defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
         script = '''
@@ -299,9 +300,6 @@ def get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, ana
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
             datachunk = {chunk.years}
-        """
-
-        results += f"""
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -309,7 +307,24 @@ def get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, ana
             yr2 = {item_end_str}
         """
 
-    return(results)
+        # set the graph definitions
+        graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+        if not analysis_only:
+            graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+        d = d2
+        i = -1
+        while d > start + chunk:
+            if not analysis_only:
+                graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+            i -= 1
+            d -= chunk
+        if analysis_only:
+            graph += f"            ANALYSIS-{item_start_str}_{item_end_str}\n"
+        else:
+            graph += f"            => ANALYSIS-{item_start_str}_{item_end_str}\n"
+        graph += f"        \"\"\"\n"
+
+    return(defs, graph)
 
 def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, chunk, analysis_only=False):
     """Return analysis-related information from app/analysis/rose-app.conf
@@ -368,9 +383,10 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         return(get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop))
     elif info_type == 'defined-interval-task-graph':
         sys.stderr.write(f"ANALYSIS: Will return defined-interval task graph only\n")
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
     elif info_type == 'defined-interval-task-definitions':
         sys.stderr.write(f"ANALYSIS: Will return defined-interval task definitions only\n")
-        return(get_defined_definitions(node, pp_components, pp_dir, chunk, start, stop, analysis_only))
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
@@ -381,4 +397,5 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', True))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
 
-print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
+#print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
+print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
