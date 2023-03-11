@@ -80,12 +80,13 @@ def get_item_info(node, keys, pp_components):
 
     return(item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative)
 
-def get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop):
+def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False):
     """
     loop over the analysis scripts listed in the config file
     build up the task graph or task definition results multiline string that will be returned
     """
-    results = ""
+    defs = ""
+    graph = ""
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
@@ -106,7 +107,7 @@ def get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop):
             continue
 
         # add the analysis script details that don't depend on time
-        results += f"""
+        defs += f"""
     [[analysis-{item}]]
         script = '''
             chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
@@ -129,13 +130,13 @@ def get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop):
             date_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')
 
             # add the task definition for each ending time
-            results += f"""
+            defs += f"""
     [[analysis-{item}-{date_str}]]
         inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{item}
             """
 
             # add the task definition family for each ending time
-            results += f"""
+            defs += f"""
     [[ANALYSIS-CUMULATIVE-{date_str}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -145,55 +146,27 @@ def get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop):
 
             date += chunk
 
-    return(results)
-
-def get_cumulative_graph(node, pp_components, pp_dir, chunk, start, stop, analysis_only):
-    """
-    loop over the analysis scripts listed in the config file
-    build up the task graph or task definition results multiline string that will be returned
-    """
-    results = ""
-
-    for keys, sub_node in node.walk():
-        # retrieve information about the script
-        item_info = get_item_info(node, keys, pp_components)
-        if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
-        else:
-            continue
-
-        # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
-        if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
-            continue
-        elif item_cumulative:
-            sys.stderr.write(f"ANALYSIS: {item}: Will run from {start} (cumulative)\n")
-        else:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
-            continue
-
-        # loop over the dates
-        oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
+        # now set the task graphs
         date = start + chunk - oneyear
         while date <= stop:
-            results += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+            graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
-                results += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+                graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
             d = date
             i = -1
             while d > start + chunk:
                 if not analysis_only:
-                    results += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                    graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
             if analysis_only:
-                results += f"            ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                graph += f"            ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             else:
-                results += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
-            results += f"        \"\"\"\n"
+                graph += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+            graph += f"        \"\"\"\n"
             date += chunk
 
-    return(results)
+    return(defs, graph)
 
 def get_interval_definitions(node, pp_components, pp_dir, chunk):
     """
@@ -377,10 +350,10 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         return(bool(get_interval_definitions(node, pp_components, pp_dir, chunk)))
     elif info_type == 'cumulative-task-graph':
         sys.stderr.write(f"ANALYSIS: Will return cumulative task graph only\n")
-        return(get_cumulative_graph(node, pp_components, pp_dir, chunk, start, stop, analysis_only))
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
     elif info_type == 'cumulative-task-definitions':
         sys.stderr.write(f"ANALYSIS: Will return cumulative task definitions only\n")
-        return(get_cumulative_definitions(node, pp_components, pp_dir, chunk, start, stop))
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop)[0])
     elif info_type == 'defined-interval-task-graph':
         sys.stderr.write(f"ANALYSIS: Will return defined-interval task graph only\n")
         return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
@@ -393,9 +366,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
 #print(get_analysis_info('per-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('are-there-per-interval-tasks', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('cumulative-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
-
-#print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', True))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
 
 #print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
-print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
+#print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
