@@ -20,6 +20,7 @@ def check_components(item_comps, pp_components):
         for comp in item_comps:
             if comp not in pp_components:
                 return(False)
+    return(True)
 
 def get_item_info(node, keys, pp_components):
     # only target the keys
@@ -33,12 +34,12 @@ def get_item_info(node, keys, pp_components):
 
     # consider adding analysis script to workflow
     # if not adding, write a note why
-    sys.stderr.write(f"DEBUG: Considering '{item}'\n")
+    #sys.stderr.write(f"DEBUG: Considering '{item}'\n")
 
     # skip this analysis script if pp component not requested
     item_comps = node.get_value(keys=[item, 'components']).split()
     if not check_components(item_comps, pp_components):
-        sys.stderr.write(f"DEBUG: Skipping '{item}' as it requests a component not available: '{comp}'\n")
+        #sys.stderr.write(f"DEBUG: Skipping '{item}' as it requests a component not available\n")
         return(False)
 
     # get the mandatory options: script path and frequency
@@ -46,7 +47,7 @@ def get_item_info(node, keys, pp_components):
     assert item_script
     item_freq = node.get_value(keys=[item, 'freq'])
     assert item_freq
-    print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
+    #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
@@ -67,8 +68,8 @@ def get_item_info(node, keys, pp_components):
             item_end = None
     else:
         item_end = None
-    if item_start and item_end:
-        sys.stderr.write(f"DEBUG: {item}: defined date range: {item_start} to {item_end}\n")
+    #if item_start and item_end:
+        #sys.stderr.write(f"DEBUG: {item}: defined date range: {item_start} to {item_end}\n")
 
     # get the optional cumulative option
     item_cumulative = node.get_value(keys=[item, 'cumulative'])
@@ -76,7 +77,7 @@ def get_item_info(node, keys, pp_components):
         item_cumulative = str_to_bool(item_cumulative)
     else:
         item_cumulative = False
-    print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
+    #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
     return(item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative)
 
@@ -98,12 +99,13 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
-            sys.stderr.write(f"ANALYSIS: {item}: Will run from {start} (cumulative)\n")
+            start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
+            sys.stderr.write(f"ANALYSIS: {item}: Will run from {start_str} to current available (cumulative mode)\n")
         else:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
         # add the analysis script details that don't depend on time
@@ -125,7 +127,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         # loop over the dates
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         date = start + chunk - oneyear
-        print(f"DEBUG: start {start} and stop {stop}")
+        #print(f"DEBUG: start {start} and stop {stop}")
         while date <= stop:
             date_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')
 
@@ -160,9 +162,9 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
                 i -= 1
                 d -= chunk
             if analysis_only:
-                graph += f"            ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                graph += f"            ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             else:
-                graph += f"            => ANALYSIS-CUMULATIVE-{chunk}-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                graph += f"            => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             graph += f"        \"\"\"\n"
             date += chunk
 
@@ -186,10 +188,10 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
             sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
@@ -224,7 +226,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
         graph += f"        \"\"\"\n"
 
-        sys.stderr.write(f"NOTE: Ending processing of '{item}'\n")
+        #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")
 
     return(defs, graph)
 
@@ -248,10 +250,10 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         if item_start and item_end:
             pass
         elif item_cumulative:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
-            sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
+            #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
         # if requested year range is outside the workflow range, then skip
@@ -271,7 +273,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         while d2 >= item_end + chunk:
             d2 -= chunk
         sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str}\n")
-        print(f"DEBUG: {d1} and {d2}")
+        #print(f"DEBUG: {d1} and {d2}")
 
         # set the task definitions`
         defs += f"""
@@ -347,7 +349,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
     start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
     stop = metomi.isodatetime.parsers.TimePointParser().parse(stop_str)
     chunk = metomi.isodatetime.parsers.DurationParser().parse(chunk)
-    sys.stderr.write(f"DEBUG: {start} to {stop}, and chunk {chunk}\n")
+    #sys.stderr.write(f"DEBUG: {start} to {stop}, and chunk {chunk}\n")
 
     # split the pp_components into a list
     pp_components = pp_components_str.split()
@@ -358,22 +360,22 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
 
     # return the requested information
     if info_type == 'per-interval-task-definitions':
-        sys.stderr.write(f"ANALYSIS: Will return per-interval task definitions only\n")
+        #sys.stderr.write(f"DEBUG: Will return per-interval task definitions only\n")
         return(get_per_interval_info(node, pp_components, pp_dir, chunk)[0])
     elif info_type == 'per-interval-task-graph':
-        sys.stderr.write(f"ANALYSIS: Will return per-interval task graph only\n")
+        #sys.stderr.write(f"DEBUG: Will return per-interval task graph only\n")
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only)[1])
     elif info_type == 'cumulative-task-graph':
-        sys.stderr.write(f"ANALYSIS: Will return cumulative task graph only\n")
+        #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
     elif info_type == 'cumulative-task-definitions':
-        sys.stderr.write(f"ANALYSIS: Will return cumulative task definitions only\n")
+        #sys.stderr.write(f"DEBUG: Will return cumulative task definitions only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop)[0])
     elif info_type == 'defined-interval-task-graph':
-        sys.stderr.write(f"ANALYSIS: Will return defined-interval task graph only\n")
+        #sys.stderr.write(f"DEBUG: Will return defined-interval task graph only\n")
         return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
     elif info_type == 'defined-interval-task-definitions':
-        sys.stderr.write(f"ANALYSIS: Will return defined-interval task definitions only\n")
+        #sys.stderr.write(f"DEBUG: Will return defined-interval task definitions only\n")
         return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
