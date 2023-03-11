@@ -168,12 +168,13 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
 
     return(defs, graph)
 
-def get_interval_definitions(node, pp_components, pp_dir, chunk):
+def get_per_interval_info(node, pp_components, pp_dir, chunk):
     """
     loop over the analysis scripts listed in the config file
     build up the task graph or task definition results multiline string that will be returned
     """
-    results = ""
+    defs = ""
+    graph = ""
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
@@ -194,7 +195,7 @@ def get_interval_definitions(node, pp_components, pp_dir, chunk):
             sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
         # add the stuff
-        results += f"""
+        defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
         script = '''
@@ -209,9 +210,19 @@ def get_interval_definitions(node, pp_components, pp_dir, chunk):
             scriptLabel = {item}
         """
 
+        # add the graph
+        oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
+        graph += f"""
+    [[ANALYSIS-{chunk}]]
+        inherit = ANALYSIS
+        [[[environment]]]
+            yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - oneyear})
+            datachunk = {chunk.years}
+        """
+
         sys.stderr.write(f"NOTE: Ending processing of '{item}'\n")
 
-    return(results)
+    return(defs, graph)
 
 def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False):
     """
@@ -344,10 +355,10 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
     # return the requested information
     if info_type == 'per-interval-task-definitions':
         sys.stderr.write(f"ANALYSIS: Will return per-interval task definitions only\n")
-        return(get_interval_definitions(node, pp_components, pp_dir, chunk))
-    elif info_type == 'are-there-per-interval-tasks':
-        sys.stderr.write(f"ANALYSIS: Will check if there are per-interval tasks and return True or False\n")
-        return(bool(get_interval_definitions(node, pp_components, pp_dir, chunk)))
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk)[0])
+    elif info_type == 'per-interval-task-graph':
+        sys.stderr.write(f"ANALYSIS: Will return per-interval task graph only\n")
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk)[1])
     elif info_type == 'cumulative-task-graph':
         sys.stderr.write(f"ANALYSIS: Will return cumulative task graph only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
@@ -364,7 +375,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         raise Exception(f"Invalid information type: {info_type}")
 
 #print(get_analysis_info('per-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
-#print(get_analysis_info('are-there-per-interval-tasks', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
+#print(get_analysis_info('per-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('cumulative-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
 
