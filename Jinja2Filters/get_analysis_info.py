@@ -177,6 +177,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
     """
     defs = ""
     graph = ""
+    oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
@@ -197,7 +198,6 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
         # add the task definitions
-        oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
@@ -262,7 +262,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
         stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(stop, '%Y')
         if item_start < start or item_end > stop:
-            sys.stderr.write(f"ANALYSIS: {item}: Defined-inteval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
+            sys.stderr.write(f"ANALYSIS: {item}: Defined-interval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
             continue
 
         # locate the nearest enclosing chunks
@@ -272,8 +272,9 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         d2 = stop
         while d2 >= item_end + chunk:
             d2 -= chunk
-        sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str}\n")
-        #print(f"DEBUG: {d1} and {d2}")
+        d1_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d1, '%Y')
+        d2_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y')
+        sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
         # set the task definitions`
         defs += f"""
@@ -298,6 +299,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         """
 
         # set the graph definitions
+        oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
         if not analysis_only:
             graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
@@ -385,5 +387,5 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
 #print(get_analysis_info('cumulative-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
 
-#print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
-#print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
+#print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P6Y', False))
+#print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P12Y', True))
