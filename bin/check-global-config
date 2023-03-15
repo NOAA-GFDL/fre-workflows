@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -f /home/$USER/.cylc/flow/global.cylc ];
+then
+	echo "user-specified global.cylc found."
+	echo "checking for differences..."	
+	diff /home/$USER/.cylc/flow/global.cylc /home/fms/fre-canopy/system-settings/flow/global.cylc
+fi
