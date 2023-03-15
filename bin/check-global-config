@@ -1,4 +1,6 @@
 #!/bin/bash
+# this script checks for differences between the default global.cylc 
+# file in system-settings, and a user-specified one, if it exists.
 
 if [ -f /home/$USER/.cylc/flow/global.cylc ];
 then
