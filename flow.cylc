@@ -338,14 +338,22 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     # default config for all tasks
     [[root]]
         init-script = """
+            module use -a /home/fms/local/modulefiles
             module load epmt
             module list
             epmt check
-"""
+        """
         env-script = """
             eval $(rose task-env)
             env
-"""
+            export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
+            export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
+            unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
+            epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
+            export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
+            export LD_PRELOAD=$PAPIEX_LD_PRELOAD
+            export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
+        """
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
@@ -395,7 +403,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             module load gcp/test
             module load fre/test
             mkdir -p $work $tempCache $refineDiagDir
-            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate\/*
+            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
             cd $work/$hsmdate
             ls
         """
@@ -437,12 +445,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 exit 1
             fi
             if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\*
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset PAPIEX_TAGS
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
-            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
+			export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
         """
 {# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
 {# Create a 'macro' function to reduce code repeat #}
@@ -456,9 +468,9 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 else
                     echo ERROR: User script got an error status $?
                     exit 1
-                fi  
-            """ 
-    {%- endmacro %}        
+                fi
+            """
+    {%- endmacro %}
 {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
     {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
     {% for refineDiag_path in refineDiag_scripts %}
@@ -519,7 +531,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
     [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID
     {% if DO_STATICS %}
@@ -556,7 +568,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% if DO_NATIVE %}
     [[rename-split-to-pp-native<native>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
-    {% if DO_STATICS %} 
+    {% if DO_STATICS %}
     [[rename-split-to-pp-native<native_static>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE
         [[[environment]]]
@@ -564,7 +576,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
     [[rename-split-to-pp-regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID
     {% if DO_STATICS %}
@@ -665,7 +677,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}
     {% endif %}
 
-    {% if DO_REGRID %} 
+    {% if DO_REGRID %}
     [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
     [[make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>]]
@@ -673,7 +685,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID %} 
+{% if DO_REGRID %}
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
