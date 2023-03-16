@@ -19,7 +19,7 @@ else
 fi
 
 
-module load cylc && WHICH_CYLC=$(which cylc)
+WHICH_CYLC=$(which cylc)
 DEF_CYLC_CFG=${WHICH_CYLC%/bin*}/flow/global.cylc
 test -f $DEF_CYLC_CFG
 DEF_CYLC_CFG_EXISTS=$?
