@@ -40,17 +40,21 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
         DO_ANALYSIS = config.get_value(['template variables', 'DO_ANALYSIS'])
         DO_ANALYSIS_ONLY = config.get_value(['template variables', 'DO_ANALYSIS_ONLY'])
 
-        if (DO_ANALYSIS || DO_ANALYSIS_ONLY):
+        if (DO_ANALYSIS or DO_ANALYSIS_ONLY):
             try:
                analysis_dir = config.get_value(['template variables', 'ANALYSIS_DIR'])
             except:
                 self.add_report(
                     'template variables', 'ANALYSIS_DIR', analysis_dir,
                     "Required and not set")
-            if os.access(analysis_dir.strip('"'), os.W_OK):
+            if (analysis_dir is not None):
+              if os.access(analysis_dir, os.W_OK):
                 pass
-            else:
-                self.add_report('template variables', "ANALYSIS_DIR", analysis_dir,
-                                    "ANALYSIS_DIR must exist and be writable if set")            
+              else:
+                self.add_report('template variables', "ANALYSIS_DIR", analysis_dir,"ANALYSIS_DIR must exist and be writable if set")
+            else: 
+                self.add_report(
+                'template variables', 'ANALYSIS_DIR', analysis_dir,
+                "Required and not set") 
 
         return self.reports
