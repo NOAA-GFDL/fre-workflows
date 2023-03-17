@@ -143,7 +143,6 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -238,7 +237,6 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -324,7 +322,6 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
