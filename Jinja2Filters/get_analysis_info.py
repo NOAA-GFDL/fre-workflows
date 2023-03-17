@@ -24,7 +24,7 @@ def check_components(list1, list2):
         return(True)
     else:
         for item in list1:
-            if item not in pp_components:
+            if item not in list2:
                 return(False)
     return(True)
 
