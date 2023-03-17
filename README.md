@@ -1,5 +1,9 @@
 # Instructions to post-process AM5 history files
 
+Note: There is another, more detailed set of instructions available as a Google Doc here,
+https://docs.google.com/document/d/1ACq9o8vBGUzAnV2vkrSoNKW2ogkF9oK7AS98-lm-w2g/edit?usp=sharing,
+which may be slightly ahead, but this one will eventaully be synchronized.
+
 0. Clone/checkout workflow and apps
 
 ```
