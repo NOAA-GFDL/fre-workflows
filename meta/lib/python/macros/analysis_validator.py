@@ -81,8 +81,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
             if(analysis_defn is None):
                report_val.append(val)
                report_dict[item]=report_val   
-        if report_dict: 
-          self.add_report(
-                'template variables','app/analysis/rose-app.conf', item+"/"+val, 
-                "Required and not set")
+               self.add_report(
+                   'template variables','app/analysis/rose-app.conf', item+"/"+val, 
+                   "Required and not set")
         return(self.reports) 
