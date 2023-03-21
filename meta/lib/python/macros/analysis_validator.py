@@ -36,7 +36,6 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
 
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
-        
         DO_ANALYSIS = config.get_value(['template variables', 'DO_ANALYSIS'])
         DO_ANALYSIS_ONLY = config.get_value(['template variables', 'DO_ANALYSIS_ONLY'])
 
@@ -55,6 +54,14 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
             else: 
                 self.add_report(
                 'template variables', 'ANALYSIS_DIR', analysis_dir,
-                "Required and not set") 
+                "Required and not set")
+        #Script location checks: uses FRE_ANALYSIS_HOME
+        fre_analysis_home = config.get_value(['template variables', 'FRE_ANALYSIS_HOME'])
+        if (fre_analysis_home is not None):
+              if os.access(fre_analysis_home, os.R_OK):
+                pass
+              else:
+                self.add_report('template variables', "FRE_ANALYSIS_HOME", fre_analysis_home,"FRE_ANALYSIS_HOME must exist and be readable if set")
+        #rose config --file ../../../../app/analysis/rose-app.conf
 
         return self.reports
