@@ -22,7 +22,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
          IF DO_ANALYSIS_ONLY is True, PP_DIR does not have to be writable. 
          FRE_ANALYSIS_HOME is valid 
          Script in app/analysis/rose-app.conf exists either in FRE_ANALYSIS_HOME or in file/
-         component, freq in app/analysis/rose-app.conf for each analysis script is non-empty
+         script, component, freq in app/analysis/rose-app.conf for each analysis script is non-empty
           
     """
 
