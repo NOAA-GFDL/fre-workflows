@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import os
-import re
+import json
 import metomi.rose.macro
+from metomi.rose.macro import *
+import metomi.rose.config as ConfigLoader
 import metomi.isodatetime.parsers as parse
 import sys
 
@@ -55,13 +57,32 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                 self.add_report(
                 'template variables', 'ANALYSIS_DIR', analysis_dir,
                 "Required and not set")
-        #Script location checks: uses FRE_ANALYSIS_HOME
+        # Report: Script location checks: uses FRE_ANALYSIS_HOME
         fre_analysis_home = config.get_value(['template variables', 'FRE_ANALYSIS_HOME'])
         if (fre_analysis_home is not None):
               if os.access(fre_analysis_home, os.R_OK):
                 pass
               else:
                 self.add_report('template variables', "FRE_ANALYSIS_HOME", fre_analysis_home,"FRE_ANALYSIS_HOME must exist and be readable if set")
-        #rose config --file ../../../../app/analysis/rose-app.conf
-
-        return self.reports
+        # Validation: Check if the paths to the analysis scripts exist referring rose-app.conf in app/analysis. Scripts may either exist in FRE_ANANALYSIS_HOME or in files/ within the postprocessing repo
+        app_analysis_conf = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/rose-app.conf'
+        # This snippet checks if there freq, script and comp for every analysis definition in app/analysis/rose-app.conf. If not, a validation error is thrown. 
+        required_val = ['freq','script','components']
+        report_dict = {} 
+        try:
+            config_node = ConfigLoader.load(app_analysis_conf)
+        except:
+            sys.exit("Un$able to read analysis rose-app.conf")
+        for keys, sub_node in config_node.walk():
+          report_val = []
+          item = keys[0] 
+          for val in required_val:
+            analysis_defn = config_node.get_value(keys=[item, val])
+            if(analysis_defn is None):
+               report_val.append(val)
+               report_dict[item]=report_val   
+        if report_dict: 
+          self.add_report(
+                'template variables','app/analysis/rose-app.conf', item+"/"+val, 
+                "Required and not set")
+        return(self.reports) 
