@@ -736,13 +736,13 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
     {% else %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
     {% endif %}
 {% endif %}
 
