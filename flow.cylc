@@ -76,6 +76,17 @@ Postprocessing example that includes Bronx-like functionality,
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
     [[graph]]
+{% if DO_ANALYSIS_ONLY %}
+    {% if DO_SECONDARY_PP %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+    {% else %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+    {% endif %}
+{% else %}
         #
         # Recurrence interval: every history-file segment
         #
@@ -94,15 +105,15 @@ pp-starter => STAGE-HISTORY
 {# If refineDiag generation is desired (DO_REFINEDIAG is True), then add these two task dependencies:		  #}
 {# 1. All tasks in the REFINE-DIAG task family are started once the stage-history task succeeds.		  #}
 {# 2. stage-history-refined task is started once all the refineDiag tasks succeed.                                #}
-{% if DO_REFINEDIAG %}
+    {% if DO_REFINEDIAG %}
 stage-history => REFINE-DIAG
 REFINE-DIAG:succeed-all => stage-history-refined
-{% endif %}
+    {% endif %}
 
 {# If preAnalysis desired (vitals calculations is canonical case), start all PRE-ANALYSIS tasks when stage-history succeeds. #}
-{% if DO_PREANALYSIS %}
+    {% if DO_PREANALYSIS %}
 stage-history => PRE-ANALYSIS
-{% endif %}
+    {% endif %}
 
 {# If task families are on the left side of the => then a qualifier must be used (e.g. :succeed-all)                     #}
 {# The angle brackets define the "ensemble" axis, the task paramaters defined above.					 #}
@@ -110,39 +121,39 @@ stage-history => PRE-ANALYSIS
 {# Each history file to be regridded should be regridded once staging is done; then should be split and cataloged	 #}
 {# (into a standard shards directory set by ISO8601 frequencies ).						 #}
 {# Each history file needed for native grid processing is similar, except skipping the regridding.                       #}
-{% if DO_REGRID %}
+    {% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
-{% endif %}
+    {% endif %}
 
-{% if DO_NATIVE %}
+    {% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
-{% endif %}
+    {% endif %}
 
 {# If HISTORY_DIR_REFINED is set, then use the next 3 lines.                                                                #}
 {# After all staging is done, then hard link the refined history files to the history file location (not a great solution). #}
 {# Regridding and splitting native history files should not start until the history-refined output is available.            #}
-{% if HISTORY_DIR_REFINED is defined %}
+    {% if HISTORY_DIR_REFINED is defined %}
 STAGE-HISTORY:succeed-all  => stage-history-refined-link
-    {% if DO_REGRID %}
+        {% if DO_REGRID %}
 stage-history-refined-link => regrid-xy<regrid>
-    {% endif %}
-    {% if DO_NATIVE %}
+        {% endif %}
+        {% if DO_NATIVE %}
 stage-history-refined-link => split-netcdf-native<native>
+        {% endif %}
     {% endif %}
-{% endif %}
 
 {# If work-dir cleaning is desired, then remove what should now be safe to remove.                                 #}
 {# Once regridded history files are split, then the regridded history files can be removed.			   #}
 {# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
-{% if CLEAN_WORK %}
-    {% if DO_REGRID %}
+    {% if CLEAN_WORK %}
+        {% if DO_REGRID %}
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
-    {% endif %}
-    {% if DO_NATIVE %}
+        {% endif %}
+        {% if DO_NATIVE %}
 rename-split-to-pp-native<native> => clean-split-native
+        {% endif %}
     {% endif %}
-{% endif %}
 """
 
 
@@ -152,48 +163,48 @@ rename-split-to-pp-native<native> => clean-split-native
         R1 = """
 {# The static processing is similar to the "every history segment" processing, except uses different history file lists. #}
 pp-starter => STAGE-HISTORY
-{% if DO_STATICS %}
-    {% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
-    {% endif %}
-    {% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
-    {% endif %}
-{# After cataloging the regridded and native statics, remap them to pp components as desired #}
-    {% if DO_NATIVE and DO_REGRID %}
-rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_NATIVE %}
-rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_REGRID %}
-rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
-    {% endif %}
-{% endif %}
-
-{# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
-{% if HISTORY_DIR_REFINED is defined %}
-STAGE-HISTORY:succeed-all => stage-history-refined-link
     {% if DO_STATICS %}
         {% if DO_REGRID %}
-stage-history-refined-link => regrid-xy<regrid_static>
+STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
         {% endif %}
         {% if DO_NATIVE %}
-stage-history-refined-link => split-netcdf-native<native_static>
+STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+        {% endif %}
+{# After cataloging the regridded and native statics, remap them to pp components as desired #}
+        {% if DO_NATIVE and DO_REGRID %}
+rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+        {% elif DO_NATIVE %}
+rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+        {% elif DO_REGRID %}
+rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
         {% endif %}
     {% endif %}
-{% endif %}
+
+{# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
+    {% if HISTORY_DIR_REFINED is defined %}
+STAGE-HISTORY:succeed-all => stage-history-refined-link
+        {% if DO_STATICS %}
+            {% if DO_REGRID %}
+stage-history-refined-link => regrid-xy<regrid_static>
+            {% endif %}
+            {% if DO_NATIVE %}
+stage-history-refined-link => split-netcdf-native<native_static>
+            {% endif %}
+        {% endif %}
+    {% endif %}
 
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
-{% if CLEAN_WORK and DO_STATICS %}
-    {% if DO_REGRID %}
+    {% if CLEAN_WORK and DO_STATICS %}
+        {% if DO_REGRID %}
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-    {% endif %}
-    {% if DO_NATIVE %}
+        {% endif %}
+        {% if DO_NATIVE %}
 rename-split-to-pp-native<native_static> => clean-split-native
-    {% endif %}
+        {% endif %}
 remap-pp-components-static => clean-shards-static
 combine-statics => clean-pp-statics
-{% endif %}
+    {% endif %}
 """
 
 
@@ -206,50 +217,50 @@ combine-statics => clean-pp-statics
 {# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |                   #}
 {# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding. #}
 {# This Jinja for loop expands to do this.                                                                #}
-{% if DO_REGRID %}
+    {% if DO_REGRID %}
 rename-split-to-pp-regrid<regrid>
-    {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
+        {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
-    {% endfor %}
+        {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
-{% endif %}
+    {% endif %}
 
-{% if DO_NATIVE %}
+    {% if DO_NATIVE %}
 rename-split-to-pp-native<native>
-    {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
+        {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
-    {% endfor %}
+        {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
-{% endif %}
+    {% endif %}
 
-{% if DO_REGRID %}
-    {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
-    {{  form_remap_dep_PP_CHUNK_A_regrid  }}
-{% endif %}
+    {% if DO_REGRID %}
+        {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{{  form_remap_dep_PP_CHUNK_A_regrid  }}
+    {% endif %}
 
-{% if DO_NATIVE %}
-    {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
-    {{  form_remap_dep_PP_CHUNK_A_native  }}
-{% endif %}
+    {% if DO_NATIVE %}
+        {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS) %}
+{{  form_remap_dep_PP_CHUNK_A_native  }}
+    {% endif %}
 
 {# If work-dir cleaning is desired, and (chunk A is larger than the history segment, or, only one pp size is specified), remove (prerequisite) history shards. #}
 {# If instead chunk A is identical to the history segment, then do not remove the shards, as they haven't be saved (remapped) yet.                              #}
-{% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
+    {% if CLEAN_WORK and PP_CHUNK_A != HISTORY_SEGMENT %}
 
-    {% if DO_NATIVE and DO_REGRID %}
+        {% if DO_NATIVE and DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-    {% elif DO_NATIVE %}
+        {% elif DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
-    {% elif DO_REGRID %}
+        {% elif DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
+        {% endif %}
+
     {% endif %}
 
-{% endif %}
-
 {# If MDTF is requested, then run it after all pp components have finished #}
-{% if DO_MDTF %}
+    {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
-{% endif %}
+    {% endif %}
 """
 
 
@@ -257,54 +268,70 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 # Recurrence interval: every CHUNK-B
 #
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
-{% if DO_SECONDARY_PP %}
+    {% if DO_SECONDARY_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
         +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
-    {% if DO_REGRID %}
+        {% if DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
-        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
+            {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% endfor %}
+            {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
-    {% endif %}
+        {% endif %}
 
 
-    {% if DO_NATIVE %}
+        {% if DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
-        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
+            {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% endfor %}
+            {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
-    {% endif %}
+        {% endif %}
 
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
 {# Throw validation exception if PP_CHUNK_B is not in rose-app.conf                                          #}
-    {% if DO_REGRID %}
-        {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
-        {{ form_remap_dep_PP_CHUNK_B_regrid }}
-    {% endif %}
+        {% if DO_REGRID %}
+            {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
+{{ form_remap_dep_PP_CHUNK_B_regrid }}
+        {% endif %}
 
-
-    {% if DO_NATIVE %}
-        {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
-        {{ form_remap_dep_PP_CHUNK_B_native }}
-    {% endif %}
+        {% if DO_NATIVE %}
+            {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS) %}
+{{ form_remap_dep_PP_CHUNK_B_native }}
+        {% endif %}
 
 {# If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created, #}
 {# and remove CHUNK-B shards once the final products are saved.                                #}
-    {% if CLEAN_WORK %}
-        {% if DO_NATIVE and DO_REGRID %}
+        {% if CLEAN_WORK %}
+            {% if DO_NATIVE and DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & make-timeseries-native-{{ PP_CHUNK_B }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% elif DO_NATIVE %}
+            {% elif DO_NATIVE %}
 make-timeseries-native-{{ PP_CHUNK_B }}<native> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% elif DO_REGRID %}
+            {% elif DO_REGRID %}
 make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% endif %}
+            {% endif %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
-    {% endif %}
+        {% endif %}
 """
+    {% endif %}
+
+#
+# Recurrence intervals for analysis tasks
+#
+    {% if DO_ANALYSIS %}
+        {% if DO_SECONDARY_PP %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+        {% else %}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+        {% endif %}
+    {% endif %}
+
 {% endif %}
 
 [runtime]
@@ -330,8 +357,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
-        [[[directives]]]
-            --time=1:00:00
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
@@ -342,8 +369,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
-        [[[directives]]]
-            --time=8:00:00
+        # Increase time limit for staging jobs to 8 hours
+        execution time limit = PT8H
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
@@ -360,7 +387,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             ptmpDir = {{ PTMP_DIR }}
     [[stage-history-refined-link]]
         script = """
-            {# a disagreemable workaround to use PTMP as a data input location #}
+            {# a disagreeable workaround to use PTMP as a data input location #}
             {# assumes no name collisions, and pollutes PTMP                   #}
             set -x
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
@@ -563,8 +590,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
-        [[[directives]]]
-            --time=8:00:00
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
@@ -686,6 +711,37 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
+{% endif %}
+
+{% if DO_ANALYSIS %}
+    [[ANALYSIS]]
+        pre-script = """
+            env
+            mkdir -p $outputDir $out_dir
+            rose task-run --verbose --app-key analysis
+        """
+        [[[environment]]]
+            # internally-used vars
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
+            FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
+            FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
+            # fre-analysis template vars
+            yr2 = $(cylc cycle-point --template=CCYY)
+            out_dir = {{ ANALYSIS_DIR }}
+            descriptor = {{ EXPERIMENT }}
+            fremodule = fre/test
+            WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
+            hist_dir = {{ HISTORY_DIR }}
+            gridspecfile = {{ PP_GRID_SPEC }}
+    {% if DO_SECONDARY_PP %}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+    {% else %}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+    {% endif %}
 {% endif %}
 
     [[mdtf]]
