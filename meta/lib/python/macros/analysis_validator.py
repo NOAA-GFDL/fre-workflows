@@ -84,7 +84,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                    'template variables','app/analysis/rose-app.conf', item+"/"+val, 
                    "Required and not set")
         # Validation: Check if the paths to the analysis scripts exist referring rose-app.conf in app/analysis. Scripts may either exist in FRE_ANANALYSIS_HOME or in file/ within the analysis app or absolute paths 
-          ascript = config_node.get_value(keys=[item, script ]) 
+          ascript = config_node.get_value(keys=[item, "script" ]) 
           if(ascript is not None):
             # check if its readable 
             if(ascript is not None):
@@ -92,14 +92,16 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                   pass
                #when its in FRE_ANALYSIS_HOME 
                elif(ascript.startswith("$FRE_ANALYSIS_HOME")):
+                  if(fre_analysis_home is None):
+                         fre_analysis_home = "na"    
                   ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home)
                else: 
                   #in file/    
-                  analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file'
-                  ascript = {0}/{1}.format(analysis_file_suffix,ascript)   
+                  analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
+                  ascript = analysis_file_suffix+ascript
             if os.access(ascript, os.R_OK):
                   pass
-               else:
+            else:
                   self.add_report(
                    'template variables','app/analysis/rose-app.conf', item+":"+ascript,
                    "Not readable")
