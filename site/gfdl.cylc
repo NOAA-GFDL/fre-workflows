@@ -2,4 +2,4 @@
     [[root]]
         platform = ppan
         [[[directives]]]
-            --comment=xtmp,epmt
+            --comment=xtmp,epmt,canopy
