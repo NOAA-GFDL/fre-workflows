@@ -357,8 +357,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
-        [[[directives]]]
-            --time=1:00:00
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
@@ -369,8 +369,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
-        [[[directives]]]
-            --time=8:00:00
+        # Increase time limit for staging jobs to 8 hours
+        execution time limit = PT8H
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
@@ -590,8 +590,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
-        [[[directives]]]
-            --time=8:00:00
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
             outputDir = {{ PP_DIR }}
@@ -736,13 +734,13 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
     {% else %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
     {% endif %}
 {% endif %}
 

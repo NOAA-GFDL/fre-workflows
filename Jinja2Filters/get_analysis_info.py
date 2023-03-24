@@ -4,25 +4,45 @@ import sys
 import metomi.rose.config
 import metomi.isodatetime.parsers
 import metomi.isodatetime.dumpers
+from legacy_date_conversions import *
 
 def str_to_bool(val): 
-    """Convert string true/false to boolean"""
+    """Convert string true/false to boolean."""
     if val.lower().startswith("t") or val.lower().startswith("y"): 
         return True 
     elif val.lower().startswith("f") or val.lower().startswith("n"): 
         return False 
     raise Exception("invalid boolean value: {!r}".format(val))
 
-def check_components(item_comps, pp_components):
-    if "all" in pp_components:
+def check_components(list1, list2):
+    """Utility method to check pp component suitability.
+
+    If each item in list1 is in list2, return True.
+    If "all" is one of the items in list2, return True.
+    Otherwise, return False.
+    """
+    if "all" in list2:
         return(True)
     else:
-        for comp in item_comps:
-            if comp not in pp_components:
+        for item in list1:
+            if item not in list2:
                 return(False)
     return(True)
 
 def get_item_info(node, keys, pp_components):
+    """Utility method to retrieve config information about an analysis script.
+
+    Accepts 3 arguments:
+        node                    Rose ConfigNode object
+        keys                    iterated structure of the node, as walked over with "walk"
+        pp_components           PP components that the workflow is using
+
+    If the name of the configuration item is "env" or "command", or
+    if the keys includes more than the item name, return False.
+
+    Otherwise, return this list of information about the analysis script:
+        item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative
+    """
     # only target the keys
     if len(keys) != 1:
         return(False)
@@ -56,7 +76,7 @@ def get_item_info(node, keys, pp_components):
         try:
             item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
         except:
-            sys.stderr.write(f"WARNING: Could not parse ISO8601 start date {item_start_str}")
+            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 start date {item_start_str}")
             item_start = None
     else:
         item_start = None
@@ -64,7 +84,7 @@ def get_item_info(node, keys, pp_components):
         try:
             item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
         except:
-            sys.stderr.write(f"WARNING: Could not parse ISO8601 end date {item_end_str}")
+            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 end date {item_end_str}")
             item_end = None
     else:
         item_end = None
@@ -81,10 +101,17 @@ def get_item_info(node, keys, pp_components):
 
     return(item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative)
 
-def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False):
-    """
-    loop over the analysis scripts listed in the config file
-    build up the task graph or task definition results multiline string that will be returned
+def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
+    """Return the task definitions and task graph for all cumulative-mode analysis scripts.
+
+    Accepts 7 arguments:
+        node                    Rose ConfigNode object
+        pp_components           PP components that the workflow is using
+        pp_dir                  PP directory to be used for setting in_data_dir template variable
+        chunk                   ISO8601 duration used by the workflow
+        start                   date object of the beginning of PP
+        stop                    date object of the end of PP
+        analysis_only           optional boolean to indicate no pre-requisites needed
     """
     defs = ""
     graph = ""
@@ -103,12 +130,15 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             continue
         elif item_cumulative:
             start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
-            sys.stderr.write(f"ANALYSIS: {item}: Will run from {start_str} to current available (cumulative mode)\n")
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run from {start_str} to current available (cumulative mode)\n")
         else:
             #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
         # add the analysis script details that don't depend on time
+        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
+        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
         defs += f"""
     [[analysis-{item}]]
         script = '''
@@ -116,8 +146,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
         '''
         [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
+            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -170,10 +199,16 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
 
     return(defs, graph)
 
-def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=False):
-    """
-    loop over the analysis scripts listed in the config file
-    build up the task graph or task definition results multiline string that will be returned
+def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=False, print_stderr=False):
+    """Return the task definitions and task graph for all every-interval-mode analysis scripts.
+
+    Accepts 5 arguments:
+        node                    Rose ConfigNode object
+        pp_components           PP components that the workflow is using
+        pp_dir                  PP directory to be used for setting in_data_dir template variable
+        chunk                   ISO8601 duration used by the workflow
+        analysis_only           optional boolean to indicate no pre-requisites needed
+        print_stderr            print analysis script information
     """
     defs = ""
     graph = ""
@@ -195,9 +230,12 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
-            sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
         # add the task definitions
+        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
+        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
@@ -206,8 +244,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
         '''
         [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
+            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -230,10 +267,18 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
 
     return(defs, graph)
 
-def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False):
-    """
-    loop over the analysis scripts listed in the config file
-    build up the task graph or task definition results multiline string that will be returned
+def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
+    """Return the task definitions and task graph for all user-defined range analysis scripts.
+
+    Accepts 7 arguments:
+        node                    Rose ConfigNode object
+        pp_components           PP components that the workflow is using
+        pp_dir                  PP directory to be used for setting in_data_dir template variable
+        chunk                   ISO8601 duration used by the workflow
+        start                   date object of the beginning of PP
+        stop                    date object of the end of PP
+        analysis_only           optional boolean to indicate no pre-requisites needed
+        print_stderr            print analysis script information to screen
     """
     defs = ""
     graph = ""
@@ -262,7 +307,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
         stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(stop, '%Y')
         if item_start < start or item_end > stop:
-            sys.stderr.write(f"ANALYSIS: {item}: Defined-interval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Defined-interval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
             continue
 
         # locate the nearest enclosing chunks
@@ -274,9 +320,12 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
             d2 -= chunk
         d1_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d1, '%Y')
         d2_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y')
-        sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
+        if print_stderr:
+            sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
         # set the task definitions`
+        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
+        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
@@ -285,8 +334,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
             $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
         '''
         [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{item_freq}/{chunk}
-            component = {item_comps[0]}
+            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -318,34 +366,25 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
 
     return(defs, graph)
 
-def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, chunk, analysis_only=False):
-    """Return analysis-related information from app/analysis/rose-app.conf
+def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, chunk, analysis_only=False, print_stderr=False):
+    """Return requested analysis-related information from app/analysis/rose-app.conf
 
-    Arguments:
-        info_type:
-            are-there-per-interval-tasks            Returns true or false
-            per-interval-task-definitions           Returns task environments for per-interval tasks
-            cumulative-task-graph                   Returns task graph for cumulative tasks
-            cumulative-task-definitions             Returns task environments for cumulaive tasks
-            defined-task-graph                      Returns task graph for defined-interval tasks
-            defined-task-definitions                REturns task environments for defined-interval tasks
+    Accepts 7 arguments:
+        info_type: one of these types
+            per-interval-task-definitions           Returns task environments for every-chunk analysis scripts
+            per-interval-task-graph                 Returns task graph for every-chunk analysis scripts
+            cumulative-task-definitions             Returns task environments for cumulative-mode analysis scripts
+            cumulative-task-graph                   Returns task graph for cumulative-mode analysis scripts
+            defined-task-definitions                Returns task environments for user-defined year range analysis scripts
+            defined-task-graph                      Returns task graph for user-defined year range analysis scripts
         pp_components_str (str): all, or a space-separated list
-                            analysis scripts depending on others will be skipped
+                                 analysis scripts depending on others will be skipped
         pp_dir (str): absolute filepath root (up to component, not including)
         start_str (str): will use at yr1 if cumulative mode on
         stop_str (str): last cycle point to process
         chunk (str): chunk to use for task graphs at least
         analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
-
-        # retrieve the needed information, one of
-        #   per-interval-task-definitions
-        #       Includes analysis script family and the tasks. Scheduler family is in flow.cylc
-        #   cumulative-task-graph
-        #       Write related task graph strings for cumulative tasks
-        #   cumulative-task-definitions
-        #       Includes analysis script family, scheduler family, and the tasks
-        #   are-there-per-interval-tasks
-        #       Returns True or False if 'per-interval-task-definitions' is non-empty or empty
+        print_stderr (bool): print a summary of analysis scripts that would be run
 """
     # convert strings to date objects
     start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
@@ -363,29 +402,29 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
     # return the requested information
     if info_type == 'per-interval-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return per-interval task definitions only\n")
-        return(get_per_interval_info(node, pp_components, pp_dir, chunk)[0])
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[0])
     elif info_type == 'per-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return per-interval task graph only\n")
-        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only)[1])
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-graph':
         #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return cumulative task definitions only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop)[0])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
     elif info_type == 'defined-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task graph only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[1])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
     elif info_type == 'defined-interval-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task definitions only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only)[0])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
+# for interactive debugging use below
 #print(get_analysis_info('per-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('per-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P3Y', True))
 #print(get_analysis_info('cumulative-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
 #print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
-
 #print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P6Y', False))
 #print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P12Y', True))
