@@ -49,6 +49,8 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                     'template variables', 'ANALYSIS_DIR', analysis_dir,
                     "Required and not set")
             if (analysis_dir is not None):
+              analysis_dir = os.path.expandvars(analysis_dir)
+              #todo trailing slash addition if it does not exist
               if os.access(analysis_dir, os.W_OK):
                 pass
               else:
@@ -61,9 +63,10 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
         fre_analysis_home = config.get_value(['template variables', 'FRE_ANALYSIS_HOME'])
         if (fre_analysis_home is not None):
               if os.access(fre_analysis_home, os.R_OK):
+                print("FRE", fre_analysis_home) 
                 pass
               else:
-                self.add_report('template variables', "FRE_ANALYSIS_HOME", fre_analysis_home,"FRE_ANALYSIS_HOME must exist and be readable if set")
+                self.add_report('template variables', "FRE_ANALYSIS_HOME", fre_analysis_home,"FRE_ANALYSIS_HOME must be readable if set")
         # Validation: This snippet checks if there freq, script and comp for every analysis definition in app/analysis/rose-app.conf. If not, a validation error is thrown. 
         app_analysis_conf = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/rose-app.conf'
         required_val = ['freq','script','components']
@@ -93,8 +96,8 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                #when its in FRE_ANALYSIS_HOME 
                elif(ascript.startswith("$FRE_ANALYSIS_HOME")):
                   if(fre_analysis_home is None):
-                         fre_analysis_home = "na"    
-                  ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home)
+                         fre_analysis_home = "$FRE_ANALYSIS_HOME"    
+                  ascript = ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home)
                else: 
                   #in file/    
                   analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
@@ -103,7 +106,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                   pass
             else:
                   self.add_report(
-                   'template variables','app/analysis/rose-app.conf', item+":"+ascript,
+                   'template variables','app/analysis/rose-app.conf', f"{item}:{ascript}",
                    "Not readable")
              
         return(self.reports) #TODO return error just once 
