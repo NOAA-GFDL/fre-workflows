@@ -97,7 +97,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                elif(ascript.startswith("$FRE_ANALYSIS_HOME")):
                   if(fre_analysis_home is None):
                          fre_analysis_home = "$FRE_ANALYSIS_HOME"    
-                  ascript = ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home)
+                  ascript = ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home.strip('"'))
                else: 
                   #in file/    
                   analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
