@@ -19,7 +19,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
 
     """Validates analysis launching specifications to ensure the following: 
          IF DO_ANALYSIS and DO_ANALYSIS_ONLY are set to True, then ANALYSIS_DIR is writable 
-         IF DO_ANALYSIS_ONLY is True, PP_DIR does not have to be writable. 
+         TODO IF DO_ANALYSIS_ONLY is True, PP_DIR does not have to be writable. 
          FRE_ANALYSIS_HOME is valid 
          Script in app/analysis/rose-app.conf exists either in FRE_ANALYSIS_HOME or in file/
          script, component, freq in app/analysis/rose-app.conf for each analysis script is non-empty
@@ -51,7 +51,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
             if (analysis_dir is not None):
               analysis_dir = os.path.expandvars(analysis_dir)
               #todo trailing slash addition if it does not exist
-              if os.access(analysis_dir, os.W_OK):
+              if os.access(analysis_dir.strip('"'), os.W_OK): 
                 pass
               else:
                 self.add_report('template variables', "ANALYSIS_DIR", analysis_dir,"ANALYSIS_DIR must exist and be writable if set")
@@ -62,7 +62,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
         # Validation:  FRE_ANALYSIS_HOME accessible or not 
         fre_analysis_home = config.get_value(['template variables', 'FRE_ANALYSIS_HOME'])
         if (fre_analysis_home is not None):
-              if os.access(fre_analysis_home, os.R_OK):
+              if os.access(fre_analysis_home.strip('"'), os.R_OK):
                 print("FRE", fre_analysis_home) 
                 pass
               else:
