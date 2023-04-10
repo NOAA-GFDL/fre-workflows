@@ -26,16 +26,6 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
           
     """
 
-    def do_analysis_checks(self):
-        '''
-        '''
-        big_chunk_days = big_chunk.get_days_and_seconds()[0]
-        small_chunk_days = small_chunk.get_days_and_seconds()[0]
-        if big_chunk_days % small_chunk_days == 0:
-            return True
-        else:
-            return False
-
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
         DO_ANALYSIS = config.get_value(['template variables', 'DO_ANALYSIS'])
