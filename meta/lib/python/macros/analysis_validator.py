@@ -25,7 +25,6 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
          script, component, freq in app/analysis/rose-app.conf for each analysis script is non-empty
           
     """
-
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
         DO_ANALYSIS = config.get_value(['template variables', 'DO_ANALYSIS'])
@@ -67,7 +66,10 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
             sys.exit("Unable to read analysis rose-app.conf")
         for keys, sub_node in config_node.walk():
           report_val = []
-          item = keys[0] 
+          item = keys[0]
+          # skip these config stanza headers as they are not analysis scripts
+          if item == "env" or item == "command":
+              continue 
           for val in required_val:
             analysis_defn = config_node.get_value(keys=[item, val])
             if(analysis_defn is None):
