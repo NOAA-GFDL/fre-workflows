@@ -11,23 +11,18 @@ BASENAME=$(basename $CURRENT)
 if [[ $BASENAME != "pp.am5" ]] ;
 then
 	echo "PROBLEM!!!"
+	echo "source me from the cloned git repo's base directory."
 	return
 fi
 
 # get the fre-python-tools
-cd $PWD/app
+cd $PWD/app/generate-time-averages
 git clone -b gen.time.avgs git@github.com:NOAA-GFDL/fre-python-tools.git fre-python-tools
-cd fre-python-tools/
+mv ./fre-python-tools/fre_python_tools/generate_time_averages/ .
 
 # cleanup stuff i don't need for now. 
-rm ./*
-rm -rf ./tests/
-
-# grab the app i need- my gen.time.avgs, and put it where i can likely use the structure
-# of other apps as a guiding principle
-mv ./fre_python_tools/generate_time_averages ./..
-cd ..
 rm -rf ./fre-python-tools/
+rm -rf ./generate_time_averages/testfiles/
 
 # b.c. -e -x directives near shebang, if this part doesn't work, i'll get a complaint
 # good.
@@ -35,5 +30,5 @@ pwd
 ls generate_time_averages/
 echo "generate_time_averages/ is ready to go!"
 
-cd ..
+cd $CURRENT
 return

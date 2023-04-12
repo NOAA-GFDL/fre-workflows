@@ -8,19 +8,22 @@ BASENAME=$(basename $CURRENT)
 if [[ $BASENAME != "pp.am5" ]] ;
 then
 	echo "PROBLEM!!!"
+	echo "source me from the cloned git repo's base directory."
 	return
 fi
 
-if [[ -d $PWD/app/fre-python-tools ]] ;
+TARG=$PWD/app/generate-time-averages/fre-python-tools
+if [[ -d $TARG ]] ;
 then
-	echo "cleaning up $PWD/app/fre-python-tools"
-	rm -rf $PWD/app/fre-python-tools
+	echo "cleaning up $TARG"
+	rm -rf $TARG
 fi
 
-if [[ -d $PWD/app/generate_time_averages ]] ;
+TARG=$PWD/app/generate-time-averages/generate_time_averages
+if [[ -d $TARG ]] ;
 then
-	echo "cleaning up $PWD/app/generate_time_averages"
-	rm -r $PWD/app/generate_time_averages
+	echo "cleaning up $TARG"
+	rm -rf $TARG
 fi
 
 echo "done cleaning up."

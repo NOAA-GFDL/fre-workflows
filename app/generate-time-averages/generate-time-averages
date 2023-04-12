@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+#
+# use fre-python-tools generate_time_average module to average history files 
+#
+
+module load python
+
+echo Arguments:
+echo "    history dir: $historyDir"
+echo "    ptmp dir: $ptmpDir"
+echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
+echo Utilities:
+type hsmget
+type cylc
+
+file=$ptmpDir$historyDir/$(cylc cycle-point --template CCYYMMDD).nc
+fname=$(cylc cycle-point --template CCYYMMDD).nc
+if ls $file; then
+    echo "going to time-average file ${fname}"
+    ls
+    pwd
+	exit 1
+else
+    echo "file ${fname} not found, cannot average"
+    exit 1
+fi
