@@ -112,7 +112,7 @@ REFINE-DIAG:succeed-all => stage-history-refined
 
 {# time average generation #}
 {% if DO_TIMEAVGS %}
-stage-history => TIME-AVG
+stage-history => generate-time-average
 #TIME-AVG:succeed-all => stage-history-averaged
 {% endif %}
 
@@ -403,10 +403,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
 {% if DO_TIMEAVGS %}
     [[TIME-AVG]]
-        pre-script = module load python
         script = rose task-run --verbose --app-key generate-time-averages        
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
+            ptmpDir = {{ PTMP_DIR }}
+    [[generate-time-average]]
+    inherit = TIME-AVG
 {% endif %}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}

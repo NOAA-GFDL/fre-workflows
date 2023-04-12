@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# for emacs syntax highlighting outside of a bin/ dir
+# -*- Shell -*-
+
 #
 # use fre-python-tools generate_time_average module to average history files 
 #
@@ -13,16 +16,25 @@ echo "    ptmp dir: $ptmpDir"
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
-type hsmget
 type cylc
 
-file=$ptmpDir$historyDir/$(cylc cycle-point --template CCYYMMDD).nc
 fname=$(cylc cycle-point --template CCYYMMDD).nc
+file=$ptmpDir$historyDir/$fname
+pwd
+ls $PWD
+ls $PWD/..
+
+echo "need more info!!! what's that first line in stage history about???"
+echo "BASH_SOURCE[0]=${BASH_SOURCE[0]}"
+echo ""
+echo "what's there???"
+ls $(dirname ${BASH_SOURCE[0]})/generate_time_averages/generate_time_averages.py
+MYPYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/generate_time_averages/generate_time_averages.py
+
 if ls $file; then
     echo "going to time-average file ${fname}"
-    ls
-    pwd
-	exit 1
+	python $MYPYTHON_SCRIPT
+	exit 0
 else
     echo "file ${fname} not found, cannot average"
     exit 1
