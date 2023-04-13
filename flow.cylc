@@ -21,8 +21,8 @@
 [meta]
     title = "Postprocessing Example 1"
     description = """
-Postprocessing example that includes Bronx-like functionality,
-"""
+    Postprocessing example that includes Bronx-like functionality,
+    """
     URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
 
 [scheduler]
@@ -37,8 +37,8 @@ Postprocessing example that includes Bronx-like functionality,
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
 {# so custom Jinja triggers are used to form the lists. Cylc and custom Jinja triggers have these rules:       #}
-{# 1. Triggers live in Jinja2Filters/ and must be python						       #}
-{# 2. The trigger filename must be <trigger-name>.py							       #}
+{# 1. Triggers live in Jinja2Filters/ and must be python						               #}
+{# 2. The trigger filename must be <trigger-name>.py							               #}
 {# 3. In the file, trigger must be defined as a function with the same name				       #}
 {# 4. First argument is passed through as a pipe, and the rest are passed through in the trigger arguments.    #}
 {# More info:												       #}
@@ -461,10 +461,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
                 exit 1
             fi
             if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                #echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                #ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                #echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                #ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+				ls {{ PTMP_DIR }}
+				ls $TMPDIR
                 export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset PAPIEX_TAGS
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
