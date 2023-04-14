@@ -1,4 +1,4 @@
-#!/bin/sh -e -x
+#!/bin/sh -e
 
 # this script is to setup the generate-time-average python module within fre_python_tools
 # it might change a bunch since we're about to overhaul the app/submodule structure
@@ -25,10 +25,12 @@ rm -rf ./fre-python-tools/
 rm -rf ./generate_time_averages/testfiles/
 
 # b.c. -e -x directives near shebang, if this part doesn't work, i'll get a complaint
-# good.
 pwd
-ls generate_time_averages/
-echo "generate_time_averages/ is ready to go!"
+if ls generate_time_averages/; then
+	echo "generate_time_averages/ is ready to go!"
+else
+	echo "something wrong! generate_time_averages dir not found."
+fi
 
 cd $CURRENT
 return

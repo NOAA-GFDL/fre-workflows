@@ -1,4 +1,4 @@
-#!/bin/sh -e -x
+#!/bin/sh -e
 
 # to clean up messes i make via setuptimavgenv.sh
 # usage: source cleanuptimavgenv.sh from pp.am5/

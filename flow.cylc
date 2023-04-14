@@ -110,12 +110,6 @@ stage-history => REFINE-DIAG
 REFINE-DIAG:succeed-all => stage-history-refined
 {% endif %}
 
-{# time average generation #}
-{% if DO_TIMEAVGS %}
-stage-history => generate-time-average
-#TIME-AVG:succeed-all => stage-history-averaged
-{% endif %}
-
 {# If preAnalysis desired (vitals calculations is canonical case), start all PRE-ANALYSIS tasks when stage-history succeeds. #}
 {% if DO_PREANALYSIS %}
 stage-history => PRE-ANALYSIS
@@ -129,10 +123,16 @@ stage-history => PRE-ANALYSIS
 {# Each history file needed for native grid processing is similar, except skipping the regridding.                       #}
 {% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+    {% if DO_TIMEAVGS %}
+SPLIT-NETCDF-REGRID:succeed-all => generate-time-averages-regrid
+    {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all =>                      split-netcdf-native<native> => rename-split-to-pp-native<native>
+    {% if DO_TIMEAVGS %}
+RENAME-SPLIT-TO-PP-NATIVE:succeed-all => generate-time-averages-native
+    {% endif %}
 {% endif %}
 
 {# If HISTORY_DIR_REFINED is set, then use the next 3 lines.                                                                #}
@@ -351,7 +351,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         """
         env-script = """
             eval $(rose task-env)
-            env
+            #env
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
@@ -402,13 +402,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
 {% if DO_TIMEAVGS %}
-    [[TIME-AVG]]
+    [[TIME-AVGS]]
         script = rose task-run --verbose --app-key generate-time-averages        
+    [[generate-time-averages-native]]
+        inherit = TIME-AVGS
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}
-            ptmpDir = {{ PTMP_DIR }}
-    [[generate-time-average]]
-    inherit = TIME-AVG
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native/default/
+    [[generate-time-averages-regrid]]
+        inherit = TIME-AVGS
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/default/
 {% endif %}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}

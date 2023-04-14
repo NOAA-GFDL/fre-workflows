@@ -7,35 +7,49 @@ set -euo pipefail
 #
 # use fre-python-tools generate_time_average module to average history files 
 #
+##debug
+#inputDir=$1
+##debug
 
 module load python
+module load fre-nctools
 
 echo Arguments:
-echo "    history dir: $historyDir"
-echo "    ptmp dir: $ptmpDir"
+echo "    input dir: $inputDir"
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
 type cylc
 
-fname=$(cylc cycle-point --template CCYYMMDD).nc
-file=$ptmpDir$historyDir/$fname
+echo "pwd..."
 pwd
-ls $PWD
-ls $PWD/..
+#ls $PWD/..
 
-echo "need more info!!! what's that first line in stage history about???"
+files=$(ls $inputDir/*/*/*/*.nc)
+
 echo "BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-echo ""
-echo "what's there???"
-ls $(dirname ${BASH_SOURCE[0]})/generate_time_averages/generate_time_averages.py
-MYPYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/generate_time_averages/generate_time_averages.py
+MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+##debug
+#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
+##debug
+echo "time averaging script: $MY_PYTHON_SCRIPT"
 
-if ls $file; then
-    echo "going to time-average file ${fname}"
-	python $MYPYTHON_SCRIPT
-	exit 0
+#echo "debug2"
+if ls $MY_PYTHON_SCRIPT; then
+	echo "script found. proceeding..."
 else
-    echo "file ${fname} not found, cannot average"
-    exit 1
+	echo "error, script not found."
+	exit 1
 fi
+
+echo "debug1"
+for file in $files; do
+    echo "going to time-average file=$file"
+	python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
+	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
+	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
+	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
+	exit 0
+	break
+done
+exit 1
