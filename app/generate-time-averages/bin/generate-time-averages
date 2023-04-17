@@ -21,10 +21,7 @@ echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
 type cylc
 
-echo "pwd..."
-pwd
-#ls $PWD/..
-
+#this probably shouldnt be a substitute for a proper "find" command...
 files=$(ls $inputDir/*/*/*/*.nc)
 
 echo "BASH_SOURCE[0]=${BASH_SOURCE[0]}"
