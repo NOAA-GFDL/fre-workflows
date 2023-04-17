@@ -11,12 +11,19 @@ set -euo pipefail
 #inputDir=$1
 ##debug
 
+
+module load epmt
+epmt annotate EPMT_JOB_TAGS="secondary_annotate:FOO.nc"
+module unload epmt
+
 module load python
 module load fre-nctools
 
 echo Arguments:
+echo "    cylc share dir: $CYLC_WORKFLOW_SHARE_DIR"
 echo "    input dir: $inputDir"
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+echo "    component: $component"
 echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
 type cylc
