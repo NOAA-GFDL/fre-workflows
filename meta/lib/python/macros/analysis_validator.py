@@ -36,23 +36,22 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
             except:
                 self.add_report(
                     'template variables', 'ANALYSIS_DIR', analysis_dir,
-                    "Required and not set")
+                    "Must exist and be writable if DO_ANALYSIS is set")
             if (analysis_dir is not None):
               analysis_dir = os.path.expandvars(analysis_dir)
               #todo trailing slash addition if it does not exist
               if os.access(analysis_dir.strip('"'), os.W_OK): 
                 pass
               else:
-                self.add_report('template variables', "ANALYSIS_DIR", analysis_dir,"ANALYSIS_DIR must exist and be writable if set")
+                self.add_report('template variables', "ANALYSIS_DIR", analysis_dir,"ANALYSIS_DIR must exist and be writable if DO_ANALYSIS is set")
             else: 
                 self.add_report(
                 'template variables', 'ANALYSIS_DIR', analysis_dir,
-                "Required and not set")
+                "Must exist and be writable if DO_ANALYSIS is set")
         # Validation:  FRE_ANALYSIS_HOME accessible or not 
         fre_analysis_home = config.get_value(['template variables', 'FRE_ANALYSIS_HOME'])
         if (fre_analysis_home is not None):
               if os.access(fre_analysis_home.strip('"'), os.R_OK):
-                print("FRE", fre_analysis_home) 
                 pass
               else:
                 self.add_report('template variables', "FRE_ANALYSIS_HOME", fre_analysis_home,"FRE_ANALYSIS_HOME must be readable if set")
