@@ -27,10 +27,22 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
     """
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
-        DO_ANALYSIS = config.get_value(['template variables', 'DO_ANALYSIS'])
-        DO_ANALYSIS_ONLY = config.get_value(['template variables', 'DO_ANALYSIS_ONLY'])
+        do_analysis = config.get_value(['template variables', 'DO_ANALYSIS'])
+        do_analysis_only = config.get_value(['template variables', 'DO_ANALYSIS_ONLY'])
+        if do_analysis == "True":
+            do_analysis = bool(1)
+        else:
+            do_analysis = bool(0)
+        if do_analysis_only == "True":
+            do_analysis_only = bool(1)
+        else:
+            do_analysis_only = bool(0)
         #Validation: ANALYSIS_DIR exists and is valid or not depending on the configuration settings used 
-        if (DO_ANALYSIS or DO_ANALYSIS_ONLY):
+        if do_analysis_only and not do_analysis:
+            self.add_report(
+                'template variables', 'DO_ANALYSIS', do_analysis,
+                "Must be set if DO_ANALYSIS_ONLY is set")
+        if do_analysis:
             try:
                analysis_dir = config.get_value(['template variables', 'ANALYSIS_DIR'])
             except:
