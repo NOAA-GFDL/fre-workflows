@@ -723,7 +723,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         [[[environment]]]
             # internally-used vars
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
-            FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
+            FRE_ANALYSIS_HOME = {{ FRE_ANALYSIS_HOME }} 
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
             # fre-analysis template vars
             yr2 = $(cylc cycle-point --template=CCYY)
