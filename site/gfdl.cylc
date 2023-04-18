@@ -3,3 +3,12 @@
         platform = ppan
         [[[directives]]]
             --comment=xtmp,epmt,canopy
+        init-script = """
+            module use -a /home/fms/local/modulefiles
+            module load epmt
+            module list
+            epmt check
+        """
+    [[STAGE-HISTORY]]
+        pre=script = module load gcp hsm/test
+

@@ -6,7 +6,7 @@
 
 {# The site-specific file (stored in site/ subdir) is included at the end of this file.	              #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows) #}
-{% set SITE = 'gfdl' %}
+{% set SITE = 'niagara' %}
 
 {# Calculate the number of history segments per a-chunk #}
 {% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
@@ -337,22 +337,17 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 [runtime]
     # default config for all tasks
     [[root]]
-        init-script = """
-            module use -a /home/fms/local/modulefiles
-            module load epmt
-            module list
-            epmt check
-        """
+       script = printenv
         env-script = """
             eval $(rose task-env)
             env
-            export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
-            export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
-            unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
-            epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
-            export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
-            export LD_PRELOAD=$PAPIEX_LD_PRELOAD
-            export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
+          #  export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
+          #  export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
+          #  unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
+          #  epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
+          #  export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
+          #  export LD_PRELOAD=$PAPIEX_LD_PRELOAD
+          #  export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
         """
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -368,9 +363,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
 
     [[STAGE-HISTORY]]
-        pre-script = module load gcp hsm/test
         # Increase time limit for staging jobs to 8 hours
-        execution time limit = PT8H
+         execution time limit = PT8H
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
