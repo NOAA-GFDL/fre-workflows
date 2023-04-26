@@ -20,7 +20,53 @@
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
         """
-
     [[STAGE-HISTORY]]
         pre=script = module load gcp hsm/test
+
+{% if DO_REFINEDIAG or DO_PREANALYSIS %}
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            env
+            set -x
+            module load gcp/test
+            module load fre/test
+            mkdir -p $work $tempCache $refineDiagDir
+            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ P    TMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
+            cd $work/$hsmdate
+            ls
+        """
+ 
+{% endif %}
+
+{% if DO_REFINEDIAG %}
+    [[REFINE-DIAG]]
+        inherit = PRE-ANALYSIS
+        post-script = """
+            cd $refineDiagDir
+            if ls *nc; then
+                refinedCount=$(ls -1 *nc | wc -l)
+            else
+                refinedCount=0
+            fi
+            if [[ $refinedCount > 0 ]]; then
+                for file in $(ls -1 *nc); do
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                done
+            else
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_D    IR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset     PAPIEX_TAGS
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+                        export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar     -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hs    mdate ; unset PAPIEX_TAGS
+        """
+{% endif %}
 
