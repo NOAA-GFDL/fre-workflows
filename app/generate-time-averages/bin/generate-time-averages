@@ -33,7 +33,15 @@ type cylc
 
 #this probably shouldnt be a substitute for a proper "find" command...
 echo "resolving target files"
-files=($(ls $inputDir/*/*/*/*$component*.nc))
+dirs=($(ls -d $inputDir/$component/*/*))
+echo "number of dirs found is : ${#dirs[@]}"
+dirNum=0
+for dir in dirs; do
+	echo "dir#${dirNum} = $dir"
+	dirNum=$($(dirNum + 1))
+done
+
+files=($(ls $inputDir/$component/*/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
 echo "number of target files to average is: ${#files[@]}"
 echo ""
 
