@@ -1,0 +1,5 @@
+[runtime]
+    [[root]]
+        platform = localhost
+   # [[STAGE-HISTORY]]
+   #     pre-script=conda activate hsm
