@@ -8,16 +8,22 @@ set -euo pipefail
 #
 
 
-##debug
-#inputDir=/home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run3/share/shards/regrid-xy/default/
-#component="buhhhh"
-##debug
+#debug
+export CYLC_TASK_CYCLE_POINT=19790101T0000Z
+#export CYLC_TASK_CYCLE_POINT=19800101T0000Z
+inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
+#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
+component=river_month
+#component=land_month
+#component=atmos_month
+histSegmentSize=P1Y
+#debug
 
 
 #echo "gonna try epmt stuff here..."
 #which epmt
 echo "epmt annotate......"
-epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc
+#epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc
 
 
 echo "module load python..."
@@ -27,21 +33,19 @@ module load fre-nctools
 
 
 echo Arguments:
-echo "    cylc share dir: $CYLC_WORKFLOW_SHARE_DIR"
-echo "    input dir: $inputDir"
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+echo "    input dir: $inputDir"
 echo "    component: $component"
 echo "    histSegmentSize: $histSegmentSize"
-echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
 type cylc
 
 
 echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-##debug
-#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
-##debug
-MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+#debug
+MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
+#debug
+#MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
 echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT"
 echo "---DEBUG--- locating python script"
 if ls $MY_PYTHON_SCRIPT; then
@@ -57,7 +61,7 @@ echo ""
 echo ""
 echo "---DEBUG--- resolving target directories"
 dirs=($(ls -d $inputDir/$component/*))
-if [[ ${dirs[@]} -lt 1 ]]; then
+if [[ ${#dirs[@]} -lt 1 ]]; then
 	echo "ZERO DIRECTORIES FOUND!"
 	exit 1
 fi
@@ -78,14 +82,17 @@ for dir in ${dirs[@]}; do
 		exit 1
 	fi
 
-	if [[ ${files[@]} -lt 1 ]]; then
+	if [[ ${#files[@]} -lt 1 ]]; then
 		echo "WARNING: no files found in directory $dir!"
 		echo "moving on to next directory..."
 	fi	
 
 	for file in ${files[@]}; do
 		echo "---DEBUG--- going to time-average file=$file"
-		python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
+		python $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
+		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
+		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
+		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
 		echo "timeaverage exit status: ?=${?}"
 	done
 	
@@ -108,9 +115,6 @@ exit 0
 #echo ""
 #echo "---DEBUG--- file loop"
 #
-#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
-#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
-#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
 #	#exit 0
 #	#break
 #done
