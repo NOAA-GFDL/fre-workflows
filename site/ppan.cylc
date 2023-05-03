@@ -40,7 +40,6 @@
 
 {% if DO_REFINEDIAG %}
     [[REFINE-DIAG]]
-        inherit = PRE-ANALYSIS
         post-script = """
             cd $refineDiagDir
             if ls *nc; then
@@ -66,7 +65,7 @@
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
-                        export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar     -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hs    mdate ; unset PAPIEX_TAGS
+            export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
         """
 {% endif %}
 
