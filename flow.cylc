@@ -6,7 +6,7 @@
 
 {# The site-specific file (stored in site/ subdir) is included at the end of this file.	              #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows) #}
-{% set SITE = 'niagara' %}
+{% set SITE = 'generic' %}
 
 {# Calculate the number of history segments per a-chunk #}
 {% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
@@ -337,7 +337,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 [runtime]
     # default config for all tasks
     [[root]]
-        script = printenv
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
