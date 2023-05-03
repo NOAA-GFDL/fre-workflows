@@ -3,71 +3,114 @@ set -euo pipefail
 
 # for emacs syntax highlighting outside of a bin/ dir
 # -*- Shell -*-
-
 #
 # use fre-python-tools generate_time_average module to average history files 
 #
+
+
 ##debug
-#inputDir=$1
+#inputDir=/home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run3/share/shards/regrid-xy/default/
 #component="buhhhh"
 ##debug
+
 
 #echo "gonna try epmt stuff here..."
 #which epmt
 echo "epmt annotate......"
 epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc
 
+
 echo "module load python..."
 module load python
 echo "module load fre-nctools..."
 module load fre-nctools
+
 
 echo Arguments:
 echo "    cylc share dir: $CYLC_WORKFLOW_SHARE_DIR"
 echo "    input dir: $inputDir"
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    component: $component"
+echo "    histSegmentSize: $histSegmentSize"
 echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
 echo Utilities:
 type cylc
 
-#this probably shouldnt be a substitute for a proper "find" command...
-echo "resolving target files"
-dirs=($(ls -d $inputDir/$component/*/*))
-echo "number of dirs found is : ${#dirs[@]}"
-dirNum=0
-for dir in dirs; do
-	echo "dir#${dirNum} = $dir"
-	dirNum=$($(dirNum + 1))
-done
 
-files=($(ls $inputDir/$component/*/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
-echo "number of target files to average is: ${#files[@]}"
-echo ""
-
-echo "BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
 ##debug
 #MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
 ##debug
-echo "time averaging script: $MY_PYTHON_SCRIPT"
-
-#echo "debug2"
+MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT"
+echo "---DEBUG--- locating python script"
 if ls $MY_PYTHON_SCRIPT; then
 	echo "script found. proceeding..."
 else
 	echo "error, script not found."
 	exit 1
 fi
+echo ""
 
-echo "debug1"
-for file in $files; do
-    echo "going to time-average file=$file"
-	python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
-	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
-	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
-	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
-	exit 0
-	break
+
+#this probably shouldnt be a substitute for a proper "find" command...
+echo ""
+echo "---DEBUG--- resolving target directories"
+dirs=($(ls -d $inputDir/$component/*))
+if [[ ${dirs[@]} -lt 1 ]]; then
+	echo "ZERO DIRECTORIES FOUND!"
+	exit 1
+fi
+echo "number of dirs found is : ${#dirs[@]}"
+
+for dir in ${dirs[@]}; do
+	echo "FOUND dir: $dir"
+	
+	echo "looking at directory structure file frequency..."
+	file_freq=${dir##*/}
+	echo "frequency found is: $file_freq"
+	if [[ $file_freq == P1D ]]; then
+		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
+	elif [[ $file_freq == P1M ]]; then
+		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMM)*.nc))
+	else
+		echo "target files not found. exit."
+		exit 1
+	fi
+
+	if [[ ${files[@]} -lt 1 ]]; then
+		echo "WARNING: no files found in directory $dir!"
+		echo "moving on to next directory..."
+	fi	
+
+	for file in ${files[@]}; do
+		echo "---DEBUG--- going to time-average file=$file"
+		python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
+		echo "timeaverage exit status: ?=${?}"
+	done
+	
 done
-exit 1
+echo ""
+#exit $?
+#exit 1 
+exit 0
+
+#echo ""
+#echo "---DEBUG--- resolving target files"
+##why is there this extra default directory?? FOR REGRID ONLY???
+##/home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run3/share/shards/regrid-xy/default/default/atmos_4xdaily/PT6H/P1Y/*nc
+#files=($(ls $inputDir/$component/*/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
+#echo "---DEBUG--- number of target files to average is: ${#files[@]}"
+#echo ""
+#
+#
+#
+#echo ""
+#echo "---DEBUG--- file loop"
+#
+#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
+#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
+#	#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
+#	#exit 0
+#	#break
+#done

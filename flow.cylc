@@ -408,18 +408,20 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% if DO_TIMEAVGS %}
     [[TIME-AVGS]]
         script = rose task-run --verbose --app-key generate-time-averages
+        [[[environment]]]
+            histSegmentSize = {{ HISTORY_SEGMENT }}
     {% if DO_NATIVE %}
     [[generate-time-averages-native<native>]]
         inherit = TIME-AVGS
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native/default/
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native/default
             component = $CYLC_TASK_PARAM_native
     {% endif %}
     {% if DO_REGRID %}
     [[generate-time-averages-regrid<regrid>]]
         inherit = TIME-AVGS
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/default/
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/default/default
             component = $CYLC_TASK_PARAM_regrid
     {% endif %}
 {% endif %}
