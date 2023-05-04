@@ -8,22 +8,17 @@ set -euo pipefail
 #
 
 
-#debug
-export CYLC_TASK_CYCLE_POINT=19790101T0000Z
-#export CYLC_TASK_CYCLE_POINT=19800101T0000Z
-inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
-#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
-component=river_month
-#component=land_month
-#component=atmos_month
-histSegmentSize=P1Y
-#debug
-
-
-#echo "gonna try epmt stuff here..."
-#which epmt
-echo "epmt annotate......"
-#epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc
+##debug
+#export CYLC_TASK_CYCLE_POINT=19790101T0000Z
+##export CYLC_TASK_CYCLE_POINT=19800101T0000Z
+#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
+##inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
+#component=river_month
+##component=land_month
+##component=atmos_month
+#histSegmentSize=P1Y
+#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
+##debug
 
 
 echo "module load python..."
@@ -41,11 +36,13 @@ echo Utilities:
 type cylc
 
 
+# empty env vars are A-OK to bash! this is for epmt data lineage
+export input_file_list=
+export output_file_list=
+
+
 echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-#debug
-MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
-#debug
-#MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
 echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT"
 echo "---DEBUG--- locating python script"
 if ls $MY_PYTHON_SCRIPT; then
@@ -77,27 +74,60 @@ for dir in ${dirs[@]}; do
 		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
 	elif [[ $file_freq == P1M ]]; then
 		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMM)*.nc))
+	elif [[ $file_freq == PT6H ]]; then
+		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template %Y%m%d%H)*.nc))
 	else
-		echo "target files not found. exit."
-		exit 1
+		echo "file freq not found. moving on."
+		continue
 	fi
 
 	if [[ ${#files[@]} -lt 1 ]]; then
 		echo "WARNING: no files found in directory $dir!"
 		echo "moving on to next directory..."
+	else
+		echo "${#files[@]}"
 	fi	
 
+	debugCount=0
 	for file in ${files[@]}; do
+		#export input_file_list=${input_file_list}$file, #no checksum, works great!
+		export input_file_list=${input_file_list}$(shasum -a 512256 $file), #with checksum
+		output_file=${file}_out
+		
 		echo "---DEBUG--- going to time-average file=$file"
-		python $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-nctools"
-		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "fre-python-tools"
-		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "cdo"
-		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${file}_out" -p "nco"
+		#python $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-nctools"
+		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-python-tools"
+		python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "cdo"
+		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "nco"
+
+		if [[ -f $output_file ]]; then
+			#export output_file_list=${output_file_list}$output_file, #no checksum, works great!
+			export output_file_list=${output_file_list}$(shasum -a 512256 $output_file), #with checksum
+		else
+			export output_file_list=${output_file_list}'None  None', #with checksum
+			                                                         #note, two spaces, b.c. that's what shasum
+			                                                         #does to the checksum+filename output
+		fi
 		echo "timeaverage exit status: ?=${?}"
+		debugCount=$(($debugCount+1))
+		if [[ $debugCount -gt 2 ]]; then
+			break
+		fi
 	done
 	
 done
+
+echo "---DEBUG--- gonna try epmt stuff here..."
+which epmt
+echo "epmt annotate......"
+#epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc #early version of test
+echo "epmt annotate DATA_LINEAGE_IN=${input_file_list%*,}"
+epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+
+echo "epmt annotate DATA_LINEAGE_OUT=${output_file_list%*,}"
+epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
 echo ""
+
 #exit $?
 #exit 1 
 exit 0
