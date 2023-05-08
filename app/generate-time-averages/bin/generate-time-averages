@@ -8,24 +8,25 @@ set -euo pipefail
 #
 
 
-##debug
-#export CYLC_TASK_CYCLE_POINT=19790101T0000Z
-##export CYLC_TASK_CYCLE_POINT=19800101T0000Z
-#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
-##inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
-#component=river_month
-##component=land_month
-##component=atmos_month
-#histSegmentSize=P1Y
-#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
-##debug
+# uncomment this block and set args for local development, not attached to a cylc workflow.
+unset CYCLE_TASK_CYCLE_POINT
+export CYLC_TASK_CYCLE_POINT=19790101T0000Z #for cylc cycle-point to work w/o argument, this env var must be set. 
+#export CYLC_TASK_CYCLE_POINT=19800101T0000Z
+inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
+#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
+component=river_month
+#component=land_month
+#component=atmos_month
+histSegmentSize=P1Y
+MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
+#debug
 
 
 echo "module load python..."
 module load python
-echo "module load fre-nctools..."
-module load fre-nctools
-
+#echo "module load fre-nctools..."
+#module load fre-nctools
+#module load cdo
 
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
@@ -43,12 +44,11 @@ export output_file_list=
 
 echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
 MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
-echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT"
-echo "---DEBUG--- locating python script"
+echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT, locating..."
 if ls $MY_PYTHON_SCRIPT; then
 	echo "script found. proceeding..."
 else
-	echo "error, script not found."
+	echo "---ERROR--- error, script not found."
 	exit 1
 fi
 echo ""
@@ -59,13 +59,13 @@ echo ""
 echo "---DEBUG--- resolving target directories"
 dirs=($(ls -d $inputDir/$component/*))
 if [[ ${#dirs[@]} -lt 1 ]]; then
-	echo "ZERO DIRECTORIES FOUND!"
+	echo "---ERROR--- ZERO DIRECTORIES FOUND!"
 	exit 1
 fi
 echo "number of dirs found is : ${#dirs[@]}"
 
 for dir in ${dirs[@]}; do
-	echo "FOUND dir: $dir"
+	echo "---DEBUG--- FOUND dir: $dir"
 	
 	echo "looking at directory structure file frequency..."
 	file_freq=${dir##*/}
@@ -77,15 +77,15 @@ for dir in ${dirs[@]}; do
 	elif [[ $file_freq == PT6H ]]; then
 		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template %Y%m%d%H)*.nc))
 	else
-		echo "file freq not found. moving on."
+		echo "---WARNING--- file freq not found. moving on."
 		continue
 	fi
 
 	if [[ ${#files[@]} -lt 1 ]]; then
-		echo "WARNING: no files found in directory $dir!"
+		echo "---WARNING--- no files found in directory $dir!"
 		echo "moving on to next directory..."
 	else
-		echo "${#files[@]}"
+		echo "---DEBUG--- found ${#files[@]} files"
 	fi	
 
 	debugCount=0
@@ -108,7 +108,7 @@ for dir in ${dirs[@]}; do
 			                                                         #note, two spaces, b.c. that's what shasum
 			                                                         #does to the checksum+filename output
 		fi
-		echo "timeaverage exit status: ?=${?}"
+		echo "---DEBUG--- timeaverage exit status: ?=${?}"
 		debugCount=$(($debugCount+1))
 		if [[ $debugCount -gt 2 ]]; then
 			break
@@ -119,32 +119,13 @@ done
 
 echo "---DEBUG--- gonna try epmt stuff here..."
 which epmt
-echo "epmt annotate......"
-#epmt annotate EPMT_DATA_LINEAGE=FOO.nc,BAR.nc,WHY.nc #early version of test
-echo "epmt annotate DATA_LINEAGE_IN=${input_file_list%*,}"
+echo "---DEBUG--- epmt annotate......"
+#echo "---DEBUG--- epmt annotate DATA_LINEAGE_IN=${input_file_list%*,}"
 epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
-
-echo "epmt annotate DATA_LINEAGE_OUT=${output_file_list%*,}"
+#echo "---DEBUG--- epmt annotate DATA_LINEAGE_OUT=${output_file_list%*,}"
 epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
 echo ""
 
 #exit $?
 #exit 1 
 exit 0
-
-#echo ""
-#echo "---DEBUG--- resolving target files"
-##why is there this extra default directory?? FOR REGRID ONLY???
-##/home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run3/share/shards/regrid-xy/default/default/atmos_4xdaily/PT6H/P1Y/*nc
-#files=($(ls $inputDir/$component/*/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
-#echo "---DEBUG--- number of target files to average is: ${#files[@]}"
-#echo ""
-#
-#
-#
-#echo ""
-#echo "---DEBUG--- file loop"
-#
-#	#exit 0
-#	#break
-#done
