@@ -20,8 +20,9 @@
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
         """
+
     [[STAGE-HISTORY]]
-        pre=script = module load gcp hsm/test
+        pre-script = module load gcp hsm/test
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
