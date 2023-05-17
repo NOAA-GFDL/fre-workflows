@@ -1,5 +1,20 @@
 [runtime]
     [[root]]
         platform = localhost
-   # [[STAGE-HISTORY]]
-   #     pre-script=conda activate hsm
+        [[[environment]]]
+            TMPDIR = /collab1/data/Dana.Singh/tmp
+    [[STAGE-HISTORY]]
+        pre-script= """
+             export c=$(which cylc)     #defines cylc installation path
+             export PATH=${c%/*}:$PATH  #appends cylc installation path onto path
+             conda activate hsm
+        """
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = """
+             export c=$(which cylc)     #defines cylc installation path
+             export PATH=${c%/*}:$PATH  #appends cylc installation path onto path
+             conda activate regrid-xy && mkdir -p $outputDir
+        """
+{% endif %}
