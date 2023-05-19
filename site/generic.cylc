@@ -1,20 +1,30 @@
 [runtime]
     [[root]]
         platform = localhost
-        [[[environment]]]
-            TMPDIR = /collab1/data/Dana.Singh/tmp
+        env-script = """
+             c=$(which cylc)             #defines cylc installation path
+             export PATH=${c%/*}:$PATH   #appends cylc installation path onto path
+        """
+
     [[STAGE-HISTORY]]
         pre-script= """
-             export c=$(which cylc)     #defines cylc installation path
-             export PATH=${c%/*}:$PATH  #appends cylc installation path onto path
              conda activate hsm
         """
 
+{% if DO_REFINEDIAG or DO_PREANALYSIS %}
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            conda activate regrid-xy
+            env
+            set -x
+            mkdir -p $work $tempCache $refineDiagDir
+         """
+{% endif %}
+
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = """
-             export c=$(which cylc)     #defines cylc installation path
-             export PATH=${c%/*}:$PATH  #appends cylc installation path onto path
-             conda activate regrid-xy && mkdir -p $outputDir
+        pre-script = """ 
+            conda activate regrid-xy && mkdir -p $outputDir
         """
 {% endif %}
+
