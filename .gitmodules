@@ -1,6 +1,3 @@
-[submodule "app/pp-starter"]
-	path = app/pp-starter
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/pp-starter.git
 [submodule "app/stage-history"]
 	path = app/stage-history
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/stage-history.git
