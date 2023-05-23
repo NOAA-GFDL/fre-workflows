@@ -14,17 +14,21 @@
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
         pre-script = """
-            conda activate regrid-xy
+            conda activate fre-nctools
             env
             set -x
             mkdir -p $work $tempCache $refineDiagDir
+            cd $work/$hsmdate
+            ls
          """
 {% endif %}
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = """ 
+        pre-script = """
+            set +u 
             conda activate regrid-xy && mkdir -p $outputDir
+            set -u
         """
 {% endif %}
 
