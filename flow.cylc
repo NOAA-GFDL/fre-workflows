@@ -105,15 +105,15 @@ pp-starter => STAGE-HISTORY
 {# If refineDiag generation is desired (DO_REFINEDIAG is True), then add these two task dependencies:		  #}
 {# 1. All tasks in the REFINE-DIAG task family are started once the stage-history task succeeds.		  #}
 {# 2. stage-history-refined task is started once all the refineDiag tasks succeed.                                #}
-#    {% if DO_REFINEDIAG %}
-#stage-history => REFINE-DIAG
-#REFINE-DIAG:succeed-all => stage-history-refined
-#    {% endif %}
-#
-# {# If preAnalysis desired (vitals calculations is canonical case), start all PRE-ANALYSIS tasks when stage-history succeeds. #}
-#    {% if DO_PREANALYSIS %}
-#stage-history => PRE-ANALYSIS
-#    {% endif %}
+    {% if DO_REFINEDIAG %}
+stage-history => REFINE-DIAG
+REFINE-DIAG:succeed-all => stage-history-refined
+    {% endif %}
+
+{# If preAnalysis desired (vitals calculations is canonical case), start all PRE-ANALYSIS tasks when stage-history succeeds. #}
+    {% if DO_PREANALYSIS %}
+stage-history => PRE-ANALYSIS
+    {% endif %}
 
 {# If task families are on the left side of the => then a qualifier must be used (e.g. :succeed-all)                     #}
 {# The angle brackets define the "ensemble" axis, the task paramaters defined above.					 #}
@@ -417,100 +417,93 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         """
 {% endif %}
 
-#{% if DO_REFINEDIAG or DO_PREANALYSIS %} 
-#    [[PRE-ANALYSIS]] 
-#        pre-script = """ 
-#            env 
-#            set -x  
-#            mkdir -p $work $tempCache $refineDiagDir  
-#            cd $work/$hsmdate  
-#            ls  
-#         """  
-#        [[[environment]]]  
-#            name = {{ EXPERIMENT }}  
-#            rtsxml = no-more-xml  
-#            work = $TMPDIR/work  
-#            tempCache = $TMPDIR/tempCache  
-#            root = $CYLC_WORKFLOW_RUN_DIR  
-#            archive = is-this-needed  
-#            scriptName = $CYLC_TASK_LOG_DIR/job  
-#            oname = $(cylc cycle-point --template CCYYMMDD)  
-#            hsmdate = $oname.nc  
-#            ptmpDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}  
-#            histDir = {{ HISTORY_DIR }}  
-#            platform = {{ PLATFORM }}  
-#            target = {{ TARGET }}  
-#            segment_months = {{ HISTORY_SEGMENT }}  
-#            basedate = is-this-needed  
-#            gridspec = {{ PP_GRID_SPEC }}  
-#            refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate  
-#{% endif %}  
-#{% if DO_REFINEDIAG %}  
-#    [[REFINE-DIAG]]  
-#        inherit = PRE-ANALYSIS  
-#        post-script = """  
-#            cd $refineDiagDir  
-#            if ls *nc; then  
-#                refinedCount=$(ls -1 *nc | wc -l)  
-#            else  
-#                refinedCount=0  
-#            fi  
-#            if [[ $refinedCount > 0 ]]; then  
-#                for file in $(ls -1 *nc); do  
-#                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log  
-#                done  
-#            else  
-#                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
-#                exit 1  
-#            fi  
-#            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then  
-#                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."  
-#                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}  
-#                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."  
-#                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc 
-#                mv -f * $TMPDIR/modify_refineDiag  
-#                mv -f $TMPDIR/modify_refineDiag/* . 
-#                rm -rf $TMPDIR/modify_refineDiag  
-#            fi  
-#        """  
-#{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}  
-#{# Create a 'macro' function to reduce code repeat #}  
-#    {% macro exec_refine(script_name) -%}  
-#            inherit = REFINE-DIAG  
-#            script = """  
-#                ls  
-#                echo NOTE: About to source user script  
-#                if csh {{ script_name }}; then  
-#                    echo NOTE: User script exited normally  
-#                else  
-#                    echo ERROR: User script got an error status $?  
-#                    exit 1  
-#                fi  
-#            """  
-#    {%- endmacro %}  
-#{# Use the 'split' function to transform string into an iterable list, including of length 1 #}  
-#    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}  
-#    {% for refineDiag_path in refineDiag_scripts %}  
-#            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]  
-#        {{ exec_refine(refineDiag_path) }}  
-#    {% endfor %}  
-#{% endif %}  
-#  
-#{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}  
-#    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] %}  
-#    [[preAnalysis-{{ preanalysis_name }}]]  
-#        inherit = PRE-ANALYSIS  
-#        script = """  
-#            ls  
-#            echo NOTE: About to source user script  
-#            if csh {{ PREANALYSIS_SCRIPT }}; then  
-#                echo NOTE: User script exited normally 
-#            else  
-#                echo ERROR: User script got an error status $?  
-#                exit 1  
-#            fi 
-#        """ 
-#{% endif %} 
+{% if DO_REFINEDIAG or DO_PREANALYSIS %} 
+    [[PRE-ANALYSIS]] 
+        [[[environment]]]  
+            name = {{ EXPERIMENT }}  
+            rtsxml = no-more-xml  
+            work = $TMPDIR/work  
+            tempCache = $TMPDIR/tempCache  
+            root = $CYLC_WORKFLOW_RUN_DIR  
+            archive = is-this-needed  
+            scriptName = $CYLC_TASK_LOG_DIR/job  
+            oname = $(cylc cycle-point --template CCYYMMDD)  
+            hsmdate = $oname.nc  
+            ptmpDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}  
+            histDir = {{ HISTORY_DIR }}  
+            platform = {{ PLATFORM }}  
+            target = {{ TARGET }}  
+            segment_months = {{ HISTORY_SEGMENT }}  
+            basedate = is-this-needed  
+            gridspec = {{ PP_GRID_SPEC }}  
+            refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate  
+{% endif %}  
+{% if DO_REFINEDIAG %}  
+    [[REFINE-DIAG]]  
+        inherit = PRE-ANALYSIS  
+        post-script = """  
+            cd $refineDiagDir  
+            if ls *nc; then  
+                refinedCount=$(ls -1 *nc | wc -l)  
+            else  
+                refinedCount=0  
+            fi  
+            if [[ $refinedCount > 0 ]]; then  
+                for file in $(ls -1 *nc); do  
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log  
+                done  
+            else  
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1  
+            fi  
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then  
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."  
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}  
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."  
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc 
+                mv -f * $TMPDIR/modify_refineDiag  
+                mv -f $TMPDIR/modify_refineDiag/* . 
+                rm -rf $TMPDIR/modify_refineDiag  
+            fi  
+        """  
+{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}  
+{# Create a 'macro' function to reduce code repeat #}  
+    {% macro exec_refine(script_name) -%}  
+            inherit = REFINE-DIAG  
+            script = """  
+                ls  
+                echo NOTE: About to source user script  
+                if csh {{ script_name }}; then  
+                    echo NOTE: User script exited normally  
+                else  
+                    echo ERROR: User script got an error status $?  
+                    exit 1  
+                fi  
+            """  
+    {%- endmacro %}  
+{# Use the 'split' function to transform string into an iterable list, including of length 1 #}  
+    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}  
+    {% for refineDiag_path in refineDiag_scripts %}  
+            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]  
+        {{ exec_refine(refineDiag_path) }}  
+    {% endfor %}  
+{% endif %}  
+  
+{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}  
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] %}  
+    [[preAnalysis-{{ preanalysis_name }}]]  
+        inherit = PRE-ANALYSIS  
+        script = """  
+            ls  
+            echo NOTE: About to source user script  
+            if csh {{ PREANALYSIS_SCRIPT }}; then  
+                echo NOTE: User script exited normally 
+            else  
+                echo ERROR: User script got an error status $?  
+                exit 1  
+            fi 
+        """ 
+{% endif %} 
 
     [[SPLIT-NETCDF]]
         pre-script = module load cdo nco && mkdir -p $outputDir
