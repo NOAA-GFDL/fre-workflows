@@ -32,7 +32,7 @@
             module load gcp/test
             module load fre/test
             mkdir -p $work $tempCache $refineDiagDir
-            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ P    TMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
+            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
             cd $work/$hsmdate
             ls
         """
