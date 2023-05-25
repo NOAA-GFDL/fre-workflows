@@ -363,31 +363,32 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
 
+# Assess whether history files are present for a given segment. Flow.cylc converts this into a job script which is ran as the first step in a cylc play. 
     [[pp-starter]]
-        [[[environment]]]
-            targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
         script = """
             # Returns 0 if ready, 1 if not
             #
             echo Arguments:
-            echo "    trigger: $targetFile"
-            echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+            echo '    INFO: trigger: $targetFile'
+            echo '    INFO: cycle point: $CYLC_TASK_CYCLE_POINT'
             # Resolve the date strings: YYYY, MM, DD, HH
             IFS='-' read YYYY MM DD << DATES
             $(cylc cycle-point --template CCYY-MM-DD)
             DATES
             HH=$(cylc cycle-point --template hh)
             targetFileResolved=$(echo $targetFile | sed -e "s/YYYY/$YYYY/g" -e "s/MM/$MM/g" -e "s/DD/$DD/g" -e "s/HH/$HH/g")
-            echo "    trigger (date expanded): $targetFileResolved"
+            echo '    trigger (date expanded): $targetFileResolved'
             # Look for target file
             if ls $targetFileResolved; then
-                echo "Target '$targetFileResolved' is ready"
+                echo 'Target "$targetFileResolved" is ready'
                 exit 0
             else
-                err "Error: target '$targetFileResolved' is not ready"
+                err 'Error: target "$targetFileResolved" is not ready'
                 exit 1
             fi
         """
+        [[[environment]]]
+            targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
         # Increase time limit for staging jobs to 8 hours
