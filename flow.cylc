@@ -392,16 +392,52 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
         # Increase time limit for staging jobs to 8 hours
+        script = """
+            set -euo pipefail
+            #Stage the contents of a tarfile to PTMP
+            echo Arguments:
+            echo '    history dir: $historyDir'
+            echo '    ptmp dir: $ptmpDir'
+            echo '    cycle point: $CYLC_TASK_CYCLE_POINT'
+            echo '    TMPDIR (not used yet): ${TMPDIR:=/tmp}'
+            echo Utilities:
+            type hsmget
+            type cylc
+            #Verify history directory exists and is a directory
+            if [[ ! -d $historyDir ]]; then
+                 err 'Error: Archive directory "$historyDir" does not exist or isnt a directory'
+                 exit 1
+            fi
+            #Verify history file exists
+            file=$historyDir/$(cylc cycle-point --template CCYYMMDD).nc.tar
+            if ls $file; then
+                 echo 'Going to stage "$file" to PTMP'
+            else
+                 err 'Error: Could not locate "$file"'
+                 exit 1
+            fi
+            #We want to stage the history files to PTMP without transferring to VFTMP.
+            #Calling hsmget on a file with wildcards that doesnt exist does this,
+            #e.g. "dummy*" as below, but prints a warning
+            if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
+                 echo 'History files in "$file" have been staged to PTMP successfully'
+            else
+                 err 'Error: Cant stage history files in "$file" to PTMP'
+                 exit 1
+            fi
+            echo 'Natural end of the history file staging'
+            exit 0
+        """
         execution time limit = PT8H
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
             historyDir = {{ HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
+
 {% if HISTORY_DIR_REFINED is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
-        script = rose task-run --verbose --app-key stage-history
         post-script = """
         """
         [[[environment]]]
@@ -745,7 +781,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         [[[environment]]]
             # internally-used vars
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
-            FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
+            FRE_ANALYSIS_HOME = {{ FRE_ANALYSIS_HOME }} 
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
             # fre-analysis template vars
             yr2 = $(cylc cycle-point --template=CCYY)
