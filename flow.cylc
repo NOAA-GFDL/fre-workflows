@@ -365,6 +365,8 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
 # Assess whether history files are present for a given segment. Flow.cylc converts this into a job script which is ran as the first step in a cylc play. 
     [[pp-starter]]
+        # NOTE! script must appear *before* [[[enviroment]]] or else
+        # the job scripts will have quoting issues
         script = """
             # Returns 0 if ready, 1 if not
             #
@@ -377,13 +379,13 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             DATES
             HH=$(cylc cycle-point --template hh)
             targetFileResolved=$(echo $targetFile | sed -e "s/YYYY/$YYYY/g" -e "s/MM/$MM/g" -e "s/DD/$DD/g" -e "s/HH/$HH/g")
-            echo '    trigger (date expanded): $targetFileResolved'
+            echo "    trigger (date expanded): $targetFileResolved"
             # Look for target file
             if ls $targetFileResolved; then
-                echo 'Target "$targetFileResolved" is ready'
+                echo "Target "$targetFileResolved" is ready"
                 exit 0
             else
-                echo 'Error: target "$targetFileResolved" is not ready'
+                echo "Error: target "$targetFileResolved" is not ready"
                 exit 1
             fi
         """
