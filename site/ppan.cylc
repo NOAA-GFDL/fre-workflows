@@ -36,7 +36,6 @@
             cd $work/$hsmdate
             ls
         """
- 
 {% endif %}
 
 {% if DO_REFINEDIAG %}
@@ -70,3 +69,24 @@
         """
 {% endif %}
 
+    [[SPLIT-NETCDF]]
+        pre-script = module load cdo nco && mkdir -p $outputDir
+
+    [[RENAME-SPLIT-TO-PP]]
+        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
+
+    [[REMAP-PP-COMPONENTS]]
+        pre-script = module load cdo gcp/test && mkdir -p $outputDir
+
+    [[MAKE-TIMESERIES]]
+        pre-script = module load cdo && mkdir -p $outputDir
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = module load fre/test && mkdir -p $outputDir
+{% endif %}
+
+{% if DO_STATICS %}
+    [[combine-statics]]
+        pre-script = module load cdo && mkdir -p $outputDir
+{% endif %}
