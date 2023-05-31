@@ -1,0 +1,10 @@
+name: task-tools
+channels:
+  - NOAA-GFDL
+  - conda-forge
+dependencies:
+  - hsm
+  - fre-nctools
+  - nco
+  - cdo
+  - netcdf-cxx4
