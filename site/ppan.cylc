@@ -60,7 +60,7 @@
                 ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
                 echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
                 ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
-                export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_D    IR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset     PAPIEX_TAGS
+                export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset     PAPIEX_TAGS
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
