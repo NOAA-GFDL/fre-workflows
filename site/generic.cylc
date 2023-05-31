@@ -2,33 +2,9 @@
     [[root]]
         platform = localhost
         env-script = """
-             c=$(which cylc)             #defines cylc installation path
-             export PATH=${c%/*}:$PATH   #appends cylc installation path onto path
-        """
-
-    [[STAGE-HISTORY]]
-        pre-script= """
-             conda activate hsm
-        """
-
-{% if DO_REFINEDIAG or DO_PREANALYSIS %}
-    [[PRE-ANALYSIS]]
-        pre-script = """
-            conda activate fre-nctools
-            env
-            set -x
-            mkdir -p $work $tempCache $refineDiagDir
-            cd $work/$hsmdate
-            ls
-         """
-{% endif %}
-
-{% if DO_REGRID %}
-    [[REGRID-XY]]
-        pre-script = """
-            set +u 
-            conda activate regrid-xy && mkdir -p $outputDir
+            c=$(which cylc)             #defines cylc installation path
+            export PATH=${c%/*}:$PATH   #appends cylc installation path onto path
+            set +u
+            conda activate task-tools
             set -u
         """
-{% endif %}
-
