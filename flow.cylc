@@ -4,7 +4,7 @@
 {# Jinja code between single braces is run.                          #}
 {# Jinja code with two braces is printed.                            #}
 
-{# The site-specific file (stored in site/ subdir) is included at the end of this file.	              #}
+{# The site-specific file (stored in site/ subdir) is included at the end of this file. When working in the main branch, the ppan site file should be specified. The ppan site comprises of gfdl specific tools. Other available sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.	              #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows) #}
 {% set SITE = 'generic' %}
 
@@ -356,6 +356,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
     [[STAGE-HISTORY]]
         # Increase time limit for staging jobs to 8 hours
+        execution time limit = PT8H
         script = """
             set -euo pipefail
             #Stage the contents of a tarfile to PTMP
@@ -392,7 +393,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             echo 'Natural end of the history file staging'
             exit 0
         """
-        execution time limit = PT8H
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
@@ -418,7 +418,14 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %} 
-    [[PRE-ANALYSIS]] 
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            env
+            set -x
+            mkdir -p $work $tempCache $refineDiagDir
+            cd $work/$hsmdate
+            ls
+        """ 
         [[[environment]]]  
             name = {{ EXPERIMENT }}  
             rtsxml = no-more-xml  
@@ -506,7 +513,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %} 
 
     [[SPLIT-NETCDF]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key split-netcdf
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
@@ -553,7 +560,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key rename-split-to-pp
 
 {% if DO_NATIVE %}
@@ -598,7 +605,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load cdo gcp/test && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards
@@ -632,7 +639,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
             fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
@@ -695,6 +702,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
             inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
@@ -716,7 +724,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
 {% if DO_STATICS %}
     [[combine-statics]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             outputDir = {{ PP_DIR }}
