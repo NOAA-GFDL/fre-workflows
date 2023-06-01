@@ -337,10 +337,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 [runtime]
     # default config for all tasks
     [[root]]
-        env-script = """
-            eval $(rose task-env)
-            env
-        """        
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
