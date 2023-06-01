@@ -335,17 +335,6 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
 [runtime]
-#    # default config for all tasks
-#    [[root]]
-#        script = rose task-run --verbose
-#        {# retries don't make sense yet while testing as they will just delay the failures #}
-#        {# execution retry delays = PT1M, PT5M, PT10M                                      #}
-#        # Set default time limit to 4 hours
-#        execution time limit = PT4H
-#        [[[events]]]
-#            mail events = startup shutdown aborted timeout stalled inactivity
-#            submission timeout = P1D
-
     [[pp-starter]]
         [[[environment]]]
             targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
