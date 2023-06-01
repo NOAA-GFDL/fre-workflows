@@ -1,8 +1,6 @@
 [runtime]
     [[root]]
         platform = ppan
-        [[[directives]]]
-            --comment=xtmp,epmt,canopy
         init-script = """
             module use -a /home/fms/local/modulefiles
             module load epmt
@@ -20,6 +18,8 @@
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
         """
+        [[[directives]]]
+            --comment=xtmp,epmt,canopy
 
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
