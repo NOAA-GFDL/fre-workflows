@@ -7,4 +7,6 @@
             set +u
             conda activate task-tools
             set -u
+            eval $(rose task-env)
+            env
         """
