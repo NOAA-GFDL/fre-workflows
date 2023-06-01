@@ -1,6 +1,5 @@
 [runtime]
     [[root]]
-        platform = localhost
         env-script = """
             c=$(which cylc)             #defines cylc installation path
             export PATH=${c%/*}:$PATH   #appends cylc installation path onto path
@@ -10,3 +9,12 @@
             eval $(rose task-env)
             env
         """
+        script = rose task-run --verbose
+        {# retries don't make sense yet while testing as they will just delay the failures #}
+        {# execution retry delays = PT1M, PT5M, PT10M                                      #}
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
+        platform = localhost
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D

@@ -1,6 +1,5 @@
 [runtime]
     [[root]]
-        platform = ppan
         init-script = """
             module use -a /home/fms/local/modulefiles
             module load epmt
@@ -18,6 +17,15 @@
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
         """
+        script = rose task-run --verbose
+        {# retries don't make sense yet while testing as they will just delay the failures #}
+        {# execution retry delays = PT1M, PT5M, PT10M                                      #}
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
+        platform = ppan
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,canopy
 
