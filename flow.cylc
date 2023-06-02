@@ -336,9 +336,32 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
 [runtime]
     [[pp-starter]]
+        # NOTE! script must appear *before* [[[enviroment]]] or else
+        # the job scripts will have quoting issues
+        script = """
+            # Returns 0 if ready, 1 if not
+            #
+            echo Arguments:
+            echo "    INFO: trigger: $targetFile"
+            echo "    INFO: cycle point: $CYLC_TASK_CYCLE_POINT"
+            # Resolve the date strings: YYYY, MM, DD, HH
+            IFS='-' read YYYY MM DD << DATES
+            $(cylc cycle-point --template CCYY-MM-DD)
+            DATES
+            HH=$(cylc cycle-point --template hh)
+            targetFileResolved=$(echo $targetFile | sed -e "s/YYYY/$YYYY/g" -e "s/MM/$MM/g" -e "s/DD/$DD/g" -e "s/HH/$HH/g")
+            echo "    trigger (date expanded): $targetFileResolved"
+            # Look for target file
+            if ls $targetFileResolved; then
+                echo "Target "$targetFileResolved" is ready"
+                exit 0
+            else
+                echo "Error: target "$targetFileResolved" is not ready"
+                exit 1
+            fi
+        """
         [[[environment]]]
             targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
-
     [[STAGE-HISTORY]]
         # Increase time limit for staging jobs to 8 hours
         execution time limit = PT8H
