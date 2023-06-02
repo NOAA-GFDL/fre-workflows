@@ -1,5 +1,0 @@
-[runtime]
-    [[root]]
-        platform = ppan
-        [[[directives]]]
-            --comment=xtmp,epmt,canopy
