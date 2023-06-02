@@ -6,7 +6,7 @@
 
 {# The site-specific file (stored in site/ subdir) is included at the end of this file. When working in the main branch, the ppan site file should be specified. The ppan site comprises of gfdl specific tools. Other available sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.	              #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows) #}
-{% set SITE = 'generic' %}
+{% set SITE = 'ppan' %}
 
 {# Calculate the number of history segments per a-chunk #}
 {% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
