@@ -36,27 +36,37 @@ conda activate cylc
 
 7. Canopy PP steps
 a. Edits:
+
 	i. bin/write-rose-configs
+
 		1. correct path to python 
+
 	ii. Rose-suite.conf
+
 		1. PTMPDIR path 
 		2. DO_REFINEDIAG=False
 		3. DO_ANALYSIS=False
+
 	iii. opt/rose-suite-experiment configurations
+
 		1. Correct history directory path (wherever data was transferred to)
 		2. Comment out HISTORY_DIR_REFINED
 			a. Comment this out along with DO_REFINEdIAG=False
 				a.1 no refinediag processing
 		3. PP directory path
 		4. PP_GRID_SPEC directory path (wherever data was tranferred to)
+
 	iv. Macro.py issue (if seen in rose macro --validate step)
+
 		1. Clone Chris Blanton's fork of the rose repo: git clone -b default-validator-change https://github.com/ceblanton/rose.git
 		2. Checkout rose fork: git checkout default-validator-change
 		3. Locate your macro.py in cylc env. installation: 
 			a. Ex.: /collab1/data/$USER/envs/cylc/lib/python3.10/site-packages/metomi/rose/macro.py
 		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
 			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
+
 	v. bin/install-exp
+
 		1. --symlink-dirs='run=/collab1/data/$USER' was added to the cylc install line due to limited space on NIAGARA 
 
 b. Steps to run workflow:
