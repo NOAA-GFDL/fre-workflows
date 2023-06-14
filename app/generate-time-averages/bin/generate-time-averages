@@ -26,7 +26,7 @@ echo "module load python..."
 module load python
 #echo "module load fre-nctools..."
 #module load fre-nctools
-#module load cdo
+module load cdo
 
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
@@ -92,9 +92,20 @@ for dir in ${dirs[@]}; do
 	for file in ${files[@]}; do
 		#export input_file_list=${input_file_list}$file, #no checksum, works great!
 		export input_file_list=${input_file_list}$(shasum -a 512256 $file), #with checksum
-		output_file=${file}_out
+
+		#echo "---DEBUG--- going to time-average file=$file"
+		output_file=${file%/$component/*}/$component/tas${file#*/$component}
+		output_dir=${output_file%/*}
 		
-		echo "---DEBUG--- going to time-average file=$file"
+		if [[ ! -d $output_dir ]]; then
+
+			mkdir -p $output_dir
+		else
+			echo "---WARNING--- output dir not created because it already exists."
+		fi
+		
+		echo "---DEBUG--- output going to be=$output_file"
+		
 		#python $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-nctools"
 		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-python-tools"
 		python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "cdo"
@@ -108,11 +119,11 @@ for dir in ${dirs[@]}; do
 			                                                         #note, two spaces, b.c. that's what shasum
 			                                                         #does to the checksum+filename output
 		fi
-		echo "---DEBUG--- timeaverage exit status: ?=${?}"
-		debugCount=$(($debugCount+1))
-		if [[ $debugCount -gt 2 ]]; then
-			break
-		fi
+		#echo "---DEBUG--- timeaverage exit status: ?=${?}"
+		#debugCount=$(($debugCount+1))
+		#if [[ $debugCount -gt 2 ]]; then
+		#	break
+		#fi
 	done
 	
 done
