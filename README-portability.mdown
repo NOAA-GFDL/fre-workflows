@@ -29,12 +29,7 @@ mamba env create --file task-tools.yaml
 
 Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC) 
 
-6. Activate cylc environment
-```
-conda activate cylc
-```
-
-7. Canopy PP steps
+6. Canopy PP steps
 a. Edits:
 
 	i. bin/write-rose-configs
@@ -65,11 +60,25 @@ a. Edits:
 		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
 			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
 
-	v. bin/install-exp
+	v. opt/variable-groups/*
+		
+		1. Certain pp component requested (atmos_daily_refined) does not have availble history files to create it
+		2. atmos_daily_refined found in 3 components:
+			a. atmos_cmip_daily.json
+			b. atmos_daily_2deg_2d.json
+			c. atmos_daily_2deg_3d.json
+		3. edit these to remove atmos_daily_refined 
+
+	vi. bin/install-exp
 
 		1. --symlink-dirs='run=/collab1/data/$USER' was added to the cylc install line due to limited space on NIAGARA 
 
-b. Steps to run workflow:
+b. Activate cylc environment
+```
+conda activate cylc
+```
+
+c. Steps to run workflow:
 ```
 bin/list-exps
 bin/write-rose-configs opt/variable-groups/*
@@ -79,7 +88,7 @@ export TMPDIR=/collab1/data/$USER/tmp    #for TMPDIR environment variable
 bin/install-exp [exp]
 cylc play [exp]
 ```
-c. To monitor status:
+d. To monitor status:
 See debugging messages:
 ``` 
 cylc play --no-detach --debug [exp] 
