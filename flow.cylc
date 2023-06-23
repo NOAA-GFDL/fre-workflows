@@ -522,7 +522,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 
     [[SPLIT-NETCDF]]
         pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key split-netcdf
+        script = rose task-run --verbose --config=$CYLC_SUITE_RUN_DIR/split-netcdf
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
 
