@@ -40,7 +40,7 @@ a. Edits:
 
 		1. PTMPDIR path 
 		2. DO_REFINEDIAG=False
-		3. DO_ANALYSIS=False
+		3. DO_PREANALYSIS=False
 
 	iii. opt/rose-suite-experiment configurations
 
