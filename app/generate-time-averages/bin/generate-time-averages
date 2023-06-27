@@ -8,25 +8,27 @@ set -euo pipefail
 #
 
 
-# uncomment this block and set args for local development, not attached to a cylc workflow.
-unset CYCLE_TASK_CYCLE_POINT
-export CYLC_TASK_CYCLE_POINT=19790101T0000Z #for cylc cycle-point to work w/o argument, this env var must be set. 
-#export CYLC_TASK_CYCLE_POINT=19800101T0000Z
-inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
-#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
-component=river_month
-#component=land_month
-#component=atmos_month
-histSegmentSize=P1Y
-MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
-#debug
+## uncomment this block and set args for local development, not attached to a cylc workflow.
+#unset CYCLE_TASK_CYCLE_POINT
+#export CYLC_TASK_CYCLE_POINT=19790101T0000Z #for cylc cycle-point to work w/o argument, this env var must be set. 
+##export CYLC_TASK_CYCLE_POINT=19800101T0000Z
+#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
+##inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
+#component=river_month
+##component=land_month
+##component=atmos_month
+#histSegmentSize=P1Y
+#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
+##debug
 
-
-echo "module load python..."
-module load python
+module load conda
+#conda activate fre-python-tools-PR2
+conda activate /home/Ian.Laflotte/.conda/envs/fre-python-tools-PR2
+#echo "module load python..."
+#module load python
 #echo "module load fre-nctools..."
 #module load fre-nctools
-module load cdo
+#module load cdo
 
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"

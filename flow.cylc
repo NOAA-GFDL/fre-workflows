@@ -72,7 +72,7 @@
     final cycle point = {{ PP_STOP }}
     # max number of active cycle points (default 5)
 	#    runahead limit = P10
-    runahead limit = P0
+    runahead limit = P1
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
@@ -363,10 +363,10 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             echo "    trigger (date expanded): $targetFileResolved"
             # Look for target file
             if ls $targetFileResolved; then
-                echo "Target "$targetFileResolved" is ready"
+                echo "Target ${targetFileResolved} is ready"
                 exit 0
             else
-                echo "Error: target "$targetFileResolved" is not ready"
+                echo "Error: target ${targetFileResolved} is not ready"
                 exit 1
             fi
         """
@@ -378,6 +378,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         script = """
             set -euo pipefail
             #Stage the contents of a tarfile to PTMP
+			module list
             echo Arguments:
             echo '    history dir: $historyDir'
             echo '    ptmp dir: $ptmpDir'
@@ -388,24 +389,24 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             type cylc
             #Verify history directory exists and is a directory
             if [[ ! -d $historyDir ]]; then
-                 err 'Error: Archive directory "$historyDir" does not exist or isnt a directory'
+                 err 'Error: Archive directory ${historyDir} does not exist or isnt a directory'
                  exit 1
             fi
             #Verify history file exists
             file=$historyDir/$(cylc cycle-point --template CCYYMMDD).nc.tar
-            if ls $file; then
-                 echo 'Going to stage "$file" to PTMP'
+            if ls ${file}; then
+                 echo 'Going to stage ${file} to PTMP'
             else
-                 err 'Error: Could not locate "$file"'
+                 err 'Error: Could not locate ${file}'
                  exit 1
             fi
             #We want to stage the history files to PTMP without transferring to VFTMP.
             #Calling hsmget on a file with wildcards that doesnt exist does this,
             #e.g. "dummy*" as below, but prints a warning
             if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
-                 echo 'History files in "$file" have been staged to PTMP successfully'
+                 echo 'History files in ${file} have been staged to PTMP successfully'
             else
-                 err 'Error: Cant stage history files in "$file" to PTMP'
+                 err 'Error: Cant stage history files in ${file} to PTMP'
                  exit 1
             fi
             echo 'Natural end of the history file staging'
