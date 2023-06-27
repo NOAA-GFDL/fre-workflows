@@ -1,0 +1,100 @@
+[runtime]
+    [[root]]
+        init-script = """
+            module use -a /home/fms/local/modulefiles
+            module load epmt
+            module list
+            epmt check
+        """
+        env-script = """
+            eval $(rose task-env)
+            env
+            export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
+            export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
+            unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
+            epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
+            export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
+            export LD_PRELOAD=$PAPIEX_LD_PRELOAD
+            export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
+        """
+        script = rose task-run --verbose
+        {# retries don't make sense yet while testing as they will just delay the failures #}
+        {# execution retry delays = PT1M, PT5M, PT10M                                      #}
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
+        platform = ppan
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D
+        [[[directives]]]
+            --comment=xtmp,epmt,canopy
+
+    [[STAGE-HISTORY]]
+        pre-script = module load gcp hsm/test
+
+{% if DO_REFINEDIAG or DO_PREANALYSIS %}
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            env
+            set -x
+            module load gcp/test
+            module load fre/test
+            mkdir -p $work $tempCache $refineDiagDir
+            export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
+            cd $work/$hsmdate
+            ls
+        """
+{% endif %}
+
+{% if DO_REFINEDIAG %}
+    [[REFINE-DIAG]]
+        post-script = """
+            cd $refineDiagDir
+            if ls *nc; then
+                refinedCount=$(ls -1 *nc | wc -l)
+            else
+                refinedCount=0
+            fi
+            if [[ $refinedCount > 0 ]]; then
+                for file in $(ls -1 *nc); do
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                done
+            else
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                export PAPIEX_TAGS="op:hsmget;op_instance:2;op_is_canopy:1" ; hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\* ; unset     PAPIEX_TAGS
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+            export PAPIEX_TAGS="op:hsmput;op_instance:1;op_is_canopy:1" ; hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate ; unset PAPIEX_TAGS
+        """
+{% endif %}
+
+    [[SPLIT-NETCDF]]
+        pre-script = module load cdo nco && mkdir -p $outputDir
+
+    [[RENAME-SPLIT-TO-PP]]
+        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
+
+    [[REMAP-PP-COMPONENTS]]
+        pre-script = module load cdo gcp/test && mkdir -p $outputDir
+
+    [[MAKE-TIMESERIES]]
+        pre-script = module load cdo && mkdir -p $outputDir
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = module load fre/test && mkdir -p $outputDir
+{% endif %}
+
+{% if DO_STATICS %}
+    [[combine-statics]]
+        pre-script = module load cdo && mkdir -p $outputDir
+{% endif %}

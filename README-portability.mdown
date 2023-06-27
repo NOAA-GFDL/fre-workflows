@@ -1,0 +1,91 @@
+# Portable flow.cylc documentation
+1. Install conda
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```
+
+2. Install mamba
+```
+conda install -c conda-forge mamba
+```
+
+3. Move future conda directories and packages to collab1
+```
+conda config --add envs_dirs /collab1/data/$USER/envs  #for niagara
+conda config --add pkgs_dirs /collab1/data/$USER/pkgs  #for niagara
+```
+
+4. Create and install environments
+
+Environment yamls: cylc and task-tools, where task-tools includes hsm, fre-nctools, nco, cdo, and netcdf-cxx4. To create an environment: 
+```
+mamba env create --file cylc.yaml
+mamba env create --file task-tools.yaml
+```
+
+5. Transfer data
+
+Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC) 
+
+6. Activate cylc environment
+```
+conda activate cylc
+```
+
+7. Canopy PP steps
+a. Edits:
+
+	i. bin/write-rose-configs
+
+		1. correct path to python 
+
+	ii. Rose-suite.conf
+
+		1. PTMPDIR path 
+		2. DO_REFINEDIAG=False
+		3. DO_ANALYSIS=False
+
+	iii. opt/rose-suite-experiment configurations
+
+		1. Correct history directory path (wherever data was transferred to)
+		2. Comment out HISTORY_DIR_REFINED
+			a. Comment this out along with DO_REFINEdIAG=False
+				a.1 no refinediag processing
+		3. PP directory path
+		4. PP_GRID_SPEC directory path (wherever data was tranferred to)
+
+	iv. Macro.py issue (if seen in rose macro --validate step)
+
+		1. Clone Chris Blanton's fork of the rose repo: git clone -b default-validator-change https://github.com/ceblanton/rose.git
+		2. Checkout rose fork: git checkout default-validator-change
+		3. Locate your macro.py in cylc env. installation: 
+			a. Ex.: /collab1/data/$USER/envs/cylc/lib/python3.10/site-packages/metomi/rose/macro.py
+		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
+			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
+
+	v. bin/install-exp
+
+		1. --symlink-dirs='run=/collab1/data/$USER' was added to the cylc install line due to limited space on NIAGARA 
+
+b. Steps to run workflow:
+```
+bin/list-exps
+bin/write-rose-configs opt/variable-groups/*
+rose macro --validate
+export CYLC_CONF_PATH=/home/$USER        #for global.cylc
+export TMPDIR=/collab1/data/$USER/tmp    #for TMPDIR environment variable
+bin/install-exp [exp]
+cylc play [exp]
+```
+c. To monitor status:
+See debugging messages:
+``` 
+cylc play --no-detach --debug [exp] 
+```
+
+Monitor status of each task: 
+```
+watch -n 5 cylc workflow-state [exp]  
+```
