@@ -18,17 +18,9 @@ set -euo pipefail
 ##component=land_month
 ##component=atmos_month
 #histSegmentSize=P1Y
-#MY_PYTHON_SCRIPT=/home/Ian.Laflotte/Working/pp.am5/app/generate-time-averages/generate_time_averages/generate_time_averages.py
 ##debug
 
-module load conda
-#conda activate fre-python-tools-PR2
-conda activate /home/Ian.Laflotte/.conda/envs/fre-python-tools-PR2
-#echo "module load python..."
-#module load python
-#echo "module load fre-nctools..."
-#module load fre-nctools
-#module load cdo
+module load fre-python-tools/0.0.1
 
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
@@ -44,16 +36,16 @@ export input_file_list=
 export output_file_list=
 
 
-echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
-echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT, locating..."
-if ls $MY_PYTHON_SCRIPT; then
-	echo "script found. proceeding..."
-else
-	echo "---ERROR--- error, script not found."
-	exit 1
-fi
-echo ""
+#echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
+#MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
+#echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT, locating..."
+#if ls $MY_PYTHON_SCRIPT; then
+#	echo "script found. proceeding..."
+#else
+#	echo "---ERROR--- error, script not found."
+#	exit 1
+#fi
+#echo ""
 
 
 #this probably shouldnt be a substitute for a proper "find" command...
@@ -67,22 +59,26 @@ fi
 echo "number of dirs found is : ${#dirs[@]}"
 
 for dir in ${dirs[@]}; do
-	echo "---DEBUG--- FOUND dir: $dir"
-	
+	echo "---DEBUG--- FOUND dir: $dir"	
 	echo "looking at directory structure file frequency..."
+
+	# check file frequency via directory name
 	file_freq=${dir##*/}
 	echo "frequency found is: $file_freq"
+
+	#now need to pick the right date-time format for the cycle-point
 	if [[ $file_freq == P1D ]]; then
-		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMMDD)*.nc))
+		cyclepoint=$(cylc cycle-point --template CCYYMMDD)
 	elif [[ $file_freq == P1M ]]; then
-		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template CCYYMM)*.nc))
+		cyclepoint=$(cylc cycle-point --template CCYYMM)
 	elif [[ $file_freq == PT6H ]]; then
-		files=($(ls $dir/$histSegmentSize/$component.$(cylc cycle-point --template %Y%m%d%H)*.nc))
+		cyclepoint=$(cylc cycle-point --template %Y%m%d%H)
 	else
 		echo "---WARNING--- file freq not found. moving on."
 		continue
 	fi
-
+															   
+	files=($(ls $dir/$histSegmentSize/$component.$cyclepoint*.nc)
 	if [[ ${#files[@]} -lt 1 ]]; then
 		echo "---WARNING--- no files found in directory $dir!"
 		echo "moving on to next directory..."
@@ -108,10 +104,9 @@ for dir in ${dirs[@]}; do
 		
 		echo "---DEBUG--- output going to be=$output_file"
 		
-		#python $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-nctools"
-		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "fre-python-tools"
-		python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "cdo"
-		#python -O $MY_PYTHON_SCRIPT -i "$file" -o "${output_file}" -p "nco"
+		generate-time-averages -p "cdo"              "${file}" "${output_file}"
+		#generate-time-averages -p "fre-python-tools" "${file}" "${output_file}"
+		#generate-time-averages -p "fre-nctools"      "${file}" "${output_file}"
 
 		if [[ -f $output_file ]]; then
 			#export output_file_list=${output_file_list}$output_file, #no checksum, works great!
