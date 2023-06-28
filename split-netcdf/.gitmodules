@@ -1,3 +1,0 @@
-[submodule "shared"]
-	path = shared
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/shared.git
