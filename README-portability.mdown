@@ -32,17 +32,21 @@ Globus online was used to transfer experiment data and any other necessary data 
 6. Canopy PP steps
 a. Edits:
 
-	i. bin/write-rose-configs
+	i. flow.cylc
+		
+		1. If not on gfdl pp/an, change the `site` from `ppan` to `generic`
+
+	ii. bin/write-rose-configs
 
 		1. Write in the correct path to cylc python 
 
-	ii. Rose-suite.conf
+	iii. Rose-suite.conf
 
 		1. Correct PTMPDIR path 
 		2. DO_REFINEDIAG=False
 		3. DO_PREANALYSIS=False
 
-	iii. opt/rose-suite-experiment configurations
+	iv. opt/rose-suite-experiment configurations
 
 		1. Correct history directory path (wherever data was transferred to)
 		2. Comment out HISTORY_DIR_REFINED
@@ -51,7 +55,7 @@ a. Edits:
 		3. Correct PP directory path
 		4. Correct PP_GRID_SPEC directory path (wherever data was tranferred to)
 
-	iv. Macro.py issue (if seen in rose macro --validate step)
+	v. Macro.py issue (if seen in rose macro --validate step)
 
 		1. Clone Chris Blanton's fork of the rose repo: git clone -b default-validator-change https://github.com/ceblanton/rose.git
 		2. Checkout rose fork: git checkout default-validator-change
@@ -60,7 +64,7 @@ a. Edits:
 		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
 			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
 
-	v. opt/variable-groups/*
+	vi. opt/variable-groups/*
 		
 		1. Certain pp component requested (atmos_daily_refined) does not have availble history files to create it
 		2. atmos_daily_refined found in 3 components in opt/variable-groups:
@@ -69,7 +73,7 @@ a. Edits:
 			c. atmos_daily_2deg_3d.json
 		3. edit these to remove atmos_daily_refined 
 
-	vi. bin/install-exp
+	vii. bin/install-exp
 
 		1. --symlink-dirs='run=/collab1/data/$USER' was added to the `cylc install` command
 			a. the `run` path is niagara-specific
