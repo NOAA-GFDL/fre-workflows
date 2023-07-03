@@ -79,24 +79,20 @@ a. Edits:
 			a. the `run` path is niagara-specific
 			b. This edit was done due to limited space on niagara
 
-b. Activate cylc environment
-```
-conda activate cylc
-```
 
-c. Steps to run workflow:
+b. Steps to run workflow:
 ```
+conda activate cylc                      #activate cylc environment
 bin/list-exps
 bin/write-rose-configs opt/variable-groups/*
 rose macro --validate
 export CYLC_CONF_PATH=/home/$USER        #for global.cylc
-
-#TMPDIR path listed is niagara-specific 
-export TMPDIR=/collab1/data/$USER/tmp    #for TMPDIR environment variable
+export TMPDIR=/collab1/data/$USER/tmp    #TMPDIR path listed is niagara-specific 
+                                         #for TMPDIR environment variable
 bin/install-exp [exp]
 cylc play [exp]
 ```
-d. To monitor status:
+c. To monitor status:
 See debugging messages:
 ``` 
 cylc play --no-detach --debug [exp] 
