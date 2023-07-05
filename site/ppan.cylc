@@ -9,6 +9,7 @@
         env-script = """
             eval $(rose task-env)
             env
+            export COPY_TOOL=gcp
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD

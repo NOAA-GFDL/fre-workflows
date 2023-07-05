@@ -1,4 +1,4 @@
-# Portable flow.cylc documentation
+# Portable flow.cylc instructions
 1. Install conda
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -11,7 +11,7 @@ chmod +x Miniconda3-latest-Linux-x86_64.sh
 conda install -c conda-forge mamba
 ```
 
-3. Move future conda directories and packages to collab1
+3. If not enough space, move conda directories and packages to another location (collab1 on Niagara)
 ```
 conda config --add envs_dirs /collab1/data/$USER/envs  #for niagara
 conda config --add pkgs_dirs /collab1/data/$USER/pkgs  #for niagara
@@ -29,34 +29,33 @@ mamba env create --file task-tools.yaml
 
 Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC) 
 
-6. Activate cylc environment
-```
-conda activate cylc
-```
-
-7. Canopy PP steps
+6. Canopy PP steps
 a. Edits:
 
-	i. bin/write-rose-configs
+	i. flow.cylc
+		
+		1. If not on gfdl pp/an, change the `site` from `ppan` to `generic`
 
-		1. correct path to python 
+	ii. bin/write-rose-configs
 
-	ii. Rose-suite.conf
+		1. Write in the correct path to cylc python 
 
-		1. PTMPDIR path 
+	iii. Rose-suite.conf
+
+		1. Correct PTMPDIR path 
 		2. DO_REFINEDIAG=False
-		3. DO_ANALYSIS=False
+		3. DO_PREANALYSIS=False
 
-	iii. opt/rose-suite-experiment configurations
+	iv. opt/rose-suite-experiment configurations
 
 		1. Correct history directory path (wherever data was transferred to)
 		2. Comment out HISTORY_DIR_REFINED
-			a. Comment this out along with DO_REFINEdIAG=False
-				a.1 no refinediag processing
-		3. PP directory path
-		4. PP_GRID_SPEC directory path (wherever data was tranferred to)
+			a. Comment this out along with DO_REFINEDIAG=False
+				a.1 This means there is no refinediag processing
+		3. Correct PP directory path
+		4. Correct PP_GRID_SPEC directory path (wherever data was tranferred to)
 
-	iv. Macro.py issue (if seen in rose macro --validate step)
+	v. Macro.py issue (if seen in rose macro --validate step)
 
 		1. Clone Chris Blanton's fork of the rose repo: git clone -b default-validator-change https://github.com/ceblanton/rose.git
 		2. Checkout rose fork: git checkout default-validator-change
@@ -65,17 +64,31 @@ a. Edits:
 		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
 			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
 
-	v. bin/install-exp
+	vi. opt/variable-groups/*
+		
+		1. Certain pp component requested (atmos_daily_refined) does not have availble history files to create it
+		2. atmos_daily_refined found in 3 components in opt/variable-groups:
+			a. atmos_cmip_daily.json
+			b. atmos_daily_2deg_2d.json
+			c. atmos_daily_2deg_3d.json
+		3. edit these to remove atmos_daily_refined 
 
-		1. --symlink-dirs='run=/collab1/data/$USER' was added to the cylc install line due to limited space on NIAGARA 
+	vii. bin/install-exp
+
+		1. --symlink-dirs='run=/collab1/data/$USER' was added to the `cylc install` command
+			a. the `run` path is niagara-specific
+			b. This edit was done due to limited space on niagara
+
 
 b. Steps to run workflow:
 ```
+conda activate cylc                      #activate cylc environment
 bin/list-exps
 bin/write-rose-configs opt/variable-groups/*
 rose macro --validate
 export CYLC_CONF_PATH=/home/$USER        #for global.cylc
-export TMPDIR=/collab1/data/$USER/tmp    #for TMPDIR environment variable
+export TMPDIR=/collab1/data/$USER/tmp    #TMPDIR path listed is niagara-specific 
+                                         #for TMPDIR environment variable
 bin/install-exp [exp]
 cylc play [exp]
 ```
