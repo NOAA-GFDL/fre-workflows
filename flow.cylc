@@ -378,7 +378,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             type cylc
             #Verify history directory exists and is a directory
             if [[ ! -d $historyDir ]]; then
-                 err 'Error: Archive directory "$historyDir" does not exist or isnt a directory'
+                 echo 'Error: Archive directory "$historyDir" does not exist or isnt a directory'
                  exit 1
             fi
             #Verify history file exists
@@ -386,7 +386,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             if ls $file; then
                  echo 'Going to stage "$file" to PTMP'
             else
-                 err 'Error: Could not locate "$file"'
+                 echo 'Error: Could not locate "$file"'
                  exit 1
             fi
             #We want to stage the history files to PTMP without transferring to VFTMP.
@@ -395,7 +395,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
                  echo 'History files in "$file" have been staged to PTMP successfully'
             else
-                 err 'Error: Cant stage history files in "$file" to PTMP'
+                 echo 'Error: Cant stage history files in "$file" to PTMP'
                  exit 1
             fi
             echo 'Natural end of the history file staging'
