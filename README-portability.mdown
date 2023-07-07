@@ -1,4 +1,61 @@
-# Portable flow.cylc instructions
+Cylc is a general purpose workflow scheduler that is very efficient for cycling systems. For more documentation, visit https://cylc.github.io/cylc-doc/stable/html. 
+
+The usage of cylc includes configuration files: workflow configuration, global.cylc, site configurations, rose-suite configuration, and rose-suite-experiment configrations. 
+
+The workflow configuration (flow.cylc) defines the workflow, what scripts to use throughout the workfow, and task dependencies. The global.cylc defines default cylc flow settings, including the job runner and platform information (further used in user site configurations). The site configurations ................ Furthermore, the rose-suite configuration references a default configuration file for all experiments. These settings can be applied to all experiments but can also be overwritten by experiment configurations. Rose-suite-exp. configurations include specific info for the experiment such as the history file location, the output directory location, pp components to process, etc. 
+
+# Workflow Configuration
+To help understand the workflow configuration, the following diagram was created. It is laid out in sections.
+
+```mermaid
+flowchart TD
+
+subgraph Parts of Workflow 
+%%C["Cylc Workflow:\nGeneral purpose workflow engine that \norchestrates cycling systems very efficiently\n\n(https://cylc.github.io/cylc-doc/stable/html/)"]
+F[Cylc workflow: \nflow.cylc]
+F-->S{{1. site\n-set user site\n-can be gfdl-ws, generic, or ppan}}
+F--->f1{{2. meta: \n-information about the workflow}} 
+%%-.-> RS
+F---->f2{{"3. schedule: \n-settings for the scheduler\n-non-task-specific workflow configuration"}}
+F----->f3{{4.task parameters: \n-define task parameters values and parameter templates}}
+F------>f4{{5.scheduling: \n-allows cylc to determine when tasks are ready to run\n-define families\n-defines qualifiers}}
+F------->f5{{"6.runtime: \n-determines how, where, and what to execute when tasks are ready \n-can specify what script to execute, what compute resources to use, \n and how to run a task"}}
+end
+```
+
+# Portable workflow 
+The portable workflow (flow.cylc) was created by utilizing conda environments with workflow tools and moving gfdl site specific tools to the ppan.cylc site configuration file, in addition to creating a generic.cylc site configuration to be used in its place. 
+
+The generic.cylc is where the conda environments containing tools needed for the workflow are activated, as seen below. The site configurations also define the platform used which references the global.cylc. As mentioned, the global.cylc contains info about the platform
+
+```mermaid
+flowchart TD
+SS[Site] --> s1[gfdl-ws.cylc]
+SS-->s2[ppan.cylc]
+SS-->s3[generic.cylc]
+
+subgraph gdfl-ws configuration
+s1-->wsp[platform = localhost]
+end
+
+subgraph pp/an configuration
+s2-->ppanp[platform = ppan]
+s2-->info[gfdl site specific workflow and tools]
+end
+
+subgraph generic configuration
+s3-->E
+E[activate envs]-->e1[cylc.yaml: \n-cylc dependencies] & e2[task-tools.yaml: \ntools used by workflow]
+s3-->genp[platform = localhost]
+end
+
+G[global.cylc] --> g1["-defines default Cylc Flow settings for a user or site \n-includes info for each platform used in the site configs"]
+wsp -.->G
+ppanp -.->G
+genp -..->G
+```
+
+# Instructions for portable workflow (as of now)
 1. Install conda
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -42,7 +99,7 @@ a. Edits:
 
 	iii. Rose-suite.conf
 
-		1. Correct PTMPDIR path 
+		1. Correct PTMPDIR path - create ptmp directory
 		2. DO_REFINEDIAG=False
 		3. DO_PREANALYSIS=False
 
@@ -79,6 +136,10 @@ a. Edits:
 			a. the `run` path is niagara-specific
 			b. This edit was done due to limited space on niagara
 
+    viii. tmp directory
+
+        1. create tmp directory - set environment variable TMPDIR in steps below
+
 
 b. Steps to run workflow:
 ```
@@ -86,9 +147,9 @@ conda activate cylc                      #activate cylc environment
 bin/list-exps
 bin/write-rose-configs opt/variable-groups/*
 rose macro --validate
-export CYLC_CONF_PATH=/home/$USER        #for global.cylc
-export TMPDIR=/collab1/data/$USER/tmp    #TMPDIR path listed is niagara-specific 
-                                         #for TMPDIR environment variable
+export CYLC_CONF_PATH=/path/to/generic-global-config  #this points to the global.cylc used for for `site=generic`
+                                                      #in generic-global-config folder in the postprocessing template repository (fre2/workflows/postprocessing/generic-global-config)
+export TMPDIR=/path/to/TMPDIR/tmp    #for TMPDIR environment variable for stage-history task
 bin/install-exp [exp]
 cylc play [exp]
 ```
