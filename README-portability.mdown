@@ -147,8 +147,8 @@ conda activate cylc                      #activate cylc environment
 bin/list-exps
 bin/write-rose-configs opt/variable-groups/*
 rose macro --validate
-export CYLC_CONF_PATH=/path/to/generic-global.cylc  #for generic global.cylc
-                                                    #in generic-global-config folder
+export CYLC_CONF_PATH=/path/to/generic-global-config  #this points to the global.cylc used for for `site=generic`
+                                                      #in generic-global-config folder in the postprocessing template repository (fre2/workflows/postprocessing/generic-global-config)
 export TMPDIR=/path/to/TMPDIR/tmp    #for TMPDIR environment variable for stage-history task
 bin/install-exp [exp]
 cylc play [exp]
