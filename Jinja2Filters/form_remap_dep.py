@@ -12,7 +12,7 @@ See form_remap_dep invocations from flow.cylc  '''
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, do_timeavgs):
+def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
@@ -101,15 +101,9 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, do_timeav
               makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
-                      if do_timeavgs:
-                          makets_stmt =  "{} & {} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src), "make-timeavgs-{}-{}_{}".format(grid,chunk,src))
-                      else:
-                          makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
+                    makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
                   else:
-                      if do_timeavgs:
-                          makets_stmt =  "make-timeseries-{}-{}_{} & make-timeavgs-{}-{}_{}".format(grid,chunk,src,grid,chunk,src)
-                      else:
-                          makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+                    makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
  
               remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
               remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
