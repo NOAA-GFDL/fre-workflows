@@ -26,32 +26,19 @@ echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    input dir: $inputDir"
 echo "    component: $component"
-echo "    histSegmentSize: $histSegmentSize"
+echo "    interval: $interval"
 echo Utilities:
 type cylc
-
-
-# empty env vars are A-OK to bash! this is for epmt data lineage
-export input_file_list=
-export output_file_list=
-
-
-#echo "---DEBUG--- BASH_SOURCE[0]=${BASH_SOURCE[0]}"
-#MY_PYTHON_SCRIPT=$(dirname ${BASH_SOURCE[0]})/../generate_time_averages/generate_time_averages.py
-#echo "---DEBUG--- time averaging script: $MY_PYTHON_SCRIPT, locating..."
-#if ls $MY_PYTHON_SCRIPT; then
-#	echo "script found. proceeding..."
-#else
-#	echo "---ERROR--- error, script not found."
-#	exit 1
-#fi
-#echo ""
-
+type generate-time-averages
 
 #this probably shouldnt be a substitute for a proper "find" command...
 echo ""
 echo "---DEBUG--- resolving target directories"
-dirs=($(ls -d $inputDir/$component/*))
+if [[ $use_subdirs ]]; then
+    dirs=($(ls -d $inputDir/*/$component/ts/*))
+else
+    dirs=($(ls -d $inputDir/$component/ts/*))
+fi
 if [[ ${#dirs[@]} -lt 1 ]]; then
 	echo "---ERROR--- ZERO DIRECTORIES FOUND!"
 	exit 1
@@ -67,18 +54,18 @@ for dir in ${dirs[@]}; do
 	echo "frequency found is: $file_freq"
 
 	#now need to pick the right date-time format for the cycle-point
-	if [[ $file_freq == P1D ]]; then
-		cyclepoint=$(cylc cycle-point --template CCYYMMDD)
-	elif [[ $file_freq == P1M ]]; then
-		cyclepoint=$(cylc cycle-point --template CCYYMM)
-	elif [[ $file_freq == PT6H ]]; then
-		cyclepoint=$(cylc cycle-point --template %Y%m%d%H)
+	if [[ $file_freq == P1M ]]; then
+		cyclepoint=$(cylc cycle-point --template CCYY12)
+        tool_args=month
+	elif [[ $file_freq == P1Y ]]; then
+		cyclepoint=$(cylc cycle-point --template CCYY)
+        tool_args=all
 	else
-		echo "---WARNING--- file freq not found. moving on."
+		echo "---WARNING--- file_freq='$file_freq' not monthly or annual. moving on."
 		continue
 	fi
 															   
-	files=($(ls $dir/$histSegmentSize/$component.$cyclepoint*.nc)
+	files=($(ls $dir/$interval/$component.*-$cyclepoint.*.nc))
 	if [[ ${#files[@]} -lt 1 ]]; then
 		echo "---WARNING--- no files found in directory $dir!"
 		echo "moving on to next directory..."
@@ -88,52 +75,22 @@ for dir in ${dirs[@]}; do
 
 	debugCount=0
 	for file in ${files[@]}; do
-		#export input_file_list=${input_file_list}$file, #no checksum, works great!
-		export input_file_list=${input_file_list}$(shasum -a 512256 $file), #with checksum
-
 		#echo "---DEBUG--- going to time-average file=$file"
-		output_file=${file%/$component/*}/$component/tas${file#*/$component}
+		output_file=${file%/$component/*}/$component/av${file#*/$component/ts}
 		output_dir=${output_file%/*}
 		
-		if [[ ! -d $output_dir ]]; then
-
-			mkdir -p $output_dir
-		else
-			echo "---WARNING--- output dir not created because it already exists."
-		fi
+		mkdir -p $output_dir
 		
 		echo "---DEBUG--- output going to be=$output_file"
-		
-		generate-time-averages -p "cdo"              "${file}" "${output_file}"
-		#generate-time-averages -p "fre-python-tools" "${file}" "${output_file}"
-		#generate-time-averages -p "fre-nctools"      "${file}" "${output_file}"
 
-		if [[ -f $output_file ]]; then
-			#export output_file_list=${output_file_list}$output_file, #no checksum, works great!
-			export output_file_list=${output_file_list}$(shasum -a 512256 $output_file), #with checksum
-		else
-			export output_file_list=${output_file_list}'None  None', #with checksum
-			                                                         #note, two spaces, b.c. that's what shasum
-			                                                         #does to the checksum+filename output
-		fi
-		#echo "---DEBUG--- timeaverage exit status: ?=${?}"
-		#debugCount=$(($debugCount+1))
-		#if [[ $debugCount -gt 2 ]]; then
-		#	break
-		#fi
+        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_file}"
+		
+		if ! $cmd; then
+		    echo "---ERROR--- Failed: timeaverage: $cmd"
+            exit $?
+        fi
 	done
 	
 done
 
-echo "---DEBUG--- gonna try epmt stuff here..."
-which epmt
-echo "---DEBUG--- epmt annotate......"
-#echo "---DEBUG--- epmt annotate DATA_LINEAGE_IN=${input_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
-#echo "---DEBUG--- epmt annotate DATA_LINEAGE_OUT=${output_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
-echo ""
-
-#exit $?
-#exit 1 
 exit 0
