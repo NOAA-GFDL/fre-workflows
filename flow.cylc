@@ -71,8 +71,7 @@
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     # max number of active cycle points (default 5)
-	#    runahead limit = P10
-    runahead limit = P1
+    runahead limit = P10
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
@@ -432,23 +431,55 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
 {% endif %}
 
 {% if DO_TIMEAVGS %}
-    [[TIME-AVGS]]
+    [[MAKE-TIMEAVGS]]
+        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key generate-time-averages
-        [[[environment]]]
-            histSegmentSize = {{ HISTORY_SEGMENT }}
     {% if DO_NATIVE %}
-    [[generate-time-averages-native<native>]]
-        inherit = TIME-AVGS
+    [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native/default
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             component = $CYLC_TASK_PARAM_native
     {% endif %}
     {% if DO_REGRID %}
-    [[generate-time-averages-regrid<regrid>]]
-        inherit = TIME-AVGS
+    [[MAKE-TIMEAVGS-REGRID]]
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/default/default
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
+            use_subdirs = 1
+    {% endif %}
+    [[MAKE-TIMEAVGS-{{ PP_CHUNK_A }}]]
+        [[[environment]]]
+            interval = {{ PP_CHUNK_A }}
+    {% if DO_NATIVE %}
+    [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
+    [[make-timeavgs-native-{{ PP_CHUNK_A }}<native>]]
+        inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}
+    {% endif %}
+    {% if DO_REGRID %}
+    [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
+    [[make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid>]]
+        inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}
+    {% endif %}
+    {% if DO_SECONDARY_PP %}
+    [[MAKE-TIMEAVGS-{{ PP_CHUNK_B }}]]
+        [[[environment]]]
+            interval = {{ PP_CHUNK_B }}
+        {% if DO_NATIVE %}
+    [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
+    [[make-timeavgs-native-{{ PP_CHUNK_B }}<native>]]
+        inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}
+        {% endif %}
+        {% if DO_REGRID %}
+    [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
+    [[make-timeavgs-regrid-{{ PP_CHUNK_B }}<regrid>]]
+        inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}
+        {% endif %}
     {% endif %}
 {% endif %}
 
@@ -603,7 +634,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native/default
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/native
             component = $CYLC_TASK_PARAM_native
 {% endif %}
 
@@ -612,7 +643,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/default
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
 {% endif %}
