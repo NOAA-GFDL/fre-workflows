@@ -12,7 +12,7 @@ See form_remap_dep invocations from flow.cylc  '''
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
+def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_type):
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
@@ -105,7 +105,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
                   else:
                     makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
  
-              remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
+              remap_stmt = "remap-pp-components-{}-{}_{}".format(output_type,chunk,key)
               remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
               remap_dep += """{} 
               """.format(remap_dep_stmt)
