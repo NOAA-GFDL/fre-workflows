@@ -1,32 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
-# for emacs syntax highlighting outside of a bin/ dir
-# -*- Shell -*-
 #
 # use fre-python-tools generate_time_average module to average history files 
 #
-
-
-## uncomment this block and set args for local development, not attached to a cylc workflow.
-#unset CYCLE_TASK_CYCLE_POINT
-#export CYLC_TASK_CYCLE_POINT=19790101T0000Z #for cylc cycle-point to work w/o argument, this env var must be set. 
-##export CYLC_TASK_CYCLE_POINT=19800101T0000Z
-#inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/native/default
-##inputDir=/xtmp/Ian.Laflotte/work/cylc-run/am5_c96L33_amip/run1/share/shards/regrid-xy/default/default
-#component=river_month
-##component=land_month
-##component=atmos_month
-#histSegmentSize=P1Y
-##debug
-
-module load fre-python-tools/0.0.1
 
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    input dir: $inputDir"
 echo "    component: $component"
 echo "    interval: $interval"
+echo "    use subdirs: ${use_subdirs:=}"
 echo Utilities:
 type cylc
 type generate-time-averages
@@ -35,9 +19,9 @@ type generate-time-averages
 echo ""
 echo "---DEBUG--- resolving target directories"
 if [[ $use_subdirs ]]; then
-    dirs=($(ls -d $inputDir/*/$component/ts/*))
+    dirs=($(ls -d $inputDir/*/$component/*))
 else
-    dirs=($(ls -d $inputDir/$component/ts/*))
+    dirs=($(ls -d $inputDir/$component/*))
 fi
 if [[ ${#dirs[@]} -lt 1 ]]; then
 	echo "---ERROR--- ZERO DIRECTORIES FOUND!"
@@ -75,15 +59,10 @@ for dir in ${dirs[@]}; do
 
 	debugCount=0
 	for file in ${files[@]}; do
-		#echo "---DEBUG--- going to time-average file=$file"
-		output_file=${file%/$component/*}/$component/av${file#*/$component/ts}
-		output_dir=${output_file%/*}
-		
+        output_dir=$outputDir/$file_freq/$interval
 		mkdir -p $output_dir
-		
-		echo "---DEBUG--- output going to be=$output_file"
-
-        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_file}"
+        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$(basename $file)"
+        echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
 		    echo "---ERROR--- Failed: timeaverage: $cmd"
