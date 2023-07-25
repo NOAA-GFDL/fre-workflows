@@ -670,14 +670,16 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     {% endif %}
 {% endif %}
 
+    [[REMAP-PP-COMPONENTS]]
+        script = rose task-run --verbose --app-key remap-pp-components
+        [[[environment]]]
+            components = $CYLC_TASK_PARAM_component
+
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
-    [[REMAP-PP-COMPONENTS-TS]]
-        script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
-            components = $CYLC_TASK_PARAM_component
             dirTSWorkaround = 1
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -696,13 +698,35 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
         inherit = REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}
 {% endif %}
 
+    [[REMAP-PP-COMPONENTS-AV]]
+        inherit = REMAP-PP-COMPONENTS
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
+    [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}]]
+        inherit = REMAP-PP-COMPONENTS-AV
+        [[[environment]]]
+            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            currentChunk = {{ PP_CHUNK_A }}
+    [[remap-pp-components-av-{{ PP_CHUNK_A }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}
+{% if DO_SECONDARY_PP %}
+    [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}]]
+        inherit = REMAP-PP-COMPONENTS-AV
+        [[[environment]]]
+            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            currentChunk = {{ PP_CHUNK_B }}
+    [[remap-pp-components-av-{{ PP_CHUNK_B }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}
+{% endif %}
+
 {% if DO_STATICS %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             components = {{ PP_COMPONENTS }}
             dirTSWorkaround = 0
 {% endif %}
@@ -795,7 +819,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[combine-statics]]
         pre-script = mkdir -p $outputDir
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             outputDir = {{ PP_DIR }}
 {% endif %}
 
