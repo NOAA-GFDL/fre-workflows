@@ -240,13 +240,11 @@ rename-split-to-pp-native<native>
     {% endif %}
 
     {% if DO_REGRID %}
-        {% set form_remap_dep_PP_CHUNK_A_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') %}
-{{  form_remap_dep_PP_CHUNK_A_regrid  }}
+        {{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') }}
     {% endif %}
 
     {% if DO_NATIVE %}
-        {% set form_remap_dep_PP_CHUNK_A_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') %}
-{{  form_remap_dep_PP_CHUNK_A_native  }}
+        {{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') }}
     {% endif %}
 
 {# If work-dir cleaning is desired, and (chunk A is larger than the history segment, or, only one pp size is specified), remove (prerequisite) history shards. #}
@@ -297,13 +295,11 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
 {# Throw validation exception if PP_CHUNK_B is not in rose-app.conf                                          #}
         {% if DO_REGRID %}
-            {% set form_remap_dep_PP_CHUNK_B_regrid  =  "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') %}
-{{ form_remap_dep_PP_CHUNK_B_regrid }}
+            {{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
         {% endif %}
 
         {% if DO_NATIVE %}
-            {% set form_remap_dep_PP_CHUNK_B_native  =  "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') %}
-{{ form_remap_dep_PP_CHUNK_B_native }}
+            {{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
         {% endif %}
 
 {# If work-dir cleaning is desired, remove CHUNK-A shards once CHUNK-B timeseries are created, #}
