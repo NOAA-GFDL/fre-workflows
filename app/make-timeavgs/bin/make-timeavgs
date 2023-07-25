@@ -59,9 +59,36 @@ for dir in ${dirs[@]}; do
 
 	debugCount=0
 	for file in ${files[@]}; do
+        # reduce date precision of output name to year-only,
+        # and include only one year if a one-year interval
+        basename=$(basename $file)
+        date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
+        date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
+        date1=${date1:0:4}
+        date2=${date2:0:4}
+        var=$(echo $basename | cut -d. -f3)
+        if (( $(echo $basename | grep -o '\.' | wc -l) == 4 )); then
+            tile=$(echo $basename | cut -d. -f4)
+        else
+            tile=""
+        fi
+        if [[ $date1 == $date2 ]]; then
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1.$var.$tile.nc
+            else
+                newfile=$component.$date1.$var.nc
+            fi
+        else
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1-$date2.$var.$tile.nc
+            else
+                newfile=$component.$date1-$date2.$var.nc
+            fi
+        fi
+
         output_dir=$outputDir/$file_freq/$interval
 		mkdir -p $output_dir
-        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$(basename $file)"
+        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
         echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
