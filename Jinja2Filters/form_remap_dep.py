@@ -29,6 +29,12 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_ty
       grid = "regrid"
     else:
       grid = grid_type 
+    if output_type == "ts":
+        prereq_task = "make-timeseries"
+    elif output_type== "av":
+        prereq_task = "make-timeavgs"
+    else:
+        raise Exception("output type not supported")
     #print(pp_components)
     #print(chunk) 
     ########################
@@ -101,9 +107,9 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_ty
               makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
-                    makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
+                    makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}-{}_{}".format(prereq_task,grid,chunk,src))
                   else:
-                    makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+                    makets_stmt =  "{}-{}-{}_{}".format(prereq_task,grid,chunk,src)
  
               remap_stmt = "remap-pp-components-{}-{}_{}".format(output_type,chunk,key)
               remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
