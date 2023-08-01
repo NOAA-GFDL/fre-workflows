@@ -687,6 +687,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
+            product = ts
             dirTSWorkaround = 1
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -710,6 +711,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
+            product = av
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
@@ -735,6 +737,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             components = {{ PP_COMPONENTS }}
+            product = static
             dirTSWorkaround = 0
 {% endif %}
 
