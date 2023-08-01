@@ -33,6 +33,14 @@ for dir in ${dirs[@]}; do
 	echo "---DEBUG--- FOUND dir: $dir"	
 	echo "looking at directory structure file frequency..."
 
+    # retrieve the regrid resolution subtype
+    if [[ $use_subdirs ]]; then
+        pushd $dir
+        cd ../..
+        subdir=$(basename $(pwd))
+        popd
+    fi
+
 	# check file frequency via directory name
 	file_freq=${dir##*/}
 	echo "frequency found is: $file_freq"
@@ -86,7 +94,11 @@ for dir in ${dirs[@]}; do
             fi
         fi
 
-        output_dir=$outputDir/$file_freq/$interval
+        if [[ $use_subdirs ]]; then
+            output_dir=$outputDir/$subdir/$file_freq/$interval
+        else
+            output_dir=$outputDir/$file_freq/$interval
+        fi
 		mkdir -p $output_dir
         cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
         echo "---DEBUG--- to run: $cmd"
