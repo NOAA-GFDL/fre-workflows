@@ -92,6 +92,9 @@
     [[MAKE-TIMEAVGS]]
         pre-script = module load fre-python-tools && mkdir -p $outputDir
 
+    [[COMBINE-TIMEAVGS]]
+        pre-script = module load cdo && mkdir -p $outputDir
+
 {% if DO_REGRID %}
     [[REGRID-XY]]
         pre-script = module load fre/test && mkdir -p $outputDir
