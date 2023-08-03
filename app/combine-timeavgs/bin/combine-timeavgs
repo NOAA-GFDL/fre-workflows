@@ -1,0 +1,85 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+# Form the legacy Bronx timeaverage directory path
+# given a frequency and chunksize
+function form_av_dirs {
+    case $1 in
+        P1Y)
+            freq=annual
+            ;;
+        P1M)
+            freq=monthly
+            ;;
+        *)
+            echo "ERROR: unexpected freq $freq"
+            exit 2
+            ;;
+    esac
+
+    if [[ $2 =~ ^P([0-9]+)Y$ ]]; then
+        chunk=${BASH_REMATCH[1]}yr
+    else
+        echo "ERROR: expected chunk $chunk"
+        exit 2
+    fi
+
+    echo ${freq}_$chunk
+}
+
+#
+# Combine (variables) and split (monthly) timeaverages
+#
+
+echo Arguments:
+echo "    input dir: $inputDir"
+echo "    output dir: $outputDir"
+echo "    component: $component"
+echo "    begin: $begin"
+echo "    end: $end"
+echo "    current chunk: $currentChunk"
+echo Utilities:
+type cdo
+
+# Verify input directory exists and is a directory
+if [[ ! -d $inputDir ]]; then
+    echo "Error: Input directory '${inputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+# Verify output directory exists and is a directory
+if [[ ! -d $outputDir ]]; then
+    echo "Error: Output directory '${outputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+cd $inputDir/$component
+
+for freq in $(ls); do
+    pushd $freq/$currentChunk
+
+    # remove previous intermediate files if they exist
+    if [[ -f $component.$begin-$end.nc ]]; then
+        rm -f $component.$begin-$end.nc
+    fi
+
+    # create output dir
+    subdir=$(form_av_dirs $freq $currentChunk)
+    mkdir -p $outputDir/$subdir
+
+    if [[ $freq == P1M ]]; then
+        cdo -O merge $component.$begin-$end.*.nc $component.$begin-$end.nc
+        cdo -O splitmon $component.$begin-$end.nc $outputDir/$subdir/$component.$begin-$end.
+    elif [[ $freq == P1Y ]]; then
+        cdo -O merge $component.$begin-$end.*.nc $outputDir/$subdir/$component.$begin-$end.ann.nc
+    else
+        echo "Error: frequency $freq not supported"
+        exit 2
+    fi
+
+    popd
+done
+
+echo Natural end of the timeavg combining
+exit 0
