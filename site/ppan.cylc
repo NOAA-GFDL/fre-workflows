@@ -28,6 +28,8 @@
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,canopy
+        [[[environment]]]
+            COPY_TOOL=gcp
 
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
