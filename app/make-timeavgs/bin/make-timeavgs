@@ -95,9 +95,9 @@ for dir in ${dirs[@]}; do
         fi
 
         if [[ $use_subdirs ]]; then
-            output_dir=$outputDir/$subdir/$file_freq/$interval
+            output_dir=$outputDir/$subdir/$component/$file_freq/$interval
         else
-            output_dir=$outputDir/$file_freq/$interval
+            output_dir=$outputDir/$component/$file_freq/$interval
         fi
 		mkdir -p $output_dir
         cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
