@@ -916,7 +916,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_STATICS %}
     [[clean-pp-statics]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp"
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp/static"
 {% endif %}
 {% if DO_NATIVE %}
     [[clean-split-native]]
@@ -933,9 +933,9 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[clean-shards-static]]
         inherit = CLEAN
         script = """
-            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/P0Y
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/P0Y
     {% if DO_REGRID %}
-            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/P0Y
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/P0Y
     {% endif %}
         """
 {% endif %}
@@ -943,12 +943,13 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
+            exit 3
 {% for SEGMENT in range(0, HIST_SEGMENTS_PER_CHUNK_A) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
     {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -delete
     {% endif %}
 {% endfor %}
         """
@@ -956,21 +957,22 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[clean-shards-{{ PP_CHUNK_A }}]]
         inherit = CLEAN
         script = """
+            exit 3
 {% if DO_SECONDARY_PP %}
     {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
         {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -delete
         {% endif %}
     {% endfor %}
 {% else %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
     {% if DO_REGRID %}
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ PP_CHUNK_A }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
     {% endif %}
 {% endif %}
         """
@@ -979,8 +981,9 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[clean-shards-{{ PP_CHUNK_B }}]]
         inherit = CLEAN
         script = """
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
-            find $CYLC_WORKFLOW_SHARE_DIR/shards/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
+            exit 3
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/native/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
+            find $CYLC_WORKFLOW_SHARE_DIR/shards/native/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
     {% if DO_REGRID %}
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc"
             find $CYLC_WORKFLOW_SHARE_DIR/shards/regrid-xy/*/*/*/{{ PP_CHUNK_B }} -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -delete
