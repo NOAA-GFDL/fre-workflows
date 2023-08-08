@@ -255,6 +255,7 @@ rename-split-to-pp-native<native>
 
 {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_A }}<component> => combine-timeavgs-{{ PP_CHUNK_A }}<component>
+=> clean-pp-timeavgs-{{ PP_CHUNK_A }}
 {% endif %}
 
 # 3 scenarios of CHUNK-A workdir cleaning
@@ -310,6 +311,7 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
     {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_B }}<component> => combine-timeavgs-{{ PP_CHUNK_B }}<component>
+=> clean-pp-timeavgs-{{ PP_CHUNK_B }}
     {% endif %}
 
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
@@ -965,9 +967,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_A }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_A }}"
             for dir in $dirs; do
                 if ls $dir; then
-{% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
+{% if DO_SECONDARY_PP %}
+    {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
                     find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
-{% endfor %}
+    {% endfor %}
+{% else %}
+                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+{% endif %}
                 fi
             done
         """
@@ -977,6 +983,36 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         inherit = CLEAN
         script = """
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_B }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_B }}"
+            for dir in $dirs; do
+                if ls $dir; then
+                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                fi
+            done
+        """
+{% endif %}
+
+    [[clean-pp-timeavgs-{{ PP_CHUNK_A }}]]
+        inherit = CLEAN
+        script = """
+            dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK_A }}
+            for dir in $dirs; do
+                if ls $dir; then
+{% if DO_SECONDARY_PP %}
+    {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
+                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+    {% endfor %}
+{% else %}
+                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+{% endif %}
+                fi
+            done
+        """
+
+{% if DO_SECONDARY_PP %}
+    [[clean-pp-timeavgs-{{ PP_CHUNK_B }}]]
+        inherit = CLEAN
+        script = """
+            dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK_B }}
             for dir in $dirs; do
                 if ls $dir; then
                     find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
