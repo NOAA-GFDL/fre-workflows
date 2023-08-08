@@ -59,20 +59,28 @@ cd $inputDir/$component
 for freq in $(ls); do
     pushd $freq/$currentChunk
 
+    # workaround to target YYYY files if chunkSize is P1Y
+    if [[ $currentChunk == P1Y ]]; then
+        dates=$begin
+    else
+        dates="$begin-$end"
+    fi
+
     # remove previous intermediate files if they exist
-    if [[ -f $component.$begin-$end.nc ]]; then
-        rm -f $component.$begin-$end.nc
+    if [[ -f $component.$dates.nc ]]; then
+        rm -f $component.$dates.nc
     fi
 
     # create output dir
     subdir=$(form_av_dirs $freq $currentChunk)
     mkdir -p $outputDir/$subdir
 
+
     if [[ $freq == P1M ]]; then
-        cdo -O merge $component.$begin-$end.*.nc $component.$begin-$end.nc
-        cdo -O splitmon $component.$begin-$end.nc $outputDir/$subdir/$component.$begin-$end.
+        cdo -O merge $component.$dates.*.nc $component.$dates.nc
+        cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
     elif [[ $freq == P1Y ]]; then
-        cdo -O merge $component.$begin-$end.*.nc $outputDir/$subdir/$component.$begin-$end.ann.nc
+        cdo -O merge $component.$dates.*.nc $outputDir/$subdir/$component.$dates.ann.nc
     else
         echo "Error: frequency $freq not supported"
         exit 2
