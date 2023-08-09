@@ -12,7 +12,7 @@ See form_remap_dep invocations from flow.cylc  '''
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
+def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_type, history_segment=None):
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
@@ -21,6 +21,8 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
        @param temporal_type (str): One of: temporal or static
        @param chunk (str): e.g P5Y for 5-year time series 
        @param pp_component (str): all, or a space-separated list
+       @param output_type (str): ts or av
+       @param history_segment (str): if given, handle special case where history segment equals pp-chunk-a
 
        @return remap_dep (multiline str) with Jinja formatting listing source-pp dependencies  
     """
@@ -29,6 +31,15 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
       grid = "regrid"
     else:
       grid = grid_type 
+    if output_type == "ts":
+        if history_segment == chunk:
+            prereq_task = "rename-split-to-pp"
+        else:
+            prereq_task = "make-timeseries"
+    elif output_type== "av":
+        prereq_task = "make-timeavgs"
+    else:
+        raise Exception("output type not supported")
     #print(pp_components)
     #print(chunk) 
     ########################
@@ -101,11 +112,17 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
               makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
-                    makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
+                      if prereq_task == 'rename-split-to-pp':
+                        makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}_{}".format(prereq_task,grid,src))
+                      else:
+                        makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}-{}_{}".format(prereq_task,grid,chunk,src))
                   else:
-                    makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+                      if prereq_task == 'rename-split-to-pp':
+                        makets_stmt =  "{}-{}_{}".format(prereq_task,grid,src)
+                      else:
+                        makets_stmt =  "{}-{}-{}_{}".format(prereq_task,grid,chunk,src)
  
-              remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
+              remap_stmt = "remap-pp-components-{}-{}_{}".format(output_type,chunk,key)
               remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
               remap_dep += """{} 
               """.format(remap_dep_stmt)
