@@ -261,6 +261,7 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid> & REMAP-PP-COMPONENTS-{{ PP_CHUN
     {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => mdtf
     {% endif %}
+REMAP-PP-COMPONENTS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 """
 
 
@@ -635,7 +636,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
     [[remap-pp-components-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}
 {% endif %}
-
+   
 {% if DO_STATICS %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS
@@ -645,6 +646,18 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp
             components = {{ PP_COMPONENTS }}
 {% endif %}
+    [[data-catalog]]
+       pre-script = """
+       cd $TMPDIR
+       git clone git@github.com:Ciheim/CatalogBuilder.git
+       cd ./CatalogBuilder
+       git checkout testgfdl
+       module load conda
+       conda activate CiheimEnv
+       gen_intake_gfdl.py --overwrite $ppdir ~/output.csv
+       """
+       [[[environment]]]
+          ppdir = {{PP_DIR}}
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
