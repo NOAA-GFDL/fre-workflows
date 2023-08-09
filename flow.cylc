@@ -222,7 +222,9 @@ rename-split-to-pp-regrid<regrid>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
+    {% if HISTORY_SEGMENT != PP_CHUNK_A %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
+    {% endif %}
     {% if DO_TIMEAVGS %}
 => make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid>
     {% endif %}
@@ -233,23 +235,25 @@ rename-split-to-pp-native<native>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
 & rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
+    {% if HISTORY_SEGMENT != PP_CHUNK_A %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
+    {% endif %}
     {% if DO_TIMEAVGS %}
 => make-timeavgs-native-{{ PP_CHUNK_A }}<native>
     {% endif %}
 {% endif %}
 
 {% if DO_REGRID %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT) }}
     {% if DO_TIMEAVGS %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av') }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT) }}
     {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts') }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT) }}
     {% if DO_TIMEAVGS %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av') }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT) }}
     {% endif %}
 {% endif %}
 
@@ -263,7 +267,7 @@ remap-pp-components-av-{{ PP_CHUNK_A }}<component> => combine-timeavgs-{{ PP_CHU
 # 2. If chunk-a equals history segment, then do nothing- these will be removed after chunk-b generation
 # 3. Otherwise, remove prereq history segments and leave the chunk-a shards for chunk-b generation
 {% if CLEAN_WORK %}
-    {% if PP_CHUNK_A != HISTORY_SEGMENT %}
+    {% if PP_CHUNK_B is not defined or PP_CHUNK_A != HISTORY_SEGMENT %}
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
         {% if DO_TIMEAVGS %}
 REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
@@ -288,9 +292,17 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
     {% if DO_REGRID %}
+        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
+rename-split-to-pp-regrid<regrid>
+        {% else %}
 make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
+        {% endif %}
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
+        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
+& rename-split-to-pp-regrid<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+        {% else %}
 & make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+        {% endif %}
         {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
         {% if DO_TIMEAVGS %}
@@ -299,9 +311,17 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
     {% endif %}
 
     {% if DO_NATIVE %}
+        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
+rename-split-to-pp-native<native>
+        {% else %}
 make-timeseries-native-{{ PP_CHUNK_A }}<native>
+        {% endif %}
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
+        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
+& rename-split-to-pp-native<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+        {% else %}
 & make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+        {% endif %}
         {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
         {% if DO_TIMEAVGS %}
@@ -969,10 +989,18 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                 if ls $dir; then
 {% if DO_SECONDARY_PP %}
     {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY   --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    fi
     {% endfor %}
 {% else %}
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    fi
 {% endif %}
                 fi
             done
@@ -999,10 +1027,18 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                 if ls $dir; then
 {% if DO_SECONDARY_PP %}
     {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point   --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                    fi
     {% endfor %}
 {% else %}
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point   --template CCYY)*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    fi
 {% endif %}
                 fi
             done
