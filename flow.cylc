@@ -1025,21 +1025,11 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK_A }}
             for dir in $dirs; do
                 if ls $dir; then
-{% if DO_SECONDARY_PP %}
-    {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
-                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
-                        find $dir -type f -name "*.$(cylc cycle-point   --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
-                    else
-                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
-                    fi
-    {% endfor %}
-{% else %}
                     if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
                         find $dir -type f -name "*.$(cylc cycle-point   --template CCYY)*.nc" -print -delete
                     else
                         find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     fi
-{% endif %}
                 fi
             done
         """
