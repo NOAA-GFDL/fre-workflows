@@ -47,8 +47,9 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
             continue
 
         # filter static and temporal
-        # if freq is not set, then treat it as if it were all temporal.
-        # if freq includes "P0Y" then treat all as statics
+        # if freq is not set             => temporal
+        # if freq includes "P0Y"         => static
+        # if freq does not include "P0Y" => temporal
         freq = node.get_value(keys=[item, 'freq'])
         if freq and 'P0Y' in freq and temporal_type == 'temporal':
             #print("DEBUG: Skipping static when temporal is requested")

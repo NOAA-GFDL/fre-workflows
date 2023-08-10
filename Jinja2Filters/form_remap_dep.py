@@ -31,6 +31,10 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_ty
       grid = "regrid"
     else:
       grid = grid_type 
+
+    # Determine the task needed to run before remap-pp-components
+    # Note: history_segment should be specified for primary chunk generation,
+    # and omitted for secondary chunk generation.
     if output_type == "ts":
         if history_segment == chunk:
             prereq_task = "rename-split-to-pp"
@@ -40,6 +44,7 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_ty
         prereq_task = "make-timeavgs"
     else:
         raise Exception("output type not supported")
+
     #print(pp_components)
     #print(chunk) 
     ########################
@@ -112,6 +117,8 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_ty
               makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
+                      # make-timeseries and make-timeavgs tasks have the chunksize in the task name,
+                      # but rename-split-to-pp does not
                       if prereq_task == 'rename-split-to-pp':
                         makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}_{}".format(prereq_task,grid,src))
                       else:
