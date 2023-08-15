@@ -20,7 +20,7 @@ import metomi.isodatetime.parsers
 #
 
 LOGGING_FORMAT = '%(asctime)s  %(levelname)s: %(message)s'
-FRE_PATH = '/home/fms/local/opt/fre-commands/bronx-19/bin'
+FRE_PATH = '/home/fms/local/opt/fre-commands/bronx-20/bin'
 FRE_TEST_PATH = '/home/fms/local/opt/fre-commands/test/bin'
 CYLC_PATH = '/home/fms/fre-canopy/system-settings/bin'
 CYLC_REFINED_SCRIPTS = ["check4ptop.pl", 
@@ -134,11 +134,11 @@ def main(args):
     ##########################################################################
     # Set up default configurations for regrid-xy and remap-pp-components
     ##########################################################################
-    rose_remap = metomi.rose.config.ConfigNode()
-    rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
+    ###rose_remap = metomi.rose.config.ConfigNode()
+    ###rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
 
-    rose_regrid_xy = metomi.rose.config.ConfigNode()
-    rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
+    ###rose_regrid_xy = metomi.rose.config.ConfigNode()
+    ###rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
     ##########################################################################
     # Create the rose-suite config and begin setting up key-value pairs
@@ -147,12 +147,12 @@ def main(args):
     # Note: Addition of quotes will appear as "'" in the code.
     ##########################################################################
     rose_suite = metomi.rose.config.ConfigNode()
-    rose_suite.set(keys=['template variables', 'PTMP_DIR'],
-                   value="'/xtmp/$USER/ptmp'")
-    rose_suite.set(keys=['template variables', 'CLEAN_WORK'],
-                   value='True')
-    rose_suite.set(keys=['template variables', 'DO_MDTF'],
-                   value='False')
+    #rose_suite.set(keys=['template variables', 'PTMP_DIR'],
+    #               value="'/xtmp/$USER/ptmp'")
+    #rose_suite.set(keys=['template variables', 'CLEAN_WORK'],
+    #               value='True')
+    #rose_suite.set(keys=['template variables', 'DO_MDTF'],
+    #               value='False')
     
     if args.pp_start is not None:
         rose_suite.set(keys=['template variables', 'PP_START'],
@@ -168,21 +168,23 @@ def main(args):
         rose_suite.set(keys=['template variables', 'PP_STOP'],
                        value="'0000'")
 
-    if args.do_refinediag:
-        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
-                       value='True')
-        rose_suite.set(keys=['template variables', 'REFINEDIAG_NAME'],
-                       value="'atmos'")
-        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-                       value='True')
-        rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
-                       value="'vitals'")
-    else:
-        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
-                       value='False')
-        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-                       value='False')
+    #if args.do_refinediag:
+    #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
+    #                   value='True')
+    #    rose_suite.set(keys=['template variables', 'REFINEDIAG_NAME'],
+    #                   value="'atmos'")
+    #    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
+    #                   value='True')
+    #    rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
+    #                   value="'vitals'")
+    #else:
+    #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
+    #                   value='False')
+    #    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
+    #                   value='False')
 
+    rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
+                   value=args.do_analysis)
     rose_suite.set(keys=['template variables', 'EXPERIMENT'],
                    value="'{}'".format(expname))
     rose_suite.set(keys=['template variables', 'PLATFORM'],
@@ -519,6 +521,8 @@ if __name__ == '__main__':
                         help="Required. The Bronx XML Target")
     parser.add_argument('--experiment', '-e', required=True, 
                         help="Required. The Bronx XML Experiment")
+    parser.add_argument('--do_analysis', action='store_true', default=False,
+                        help="Optional. Runs the analysis scripts.")
     parser.add_argument('--historydir', 
                         help="Optional. History directory to reference. "              \
                              "If not specified, the XML's default will be used.")
