@@ -124,19 +124,18 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
                       # make-timeseries and make-timeavgs tasks have the chunksize in the task name,
                       # but rename-split-to-pp does not
                       if prereq_task == 'rename-split-to-pp':
-                        makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}_{}".format(prereq_task,grid,src))
+                          makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}_{src}"
                       else:
-                        makets_stmt =  "{} & {}".format(makets_stmt,"{}-{}-{}_{}".format(prereq_task,grid,chunk,src))
+                          makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}-{chunk}_{src}"
                   else:
                       if prereq_task == 'rename-split-to-pp':
-                        makets_stmt =  "{}-{}_{}".format(prereq_task,grid,src)
+                          makets_stmt = f"{prereq_task}-{grid}_{src}"
                       else:
-                        makets_stmt =  "{}-{}-{}_{}".format(prereq_task,grid,chunk,src)
+                          makets_stmt = f"{prereq_task}-{grid}-{chunk}_{src}"
  
-              remap_stmt = "remap-pp-components-{}-{}_{}".format(output_type,chunk,key)
-              remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
-              remap_dep += """{} 
-              """.format(remap_dep_stmt)
+              remap_stmt = f"remap-pp-components-{output_type}-{chunk}_{key}"
+              remap_dep_stmt = f"{makets_stmt} => {remap_stmt}"
+              remap_dep += f"{remap_dep_stmt}\n"
     # Possibly, no tasks are needed for the given request (grid type, temporal/static, chunk, components).
     # When that happens just exit with an empty string and exit normally.
     return(remap_dep)
