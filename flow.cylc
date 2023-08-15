@@ -650,7 +650,7 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
        script = """
        cd $TMPDIR
        git clone git@github.com:aradhakrishnanGFDL/CatalogBuilder.git
-       cd ./CatalogBuilder
+       cd CatalogBuilder
        git checkout testgfdl
        gen_intake_gfdl.py --overwrite $ppdir $ppdir/catalog.csv
        """
