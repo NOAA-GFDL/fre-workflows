@@ -647,14 +647,12 @@ REMAP-PP-COMPONENTS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }
             components = {{ PP_COMPONENTS }}
 {% endif %}
     [[data-catalog]]
-       pre-script = """
+       script = """
        cd $TMPDIR
-       git clone git@github.com:Ciheim/CatalogBuilder.git
+       git clone git@github.com:aradhakrishnanGFDL/CatalogBuilder.git
        cd ./CatalogBuilder
        git checkout testgfdl
-       module load conda
-       conda activate CiheimEnv
-       gen_intake_gfdl.py --overwrite $ppdir ~/output.csv
+       gen_intake_gfdl.py --overwrite $ppdir $ppdir/catalog.csv
        """
        [[[environment]]]
           ppdir = {{PP_DIR}}
