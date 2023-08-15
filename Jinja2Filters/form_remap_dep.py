@@ -14,7 +14,9 @@ See form_remap_dep invocations from flow.cylc
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str, output_type, history_segment=None):
+# Function parameter type hints, PEP 484
+ 
+def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components_str: str, output_type: str, history_segment: str=None) -> str:
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
