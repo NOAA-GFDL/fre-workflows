@@ -16,9 +16,6 @@
 [submodule "app/mdtf"]
 	path = app/mdtf
 	url = https://gitlab.gfdl.noaa.gov/fre2/apps/mdtf.git
-[submodule "opt"]
-	path = opt
-	url = git@gitlab.gfdl.noaa.gov:fre2/examples/am5.git
 [submodule "app/analysis"]
 	path = app/analysis
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/analysis.git
