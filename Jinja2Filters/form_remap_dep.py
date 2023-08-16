@@ -2,17 +2,21 @@ import re
 import os
 import metomi.rose.config
 """! form_remap_dep parses the remap_pp_components rose-app.conf and uses input from rose-suite.conf in the form of
-env variables and returns the pp component and source name dependencies for remap_pp_components task execution. For insta
-\nce, for an atmos PP component that requires the regridded atmos_month and regridded atmos_daily history files, this Jin
-\jaFilter when called within flow.cylc helps identify this dependency to complete the corresponding task graph. This JinjaFilter ensures a remap-pp-component only waits for the dependent make-timeseries tasks such that the succeeded components output are made available in the final destination. 
-See form_remap_dep invocations from flow.cylc  '''
+env variables and returns the pp component and source name dependencies for remap_pp_components task execution. For 
+instance, for an atmos PP component that requires the regridded atmos_month and regridded atmos_daily history 
+files, this JinjaFilter when called within flow.cylc helps identify this dependency to complete the corresponding 
+task graph. This JinjaFilter ensures a remap-pp-component only waits for the dependent make-timeseries tasks such 
+that the succeeded components output are made available in the final destination. 
+See form_remap_dep invocations from flow.cylc
 """
 # @file form_remap_dep.py
 # Author(s)
 # Created by A.Radhakrishnan on 06/27/2022
 # Credit MSD workflow team
  
-def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
+# Function parameter type hints, PEP 484
+ 
+def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components_str: str, output_type: str, history_segment: str=None) -> str:
 
     """ Form the task parameter list based on the grid type, the temporal type, and the desired pp component(s)
 
@@ -21,6 +25,8 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
        @param temporal_type (str): One of: temporal or static
        @param chunk (str): e.g P5Y for 5-year time series 
        @param pp_component (str): all, or a space-separated list
+       @param output_type (str): ts or av
+       @param history_segment (str): if given, handle special case where history segment equals pp-chunk-a
 
        @return remap_dep (multiline str) with Jinja formatting listing source-pp dependencies  
     """
@@ -29,6 +35,20 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
       grid = "regrid"
     else:
       grid = grid_type 
+
+    # Determine the task needed to run before remap-pp-components
+    # Note: history_segment should be specified for primary chunk generation,
+    # and omitted for secondary chunk generation.
+    if output_type == "ts":
+        if history_segment == chunk:
+            prereq_task = "rename-split-to-pp"
+        else:
+            prereq_task = "make-timeseries"
+    elif output_type== "av":
+        prereq_task = "make-timeavgs"
+    else:
+        raise Exception("output type not supported")
+
     #print(pp_components)
     #print(chunk) 
     ########################
@@ -101,14 +121,21 @@ def form_remap_dep(grid_type, temporal_type, chunk, pp_components_str):
               makets_stmt = ""
               for src in value:
                   if(makets_stmt != ''): 
-                    makets_stmt =  "{} & {}".format(makets_stmt,"make-timeseries-{}-{}_{}".format(grid,chunk,src))
+                      # make-timeseries and make-timeavgs tasks have the chunksize in the task name,
+                      # but rename-split-to-pp does not
+                      if prereq_task == 'rename-split-to-pp':
+                          makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}_{src}"
+                      else:
+                          makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}-{chunk}_{src}"
                   else:
-                    makets_stmt =  "make-timeseries-{}-{}_{}".format(grid,chunk,src)
+                      if prereq_task == 'rename-split-to-pp':
+                          makets_stmt = f"{prereq_task}-{grid}_{src}"
+                      else:
+                          makets_stmt = f"{prereq_task}-{grid}-{chunk}_{src}"
  
-              remap_stmt = "remap-pp-components-{}_{}".format(chunk,key)
-              remap_dep_stmt = "{} => {}".format(makets_stmt,remap_stmt)
-              remap_dep += """{} 
-              """.format(remap_dep_stmt)
+              remap_stmt = f"remap-pp-components-{output_type}-{chunk}_{key}"
+              remap_dep_stmt = f"{makets_stmt} => {remap_stmt}"
+              remap_dep += f"{remap_dep_stmt}\n"
     # Possibly, no tasks are needed for the given request (grid type, temporal/static, chunk, components).
     # When that happens just exit with an empty string and exit normally.
     return(remap_dep)

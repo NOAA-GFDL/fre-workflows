@@ -46,15 +46,20 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
             #print("DEBUG: Skipping as not right grid; got", candidate_grid_type, "and wanted", grid_type)
             continue
 
-        # skip if temporal type is not desired
-        # freq is optional, so continue on if it is omitted
+        # filter static and temporal
+        # if freq is not set             => temporal
+        # if freq includes "P0Y"         => static
+        # if freq does not include "P0Y" => temporal
         freq = node.get_value(keys=[item, 'freq'])
+        if freq is not None and 'P0Y' in freq and temporal_type == 'temporal':
+            #print("DEBUG: Skipping static when temporal is requested")
+            continue
         if temporal_type == "static":
-            if freq and 'P0Y' not in freq:
+            if freq is not None and 'P0Y' not in freq:
                 #print("DEBUG: Skipping as static is requested, no P0Y here", freq)
                 continue
         elif (temporal_type == "temporal"):
-            if freq and 'P0Y' in freq:
+            if freq is not None and 'P0Y' in freq:
                 #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
                 continue
         else:

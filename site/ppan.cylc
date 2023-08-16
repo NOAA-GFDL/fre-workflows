@@ -9,7 +9,6 @@
         env-script = """
             eval $(rose task-env)
             env
-            export COPY_TOOL=gcp
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
@@ -29,6 +28,8 @@
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,canopy
+        [[[environment]]]
+            COPY_TOOL=gcp
 
     [[STAGE-HISTORY]]
         pre-script = module load gcp hsm/test
@@ -88,6 +89,12 @@
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
 
     [[MAKE-TIMESERIES]]
+        pre-script = module load cdo && mkdir -p $outputDir
+
+    [[MAKE-TIMEAVGS]]
+        pre-script = module load fre-python-tools && mkdir -p $outputDir
+
+    [[COMBINE-TIMEAVGS]]
         pre-script = module load cdo && mkdir -p $outputDir
 
 {% if DO_REGRID %}
