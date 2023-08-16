@@ -279,6 +279,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_S
 {% if DO_MDTF %}
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
+
+REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 """
 
 
@@ -791,7 +793,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}
     {% endif %}
 {% endif %}
-
+   
 {% if DO_STATICS %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -803,6 +805,15 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             product = static
             dirTSWorkaround = ""
 {% endif %}
+    [[data-catalog]]
+       script = """
+       cd $TMPDIR
+       git clone git@github.com:aradhakrishnanGFDL/CatalogBuilder.git
+       cd CatalogBuilder
+       ./gen_intake_gfdl.py --overwrite $ppdir $ppdir/catalog.csv
+       """
+       [[[environment]]]
+          ppdir = {{PP_DIR}}
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir

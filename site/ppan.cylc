@@ -87,6 +87,12 @@
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load cdo gcp/test && mkdir -p $outputDir
+    
+    [[data-catalog]]
+        pre-script = module load conda && conda activate /net2/Ciheim.Brown/conda/envs/DCEnv
+
+        [[[directives]]]
+            --partition=analysis
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
