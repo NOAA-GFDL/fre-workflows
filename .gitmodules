@@ -1,6 +1,3 @@
-[submodule "app/split-netcdf"]
-	path = app/split-netcdf
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/split-netcdf.git
 [submodule "app/rename-split-to-pp"]
 	path = app/rename-split-to-pp
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/rename-split-to-pp.git
@@ -19,9 +16,6 @@
 [submodule "app/mdtf"]
 	path = app/mdtf
 	url = https://gitlab.gfdl.noaa.gov/fre2/apps/mdtf.git
-[submodule "opt"]
-	path = opt
-	url = git@gitlab.gfdl.noaa.gov:fre2/examples/am5.git
 [submodule "app/analysis"]
 	path = app/analysis
 	url = git@gitlab.gfdl.noaa.gov:fre2/apps/analysis.git

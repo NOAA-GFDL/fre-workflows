@@ -1,0 +1,114 @@
+#!/bin/bash
+set -euo pipefail
+
+#
+# use fre-python-tools generate_time_average module to average history files 
+#
+
+echo Arguments:
+echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+echo "    input dir: $inputDir"
+echo "    component: $component"
+echo "    interval: $interval"
+echo "    use subdirs: ${use_subdirs:=}"
+echo Utilities:
+type cylc
+type generate-time-averages
+
+#this probably shouldnt be a substitute for a proper "find" command...
+echo ""
+echo "---DEBUG--- resolving target directories"
+if [[ $use_subdirs ]]; then
+    dirs=($(ls -d $inputDir/*/$component/*))
+else
+    dirs=($(ls -d $inputDir/$component/*))
+fi
+if [[ ${#dirs[@]} -lt 1 ]]; then
+	echo "---ERROR--- ZERO DIRECTORIES FOUND!"
+	exit 1
+fi
+echo "number of dirs found is : ${#dirs[@]}"
+
+for dir in ${dirs[@]}; do
+	echo "---DEBUG--- FOUND dir: $dir"	
+	echo "looking at directory structure file frequency..."
+
+    # retrieve the regrid resolution subtype
+    if [[ $use_subdirs ]]; then
+        pushd $dir
+        cd ../..
+        subdir=$(basename $(pwd))
+        popd
+    fi
+
+	# check file frequency via directory name
+	file_freq=${dir##*/}
+	echo "frequency found is: $file_freq"
+
+	#now need to pick the right date-time format for the cycle-point
+	if [[ $file_freq == P1M ]]; then
+		cyclepoint=$(cylc cycle-point --template CCYY12)
+        tool_args=month
+	elif [[ $file_freq == P1Y ]]; then
+		cyclepoint=$(cylc cycle-point --template CCYY)
+        tool_args=all
+	else
+		echo "---WARNING--- file_freq='$file_freq' not monthly or annual. moving on."
+		continue
+	fi
+															   
+	files=($(ls $dir/$interval/$component.*-$cyclepoint.*.nc))
+	if [[ ${#files[@]} -lt 1 ]]; then
+		echo "---WARNING--- no files found in directory $dir!"
+		echo "moving on to next directory..."
+	else
+		echo "---DEBUG--- found ${#files[@]} files"
+	fi	
+
+	debugCount=0
+	for file in ${files[@]}; do
+        # reduce date precision of output name to year-only,
+        # and include only one year if a one-year interval
+        basename=$(basename $file)
+        date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
+        date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
+        date1=${date1:0:4}
+        date2=${date2:0:4}
+        var=$(echo $basename | cut -d. -f3)
+        if (( $(echo $basename | grep -o '\.' | wc -l) == 4 )); then
+            tile=$(echo $basename | cut -d. -f4)
+        else
+            tile=""
+        fi
+        if [[ $date1 == $date2 ]]; then
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1.$var.$tile.nc
+            else
+                newfile=$component.$date1.$var.nc
+            fi
+        else
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1-$date2.$var.$tile.nc
+            else
+                newfile=$component.$date1-$date2.$var.nc
+            fi
+        fi
+
+        if [[ $use_subdirs ]]; then
+            output_dir=$outputDir/$subdir/$component/$file_freq/$interval
+        else
+            output_dir=$outputDir/$component/$file_freq/$interval
+        fi
+		mkdir -p $output_dir
+        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
+        echo "---DEBUG--- to run: $cmd"
+		
+		if ! $cmd; then
+		    echo "---ERROR--- Failed: timeaverage: $cmd"
+            exit $?
+        fi
+	done
+	
+done
+
+exit 0
