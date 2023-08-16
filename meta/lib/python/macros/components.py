@@ -14,10 +14,6 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
     def validate(self, config, meta_config=None):
         """Return a list of errors, if any."""
 
-        # If PP_COMPONENTS is not set, assume we're in the default config and exit
-        if not config.get_value(['template variables', 'PP_COMPONENTS']):
-            return self.reports
-
         # Read the Rose app configuration specified by config_key
 
         # Read the remap-pp-components and regrid-xy app configs, and report any errors.
@@ -52,7 +48,7 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
             # add history file to the component dict
             if comp not in history_files_by_comp:
                 history_files_by_comp[comp] = set()
-            for source in node.get_value([item, 'source']).split():
+            for source in node.get_value([item, 'sources']).split():
                 history_files_by_comp[comp].add(source)
 
             # add regridded label for regridded components
@@ -65,7 +61,15 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
 
         # Requested components (PP_COMPONENTS) in rose-suite.conf must exist in remap-pp-component's app config
         # If they don't, add suitable errors
-        requested_comps = config.get_value(['template variables', 'PP_COMPONENTS']).strip('"').split(' ')
+        requested_comps_str = config.get_value(['template variables', 'PP_COMPONENTS'])
+        if requested_comps_str is None:
+            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
+            return self.reports
+        if requested_comps_str == "":
+            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
+            return self.reports
+
+        requested_comps = requested_comps_str.strip('"').split(' ')
         for comp in requested_comps:
             if comp in available_comps:
                 pass
@@ -96,8 +100,10 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
                         continue
                     sources = node.get_value([item, 'sources']).split()
                     if history_file in sources:
-                        output_grid_type = node.get_value([item, 'outputGridType'])
-                        if "regrid-xy/" + output_grid_type == regrid_label_by_comp[comp]:
+                        output_grid_type = node.get_value([item, 'grid'])
+                        if output_grid_type is None:
+                            pass
+                        elif output_grid_type == regrid_label_by_comp[comp]:
                             success_flag = True
                 if not success_flag:
                     self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), f"Requested component '{comp}' uses history file '{history_file}' with regridding label '{regrid_label_by_comp[comp]}', but this was not found in app/regrid-xy/rose-app.conf")
