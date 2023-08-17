@@ -11,7 +11,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
     writable: PTMP_DIR, PP_DIR
     """
 
-    readable = ['GRID_SPEC', 'HISTORY_DIR', 'HISTORY_DIR_REFINED', 'PREANALYSIS_SCRIPT']
+    readable = ['GRID_SPEC', 'HISTORY_DIR', 'HISTORY_DIR_REFINED', 'PREANALYSIS_SCRIPT', 'PP_GRID_SPEC']
     writable = ['PTMP_DIR', 'PP_DIR']
     readable_list = ['REFINEDIAG_SCRIPTS']
 
