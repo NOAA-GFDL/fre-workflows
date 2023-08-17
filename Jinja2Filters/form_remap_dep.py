@@ -107,7 +107,7 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
                #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
                continue
 
-        results = node.get_value(keys=[item, 'source']).split()
+        results = node.get_value(keys=[item, 'sources']).split()
         remap_comp = comp
         answer = sorted(list(set(results)))
         if remap_comp is not None:

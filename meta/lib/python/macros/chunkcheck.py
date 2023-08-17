@@ -33,10 +33,6 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
 
-        # If PP_COMPONENTS is not set, assume we're in the default config and exit
-        if not config.get_value(['template variables', 'PP_COMPONENTS']):
-            return self.reports
-
         # history_segment and pp_chunk_a are required and must be iso8601-parsable
         # if missing, add reports and exit early
         history_segment = config.get_value(['template variables', 'HISTORY_SEGMENT'])

@@ -11,7 +11,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
     writable: PTMP_DIR, PP_DIR
     """
 
-    readable = ['GRID_SPEC', 'HISTORY_DIR', 'HISTORY_DIR_REFINED', 'PREANALYSIS_SCRIPT']
+    readable = ['GRID_SPEC', 'HISTORY_DIR', 'HISTORY_DIR_REFINED', 'PREANALYSIS_SCRIPT', 'PP_GRID_SPEC']
     writable = ['PTMP_DIR', 'PP_DIR']
     readable_list = ['REFINEDIAG_SCRIPTS']
 
@@ -41,7 +41,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         # Check for readable files/dirs
         for item in self.readable:
             location = config.get_value(['template variables', item])
-            if location:
+            if location is not None:
                 if not self.is_file_readable(location):
                     self.add_report('template variables', item, location,
                                     f"{item} must exist and be readable if set")
@@ -49,7 +49,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         # Check for readable spaced lists of files/dirs
         for item in self.readable_list:
             locations = config.get_value(['template variables', item])
-            if locations:
+            if locations is not None:
                 locations = locations.strip('"')
                 filenames = locations.split(' ')
                 for filename in filenames:
@@ -60,7 +60,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         # Check for writable files/dirs
         for item in self.writable:
             location = config.get_value(['template variables', item])
-            if location:
+            if location is not None:
                 location = re.sub('\${?USER}?', os.environ['USER'], location)
                 if os.access(location.strip('"'), os.W_OK):
                     pass
