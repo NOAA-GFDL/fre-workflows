@@ -100,10 +100,10 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
                         continue
                     sources = node.get_value([item, 'sources']).split()
                     if history_file in sources:
-                        output_grid_type = node.get_value([item, 'grid'])
+                        output_grid_type = node.get_value([item, 'outputGridType'])
                         if output_grid_type is None:
                             pass
-                        elif output_grid_type == regrid_label_by_comp[comp]:
+                        elif "regrid-xy/" + output_grid_type == regrid_label_by_comp[comp]:
                             success_flag = True
                 if not success_flag:
                     self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), f"Requested component '{comp}' uses history file '{history_file}' with regridding label '{regrid_label_by_comp[comp]}', but this was not found in app/regrid-xy/rose-app.conf")
