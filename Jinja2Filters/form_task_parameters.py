@@ -12,7 +12,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         pp_component (str): all, or a space-separated list
 """
     pp_components = pp_components_str.split()
-    # print("DEBUG: desired pp components:", pp_components)
+    #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
@@ -65,7 +65,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         else:
             raise Exception("Unknown temporal type:", temporal_type)
 
-        results = results + node.get_value(keys=[item, 'source']).split()
+        results = results + node.get_value(keys=[item, 'sources']).split()
 
     answer = sorted(list(set(results)))
     return(', '.join(answer))
