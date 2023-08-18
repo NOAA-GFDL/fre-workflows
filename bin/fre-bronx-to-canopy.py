@@ -246,6 +246,7 @@ def main(args):
 
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
+    simUnits = frelist_xpath(args, 'runtime/production/@units')
 
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
                    value="'{}'".format(historyDir))
@@ -376,6 +377,34 @@ def main(args):
     if segment == 'P12M':
         segment = 'P1Y'
     rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
+
+    # Get the namelist current_date as the likely PP_START (unless "start" is used in the PP tags)
+    # frelist --namelist may be better, but sometimes may not work
+    current_date_str = frelist_xpath(args, 'input/namelist')
+    match = re.search(r'current_date\s*=\s*(\d+),(\d+),(\d+)', current_date_str)
+    if match:
+        try:
+            current_date = metomi.isodatetime.data.TimePoint(year=match.group(1), month_of_year=match.group(2), day_of_month=match.group(3))
+        except:
+            logging.warn("Could not parse date from namelist current_date")
+            current_date = None
+    else:
+        current_date = None
+        logging.warn("Could not find current_date in namelists")
+    logging.info(f"current_date (from namelists): {current_date}")
+
+    # change this later, but let's put them in now
+    if simUnits == "years":
+        oneless = int(simTime) - 1
+        duration = f"P{oneless}Y"
+    elif simUnits == "months":
+        duration = f"P{simTime}M"
+    else:
+        raise Exception("Was thinking simUnits would be years or months")
+    dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
+    pp_stop = current_date + dur
+    rose_suite.set(keys=['template variables', 'PP_START'], value=f'"{current_date}"')
+    rose_suite.set(keys=['template variables', 'PP_STOP'], value=f'"{pp_stop}"')
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
