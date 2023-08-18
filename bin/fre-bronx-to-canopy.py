@@ -14,7 +14,7 @@ import metomi.isodatetime.parsers
 # 
 #
 # The Bronx-to-Canopy XML converter overwrites 3 files:
-# - rose-suite.conf
+# - opt/rose-suite-EXPNAME.conf
 # - app/remap-pp-components/rose-app.conf
 # - app/regrid-xy/rose-app.conf
 #
@@ -134,11 +134,11 @@ def main(args):
     ##########################################################################
     # Set up default configurations for regrid-xy and remap-pp-components
     ##########################################################################
-    ###rose_remap = metomi.rose.config.ConfigNode()
-    ###rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
+    rose_remap = metomi.rose.config.ConfigNode()
+    rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
 
-    ###rose_regrid_xy = metomi.rose.config.ConfigNode()
-    ###rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
+    rose_regrid_xy = metomi.rose.config.ConfigNode()
+    rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
     ##########################################################################
     # Create the rose-suite config and begin setting up key-value pairs
@@ -147,26 +147,28 @@ def main(args):
     # Note: Addition of quotes will appear as "'" in the code.
     ##########################################################################
     rose_suite = metomi.rose.config.ConfigNode()
-    #rose_suite.set(keys=['template variables', 'PTMP_DIR'],
-    #               value="'/xtmp/$USER/ptmp'")
-    #rose_suite.set(keys=['template variables', 'CLEAN_WORK'],
-    #               value='True')
-    #rose_suite.set(keys=['template variables', 'DO_MDTF'],
-    #               value='False')
+    rose_suite.set(keys=['template variables', 'SITE'],              value='"ppan"')
+    rose_suite.set(keys=['template variables', 'CLEAN_WORK'],        value='True')
+    rose_suite.set(keys=['template variables', 'PTMP_DIR'],          value='"/xtmp/$USER/ptmp"')
+    rose_suite.set(keys=['template variables', 'DO_MDTF'],           value='False')
+    rose_suite.set(keys=['template variables', 'DO_STATICS'],        value='True')
+    rose_suite.set(keys=['template variables', 'DO_TIMEAVGS'],       value='True')
+    rose_suite.set(keys=['template variables', 'DO_ANALYSIS_ONLY'],  value='False')
+    rose_suite.set(keys=['template variables', 'FRE_ANALYSIS_HOME'], value='"/home/fms/local/opt/fre-analysis/test"')
     
-    if args.pp_start is not None:
-        rose_suite.set(keys=['template variables', 'PP_START'],
-                       value="'" + str(args.pp_start) + "'")
-    else:
-        rose_suite.set(keys=['template variables', 'PP_START'],
-                       value="'0000'")
+    #if args.pp_start is not None:
+    #    rose_suite.set(keys=['template variables', 'PP_START'],
+    #                   value="'" + str(args.pp_start) + "'")
+    #else:
+    #    rose_suite.set(keys=['template variables', 'PP_START'],
+    #                   value="'0000'")
 
-    if args.pp_stop is not None:
-        rose_suite.set(keys=['template variables', 'PP_STOP'],
-                       value="'" + str(args.pp_stop) + "'")
-    else:
-        rose_suite.set(keys=['template variables', 'PP_STOP'],
-                       value="'0000'")
+    #if args.pp_stop is not None:
+    #    rose_suite.set(keys=['template variables', 'PP_STOP'],
+    #                   value="'" + str(args.pp_stop) + "'")
+    #else:
+    #    rose_suite.set(keys=['template variables', 'PP_STOP'],
+    #                   value="'0000'")
 
     #if args.do_refinediag:
     #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
@@ -178,13 +180,11 @@ def main(args):
     #    rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
     #                   value="'vitals'")
     #else:
-    #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
-    #                   value='False')
-    #    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-    #                   value='False')
+    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
+    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
-    rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
-                   value=args.do_analysis)
+    #rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
+    #               value=args.do_analysis)
     rose_suite.set(keys=['template variables', 'EXPERIMENT'],
                    value="'{}'".format(expname))
     rose_suite.set(keys=['template variables', 'PLATFORM'],
@@ -231,27 +231,32 @@ def main(args):
     ppDir = fetch_pp_process.stdout.strip()
     logging.info(ppDir)
 
+    fetch_analysis_dir_cmd = "frelist -x {} -p {} -t {} {} -d analysis".format(xml,
+                                                                        platform,
+                                                                        target,
+                                                                        expname)
+    logging.info(">> {}".format(fetch_analysis_dir_cmd))
+    fetch_analysis_dir_process = subprocess.run(fetch_analysis_dir_cmd,
+                                      shell=True,
+                                      check=True,
+                                      capture_output=True,
+                                      universal_newlines=True)
+    analysisDir = fetch_analysis_dir_process.stdout.strip()
+    logging.info(analysisDir)
+
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
 
-    if args.historydir is not None:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
-                       value="'{}'".format(args.historydir))
-    else:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
-                       value="'{}'".format(historyDir))
-    if args.refinedir is not None:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                       value="'{}'".format(args.refinedir))
-    else:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                       value="'{}'".format(historyDirRefined))
-    if args.ppdir is not None:
-        rose_suite.set(keys=['template variables', 'PP_DIR'],
-                       value="'{}'".format(args.ppdir))
-    else:
-        rose_suite.set(keys=['template variables', 'PP_DIR'],
-                       value="'{}'".format(ppDir))
+    rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
+                   value="'{}'".format(historyDir))
+    rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+                   value="'{}'".format(historyDirRefined))
+    rose_suite.set(keys=['template variables', 'PP_DIR'],
+                   value="'{}'".format(ppDir))
+    rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
+                   value="'{}'".format(analysisDir))
+    rose_suite.set(keys=['template variables', 'GRID_SPEC'],
+                   value="'{}'".format(gridSpec))
 
     ##########################################################################
     # Process the refineDiag scripts into the rose-suite configuration from
@@ -370,90 +375,87 @@ def main(args):
     # P12M is identical to P1Y but the latter looks nicer
     if segment == 'P12M':
         segment = 'P1Y'
-    rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'],
-                   value="'{}'".format(segment))
+    rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
-    comp_count = 0
-    for comp in comps:
-        comp_count += 1
-        pp_comp_xpath_header = 'postProcess/component[@type="{}"]'                     \
-                               .format(comp)
-        logging.info("Component loop: {} out of {}"                                    \
-                     .format(comp_count, len(comps)))
+    #comp_count = 0
+    #for comp in comps:
+    #    comp_count += 1
+    #    pp_comp_xpath_header = 'postProcess/component[@type="{}"]'                     \
+    #                           .format(comp)
+    #    logging.info("Component loop: {} out of {}"                                    \
+    #                 .format(comp_count, len(comps)))
 
-        comp_source = frelist_xpath(args, '{}/@source'                                 \
-                                          .format(pp_comp_xpath_header))
-        xyInterp = frelist_xpath(args, '{}/@xyInterp'                                  \
-                                       .format(pp_comp_xpath_header))
-        sourceGrid = frelist_xpath(args, '{}/@sourceGrid'                              \
-                                         .format(pp_comp_xpath_header))
-        if xyInterp:
-            grid = "regrid-xy"
-        else:
-            grid = "native"
+#        comp_source = frelist_xpath(args, '{}/@source'                                 \
+#                                          .format(pp_comp_xpath_header))
+#        xyInterp = frelist_xpath(args, '{}/@xyInterp'                                  \
+#                                       .format(pp_comp_xpath_header))
+#        sourceGrid = frelist_xpath(args, '{}/@sourceGrid'                              \
+#                                         .format(pp_comp_xpath_header))
+#        if xyInterp:
+#            grid = "regrid-xy"
+#        else:
+#            grid = "native"
 
-        sources = set()
-        timeseries_count = 0
+#        sources = set()
+#        timeseries_count = 0
 
         # Get the number of TS nodes
-        results = frelist_xpath(args, '{}/timeSeries/@freq'                            \
-                                      .format(pp_comp_xpath_header)).split()
-        timeseries_count = len(results)
+#        results = frelist_xpath(args, '{}/timeSeries/@freq'                            \
+#                                      .format(pp_comp_xpath_header)).split()
+#        timeseries_count = len(results)
 
         # Loop over the TS nodes and write out the frequency, chunklength, and
         # grid to the remap-pp-components Rose app configuration
-        for i in range(1, timeseries_count + 1):
-            label = "{}.{}".format(comp, str(i))
+#        for i in range(1, timeseries_count + 1):
+#            label = "{}.{}".format(comp, str(i))
 
-            source = frelist_xpath(args, '{}/timeSeries[{}]/@source'                   \
-                                         .format(pp_comp_xpath_header, i))
-            if source:
-                sources.add(source)
-                rose_remap.set(keys=[label, 'source'], value=source)
-            elif comp_source:
-                sources.add(comp_source)
-                rose_remap.set(keys=[label, 'source'], value=comp_source)
-            else:
-                logging.warning("Skipping a timeSeries with no source "                \
-                                "and no component source for {}"                       \
-                                .format(comp))
-                continue
+#            source = frelist_xpath(args, '{}/timeSeries[{}]/@source'                   \
+#                                         .format(pp_comp_xpath_header, i))
+#            if source:
+#                sources.add(source)
+#                rose_remap.set(keys=[label, 'source'], value=source)
+#            elif comp_source:
+#                sources.add(comp_source)
+#                rose_remap.set(keys=[label, 'source'], value=comp_source)
+#            else:
+#                logging.warning("Skipping a timeSeries with no source "                \
+#                                "and no component source for {}"                       \
+#                                .format(comp))
+#                continue
 
-            freq = freq_from_legacy(frelist_xpath(args,                                
-                                                  '{}/timeSeries[{}]/@freq'            \
-                                                  .format(pp_comp_xpath_header, i)))
-            chunk = chunk_from_legacy(frelist_xpath(args,                              
-                                                    '{}/timeSeries[{}]/@chunkLength'   \
-                                                    .format(pp_comp_xpath_header, i)))
-            rose_remap.set(keys=[label, 'freq'], value=freq)
-            rose_remap.set(keys=[label, 'chunk'], value=chunk)
-            rose_remap.set(keys=[label, 'grid'], value=grid)
+#            freq = freq_from_legacy(frelist_xpath(args,                                
+#                                                  '{}/timeSeries[{}]/@freq'            \
+#                                                  .format(pp_comp_xpath_header, i)))
+#            chunk = chunk_from_legacy(frelist_xpath(args,                              
+#                                                    '{}/timeSeries[{}]/@chunkLength'   \
+#                                                    .format(pp_comp_xpath_header, i)))
+#            rose_remap.set(keys=[label, 'freq'], value=freq)
+#            rose_remap.set(keys=[label, 'chunk'], value=chunk)
+#            rose_remap.set(keys=[label, 'grid'], value=grid)
 
-        rose_remap.set(keys=[comp + '.static', 'source'], value=' '.join(sources))
-        rose_remap.set(keys=[comp + '.static', 'chunk'], value="P0Y")
-        rose_remap.set(keys=[comp + '.static', 'freq'], value="P0Y")
-        rose_remap.set(keys=[comp + '.static', 'grid'], value=grid)
-
-        if grid == "native":
-            continue
-        else:
+#        rose_remap.set(keys=[comp + '.static', 'source'], value=' '.join(sources))
+#        rose_remap.set(keys=[comp + '.static', 'chunk'], value="P0Y")
+#        rose_remap.set(keys=[comp + '.static', 'freq'], value="P0Y")
+#        rose_remap.set(keys=[comp + '.static', 'grid'], value=grid)
+#
+#        if grid == "native":
+#            continue
+#        else:
             # Write out values to the 'regrid-xy' Rose app as well as the
             # 'GRID_SPEC' value to the rose-suite configuration.
-            rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
+#            rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
 
-            sourcegrid_split = sourceGrid.split('-')
-            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=sourcegrid_split[1])
-            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=sourcegrid_split[0])
+#            sourcegrid_split = sourceGrid.split('-')
+#            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=sourcegrid_split[1])
+#            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=sourcegrid_split[0])
 
-            interp_split = xyInterp.split(',')
-            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
-            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
+#            interp_split = xyInterp.split(',')
+#            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
+#            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
 
-            rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
-            rose_suite.set(keys=['template variables', 'GRID_SPEC'],
-                           value="'{}'".format(gridSpec))
+#            rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
 
     # Process all of the found PP chunks into the rose-suite configuration
     if args.verbose:
@@ -477,19 +479,19 @@ def main(args):
     sorted_chunks = list(all_chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
-    assert len(all_chunks) >= 1
-    logging.info("  Chunks found: {}".format(', '.join(sorted_chunks)))
-    if len(all_chunks) == 1:
-        rose_suite.set(['template variables', 'PP_CHUNK_A'],
-                       "'{}'".format(sorted_chunks[0]))
-        rose_suite.set(['template variables', 'PP_CHUNK_B'],
-                       "'{}'".format(sorted_chunks[0]))
-    else:
-        rose_suite.set(['template variables', 'PP_CHUNK_A'],
-                       "'{}'".format(sorted_chunks[0]))
-        rose_suite.set(['template variables', 'PP_CHUNK_B'],
-                       "'{}'".format(sorted_chunks[1]))
-    logging.info("  Chunks used: {}".format(', '.join(sorted_chunks[0:2])))
+    #assert len(all_chunks) >= 1
+    #logging.info("  Chunks found: {}".format(', '.join(sorted_chunks)))
+    #if len(all_chunks) == 1:
+    #    rose_suite.set(['template variables', 'PP_CHUNK_A'],
+    #                   "'{}'".format(sorted_chunks[0]))
+    #    rose_suite.set(['template variables', 'PP_CHUNK_B'],
+    #                   "'{}'".format(sorted_chunks[0]))
+    #else:
+    #    rose_suite.set(['template variables', 'PP_CHUNK_A'],
+    #                   "'{}'".format(sorted_chunks[0]))
+    #    rose_suite.set(['template variables', 'PP_CHUNK_B'],
+    #                   "'{}'".format(sorted_chunks[1]))
+    #logging.info("  Chunks used: {}".format(', '.join(sorted_chunks[0:2])))
    
     # Write out the final configurations.
     if args.verbose:
@@ -498,7 +500,7 @@ def main(args):
 
     dumper = metomi.rose.config.ConfigDumper()
     
-    outfile = "rose-suite.conf"
+    outfile = f"opt/rose-suite-{args.experiment}.conf"
     logging.info("  " + outfile)
     dumper(rose_suite, outfile)
 
