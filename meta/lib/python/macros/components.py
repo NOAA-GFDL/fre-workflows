@@ -69,7 +69,7 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
             self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
             return self.reports
 
-        requested_comps = requested_comps_str.strip('"').split(' ')
+        requested_comps = requested_comps_str.strip('"\'').split(' ')
         for comp in requested_comps:
             if comp in available_comps:
                 pass

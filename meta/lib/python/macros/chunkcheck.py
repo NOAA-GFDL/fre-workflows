@@ -38,7 +38,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         history_segment = config.get_value(['template variables', 'HISTORY_SEGMENT'])
         history_segment_duration = None
         if history_segment:
-            history_segment = history_segment.strip('\"')
+            history_segment = history_segment.strip('\'\"')
             try:
                 history_segment_duration = parse.DurationParser().parse(history_segment)
             except:
@@ -53,7 +53,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         pp_chunk_a = config.get_value(['template variables', 'PP_CHUNK_A'])
         pp_chunk_a_duration = None
         if pp_chunk_a:
-            pp_chunk_a = pp_chunk_a.strip('\"')
+            pp_chunk_a = pp_chunk_a.strip('\"\'')
             try:
                 pp_chunk_a_duration = parse.DurationParser().parse(pp_chunk_a)
             except:
