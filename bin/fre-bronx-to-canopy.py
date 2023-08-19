@@ -157,7 +157,7 @@ def main(args):
     rose_suite.set(keys=['template variables', 'FRE_ANALYSIS_HOME'], value='"/home/fms/local/opt/fre-analysis/test"')
 
     # not sure about these
-    rose_suite.set(keys=['template variables', 'PP_DEFAULT_XYINTERP'], value='360,180')
+    rose_suite.set(keys=['template variables', 'PP_DEFAULT_XYINTERP'], value='"360,180"')
     rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],  value='False')
     
     #if args.pp_start is not None:
