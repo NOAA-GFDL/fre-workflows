@@ -155,6 +155,10 @@ def main(args):
     rose_suite.set(keys=['template variables', 'DO_TIMEAVGS'],       value='True')
     rose_suite.set(keys=['template variables', 'DO_ANALYSIS_ONLY'],  value='False')
     rose_suite.set(keys=['template variables', 'FRE_ANALYSIS_HOME'], value='"/home/fms/local/opt/fre-analysis/test"')
+
+    # not sure about these
+    rose_suite.set(keys=['template variables', 'PP_DEFAULT_XYINTERP'], value='360,180')
+    rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],  value='False')
     
     #if args.pp_start is not None:
     #    rose_suite.set(keys=['template variables', 'PP_START'],
@@ -256,7 +260,7 @@ def main(args):
                    value="'{}'".format(ppDir))
     rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
                    value="'{}'".format(analysisDir))
-    rose_suite.set(keys=['template variables', 'GRID_SPEC'],
+    rose_suite.set(keys=['template variables', 'PP_GRID_SPEC'],
                    value="'{}'".format(gridSpec))
 
     ##########################################################################
@@ -393,14 +397,16 @@ def main(args):
         logging.warn("Could not find current_date in namelists")
     logging.info(f"current_date (from namelists): {current_date}")
 
-    # change this later, but let's put them in now
+    # Take a good guess for the PP_START and PP_STOP
+    # PP_START could be the coupler_nml/current_date
+    # PP_STOP could be the PP_START plus the simulation length
     if simUnits == "years":
         oneless = int(simTime) - 1
         duration = f"P{oneless}Y"
     elif simUnits == "months":
         duration = f"P{simTime}M"
     else:
-        raise Exception("Was thinking simUnits would be years or months")
+        raise Exception(f"Was hoping simUnits would be years or months; got {simUnits}")
     dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
     pp_stop = current_date + dur
     rose_suite.set(keys=['template variables', 'PP_START'], value=f'"{current_date}"')
@@ -408,119 +414,115 @@ def main(args):
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
-    #comp_count = 0
-    #for comp in comps:
-    #    comp_count += 1
-    #    pp_comp_xpath_header = 'postProcess/component[@type="{}"]'                     \
-    #                           .format(comp)
-    #    logging.info("Component loop: {} out of {}"                                    \
-    #                 .format(comp_count, len(comps)))
+    comp_count = 0
+    for comp in comps:
+        comp_count += 1
+        pp_comp_xpath_header = 'postProcess/component[@type="{}"]'                     \
+                               .format(comp)
+        logging.info("Component loop: {} out of {}"                                    \
+                     .format(comp_count, len(comps)))
 
-#        comp_source = frelist_xpath(args, '{}/@source'                                 \
-#                                          .format(pp_comp_xpath_header))
-#        xyInterp = frelist_xpath(args, '{}/@xyInterp'                                  \
-#                                       .format(pp_comp_xpath_header))
-#        sourceGrid = frelist_xpath(args, '{}/@sourceGrid'                              \
-#                                         .format(pp_comp_xpath_header))
-#        if xyInterp:
-#            grid = "regrid-xy"
-#        else:
-#            grid = "native"
+        # get the comp attributes
+        comp_source = frelist_xpath(args, '{}/@source'                                 \
+                                          .format(pp_comp_xpath_header))
+        xyInterp = frelist_xpath(args, '{}/@xyInterp'                                  \
+                                       .format(pp_comp_xpath_header))
+        sourceGrid = frelist_xpath(args, '{}/@sourceGrid'                              \
+                                         .format(pp_comp_xpath_header))
+        interpMethod = frelist_xpath(args, '{}/@interpMethod'                          \
+                                         .format(pp_comp_xpath_header))
 
-#        sources = set()
-#        timeseries_count = 0
+        # split some of the stuffs
+        if xyInterp != "":
+            interp_split = xyInterp.split(',')
+            outputGridLon = interp_split[1]
+            outputGridLat = interp_split[0]
+        if sourceGrid != "":
+            sourcegrid_split = sourceGrid.split('-')
+            inputGrid = sourcegrid_split[1]
+            inputRealm = sourcegrid_split[0]
+
+        # determine the interp method
+        if xyInterp:
+            if interpMethod == "":
+                if inputGrid == "cubedsphere":
+                    interpMethod = 'conserve_order2'
+                elif inputGrid == 'tripolar':
+                    interpMethod = 'conserve_order1'
+                else:
+                    raise Exception(f"Expected cubedsphere or tripolar, not {sourceGrid}")
+
+        # determine the grid label
+        if xyInterp:
+            grid = f"regrid-xy/{outputGridLon}_{outputGridLat}.{interpMethod}"
+            grid_tail = f"{outputGridLon}_{outputGridLat}.{interpMethod}"
+        else:
+            grid = "native"
+
+        sources = set()
+        sources.add(comp_source)
+        chunks = set()
+        timeseries_count = 0
 
         # Get the number of TS nodes
-#        results = frelist_xpath(args, '{}/timeSeries/@freq'                            \
-#                                      .format(pp_comp_xpath_header)).split()
-#        timeseries_count = len(results)
+        results = frelist_xpath(args, '{}/timeSeries/@freq'                            \
+                                      .format(pp_comp_xpath_header)).split()
+        timeseries_count = len(results)
 
         # Loop over the TS nodes and write out the frequency, chunklength, and
         # grid to the remap-pp-components Rose app configuration
-#        for i in range(1, timeseries_count + 1):
-#            label = "{}.{}".format(comp, str(i))
+        for i in range(1, timeseries_count + 1):
+            label = "{}.{}".format(comp, str(i))
 
-#            source = frelist_xpath(args, '{}/timeSeries[{}]/@source'                   \
-#                                         .format(pp_comp_xpath_header, i))
-#            if source:
-#                sources.add(source)
-#                rose_remap.set(keys=[label, 'source'], value=source)
-#            elif comp_source:
-#                sources.add(comp_source)
-#                rose_remap.set(keys=[label, 'source'], value=comp_source)
-#            else:
-#                logging.warning("Skipping a timeSeries with no source "                \
-#                                "and no component source for {}"                       \
-#                                .format(comp))
-#                continue
+            source = frelist_xpath(args, '{}/timeSeries[{}]/@source'                   \
+                                         .format(pp_comp_xpath_header, i))
+            if source:
+                sources.add(source)
 
-#            freq = freq_from_legacy(frelist_xpath(args,                                
-#                                                  '{}/timeSeries[{}]/@freq'            \
-#                                                  .format(pp_comp_xpath_header, i)))
-#            chunk = chunk_from_legacy(frelist_xpath(args,                              
-#                                                    '{}/timeSeries[{}]/@chunkLength'   \
-#                                                    .format(pp_comp_xpath_header, i)))
-#            rose_remap.set(keys=[label, 'freq'], value=freq)
-#            rose_remap.set(keys=[label, 'chunk'], value=chunk)
-#            rose_remap.set(keys=[label, 'grid'], value=grid)
+            #freq = freq_from_legacy(frelist_xpath(args,                                
+            #                                      '{}/timeSeries[{}]/@freq'            \
+            #                                      .format(pp_comp_xpath_header, i)))
+            chunk = chunk_from_legacy(frelist_xpath(args,                              
+                                                    '{}/timeSeries[{}]/@chunkLength'   \
+                                                    .format(pp_comp_xpath_header, i)))
+            chunks.add(chunk)
+            #rose_remap.set(keys=[label, 'freq'], value=freq)
+            #rose_remap.set(keys=[label, 'chunk'], value=chunk)
 
-#        rose_remap.set(keys=[comp + '.static', 'source'], value=' '.join(sources))
-#        rose_remap.set(keys=[comp + '.static', 'chunk'], value="P0Y")
-#        rose_remap.set(keys=[comp + '.static', 'freq'], value="P0Y")
-#        rose_remap.set(keys=[comp + '.static', 'grid'], value=grid)
-#
-#        if grid == "native":
-#            continue
-#        else:
-            # Write out values to the 'regrid-xy' Rose app as well as the
-            # 'GRID_SPEC' value to the rose-suite configuration.
-#            rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
+        rose_remap.set(keys=[comp, 'sources'], value=' '.join(sources))
+        rose_remap.set(keys=[comp, 'grid'], value=grid)
 
-#            sourcegrid_split = sourceGrid.split('-')
-#            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=sourcegrid_split[1])
-#            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=sourcegrid_split[0])
-
-#            interp_split = xyInterp.split(',')
-#            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
-#            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
-
-#            rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
+        if grid == "native":
+            pass
+        else:
+            # Write out values to the 'regrid-xy' Rose app
+            rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
+            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=inputGrid)
+            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=inputRealm)
+            rose_regrid_xy.set(keys=[comp, 'interpMethod'], value=interpMethod)
+            rose_regrid_xy.set(keys=[comp, 'outputGridType'], value=grid_tail)
+            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=outputGridLon)
+            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=outputGridLat)
 
     # Process all of the found PP chunks into the rose-suite configuration
     if args.verbose:
         print("")
     logging.info("Setting PP chunks...")
 
-    all_chunks = set()
-    for keys, sub_node in rose_remap.walk():
-        if len(keys) != 1:
-            continue
-
-        item = keys[0]
-        if item == "env" or item == "command":
-            continue
-
-        chunk = rose_remap.get_value(keys=[item, 'chunk'])
-        if chunk == 'P0Y':
-            continue
-        all_chunks.add(chunk)
-
-    sorted_chunks = list(all_chunks)
+    sorted_chunks = list(chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
-    #assert len(all_chunks) >= 1
-    #logging.info("  Chunks found: {}".format(', '.join(sorted_chunks)))
-    #if len(all_chunks) == 1:
-    #    rose_suite.set(['template variables', 'PP_CHUNK_A'],
-    #                   "'{}'".format(sorted_chunks[0]))
-    #    rose_suite.set(['template variables', 'PP_CHUNK_B'],
-    #                   "'{}'".format(sorted_chunks[0]))
-    #else:
-    #    rose_suite.set(['template variables', 'PP_CHUNK_A'],
-    #                   "'{}'".format(sorted_chunks[0]))
-    #    rose_suite.set(['template variables', 'PP_CHUNK_B'],
-    #                   "'{}'".format(sorted_chunks[1]))
-    #logging.info("  Chunks used: {}".format(', '.join(sorted_chunks[0:2])))
+    assert len(chunks) >= 1
+    logging.info("  Chunks found: {}".format(', '.join(sorted_chunks)))
+    if len(chunks) == 1:
+        rose_suite.set(['template variables', 'PP_CHUNK_A'],
+                       "'{}'".format(sorted_chunks[0]))
+    else:
+        rose_suite.set(['template variables', 'PP_CHUNK_A'],
+                       "'{}'".format(sorted_chunks[0]))
+        rose_suite.set(['template variables', 'PP_CHUNK_B'],
+                       "'{}'".format(sorted_chunks[1]))
+    logging.info("  Chunks used: {}".format(', '.join(sorted_chunks[0:2])))
    
     # Write out the final configurations.
     if args.verbose:
