@@ -14,6 +14,18 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
     def validate(self, config, meta_config=None):
         """Return a list of errors, if any."""
 
+        # First, check if 'history-manifest' file exists and capture the contents if so
+        history_files = set()
+        try:
+            f = open("history-manifest", "r")
+            for line in f:
+                stuff = line.split('.')
+                if len(stuff) < 3:
+                    continue
+                history_files.add(stuff[2])
+        except:
+            pass
+
         # Read the Rose app configuration specified by config_key
 
         # Read the remap-pp-components and regrid-xy app configs, and report any errors.
@@ -69,7 +81,7 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
             self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
             return self.reports
 
-        requested_comps = requested_comps_str.strip('"').split(' ')
+        requested_comps = requested_comps_str.strip('"\'').split(' ')
         for comp in requested_comps:
             if comp in available_comps:
                 pass
@@ -107,5 +119,16 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
                             success_flag = True
                 if not success_flag:
                     self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), f"Requested component '{comp}' uses history file '{history_file}' with regridding label '{regrid_label_by_comp[comp]}', but this was not found in app/regrid-xy/rose-app.conf")
+
+        # If history-manifest exists, report on history files used that are missing from inputs
+        if history_files:
+            for comp in requested_comps:
+                for history_file in history_files_by_comp[comp]:
+                    if history_file in history_files:
+                        pass
+                    else:
+                        self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"\''), f"Requested component '{comp}' uses history file '{history_file}', but it does not exist in 'history-manifest'")
+        else:
+            print("Skipping history file check as 'history-manifest' does not exist")
 
         return self.reports

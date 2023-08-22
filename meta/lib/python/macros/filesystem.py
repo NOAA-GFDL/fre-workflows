@@ -20,7 +20,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
 
         # resolve $USER or ${USER}
         location = re.sub('\${?USER}?', os.environ['USER'], filename)
-        location = location.strip('"')
+        location = location.strip('"\'')
         # delete "$CYLC_WORKFLOW_RUN_DIR/" as a workaround
         # $CYLC_WORKFLOW_RUN_DIR is the Cylc-installed (running) copy of the source (editable) workflow dir
         # so if the validate script is run from the root source workflow dir, the location will match
@@ -28,7 +28,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         # Another clunky part of this is that the refinediag/preanalysis script locations are currently
         # set as \$CYLC_WORKFLOW_RUN_DIR, so the Cylc task uses the $CYLC_WORKFLOW_RUN_DIR variable that
         # does not exist outside of running Cylc jobs.
-        location = re.sub('\\\\\$CYLC_WORKFLOW_RUN_DIR/', '', location)
+        location = re.sub('\$CYLC_WORKFLOW_RUN_DIR/', '', location)
         if os.access(location, os.R_OK):
             return True
         else:
@@ -50,9 +50,9 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         for item in self.readable_list:
             locations = config.get_value(['template variables', item])
             if locations is not None:
-                locations = locations.strip('"')
                 filenames = locations.split(' ')
                 for filename in filenames:
+                    filename.strip('\'\"')
                     if not self.is_file_readable(filename):
                         self.add_report('template variables', item, locations,
                                         f"{filename} must exist and be readable")
@@ -62,7 +62,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
             location = config.get_value(['template variables', item])
             if location is not None:
                 location = re.sub('\${?USER}?', os.environ['USER'], location)
-                if os.access(location.strip('"'), os.W_OK):
+                if os.access(location.strip('"\''), os.W_OK):
                     pass
                 else:
                     self.add_report('template variables', item, location,

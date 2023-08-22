@@ -14,7 +14,7 @@ import metomi.isodatetime.parsers
 # 
 #
 # The Bronx-to-Canopy XML converter overwrites 3 files:
-# - rose-suite.conf
+# - opt/rose-suite-EXPNAME.conf
 # - app/remap-pp-components/rose-app.conf
 # - app/regrid-xy/rose-app.conf
 #
@@ -134,11 +134,11 @@ def main(args):
     ##########################################################################
     # Set up default configurations for regrid-xy and remap-pp-components
     ##########################################################################
-    ###rose_remap = metomi.rose.config.ConfigNode()
-    ###rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
+    rose_remap = metomi.rose.config.ConfigNode()
+    rose_remap.set(keys=['command', 'default'], value='remap-pp-components')
 
-    ###rose_regrid_xy = metomi.rose.config.ConfigNode()
-    ###rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
+    rose_regrid_xy = metomi.rose.config.ConfigNode()
+    rose_regrid_xy.set(keys=['command', 'default'], value='regrid-xy')
 
     ##########################################################################
     # Create the rose-suite config and begin setting up key-value pairs
@@ -147,26 +147,32 @@ def main(args):
     # Note: Addition of quotes will appear as "'" in the code.
     ##########################################################################
     rose_suite = metomi.rose.config.ConfigNode()
-    #rose_suite.set(keys=['template variables', 'PTMP_DIR'],
-    #               value="'/xtmp/$USER/ptmp'")
-    #rose_suite.set(keys=['template variables', 'CLEAN_WORK'],
-    #               value='True')
-    #rose_suite.set(keys=['template variables', 'DO_MDTF'],
-    #               value='False')
-    
-    if args.pp_start is not None:
-        rose_suite.set(keys=['template variables', 'PP_START'],
-                       value="'" + str(args.pp_start) + "'")
-    else:
-        rose_suite.set(keys=['template variables', 'PP_START'],
-                       value="'0000'")
+    rose_suite.set(keys=['template variables', 'SITE'],              value='"ppan"')
+    rose_suite.set(keys=['template variables', 'CLEAN_WORK'],        value='True')
+    rose_suite.set(keys=['template variables', 'PTMP_DIR'],          value='"/xtmp/$USER/ptmp"')
+    rose_suite.set(keys=['template variables', 'DO_MDTF'],           value='False')
+    rose_suite.set(keys=['template variables', 'DO_STATICS'],        value='True')
+    rose_suite.set(keys=['template variables', 'DO_TIMEAVGS'],       value='True')
+    rose_suite.set(keys=['template variables', 'DO_ANALYSIS_ONLY'],  value='False')
+    rose_suite.set(keys=['template variables', 'FRE_ANALYSIS_HOME'], value='"/home/fms/local/opt/fre-analysis/test"')
 
-    if args.pp_stop is not None:
-        rose_suite.set(keys=['template variables', 'PP_STOP'],
-                       value="'" + str(args.pp_stop) + "'")
-    else:
-        rose_suite.set(keys=['template variables', 'PP_STOP'],
-                       value="'0000'")
+    # not sure about these
+    rose_suite.set(keys=['template variables', 'PP_DEFAULT_XYINTERP'], value='"360,180"')
+    rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],  value='False')
+    
+    #if args.pp_start is not None:
+    #    rose_suite.set(keys=['template variables', 'PP_START'],
+    #                   value="'" + str(args.pp_start) + "'")
+    #else:
+    #    rose_suite.set(keys=['template variables', 'PP_START'],
+    #                   value="'0000'")
+
+    #if args.pp_stop is not None:
+    #    rose_suite.set(keys=['template variables', 'PP_STOP'],
+    #                   value="'" + str(args.pp_stop) + "'")
+    #else:
+    #    rose_suite.set(keys=['template variables', 'PP_STOP'],
+    #                   value="'0000'")
 
     #if args.do_refinediag:
     #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
@@ -178,13 +184,10 @@ def main(args):
     #    rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
     #                   value="'vitals'")
     #else:
-    #    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'],
-    #                   value='False')
-    #    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-    #                   value='False')
+    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
-    rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
-                   value=args.do_analysis)
+    #rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
+    #               value=args.do_analysis)
     rose_suite.set(keys=['template variables', 'EXPERIMENT'],
                    value="'{}'".format(expname))
     rose_suite.set(keys=['template variables', 'PLATFORM'],
@@ -231,27 +234,31 @@ def main(args):
     ppDir = fetch_pp_process.stdout.strip()
     logging.info(ppDir)
 
+    fetch_analysis_dir_cmd = "frelist -x {} -p {} -t {} {} -d analysis".format(xml,
+                                                                        platform,
+                                                                        target,
+                                                                        expname)
+    logging.info(">> {}".format(fetch_analysis_dir_cmd))
+    fetch_analysis_dir_process = subprocess.run(fetch_analysis_dir_cmd,
+                                      shell=True,
+                                      check=True,
+                                      capture_output=True,
+                                      universal_newlines=True)
+    analysisDir = fetch_analysis_dir_process.stdout.strip()
+    logging.info(analysisDir)
+
     gridSpec = frelist_xpath(args, 'input/dataFile[@label="gridSpec"]')
     simTime = frelist_xpath(args, 'runtime/production/@simTime')
+    simUnits = frelist_xpath(args, 'runtime/production/@units')
 
-    if args.historydir is not None:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
-                       value="'{}'".format(args.historydir))
-    else:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
-                       value="'{}'".format(historyDir))
-    if args.refinedir is not None:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                       value="'{}'".format(args.refinedir))
-    else:
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                       value="'{}'".format(historyDirRefined))
-    if args.ppdir is not None:
-        rose_suite.set(keys=['template variables', 'PP_DIR'],
-                       value="'{}'".format(args.ppdir))
-    else:
-        rose_suite.set(keys=['template variables', 'PP_DIR'],
-                       value="'{}'".format(ppDir))
+    rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
+                   value="'{}'".format(historyDir))
+    rose_suite.set(keys=['template variables', 'PP_DIR'],
+                   value="'{}'".format(ppDir))
+    rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
+                   value="'{}'".format(analysisDir))
+    rose_suite.set(keys=['template variables', 'PP_GRID_SPEC'],
+                   value="'{}'".format(gridSpec))
 
     ##########################################################################
     # Process the refineDiag scripts into the rose-suite configuration from
@@ -267,89 +274,30 @@ def main(args):
     preanalysis_path_cylc = "'{}/{}'".format(CYLC_REFINED_DIR,
                                              PREANALYSIS_SCRIPT)
 
-    # Only need to retrieve the refineDiag scripts if the --do_refinediag setting
-    # has been enabled on the command line by the user.
-    if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
-       refineDiag_cmd = ("frelist -x {} -p {} -t {} {} "                               \
-                         "--evaluate postProcess/refineDiag/@script".format(xml,
-                                                                            platform,
-                                                                            target,
-                                                                            expname)
+    # get the refinediag scripts
+    refineDiag_cmd = ("frelist -x {} -p {} -t {} {} "                               \
+                      "--evaluate postProcess/refineDiag/@script".format(xml,
+                                                                        platform,
+                                                                        target,
+                                                                        expname)
                         )
-       refineDiag_process = subprocess.run(refineDiag_cmd,
-                                           shell=True,
-                                           check=True,
-                                           capture_output=True,
-                                           universal_newlines=True)
+    refineDiag_process = subprocess.run(refineDiag_cmd,
+                                       shell=True,
+                                       check=True,
+                                       capture_output=True,
+                                       universal_newlines=True)
+    refineDiag_scripts = refineDiag_process.stdout.strip('\n')
 
-       # Place the subprocess output (the retrieved refineDiag scripts) into a
-       # comma-separated list of single-quoted strings, deleting unwanted characters
-       str_output = "'{}'".format(refineDiag_process.stdout)
-       proc_output_list = str_output.replace(",", "','")                               \
-                          .replace(" ", "','")                                         \
-                          .replace("\n", "")                                           \
-                          .split(",")
-
-       # Pop out and retrieve the special 'preanalysis' script from the list of
-       # other captured refineDiag script, if it has been found. A list comprehension
-       # seems to work well for this case
-       try:
-           preanalysis_path_xml = proc_output_list.pop(                                \
-               [idx for idx, substr in enumerate(proc_output_list)                     \
-                if PREANALYSIS_SCRIPT in substr][0])
-       except IndexError:
-           pass
-
-       # The following nested loop assigns the Cylc workflow directory location 
-       # for refineDiag scripts instead of the XML-based one, if it exists.
-       # Additionally, there are 2 levels within the Cylc location: 
-       # CYLC_WORKFLOW_DIR/etc/refineDiag and
-       # CYLC_WORKFLOW_DIR/etc/refineDiag/atmos_refine_scripts. If the script that
-       # we've identified is 'refineDiag_atmos_cmip6.csh', we will reference the
-       # former location. Otherwise, we will reference the latter location.
-       for cylc_refined_script in CYLC_REFINED_SCRIPTS:
-           for idx, xml_script_path in enumerate(proc_output_list):
-               if cylc_refined_script in xml_script_path:
-                   if cylc_refined_script == "refineDiag_atmos_cmip6.csh":
-                       proc_output_list[idx] = "'{}/{}'".format(CYLC_REFINED_DIR,
-                                                                cylc_refined_script)
-                   else:
-                       proc_output_list[idx] = "'{}/atmos_refine_scripts/{}'"          \
-                                               .format(CYLC_REFINED_DIR,
-                                                       cylc_refined_script)
-           
-       # Write out the final list of refineDiag scripts as a list of comma-separated,
-       # single-quoted strings. If there are none found by this point, i.e. the
-       # <refineDiag> were commented out in the XML or none exist (yet the user
-       # selected --do_refineDiag), then write out an empty string and display 
-       # a warning to the user.
-       refineDiag_scripts = ",".join(proc_output_list)
-       if not refineDiag_scripts:
-           refineDiag_scripts = "''"
-
-       rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPT'],
-                      value=refineDiag_scripts)
-       if rose_suite.get_value(keys=['template variables',
-                                     'REFINEDIAG_SCRIPT']) == "''":
-           if rose_suite.get_value(keys=['template variables',
-                                         'DO_PREANALYSIS']) == "True":
-               logging.warning("Writing only the preanalysis script...")
-           else:
-               logging.warning("No refineDiag scripts written. "                       \
-                               "Check your XML to see if the "                         \
-                               "<refineDiag> tag exists or is commented out.")
-
-    if rose_suite.get_value(keys=['template variables',
-                                  'DO_PREANALYSIS']) == "True":
-        if preanalysis_path_xml is not None:
-            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'],
-                           value=preanalysis_path_cylc)
-        else:
-            # Case where there's no preanalysis script in XML 
-            # but other refineDiag scripts exist
-            rose_suite.unset(keys=['template variables', 'PREANALYSIS_NAME'])
-            rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-                           value="False")
+    if refineDiag_process.stdout:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+                    value="'{}'".format(historyDirRefined))
+        rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
+                     value="'{}'".format(refineDiag_scripts))
+        logging.info(f"Refinediag scripts: {refineDiag_scripts}")
+    else:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
+        logging.info("No refineDiag scripts written. )")
 
     # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
@@ -370,8 +318,37 @@ def main(args):
     # P12M is identical to P1Y but the latter looks nicer
     if segment == 'P12M':
         segment = 'P1Y'
-    rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'],
-                   value="'{}'".format(segment))
+    rose_suite.set(keys=['template variables', 'HISTORY_SEGMENT'], value="'{}'".format(segment))
+
+    # Get the namelist current_date as the likely PP_START (unless "start" is used in the PP tags)
+    # frelist --namelist may be better, but sometimes may not work
+    current_date_str = frelist_xpath(args, 'input/namelist')
+    match = re.search(r'current_date\s*=\s*(\d+),(\d+),(\d+)', current_date_str)
+    if match:
+        try:
+            current_date = metomi.isodatetime.data.TimePoint(year=match.group(1), month_of_year=match.group(2), day_of_month=match.group(3))
+        except:
+            logging.warn("Could not parse date from namelist current_date")
+            current_date = None
+    else:
+        current_date = None
+        logging.warn("Could not find current_date in namelists")
+    logging.info(f"current_date (from namelists): {current_date}")
+
+    # Take a good guess for the PP_START and PP_STOP
+    # PP_START could be the coupler_nml/current_date
+    # PP_STOP could be the PP_START plus the simulation length
+    if simUnits == "years":
+        oneless = int(simTime) - 1
+        duration = f"P{oneless}Y"
+    elif simUnits == "months":
+        duration = f"P{simTime}M"
+    else:
+        raise Exception(f"Was hoping simUnits would be years or months; got {simUnits}")
+    dur = metomi.isodatetime.parsers.DurationParser().parse(duration)
+    pp_stop = current_date + dur
+    rose_suite.set(keys=['template variables', 'PP_START'], value=f'"{current_date}"')
+    rose_suite.set(keys=['template variables', 'PP_STOP'], value=f'"{pp_stop}"')
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
@@ -383,18 +360,46 @@ def main(args):
         logging.info("Component loop: {} out of {}"                                    \
                      .format(comp_count, len(comps)))
 
+        # get the comp attributes
         comp_source = frelist_xpath(args, '{}/@source'                                 \
                                           .format(pp_comp_xpath_header))
         xyInterp = frelist_xpath(args, '{}/@xyInterp'                                  \
                                        .format(pp_comp_xpath_header))
         sourceGrid = frelist_xpath(args, '{}/@sourceGrid'                              \
                                          .format(pp_comp_xpath_header))
+        interpMethod = frelist_xpath(args, '{}/@interpMethod'                          \
+                                         .format(pp_comp_xpath_header))
+
+        # split some of the stuffs
+        if xyInterp != "":
+            interp_split = xyInterp.split(',')
+            outputGridLon = interp_split[1]
+            outputGridLat = interp_split[0]
+        if sourceGrid != "":
+            sourcegrid_split = sourceGrid.split('-')
+            inputGrid = sourcegrid_split[1]
+            inputRealm = sourcegrid_split[0]
+
+        # determine the interp method
         if xyInterp:
-            grid = "regrid-xy"
+            if interpMethod == "":
+                if inputGrid == "cubedsphere":
+                    interpMethod = 'conserve_order2'
+                elif inputGrid == 'tripolar':
+                    interpMethod = 'conserve_order1'
+                else:
+                    raise Exception(f"Expected cubedsphere or tripolar, not {sourceGrid}")
+
+        # determine the grid label
+        if xyInterp:
+            grid = f"regrid-xy/{outputGridLon}_{outputGridLat}.{interpMethod}"
+            grid_tail = f"{outputGridLon}_{outputGridLat}.{interpMethod}"
         else:
             grid = "native"
 
         sources = set()
+        sources.add(comp_source)
+        chunks = set()
         timeseries_count = 0
 
         # Get the number of TS nodes
@@ -411,78 +416,44 @@ def main(args):
                                          .format(pp_comp_xpath_header, i))
             if source:
                 sources.add(source)
-                rose_remap.set(keys=[label, 'source'], value=source)
-            elif comp_source:
-                sources.add(comp_source)
-                rose_remap.set(keys=[label, 'source'], value=comp_source)
-            else:
-                logging.warning("Skipping a timeSeries with no source "                \
-                                "and no component source for {}"                       \
-                                .format(comp))
-                continue
 
-            freq = freq_from_legacy(frelist_xpath(args,                                
-                                                  '{}/timeSeries[{}]/@freq'            \
-                                                  .format(pp_comp_xpath_header, i)))
+            #freq = freq_from_legacy(frelist_xpath(args,                                
+            #                                      '{}/timeSeries[{}]/@freq'            \
+            #                                      .format(pp_comp_xpath_header, i)))
             chunk = chunk_from_legacy(frelist_xpath(args,                              
                                                     '{}/timeSeries[{}]/@chunkLength'   \
                                                     .format(pp_comp_xpath_header, i)))
-            rose_remap.set(keys=[label, 'freq'], value=freq)
-            rose_remap.set(keys=[label, 'chunk'], value=chunk)
-            rose_remap.set(keys=[label, 'grid'], value=grid)
+            chunks.add(chunk)
+            #rose_remap.set(keys=[label, 'freq'], value=freq)
+            #rose_remap.set(keys=[label, 'chunk'], value=chunk)
 
-        rose_remap.set(keys=[comp + '.static', 'source'], value=' '.join(sources))
-        rose_remap.set(keys=[comp + '.static', 'chunk'], value="P0Y")
-        rose_remap.set(keys=[comp + '.static', 'freq'], value="P0Y")
-        rose_remap.set(keys=[comp + '.static', 'grid'], value=grid)
+        rose_remap.set(keys=[comp, 'sources'], value=' '.join(sources))
+        rose_remap.set(keys=[comp, 'grid'], value=grid)
 
         if grid == "native":
-            continue
+            pass
         else:
-            # Write out values to the 'regrid-xy' Rose app as well as the
-            # 'GRID_SPEC' value to the rose-suite configuration.
+            # Write out values to the 'regrid-xy' Rose app
             rose_regrid_xy.set(keys=[comp, 'sources'], value=' '.join(sources))
-
-            sourcegrid_split = sourceGrid.split('-')
-            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=sourcegrid_split[1])
-            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=sourcegrid_split[0])
-
-            interp_split = xyInterp.split(',')
-            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=interp_split[1])
-            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=interp_split[0])
-
-            rose_regrid_xy.set(keys=[comp, 'gridSpec'], value=gridSpec)
-            rose_suite.set(keys=['template variables', 'GRID_SPEC'],
-                           value="'{}'".format(gridSpec))
+            rose_regrid_xy.set(keys=[comp, 'inputGrid'], value=inputGrid)
+            rose_regrid_xy.set(keys=[comp, 'inputRealm'], value=inputRealm)
+            rose_regrid_xy.set(keys=[comp, 'interpMethod'], value=interpMethod)
+            rose_regrid_xy.set(keys=[comp, 'outputGridType'], value=grid_tail)
+            rose_regrid_xy.set(keys=[comp, 'outputGridLon'], value=outputGridLon)
+            rose_regrid_xy.set(keys=[comp, 'outputGridLat'], value=outputGridLat)
 
     # Process all of the found PP chunks into the rose-suite configuration
     if args.verbose:
         print("")
     logging.info("Setting PP chunks...")
 
-    all_chunks = set()
-    for keys, sub_node in rose_remap.walk():
-        if len(keys) != 1:
-            continue
-
-        item = keys[0]
-        if item == "env" or item == "command":
-            continue
-
-        chunk = rose_remap.get_value(keys=[item, 'chunk'])
-        if chunk == 'P0Y':
-            continue
-        all_chunks.add(chunk)
-
-    sorted_chunks = list(all_chunks)
+    sorted_chunks = list(chunks)
     sorted_chunks.sort(key=duration_to_seconds, reverse=False)
 
-    assert len(all_chunks) >= 1
+    assert len(chunks) >= 1
     logging.info("  Chunks found: {}".format(', '.join(sorted_chunks)))
-    if len(all_chunks) == 1:
+    if len(chunks) == 1:
         rose_suite.set(['template variables', 'PP_CHUNK_A'],
-                       "'{}'".format(sorted_chunks[0]))
-        rose_suite.set(['template variables', 'PP_CHUNK_B'],
                        "'{}'".format(sorted_chunks[0]))
     else:
         rose_suite.set(['template variables', 'PP_CHUNK_A'],
@@ -498,7 +469,7 @@ def main(args):
 
     dumper = metomi.rose.config.ConfigDumper()
     
-    outfile = "rose-suite.conf"
+    outfile = f"opt/rose-suite-{args.experiment}.conf"
     logging.info("  " + outfile)
     dumper(rose_suite, outfile)
 

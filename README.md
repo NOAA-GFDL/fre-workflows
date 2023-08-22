@@ -170,8 +170,21 @@ Explanation / discussion:
 - OutputGridType is the grid label referenced in the `app/remap-pp-components/rose-app.conf` file.
 - If OutputGridType is "default", then the DEFAULT_XY_INTERP setting is used. Otherwise, OutputGridLat and OutputGridLon identify the target grid.
 
+7. Optionally, report on history files that may be missing
 
-7. Validate the configuration
+Generate a "history manifest" file by listing the contents of a history tarfile to a file called 'history-manifest'.
+
+```
+tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-manifest
+```
+
+If `history-manifest` exists, `rose macro --validate` will report on history files referenced but not present.
+
+Probably, you should remove components that specify non-existent history files, reconfigure the component definition,
+or trust that the missing history files will be created by a refineDiag script.
+
+
+8. Validate the configuration
 
 `rose macro --validate` should report no errors.
 
@@ -182,7 +195,7 @@ Then, validate the Cylc configuration:
 Please complain (to a Canopy developer) or take a note if if the Cylc validation fails but the Rose validation passes,
 as this may expose some internal problems or quoting issues.
 
-8. Install the workflow
+9. Install the workflow
 
 ```
 bin/install-exp EXPNAME
@@ -190,7 +203,7 @@ bin/install-exp EXPNAME
 
 This installs the workflow run directory in `~/cylc-run/<exp-name>/runN`, where N is an incrementing number (like FRE --unique). The various `cylc` commands act on the most recent `runN` by default.
 
-9. Run the workflow
+10. Run the workflow
 
 ```
 cylc play EXPNAME
@@ -198,7 +211,7 @@ cylc play EXPNAME
 
 The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the login banner).
 
-10. Inspect workflow progress
+11. Inspect workflow progress
 
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.

@@ -26,7 +26,7 @@ class DateChecker(metomi.rose.macro.MacroBase):
                                 f"Should not be empty")
             else:
                 try:
-                    parse.TimePointParser().parse(date_str)
+                    parse.TimePointParser().parse(date_str.strip('\'"'))
                 except:
                     self.add_report('template variables', item, date_str,
                                     f"Invalid ISO8601 date")
