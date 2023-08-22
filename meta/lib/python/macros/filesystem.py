@@ -50,9 +50,9 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         for item in self.readable_list:
             locations = config.get_value(['template variables', item])
             if locations is not None:
-                locations = locations.strip('"\'')
                 filenames = locations.split(' ')
                 for filename in filenames:
+                    filename.strip('\'\"')
                     if not self.is_file_readable(filename):
                         self.add_report('template variables', item, locations,
                                         f"{filename} must exist and be readable")
