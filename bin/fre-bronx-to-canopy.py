@@ -184,7 +184,6 @@ def main(args):
     #    rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
     #                   value="'vitals'")
     #else:
-    rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
     rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
     #rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
@@ -254,8 +253,6 @@ def main(args):
 
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
                    value="'{}'".format(historyDir))
-    rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                   value="'{}'".format(historyDirRefined))
     rose_suite.set(keys=['template variables', 'PP_DIR'],
                    value="'{}'".format(ppDir))
     rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
@@ -277,89 +274,30 @@ def main(args):
     preanalysis_path_cylc = "'{}/{}'".format(CYLC_REFINED_DIR,
                                              PREANALYSIS_SCRIPT)
 
-    # Only need to retrieve the refineDiag scripts if the --do_refinediag setting
-    # has been enabled on the command line by the user.
-    if rose_suite.get_value(keys=['template variables', 'DO_REFINEDIAG']) == "True":
-       refineDiag_cmd = ("frelist -x {} -p {} -t {} {} "                               \
-                         "--evaluate postProcess/refineDiag/@script".format(xml,
-                                                                            platform,
-                                                                            target,
-                                                                            expname)
+    # get the refinediag scripts
+    refineDiag_cmd = ("frelist -x {} -p {} -t {} {} "                               \
+                      "--evaluate postProcess/refineDiag/@script".format(xml,
+                                                                        platform,
+                                                                        target,
+                                                                        expname)
                         )
-       refineDiag_process = subprocess.run(refineDiag_cmd,
-                                           shell=True,
-                                           check=True,
-                                           capture_output=True,
-                                           universal_newlines=True)
+    refineDiag_process = subprocess.run(refineDiag_cmd,
+                                       shell=True,
+                                       check=True,
+                                       capture_output=True,
+                                       universal_newlines=True)
+    refineDiag_scripts = refineDiag_process.stdout.strip('\n')
 
-       # Place the subprocess output (the retrieved refineDiag scripts) into a
-       # comma-separated list of single-quoted strings, deleting unwanted characters
-       str_output = "'{}'".format(refineDiag_process.stdout)
-       proc_output_list = str_output.replace(",", "','")                               \
-                          .replace(" ", "','")                                         \
-                          .replace("\n", "")                                           \
-                          .split(",")
-
-       # Pop out and retrieve the special 'preanalysis' script from the list of
-       # other captured refineDiag script, if it has been found. A list comprehension
-       # seems to work well for this case
-       try:
-           preanalysis_path_xml = proc_output_list.pop(                                \
-               [idx for idx, substr in enumerate(proc_output_list)                     \
-                if PREANALYSIS_SCRIPT in substr][0])
-       except IndexError:
-           pass
-
-       # The following nested loop assigns the Cylc workflow directory location 
-       # for refineDiag scripts instead of the XML-based one, if it exists.
-       # Additionally, there are 2 levels within the Cylc location: 
-       # CYLC_WORKFLOW_DIR/etc/refineDiag and
-       # CYLC_WORKFLOW_DIR/etc/refineDiag/atmos_refine_scripts. If the script that
-       # we've identified is 'refineDiag_atmos_cmip6.csh', we will reference the
-       # former location. Otherwise, we will reference the latter location.
-       for cylc_refined_script in CYLC_REFINED_SCRIPTS:
-           for idx, xml_script_path in enumerate(proc_output_list):
-               if cylc_refined_script in xml_script_path:
-                   if cylc_refined_script == "refineDiag_atmos_cmip6.csh":
-                       proc_output_list[idx] = "'{}/{}'".format(CYLC_REFINED_DIR,
-                                                                cylc_refined_script)
-                   else:
-                       proc_output_list[idx] = "'{}/atmos_refine_scripts/{}'"          \
-                                               .format(CYLC_REFINED_DIR,
-                                                       cylc_refined_script)
-           
-       # Write out the final list of refineDiag scripts as a list of comma-separated,
-       # single-quoted strings. If there are none found by this point, i.e. the
-       # <refineDiag> were commented out in the XML or none exist (yet the user
-       # selected --do_refineDiag), then write out an empty string and display 
-       # a warning to the user.
-       refineDiag_scripts = ",".join(proc_output_list)
-       if not refineDiag_scripts:
-           refineDiag_scripts = "''"
-
-       rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPT'],
-                      value=refineDiag_scripts)
-       if rose_suite.get_value(keys=['template variables',
-                                     'REFINEDIAG_SCRIPT']) == "''":
-           if rose_suite.get_value(keys=['template variables',
-                                         'DO_PREANALYSIS']) == "True":
-               logging.warning("Writing only the preanalysis script...")
-           else:
-               logging.warning("No refineDiag scripts written. "                       \
-                               "Check your XML to see if the "                         \
-                               "<refineDiag> tag exists or is commented out.")
-
-    if rose_suite.get_value(keys=['template variables',
-                                  'DO_PREANALYSIS']) == "True":
-        if preanalysis_path_xml is not None:
-            rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'],
-                           value=preanalysis_path_cylc)
-        else:
-            # Case where there's no preanalysis script in XML 
-            # but other refineDiag scripts exist
-            rose_suite.unset(keys=['template variables', 'PREANALYSIS_NAME'])
-            rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'],
-                           value="False")
+    if refineDiag_process.stdout:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
+        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+                    value="'{}'".format(historyDirRefined))
+        rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
+                     value="'{}'".format(refineDiag_scripts))
+        logging.info(f"Refinediag scripts: {refineDiag_scripts}")
+    else:
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
+        logging.info("No refineDiag scripts written. )")
 
     # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
