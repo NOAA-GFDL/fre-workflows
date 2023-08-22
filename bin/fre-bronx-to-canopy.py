@@ -302,7 +302,7 @@ def main(args):
     # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'],
-                   value="'{}'".format(' '.join(comps)))
+                   value="'{}'".format(' '.join(sorted(comps))))
 
     segment_time = frelist_xpath(args, 'runtime/production/segment/@simTime')
     segment_units = frelist_xpath(args, 'runtime/production/segment/@units')
