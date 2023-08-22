@@ -22,13 +22,13 @@ type cdo
 
 # Verify input directory exists and is a directory
 if [[ ! -d $inputDir ]]; then
-    err "Error: Input directory '${inputDir}' does not exist or isn't a directory"
+    echo "Error: Input directory '${inputDir}' does not exist or isn't a directory"
     exit 1
 fi
 
 # Verify output directory exists and is a directory
 if [[ ! -d $outputDir ]]; then
-    err "Error: Output directory '${outputDir}' does not exist or isn't a directory"
+    echo "Error: Output directory '${outputDir}' does not exist or isn't a directory"
     exit 1
 fi
 
@@ -45,7 +45,7 @@ if [[ $use_subdirs ]]; then
 
         # Exit if no input files are found
         if [[ $files =~ \* ]]; then
-            err No input files found, skipping the subdir "$subdir"
+            echo No input files found, skipping the subdir "$subdir"
             popd
             continue
         fi
@@ -66,7 +66,7 @@ else
 
     # Exit if no input files are found
     if [[ $files =~ \* ]]; then
-        err ERROR: No input files found
+        echo ERROR: No input files found
         exit 1
     fi
 
