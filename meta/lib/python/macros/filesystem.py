@@ -28,7 +28,7 @@ class FilesystemChecker(metomi.rose.macro.MacroBase):
         # Another clunky part of this is that the refinediag/preanalysis script locations are currently
         # set as \$CYLC_WORKFLOW_RUN_DIR, so the Cylc task uses the $CYLC_WORKFLOW_RUN_DIR variable that
         # does not exist outside of running Cylc jobs.
-        location = re.sub('\\\\\$CYLC_WORKFLOW_RUN_DIR/', '', location)
+        location = re.sub('\$CYLC_WORKFLOW_RUN_DIR/', '', location)
         if os.access(location, os.R_OK):
             return True
         else:
