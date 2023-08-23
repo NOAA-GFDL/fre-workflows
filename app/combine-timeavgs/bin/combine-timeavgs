@@ -41,6 +41,7 @@ echo "    end: $end"
 echo "    current chunk: $currentChunk"
 echo Utilities:
 type cdo
+type ncks
 
 # Verify input directory exists and is a directory
 if [[ ! -d $inputDir ]]; then
@@ -76,11 +77,27 @@ for freq in $(ls); do
     mkdir -p $outputDir/$subdir
 
 
+    # combine the timeaverages into one file
+    # CDO merge is the best tool for this, but chokes on multiple vertical coordinates
+    # ncks is far less efficient, and also can't append some variables, but we
+    # have to do them one at a time anyway, so we can omit the failed ones for now
     if [[ $freq == P1M ]]; then
-        cdo -O merge $component.$dates.*.nc $component.$dates.nc
+        if ! cdo -O merge $component.$dates.*.nc $component.$dates.nc; then
+            for file in $component.$dates.*.nc; do
+                if ! ncks -A $file $component.$dates.nc; then
+                    echo "Error: Could not append $file to $component.$dates.nc"
+                fi
+            done
+        fi
         cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
     elif [[ $freq == P1Y ]]; then
-        cdo -O merge $component.$dates.*.nc $outputDir/$subdir/$component.$dates.ann.nc
+        if ! cdo -O merge $component.$dates.*.nc $outputDir/$subdir/$component.$dates.ann.nc; then
+            for file in $component.$dates.*.nc; do
+                if ! ncks -A $file $outputDir/$subdir/$component.$dates.ann.nc; then
+                    echo "Error: Could not append $file to $component.$dates.ann.nc"
+                fi
+            done
+        fi
     else
         echo "Error: frequency $freq not supported"
         exit 2
