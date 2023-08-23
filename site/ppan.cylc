@@ -101,7 +101,7 @@
         pre-script = module load fre-python-tools && mkdir -p $outputDir
 
     [[COMBINE-TIMEAVGS]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo nco && mkdir -p $outputDir
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
