@@ -253,10 +253,11 @@ def main(args):
 
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
                    value="'{}'".format(historyDir))
+    # set some dirs to something else to allow bronx dual-pps easily
     rose_suite.set(keys=['template variables', 'PP_DIR'],
-                   value="'{}'".format(ppDir))
+                   value=f"'{ppDir}_canopy'")
     rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
-                   value="'{}'".format(analysisDir))
+                   value=f"'{analysisDir}_canopy'")
     rose_suite.set(keys=['template variables', 'PP_GRID_SPEC'],
                    value="'{}'".format(gridSpec))
 
@@ -291,7 +292,7 @@ def main(args):
     if refineDiag_process.stdout:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
         rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                    value="'{}'".format(historyDirRefined))
+                    value=f"'{historyDirRefined}_canopy'")
         rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
                      value="'{}'".format(refineDiag_scripts))
         logging.info(f"Refinediag scripts: {refineDiag_scripts}")
