@@ -14,7 +14,7 @@ import metomi.isodatetime.parsers
 # 
 #
 # The Bronx-to-Canopy XML converter overwrites 3 files:
-# - opt/rose-suite-EXPNAME.conf
+# - rose-suite.conf
 # - app/remap-pp-components/rose-app.conf
 # - app/regrid-xy/rose-app.conf
 #
@@ -302,7 +302,7 @@ def main(args):
     # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
     rose_suite.set(keys=['template variables', 'PP_COMPONENTS'],
-                   value="'{}'".format(' '.join(comps)))
+                   value="'{}'".format(' '.join(sorted(comps))))
 
     segment_time = frelist_xpath(args, 'runtime/production/segment/@simTime')
     segment_units = frelist_xpath(args, 'runtime/production/segment/@units')
@@ -469,7 +469,7 @@ def main(args):
 
     dumper = metomi.rose.config.ConfigDumper()
     
-    outfile = f"opt/rose-suite-{args.experiment}.conf"
+    outfile = f"rose-suite.conf"
     logging.info("  " + outfile)
     dumper(rose_suite, outfile)
 
