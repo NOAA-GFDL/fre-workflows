@@ -6,6 +6,7 @@
 git clone --recursive https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git
 cd postprocessing
 ```
+- [+ Do not clone to a temporary directory - the directory in question needs to be available for slum to read from all nodes, and local /vftmp is not. /home, /work, and /xtmp are. +]
 
 2. Load Cylc, the backend workflow engine used by Canopy
 
