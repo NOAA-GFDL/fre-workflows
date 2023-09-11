@@ -1,0 +1,82 @@
+## User defined edits
+postprocess:
+    # ROSE-SUITE.CONF
+    ROSE-CONFIGURATION:
+        - path: # Path to the rose-suite.conf file 
+        - rose-suite-configuration:
+            SITE: # Specific site used for workflow
+            CLEAN_WORK: # Switch to remove intermediate data files when they are no longer needed
+            PTMP_DIR: # Directory to use for history file cache
+            DO_MDTF: # Switch to run MDTF on generated pp output
+            DO_STATICS: # Switch to turn on/off statics processing
+            DO_TIMEAVGS: # Switch to turn on/off time-average file generation
+            DO_REFINEDIAG: # Switch to run refine-diag script(s) on history file to generate additional diagnostics
+            # Filepath to the space-separated user script(s)
+            # Currently, recommend specifying the script filepath in terms of where the script(s)
+            # will exist after "cylc install"; e.g. \$CYLC_WORKFLOW_RUN_DIR/etc/script.csh
+            REFINEDIAG_SCRIPTS: "${HOME}/$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_atmos_cmip6.csh/"
+            DO_PREANALYSIS: # Switch to run a pre-analysis script on history files
+            # Filepath to the user script
+            # Currently, recommend specifying the script filepath in terms of where the script
+            # will exist after "cylc install"; e.g. \$CYLC_WORKFLOW_RUN_DIR/etc/script.csh
+            PREANALYSIS_SCRIPT: "${HOME}/$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_data_stager_globalAve.csh"
+            DO_ANALYSIS: # Switch to launch analysis scripts
+            DO_ANALYSIS_ONLY: # Switch to only launch analysis scripts
+            FRE_ANALYSIS_HOME: # Location for shared analysis scripts
+
+    # OPT/ROSE-SUITE-TEMPLATE.CONF
+    ROSE-EXPERIMENT-CONFIGURATION:
+        - path: # Path to the rose-suite-TEMPLATE.conf
+        - rose-suite-exp-configuration:
+            HISTORY_DIR: # Directory to the primary location for history files
+            HISTORY_DIR_REFINED: # Directory to the secondary location for history files
+            HISTORY_SEGMENT: # ISO8601 duration of the length of the history segment
+            ### Settings about the requested postprocessing
+            PP_CHUNK_A: ## ISO8601 duration of the desired post-processed output
+            PP_CHUNK_B: # ISO8601 duration of a second desired postprocessed output
+            PP_COMPONENTS: # Space separated list of pp components to process
+            PP_DIR: # Directory to write pp products to
+            PP_START: # ISO8601 date to begin postprocessing
+            PP_STOP: # ISO8601 date to stop postprocessing
+            PP_DEFAULT_XYINTERP: # Default regridded resolution, e.g. "288,180"
+            PP_GRID_SPEC: # Filepath to an FMS gridSpec netCDF file or a tarfile
+            EXPERIMENT: # Label for the experiment
+            PLATFORM: # Label for the hardware and software environment
+            TARGET: # Label for the FRE compilation target used in the simulation
+            ## Settings related to analysis scripts
+            ANALYSIS_DIR: # Directory to write analysis output
+
+    # BIN/INSTALL-EXP
+    INSTALL-EXP-SCRIPT:
+        - path: # Directory to install-exp script
+        - install-option:
+            install: # Cylc install command addition: Add line to install cylc-run directory to location with more space available; default installation location for cylc-run directory is $HOME; this step is OPTIONAL; utilize this edit if you do not have enough space in home directory
+
+    # TMP DIRECTORY CREATION
+    TMPDIR:
+        - path: # Directory for tmp location (used in stage-history in workflow)
+
+    ##HAVE TO DO THIS FOR EACH PP-COMPONENT
+    # REMAP AND REGRID variable groups
+    # Create type sections for each PP_COMPONENT
+    REGRID-XY:
+        - path: # Path to the rose-app.conf for regrid-xy 
+        - rose-app-configuration:
+            - component:
+                - type: # Name of component
+                  inputGrid: 
+                  inputRealm: 
+                  interpMethod: 
+                  outputGridType: 
+                  sources: 
+
+    REMAP-PP-COMPONENTS:
+        - path: # Path to the rose-app.conf for remap-pp-components
+        - rose-app-configuration:
+            - component:
+                - type: # Name of component
+                  sources: 
+                  grid:
+                - type: # Name of component
+                  sources:
+                  grid: 
