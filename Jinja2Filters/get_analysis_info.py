@@ -29,7 +29,7 @@ def check_components(list1, list2):
                 return(False)
     return(True)
 
-def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None):
+def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, print_stderr=False):
     """Utility method to retrieve config information about an analysis script.
 
     Accepts 3 arguments:
@@ -59,7 +59,8 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None):
     # skip this analysis script if pp component not requested
     item_comps = node.get_value(keys=[item, 'components']).split()
     if not check_components(item_comps, pp_components):
-        #sys.stderr.write(f"DEBUG: Skipping '{item}' as it requests a component not available\n")
+        if print_stderr:
+            sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
         return(False)
 
     # get the mandatory options: script path and frequency
@@ -80,7 +81,8 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None):
             try:
                 item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
             except:
-                #sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
+                if print_stderr:
+                    sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
                 return(False)
     else:
         item_start = None
@@ -292,7 +294,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
-        item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop)
+        item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop, print_stderr)
         if item_info:
             item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
         else:
@@ -415,7 +417,7 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, pp_start_str, pp_sto
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[0])
     elif info_type == 'per-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return per-interval task graph only\n")
-        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[1])
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, False)[1])
     elif info_type == 'cumulative-task-graph':
         #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[1])
