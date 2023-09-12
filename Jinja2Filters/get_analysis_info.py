@@ -29,7 +29,7 @@ def check_components(list1, list2):
                 return(False)
     return(True)
 
-def get_item_info(node, keys, pp_components):
+def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None):
     """Utility method to retrieve config information about an analysis script.
 
     Accepts 3 arguments:
@@ -72,20 +72,27 @@ def get_item_info(node, keys, pp_components):
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
     item_end_str = node.get_value(keys=[item,'end'])
+    # expand $ANALYSIS_START and $ANALYSIS_STOP if they exist, replacing with ana_start and ana_stop
     if item_start_str:
-        try:
-            item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
-        except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
-            return(False)
+        if item_start_str == '$ANALYSIS_START' and ana_start is not None:
+            item_start = ana_start
+        else:
+            try:
+                item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
+            except:
+                #sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
+                return(False)
     else:
         item_start = None
     if item_end_str:
-        try:
-            item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
-        except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the stop date '{item_end_str}' is invalid\n")
-            return(False)
+        if item_end_str == '$ANALYSIS_STOP' and ana_stop is not None:
+            item_end = ana_stop
+        else:
+            try:
+                item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
+            except:
+                sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the stop date '{item_end_str}' is invalid\n")
+                return(False)
     else:
         item_end = None
     #if item_start and item_end:
@@ -267,7 +274,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
 
     return(defs, graph)
 
-def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
+def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all user-defined range analysis scripts.
 
     Accepts 7 arguments:
@@ -285,7 +292,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
-        item_info = get_item_info(node, keys, pp_components)
+        item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop)
         if item_info:
             item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
         else:
@@ -304,18 +311,18 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         # if requested year range is outside the workflow range, then skip
         item_start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y')
         item_end_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y')
-        start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
-        stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(stop, '%Y')
-        if item_start < start or item_end > stop:
+        start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_start, '%Y')
+        stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_stop, '%Y')
+        if item_start < pp_start or item_end > pp_stop:
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Defined-interval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
             continue
 
         # locate the nearest enclosing chunks
-        d1 = start
+        d1 = pp_start
         while d1 <= item_start - chunk:
             d1 += chunk
-        d2 = stop
+        d2 = pp_stop
         while d2 >= item_end + chunk:
             d2 -= chunk
         d1_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d1, '%Y')
@@ -353,7 +360,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
             graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
         d = d2
         i = -1
-        while d > start + chunk:
+        while d > pp_start + chunk:
             if not analysis_only:
                 graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
             i -= 1
@@ -366,7 +373,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
 
     return(defs, graph)
 
-def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, chunk, analysis_only=False, print_stderr=False):
+def get_analysis_info(info_type, pp_components_str, pp_dir, pp_start_str, pp_stop_str, ana_start_str, ana_stop_str, chunk, analysis_only=False, print_stderr=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
     Accepts 7 arguments:
@@ -387,10 +394,13 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         print_stderr (bool): print a summary of analysis scripts that would be run
 """
     # convert strings to date objects
-    start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
-    stop = metomi.isodatetime.parsers.TimePointParser().parse(stop_str)
+    #sys.stderr.write(f"DEBUG: {pp_start_str} to {pp_stop_str}, and chunk {chunk}, and {ana_start_str} to {ana_stop_str}\n")
+    pp_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_start_str)
+    pp_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_stop_str)
     chunk = metomi.isodatetime.parsers.DurationParser().parse(chunk)
-    #sys.stderr.write(f"DEBUG: {start} to {stop}, and chunk {chunk}\n")
+    ana_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_start_str)
+    ana_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_stop_str)
+    #sys.stderr.write(f"DEBUG: {pp_start} to {pp_stop}, and chunk {chunk}, and {ana_start} to {ana_stop}\n")
 
     # split the pp_components into a list
     pp_components = pp_components_str.split()
@@ -408,16 +418,16 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-graph':
         #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return cumulative task definitions only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[0])
     elif info_type == 'defined-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task graph only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[1])
     elif info_type == 'defined-interval-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task definitions only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
