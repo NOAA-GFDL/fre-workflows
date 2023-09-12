@@ -70,6 +70,19 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     assert item_freq
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
+    # The first "word" of item_script will be the script, but there could be more command-line args.
+    if " " in item_script:
+        split = item_script.split()
+        item_script_file = split.pop(0)
+        item_script_extras = ' '.join(split)
+    else:
+        item_script_file = item_script
+        item_script_extras = ""
+
+    # Expand the script arguments if they are needed. cvdp at least includes $ANALYSIS_START
+    if ana_start is not None:
+        item_script_extras = item_script_extras.replace('$ANALYSIS_START', metomi.isodatetime.dumpers.TimePointDumper().strftime(ana_start, '%Y'))
+
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
     item_end_str = node.get_value(keys=[item,'end'])
@@ -108,7 +121,7 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
         item_cumulative = False
     #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
-    return(item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative)
+    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative)
 
 def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all cumulative-mode analysis scripts.
@@ -129,7 +142,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
         else:
             continue
 
@@ -151,8 +164,8 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         defs += f"""
     [[analysis-{item}]]
         script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
@@ -227,7 +240,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
         else:
             continue
 
@@ -249,8 +262,8 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
         script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
@@ -296,7 +309,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop, print_stderr)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
         else:
             continue
 
@@ -339,8 +352,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
         script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
         '''
         [[[environment]]]
             in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
