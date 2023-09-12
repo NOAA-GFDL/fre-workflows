@@ -76,16 +76,16 @@ def get_item_info(node, keys, pp_components):
         try:
             item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
         except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 start date {item_start_str}")
-            item_start = None
+            sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
+            return(False)
     else:
         item_start = None
     if item_end_str:
         try:
             item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
         except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 end date {item_end_str}")
-            item_end = None
+            sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the stop date '{item_end_str}' is invalid\n")
+            return(False)
     else:
         item_end = None
     #if item_start and item_end:
