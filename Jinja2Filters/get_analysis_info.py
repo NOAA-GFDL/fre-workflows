@@ -63,11 +63,13 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
             sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
         return(False)
 
-    # get the mandatory options: script path and frequency
+    # get the mandatory options: script path, frequency, and product (ts or av)
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
     assert item_script
     item_freq = node.get_value(keys=[item, 'freq'])
     assert item_freq
+    item_product = node.get_value(keys=[item, 'product'])
+    assert item_product
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
     # The first "word" of item_script will be the script, but there could be more command-line args.
@@ -121,7 +123,7 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
         item_cumulative = False
     #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
-    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative)
+    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product)
 
 def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all cumulative-mode analysis scripts.
@@ -142,7 +144,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
@@ -158,9 +160,16 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
-        # add the analysis script details that don't depend on time
         bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
         bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+
+        # ts and av distinction
+        if item_product == "ts":
+            in_data_dir = f"{pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}"
+        else:
+            in_data_dir = f"{pp_dir}/{item_comps[0]}/av/{bronx_freq}_{bronx_chunk}"
+
+        # add the analysis script details that don't depend on time
         defs += f"""
     [[analysis-{item}]]
         script = '''
@@ -168,7 +177,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
         '''
         [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
+            in_data_dir = {in_data_dir}
             freq = {item_freq}
             staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
             scriptLabel = {item}
@@ -240,7 +249,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
@@ -309,7 +318,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop, print_stderr)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
