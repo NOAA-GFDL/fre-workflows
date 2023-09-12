@@ -160,29 +160,8 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
-
-        # ts and av distinction
-        if item_product == "ts":
-            in_data_dir = f"{pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}"
-        else:
-            in_data_dir = f"{pp_dir}/{item_comps[0]}/av/{bronx_freq}_{bronx_chunk}"
-
         # add the analysis script details that don't depend on time
-        defs += f"""
-    [[analysis-{item}]]
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
-        '''
-        [[[environment]]]
-            in_data_dir = {in_data_dir}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
-            datachunk = {chunk.years}
-        """
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
         # loop over the dates
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
@@ -265,20 +244,8 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
                 sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
         # add the task definitions
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
         defs += f"""
-    [[analysis-{item}]]
-        inherit = ANALYSIS-{chunk}
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
-        '''
-        [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -297,6 +264,34 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")
 
     return(defs, graph)
+
+def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, script_extras, product):
+    """Form the task definition string"""
+
+    bronx_freq = convert_iso_duration_to_bronx_freq(freq)
+    bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+
+    # ts and av distinction
+    if product == "ts":
+        in_data_dir = f"{pp_dir}/{comps[0]}/ts/{bronx_freq}/{bronx_chunk}"
+    else:
+        in_data_dir = f"{pp_dir}/{comps[0]}/av/{bronx_freq}_{bronx_chunk}"
+
+    string = f"""
+    [[analysis-{item}]]
+        script = '''
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script_file}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script_file}.$yr1-$yr2 {script_extras}
+        '''
+        [[[environment]]]
+            in_data_dir = {in_data_dir}
+            freq = {freq}
+            staticfile = {pp_dir}/{comps[0]}/{comps[0]}.static.nc
+            scriptLabel = {item}
+            datachunk = {chunk.years}
+        """
+
+    return(string)
 
 def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all user-defined range analysis scripts.
@@ -355,21 +350,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
         # set the task definitions`
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
         defs += f"""
-    [[analysis-{item}]]
-        inherit = ANALYSIS-{item_start_str}_{item_end_str}
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script_file}.$yr1-$yr2 {item_script_extras}
-        '''
-        [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
-            datachunk = {chunk.years}
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
         inherit = ANALYSIS
         [[[environment]]]
