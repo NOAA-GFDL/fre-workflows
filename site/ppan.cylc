@@ -12,7 +12,7 @@
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
-            epmt annotate EPMT_JOB_TAGS="exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};exp_is_canopy:YES"
+            epmt annotate EPMT_JOB_TAGS="exp_is_canopy:YES;exp_component:$CYLC_TASK_NAME;exp_name:{{ EXPERIMENT }};exp_time:$CYLC_TASK_CYCLE_POINT;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_seg_months:{{ HISTORY_SEGMENT }};script_name:FOO.sh"
             export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
             export LD_PRELOAD=$PAPIEX_LD_PRELOAD
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
