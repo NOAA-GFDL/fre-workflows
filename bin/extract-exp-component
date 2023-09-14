@@ -1,0 +1,75 @@
+#!/app/conda/miniconda/envs/cylc/bin/python
+'''
+this script takes in CYLC_TASK_NAMESPACE_HIERARCHY 
+and from it, extracts and forms a string representing 
+the exp_component field value for EPMT_JOB_TAGS, 
+recorded via `epmt annotate`
+'''
+
+test_me_list=["root CLEAN clean-history-regrid-xy"                                                                                                        ,
+              "root CLEAN clean-pp-statics"                                                                                                               ,
+              "root CLEAN clean-shards-static"                                                                                                            ,
+              "root CLEAN clean-split-native"                                                                                                             ,
+              "root CLEAN clean-split-regrid-xy"                                                                                                          ,
+              "root combine-statics"                                                                                                                      ,
+              "root pp-starter"                                                                                                                           ,
+              "root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                    ,
+              "root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                                 ,
+              "root REGRID-XY regrid-xy_atmos_month"                                                                                                      ,
+              "root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS remap-pp-components-static"                                                                ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                             ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                                 ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                              ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                   ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                               ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                   ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                                ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                     ,
+              "root STAGE-HISTORY stage-history"                                                                                                          ,
+              "root CLEAN clean-history-regrid-xy"                                                                                                        ,
+              "root CLEAN clean-pp-timeavgs-P2Y"                                                                                                          ,
+              "root CLEAN clean-shards-P1Y"                                                                                                               ,
+              "root CLEAN clean-split-native"                                                                                                             ,
+              "root CLEAN clean-split-regrid-xy"                                                                                                          ,
+              "root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos"                                                                     ,
+              "root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos_scalar"                                                              ,
+              "root data-catalog"                                                                                                                         ,
+              "root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-NATIVE MAKE-TIMEAVGS MAKE-TIMEAVGS-NATIVE-P2Y make-timeavgs-native-P2Y_atmos_global_cmip"             ,
+              "root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_4xdaily"                 ,
+              "root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_daily_cmip"              ,
+              "root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_month"                   ,
+              "root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-NATIVE MAKE-TIMESERIES MAKE-TIMESERIES-NATIVE-P2Y make-timeseries-native-P2Y_atmos_global_cmip"   ,
+              "root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_4xdaily"       ,
+              "root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_daily_cmip"    ,
+              "root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_month"         ,
+              "root pp-starter"                                                                                                                           ,
+              "root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                    ,
+              "root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                                 ,
+              "root REGRID-XY regrid-xy_atmos_month"                                                                                                      ,
+              "root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos"                               ,
+              "root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos_scalar"                        ,
+              "root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos"                               ,
+              "root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos_scalar"                        ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                             ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                                 ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                              ,
+              "root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                   ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                               ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                   ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                                ,
+              "root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                     ,
+              "root STAGE-HISTORY stage-history"]
+
+import os
+namespace_hierarchy = os.environ['CYLC_TASK_NAMESPACE_HIERARCHY']
+
+def extract_component(namespace_hierarchy):
+    hierarchy_list=namespace_hierarchy.split(' ').remove('root')
+    print(f'hierarchy_list={hierarchy_list}')
+    
+    exp_component=None
+
+    return exp_component
+
+for string in test_me_list:
+    extract_component(string)
