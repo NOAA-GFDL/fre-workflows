@@ -6,6 +6,9 @@ the exp_component field value for EPMT_JOB_TAGS,
 recorded via `epmt annotate`
 '''
 
+import re
+
+
 #this is the start of a set of test cases- just a list for now.
 #will massage this into some kind of pytest module after the guts
 #of the script are worked out a bit TODO
@@ -26,21 +29,54 @@ test_me_list=[ #first entry in each pair is the "answer", the second entry is th
 #    ["clean"          ,"root CLEAN clean-shards-static"                                                                                                         ],
 #    ["clean"          ,"root CLEAN clean-split-native"                                                                                                          ],
 #    ["clean"          ,"root CLEAN clean-split-regrid-xy"                                                                                                       ],
-#    ["refineDiag"     , None                                                                                                                                    ], #TODO get some sample input for this case
-    ["atmos_4xdaily"                ,"root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                 ],
-    ["atmos_daily_cmip"             ,"root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                              ],
-    ["atmos_month"                  ,"root REGRID-XY regrid-xy_atmos_month"                                                                                                   ],
-    ["atmos_4xdaily"                ,"root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                 ],
-    ["atmos_daily_cmip"             ,"root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                              ],
-    ["atmos_month"                  ,"root REGRID-XY regrid-xy_atmos_month"                                                                                                   ]
+#    ["atmos_4xdaily"                ,"root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                 ],
+#    ["atmos_daily_cmip"             ,"root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                              ],
+#    ["atmos_month"                  ,"root REGRID-XY regrid-xy_atmos_month"                                                                                                   ],
+#    ["atmos_4xdaily"                ,"root REGRID-XY regrid-xy_atmos_4xdaily"                                                                                                 ],
+#    ["atmos_daily_cmip"             ,"root REGRID-XY regrid-xy_atmos_daily_cmip"                                                                                              ],
+#    ["atmos_month"                  ,"root REGRID-XY regrid-xy_atmos_month"                                                                                                   ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                            ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                             ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                  ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                            ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                             ],
+    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                  ],
+    [None             ,"root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos"                                                                  ],
+    [None             ,"root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos_scalar"                                                           ],
+    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS remap-pp-components-static"                                                             ],
+    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos"                            ],
+    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos_scalar"                     ],
+    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos"                            ],
+    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos_scalar"                     ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                          ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                              ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                           ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                          ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                              ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                           ],
+    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                ],
+ #   [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-NATIVE MAKE-TIMEAVGS MAKE-TIMEAVGS-NATIVE-P2Y make-timeavgs-native-P2Y_atmos_global_cmip"          ],
+ #   [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_4xdaily"              ],
+ #   [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_daily_cmip"           ],
+ #   [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_month"                ],
+ #   [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-NATIVE MAKE-TIMESERIES MAKE-TIMESERIES-NATIVE-P2Y make-timeseries-native-P2Y_atmos_global_cmip"],
+ #   [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_4xdaily"    ],
+ #   [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_daily_cmip" ],
+ #   [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_month"      ],
+##    ["refineDiag"     , None                                                                                                                                    ], #TODO get some sample input for this case
 ]
 
 ##uncomment me for in-situ tests, comment out otherwise for now
 #import os
 #namespace_hierarchy = os.environ['CYLC_TASK_NAMESPACE_HIERARCHY']
-import re
+
+
 
 def find_clean(hierarchy_list):
+    'finds clean in the hierarchy list, ignoring case'
     for entry in hierarchy_list:
         rslt=re.search('clean', entry, re.IGNORECASE)
         if rslt is None:
@@ -56,29 +92,31 @@ def order_by_length(string_a, string_b) :
         return string_b, string_a
 
 def check_lower_char(a):
-    if ord(a)>96 and ord(a)<123:
-        return True
-    return False
+    'true if a-z'
+    return (96<ord(a) and ord(a)<123)
 
 def check_upper_char(a):
-    if ord(a)>64 and ord(a)<91:
-        return True
-    return False
+    'true if A-Z'
+    return (64<ord(a) and ord(a)<91)
 
 def trim_front(str_to_trim):
+    'trim str from front until first char is a-z or A-Z'
     firstchar=str_to_trim[0]
-    while not (check_lower_char(firstchar) or check_upper_char(firstchar)):
-        #print(f'\nord({str_to_trim[0]})={ord(str_to_trim[0])}')
+    while all([not check_lower_char(firstchar),
+               not check_upper_char(firstchar)]):
         str_to_trim=str_to_trim[1:]
         firstchar=str_to_trim[0]
     return str_to_trim
 
 def trim_back(str_to_trim):
+    'trim str from back until last char is a-z or A-Z'
     lastchar=str_to_trim[len(str_to_trim)-1]
-    while not (check_lower_char(lastchar) or check_upper_char(lastchar)):
-        print(f'\nord({str_to_trim[0]})={ord(str_to_trim[0])}')
+    while all([not check_lower_char(lastchar),
+               not check_upper_char(lastchar)]):
         str_to_trim=str_to_trim[:-1]
-        lastchar=str_to_trim[len(str_to_trim)-1]
+        firstchar=str_to_trim[len(str_to_trim)-1]
+    return str_to_trim
+
 
 def extract_component(namespace_hierarchy):
     #first entry in this env var is always "root" which is,
@@ -124,8 +162,8 @@ def extract_component(namespace_hierarchy):
             longer_one=trim_back(longer_one)
             
             return longer_one
-
-
+        
+    print(f'list longer than 3')
 
         #then, if we don't have to worry about those weird special cases, now we can check for other things TODO HIGHEST EFFORT
 
@@ -160,41 +198,3 @@ for pair in test_me_list:
         print(f'booooo, wrong answer: {test_output}\n correct answer: {corr_output}')
     else:
         print(f'yay correct answer: {test_output}')
-
-
-
-
-
-
-##work on these cases next
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                            ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                             ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                  ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-NATIVE split-netcdf-native_atmos_global_cmip"                                                            ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_4xdaily"                                                                ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_daily_cmip"                                                             ],
-#    [None             ,"root SPLIT-NETCDF SPLIT-NETCDF-REGRID split-netcdf-regrid_atmos_month"                                                                  ],
-#    [None             ,"root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos"                                                                  ],
-#    [None             ,"root COMBINE-TIMEAVGS COMBINE-TIMEAVGS-P2Y combine-timeavgs-P2Y_atmos_scalar"                                                           ],
-#    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS remap-pp-components-static"                                                             ],
-#    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos"                            ],
-#    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-AV REMAP-PP-COMPONENTS-AV-P2Y remap-pp-components-av-P2Y_atmos_scalar"                     ],
-#    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos"                            ],
-#    [None             ,"root REMAP-PP-COMPONENTS REMAP-PP-COMPONENTS-TS REMAP-PP-COMPONENTS-TS-P2Y remap-pp-components-ts-P2Y_atmos_scalar"                     ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                          ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                              ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                           ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-NATIVE rename-split-to-pp-native_atmos_global_cmip"                                          ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_4xdaily"                                              ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_daily_cmip"                                           ],
-#    [None             ,"root RENAME-SPLIT-TO-PP RENAME-SPLIT-TO-PP-REGRID rename-split-to-pp-regrid_atmos_month"                                                ],
-#    [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-NATIVE MAKE-TIMEAVGS MAKE-TIMEAVGS-NATIVE-P2Y make-timeavgs-native-P2Y_atmos_global_cmip"          ],
-#    [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_4xdaily"              ],
-#    [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_daily_cmip"           ],
-#    [None             ,"root MAKE-TIMEAVGS-P2Y MAKE-TIMEAVGS-REGRID MAKE-TIMEAVGS MAKE-TIMEAVGS-REGRID-P2Y make-timeavgs-regrid-P2Y_atmos_month"                ],
-#    [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-NATIVE MAKE-TIMESERIES MAKE-TIMESERIES-NATIVE-P2Y make-timeseries-native-P2Y_atmos_global_cmip"],
-#    [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_4xdaily"    ],
-#    [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_daily_cmip" ],
-#    [None             ,"root MAKE-TIMESERIES-P2Y MAKE-TIMESERIES-REGRID MAKE-TIMESERIES MAKE-TIMESERIES-REGRID-P2Y make-timeseries-regrid-P2Y_atmos_month"      ],
