@@ -69,10 +69,6 @@ test_me_list=[ #first entry in each pair is the "answer", the second entry is th
 ##    ["refineDiag"     , None                                                                                                                                    ], #TODO get some sample input for this case
 ]
 
-##uncomment me for in-situ tests, comment out otherwise for now
-#import os
-#namespace_hierarchy = os.environ['CYLC_TASK_NAMESPACE_HIERARCHY']
-
 
 
 def find_clean(hierarchy_list):
@@ -165,7 +161,8 @@ def extract_component(namespace_hierarchy):
         
     print(f'list longer than 3')
 
-        #then, if we don't have to worry about those weird special cases, now we can check for other things TODO HIGHEST EFFORT
+        #then, if we don't have to worry about those weird special cases
+        # now we can check for other things TODO HIGHEST EFFORT
 
 
     return None
@@ -173,13 +170,8 @@ def extract_component(namespace_hierarchy):
 
     
     
-    
 
 
-
-
-##real
-#extract_component(namespace_hierarchy)
 
 
 #testing only
@@ -189,12 +181,16 @@ for pair in test_me_list:
     corr_output=pair[0]
 
     print('...extract_component call...\n')
-
-    test_output=extract_component(pair[1])
-
-
+    test_output=extract_component(test_input)
     if any([corr_output != test_output ,
             test_output is None         ]):
         print(f'booooo, wrong answer: {test_output}\n correct answer: {corr_output}')
     else:
         print(f'yay correct answer: {test_output}')
+
+
+
+##real
+#import os
+#namespace_hierarchy = os.environ['CYLC_TASK_NAMESPACE_HIERARCHY']
+#extract_component(namespace_hierarchy)
