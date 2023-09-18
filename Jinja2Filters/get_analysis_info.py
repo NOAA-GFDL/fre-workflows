@@ -192,10 +192,10 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
                 else:
                     times = 'ann'
                 defs += """
-    [[ANALYSIS-CUMULATIVE-{}]]
+    [[analysis-{}-{}]]
         [[[environment]]]
             in_data_file = {}.{}.{}.nc
-                """.format(date_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
+                """.format(item, date_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
 
             date += chunk
 
@@ -258,6 +258,12 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # add the task definitions that don't depend on time
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
+        # task defined just above needs to inherit from the task family defined next
+        defs += f"""
+    [[analysis-{item}]]
+        inherit = ANALYSIS-{chunk}
+        """
+
         # set some other stuff
         defs += f"""
     [[ANALYSIS-{chunk}]]
@@ -274,7 +280,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             else:
                 times = 'ann'
             defs += f"""
-    [[ANALYSIS-{chunk}]]
+    [[analysis-{item}]]
         [[[environment]]]
             in_data_file = {item_comps[0]}.$yr1.{times}.nc
             """
@@ -378,6 +384,12 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # set the task definitions that don't depend on time
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
+        # set the task definition above to inherit from the task family below
+        defs += f"""
+    [[analysis-{item}]]
+        inherit = ANALYSIS-{item_start_str}_{item_end_str}
+        """
+
         # set time-varying stuff
         defs += f"""
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
@@ -394,10 +406,10 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             else:
                 times = 'ann'
             defs += """
-    [[ANALYSIS-{}_{}]]
+    [[analysis-{}]]
         [[[environment]]]
             in_data_file = {}.{}.{}.nc
-            """.format(item_start_str, item_end_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
+            """.format(item, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
 
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
