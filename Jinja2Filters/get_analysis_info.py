@@ -185,6 +185,18 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             yr2 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}
             """
 
+            # add the timeaverage in_data_file
+            if item_product == "av":
+                if item_freq == "P1M":
+                    times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+                else:
+                    times = 'ann'
+                defs += """
+    [[ANALYSIS-CUMULATIVE-{}]]
+        [[[environment]]]
+            in_data_file = {}.{}.{}.nc
+                """.format(date_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
+
             date += chunk
 
         # now set the task graphs
