@@ -243,8 +243,10 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
-        # add the task definitions
+        # add the task definitions that don't depend on time
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+
+        # set some other stuff
         defs += f"""
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
@@ -252,6 +254,18 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - oneyear})
             datachunk = {chunk.years}
         """
+
+        # add the timeaverage in_data_file
+        if item_product == "av":
+            if item_freq == "P1M":
+                times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+            else:
+                times = 'ann'
+            defs += f"""
+    [[ANALYSIS-{chunk}]]
+        [[[environment]]]
+            in_data_file = {item_comps[0]}.$yr1.{times}.nc
+            """
 
         # now add the task graphs
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
@@ -349,8 +363,10 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         if print_stderr:
             sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
-        # set the task definitions`
+        # set the task definitions that don't depend on time
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+
+        # set time-varying stuff
         defs += f"""
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
         inherit = ANALYSIS
@@ -358,6 +374,18 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             yr1 = {item_start_str}
             yr2 = {item_end_str}
         """
+
+        # now set the in_data_file for av's
+        if item_product == "av":
+            if item_freq == "P1M":
+                times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+            else:
+                times = 'ann'
+            defs += """
+    [[ANALYSIS-{}_{}]]
+        [[[environment]]]
+            in_data_file = {}.{}.{}.nc
+            """.format(item_start_str, item_end_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
 
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
