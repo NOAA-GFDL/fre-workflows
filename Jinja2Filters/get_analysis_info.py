@@ -210,12 +210,18 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         while date <= stop:
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
-                graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+                if item_product == "av":
+                    graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all\n"
+                else:
+                    graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
             d = date
             i = -1
             while d > start + chunk:
                 if not analysis_only:
-                    graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                    if item_product == "av":
+                        graph += f"            & REMAP-PP-COMPONENTS-AV-{chunk}[{i*chunk}]:succeed-all\n"
+                    else:
+                        graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
             if analysis_only:
@@ -296,7 +302,10 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         if analysis_only:
             graph += f"            ANALYSIS-{chunk}\n"
         else:
-            graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+            if item_product == "av":
+                graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+            else:
+                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
         graph += f"        \"\"\"\n"
 
         #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")
@@ -421,12 +430,18 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
         if not analysis_only:
-            graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+            if item_product == "av":
+                graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all\n"
+            else:
+                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
         d = d2
         i = -1
         while d > pp_start + chunk:
             if not analysis_only:
-                graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                if item_product == "av":
+                    graph += f"            & REMAP-PP-COMPONENTS-AV-{chunk}[{i*chunk}]:succeed-all\n"
+                else:
+                    graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
             i -= 1
             d -= chunk
         if analysis_only:
