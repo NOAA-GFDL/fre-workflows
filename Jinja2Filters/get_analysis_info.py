@@ -56,21 +56,27 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     # if not adding, write a note why
     #sys.stderr.write(f"DEBUG: Considering '{item}'\n")
 
-    # skip this analysis script if pp component not requested
-    item_comps = node.get_value(keys=[item, 'components']).split()
-    if not check_components(item_comps, pp_components):
-        if print_stderr:
-            sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
-        return(False)
-
-    # get the mandatory options: script path, frequency, and product (ts or av)
+    # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
     assert item_script
     item_freq = node.get_value(keys=[item, 'freq'])
     assert item_freq
     item_product = node.get_value(keys=[item, 'product'])
     assert item_product
+    item_switch = node.get_value(keys=[item, 'switch'])
+    assert item_switch
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
+
+    # skip if switch is off
+    if item_switch == "off":
+        return(False)
+
+    # skip this analysis script if pp component not requested
+    item_comps = node.get_value(keys=[item, 'components']).split()
+    if not check_components(item_comps, pp_components):
+        if print_stderr:
+            sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
+        return(False)
 
     # The first "word" of item_script will be the script, but there could be more command-line args.
     if " " in item_script:
@@ -195,7 +201,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
     [[analysis-{}-{}]]
         [[[environment]]]
             in_data_file = {}.{}.{}.nc
-                """.format(item, date_str, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
+                """.format(item, date_str, item_comps[0], '{$(seq -s, -f "%04g" $yr1 $yr2)}', times)
 
             date += chunk
 
@@ -279,11 +285,11 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
                 times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
             else:
                 times = 'ann'
-            defs += f"""
-    [[analysis-{item}]]
+            defs += """
+    [[analysis-{}]]
         [[[environment]]]
-            in_data_file = {item_comps[0]}.$yr1.{times}.nc
-            """
+            in_data_file = {}.{}.{}.nc
+            """.format(item, item_comps[0], '$yr1-$yr2', times)
 
         # now add the task graphs
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
@@ -409,7 +415,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
     [[analysis-{}]]
         [[[environment]]]
             in_data_file = {}.{}.{}.nc
-            """.format(item, item_comps[0], '{$(seq -s, $yr1 $yr2)}', times)
+            """.format(item, item_comps[0], '{$(seq -s, -f "%04g" $yr1 $yr2)}', times)
 
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
