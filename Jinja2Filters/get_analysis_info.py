@@ -211,7 +211,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
                 if item_product == "av":
-                    graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all\n"
+                    graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
                 else:
                     graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
             d = date
@@ -219,7 +219,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             while d > start + chunk:
                 if not analysis_only:
                     if item_product == "av":
-                        graph += f"            & REMAP-PP-COMPONENTS-AV-{chunk}[{i*chunk}]:succeed-all\n"
+                        graph += f"            & COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
                     else:
                         graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
@@ -303,7 +303,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             graph += f"            ANALYSIS-{chunk}\n"
         else:
             if item_product == "av":
-                graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
         graph += f"        \"\"\"\n"
@@ -431,7 +431,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
         if not analysis_only:
             if item_product == "av":
-                graph += f"            REMAP-PP-COMPONENTS-AV-{chunk}:succeed-all\n"
+                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
         d = d2
@@ -439,7 +439,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         while d > pp_start + chunk:
             if not analysis_only:
                 if item_product == "av":
-                    graph += f"            & REMAP-PP-COMPONENTS-AV-{chunk}[{i*chunk}]:succeed-all\n"
+                    graph += f"            & COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
                 else:
                     graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
             i -= 1
