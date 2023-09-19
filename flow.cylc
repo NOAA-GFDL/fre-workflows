@@ -267,7 +267,9 @@ rename-split-to-pp-native<native>
 
 {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_A }}<component> => combine-timeavgs-{{ PP_CHUNK_A }}<component>
+    {% if CLEAN_WORK %}
 COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_A }}
+    {% endif %}
 {% endif %}
 
 # 3 scenarios of CHUNK-A workdir cleaning
@@ -341,7 +343,9 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
     {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_B }}<component> => combine-timeavgs-{{ PP_CHUNK_B }}<component>
+        {% if CLEAN_WORK %}
 COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_B }}
+        {% endif %}
     {% endif %}
 
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
