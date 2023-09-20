@@ -67,6 +67,8 @@
     {# Standard Jinja2 triggers are also available (e.g. "replace") #}
     component  =    {{ PP_COMPONENTS | replace(' ', ', ') }}
 
+
+
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
@@ -484,14 +486,12 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
-            component = $CYLC_TASK_PARAM_native
     {% endif %}
     {% if DO_REGRID %}
     [[MAKE-TIMEAVGS-REGRID]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
-            component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
     {% endif %}
     [[MAKE-TIMEAVGS-{{ PP_CHUNK_A }}]]
@@ -847,7 +847,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}]]
         inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
     [[make-timeseries-native-{{ PP_CHUNK_A }}<native>]]
-        inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}
+        inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_A }}, <native>
 {% endif %}
 {% if DO_REGRID %}
     [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}]]
@@ -1060,3 +1060,64 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
+
+
+
+## dev bootstrap- deactivate the block 
+{% if False %}
+## this works like I expect! we can use this to pass the corresponding components
+## this approach could also be good for passing other info. 
+    [[<native>]]
+	    [[[environment]]]
+            SOMEENVVAR = HELLO
+	[[<native=atmos_scalar>]]
+	    [[[environment]]]
+		    SOMEENVVAR2 = HELLO_SPECIFIC_CASE
+			
+{% endif %}
+
+
+
+
+## dev bootstrap- deactivate the block
+{% if False %}
+
+
+{% set REGRID_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
+{% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
+{% set NATIVE_COMPONENTS  =  "native" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
+{% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}	
+
+
+{{ REGRID_COMPONENTS }}
+{{ REGRID_STATIC_COMPONENTS }}
+{{ NATIVE_COMPONENTS }}
+{{ NATIVE_STATIC_COMPONENTS }}
+
+
+
+{# {# ----experiments with jinja2 + python dictionaries---- #}          #}
+{# {# ----aka "associative arrays in jinja2"---- #}						#}
+{# 																		#}
+{# ################ {% for i in REGRID_COMPONENTS %}                    #}
+{# ################     [[ REGRID_STUFF {{i}} ]]						#}  
+{# ################         stuff = {{ REGRID_COMPONENTS[i] }}		   	#}
+{# ################ {% endfor %}										#}  
+{# ################ 													#}  
+{# ################ {% for i in REGRID_STATIC_COMPONENTS %}			   	#}
+{# ################     [[ REGRID_STATIC_STUFF {{i}} ]] 				#}  
+{# ################         stuff = {{ REGRID_STATIC_COMPONENTS[i] }}   #}
+{# ################ {% endfor %}										#}  
+{# ################ 													#}  
+{# ################ 													#}  
+{# ################ {% for i in NATIVE_COMPONENTS %}					#}  
+{# ################     [[ NATIVE_STUFF {{i}} ]] 					   	#}
+{# ################         stuff = {{ NATIVE_COMPONENTS[i] }}		   	#}
+{# ################ {% endfor %}										#}  
+{# ################ 													#}  
+{# ################ {% for i in NATIVE_STATIC_COMPONENTS %}			   	#}
+{# ################     [[ NATIVE_STATIC_STUFF {{i}} ]] 				#}  
+{# ################         stuff = {{ NATIVE_STATIC_COMPONENTS[i] }}   #}
+{# ################ {% endfor %}                                        #}
+
+{% endif %}
