@@ -1105,14 +1105,14 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_REGRID %}
     {% set REGRID_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
     {% for KEY in REGRID_COMPONENTS %}
-    [[ <regrid={{ KEY }}> ]]
+    [[<regrid={{ KEY }}>]]
         [[[environment]]]
             component = {{ REGRID_COMPONENTS[KEY] }}
     {% endfor %}
 	{% if DO_STATICS %}
         {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in REGRID_STATIC_COMPONENTS %}
-    [[ <regrid_static={{ KEY }} ]]
+    [[<regrid_static={{ KEY }}> ]]
         [[[environment]]]
             component = {{ REGRID_STATIC_COMPONENTS[KEY] }}
 		{% endfor %}
@@ -1122,14 +1122,14 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_NATIVE %}
     {% set NATIVE_COMPONENTS  =  "native" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
     {% for KEY in NATIVE_COMPONENTS %}
-    [[ <native={{ KEY }}> ]]
+    [[<native={{ KEY }}>]]
         [[[environment]]]
             component = {{ NATIVE_COMPONENTS[KEY] }}
     {% endfor %}
 	{% if DO_STATICS %}
         {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in NATIVE_STATIC_COMPONENTS %}
-    [[ <native_static={{ KEY }} ]]
+    [[<native_static={{ KEY }}> ]]
         [[[environment]]]
             component = {{ NATIVE_STATIC_COMPONENTS[KEY] }}
 		{% endfor %}
