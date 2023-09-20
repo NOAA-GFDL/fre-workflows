@@ -1063,11 +1063,11 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 
 
-## dev bootstrap- deactivate the block
-{% if False %}
 
-## this works like I expect! we can use this to pass the corresponding components
-## this approach could also be good for passing other info.
+{% if False %}
+# dev bootstrap- deactivate the block
+# this works like I expect! we can use this to pass the corresponding components
+# this approach could also be good for passing other info.
     [[<native>]]
         [[[environment]]]
 			SOMEENVVAR = HELLO
@@ -1080,12 +1080,10 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 
 
-## dev bootstrap- deactivate the block
-{% if True %}
 
+{% if False %}
+# dev bootstrap- deactivate the block
 
-{% set REGRID_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
-{% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
 {% set NATIVE_COMPONENTS  =  "native" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
 {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
 
@@ -1098,24 +1096,45 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
 
 
+
+{% if True %}
+# dev bootstrap- deactivate the block
+
 {# ----experiments with jinja2 + python dictionaries---- #}
 {# ----aka "associative arrays in jinja2"---- #}
-## dev bootstrap- deactivate the block
-{% if True %}
-
-##
 {% if DO_REGRID %}
-
-{% for SOURCE in REGRID %}
-    {{ SOURCE }}
-{% endfor %}
-
-{% for SOURCE in REGRID %}
-	[[<regrid={{ SOURCE }}>]]
-		component = {{ "regrid-xy" | form_task_parameter_components('temporal', SOURCE) }}
-{% endfor %}
-
+    {% set REGRID_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
+    {% for KEY in REGRID_COMPONENTS %}
+    [[ <regrid={{ KEY }}> ]]
+        [[[environment]]]
+            component = {{ REGRID_COMPONENTS[KEY] }}
+    {% endfor %}
+	{% if DO_STATICS %}
+        {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
+        {% for KEY in REGRID_STATIC_COMPONENTS %}
+    [[ <regrid_static={{ KEY }} ]]
+        [[[environment]]]
+            component = {{ REGRID_STATIC_COMPONENTS[KEY] }}
+		{% endfor %}
+	{% endif %}
 {% endif %}
-##
+
+{% if DO_NATIVE %}
+    {% set NATIVE_COMPONENTS  =  "native" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
+    {% for KEY in NATIVE_COMPONENTS %}
+    [[ <native={{ KEY }}> ]]
+        [[[environment]]]
+            component = {{ NATIVE_COMPONENTS[KEY] }}
+    {% endfor %}
+	{% if DO_STATICS %}
+        {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
+        {% for KEY in NATIVE_STATIC_COMPONENTS %}
+    [[ <native_static={{ KEY }} ]]
+        [[[environment]]]
+            component = {{ NATIVE_STATIC_COMPONENTS[KEY] }}
+		{% endfor %}
+	{% endif %}
+{% endif %}
+
 
 {% endif %}
