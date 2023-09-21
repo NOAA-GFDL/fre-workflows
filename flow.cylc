@@ -501,13 +501,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 	[[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}]]
 		inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
 	[[make-timeavgs-native-{{ PP_CHUNK_A }}<native>]]
-		inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}
+		inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}, <native>
 	{% endif %}
 	{% if DO_REGRID %}
 	[[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}]]
 		inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
 	[[make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid>]]
-		inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}
+		inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}, <regrid>
 	{% endif %}
 	{% if DO_SECONDARY_PP %}
 	[[MAKE-TIMEAVGS-{{ PP_CHUNK_B }}]]
@@ -517,13 +517,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 	[[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}]]
 		inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
 	[[make-timeavgs-native-{{ PP_CHUNK_B }}<native>]]
-		inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}
+		inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}, <native>
 		{% endif %}
 		{% if DO_REGRID %}
 	[[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}]]
 		inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
 	[[make-timeavgs-regrid-{{ PP_CHUNK_B }}<regrid>]]
-		inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}
+		inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}, <regrid>
 		{% endif %}
 	{% endif %}
 {% endif %}
@@ -635,7 +635,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
-			component = $CYLC_TASK_PARAM_native
+##			component = $CYLC_TASK_PARAM_native
 {% endif %}
 
 {% if DO_REGRID %}
@@ -644,29 +644,29 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
-			component = $CYLC_TASK_PARAM_regrid
+##			component = $CYLC_TASK_PARAM_regrid
 			use_subdirs = 1
 {% endif %}
 
 {% if DO_NATIVE %}
     [[split-netcdf-native<native>]]
-		inherit = SPLIT-NETCDF-NATIVE
+		inherit = SPLIT-NETCDF-NATIVE, <native>
 	{% if DO_STATICS %}
     [[split-netcdf-native<native_static>]]
-		inherit = SPLIT-NETCDF-NATIVE
-        [[[environment]]]
-			component = $CYLC_TASK_PARAM_native_static
+		inherit = SPLIT-NETCDF-NATIVE, <native_static>
+##        [[[environment]]]
+##			component = $CYLC_TASK_PARAM_native_static
 	{% endif %}
 {% endif %}
 
 {% if DO_REGRID %}
     [[split-netcdf-regrid<regrid>]]
-		inherit = SPLIT-NETCDF-REGRID
+		inherit = SPLIT-NETCDF-REGRID, <regrid>
 	{% if DO_STATICS %}
     [[split-netcdf-regrid<regrid_static>]]
-		inherit = SPLIT-NETCDF-REGRID
-        [[[environment]]]
-			component = $CYLC_TASK_PARAM_regrid_static
+		inherit = SPLIT-NETCDF-REGRID, <regrid_static>
+##        [[[environment]]]
+##			component = $CYLC_TASK_PARAM_regrid_static
 	{% endif %}
 {% endif %}
 
@@ -680,7 +680,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
-			component = $CYLC_TASK_PARAM_native
+##			component = $CYLC_TASK_PARAM_native
 {% endif %}
 
 {% if DO_REGRID %}
@@ -689,29 +689,29 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
-			component = $CYLC_TASK_PARAM_regrid
+##			component = $CYLC_TASK_PARAM_regrid
 			use_subdirs = 1
 {% endif %}
 
 {% if DO_NATIVE %}
     [[rename-split-to-pp-native<native>]]
-    	inherit = RENAME-SPLIT-TO-PP-NATIVE
+    	inherit = RENAME-SPLIT-TO-PP-NATIVE, <native>
     {% if DO_STATICS %}
     [[rename-split-to-pp-native<native_static>]]
-    	inherit = RENAME-SPLIT-TO-PP-NATIVE
-        [[[environment]]]
-			component = $CYLC_TASK_PARAM_native_static
+    	inherit = RENAME-SPLIT-TO-PP-NATIVE, <native_static>
+##        [[[environment]]]
+##			component = $CYLC_TASK_PARAM_native_static
 	{% endif %}
 {% endif %}
 
 {% if DO_REGRID %}
     [[rename-split-to-pp-regrid<regrid>]]
-    	inherit = RENAME-SPLIT-TO-PP-REGRID
+    	inherit = RENAME-SPLIT-TO-PP-REGRID, <regrid>
     {% if DO_STATICS %}
     [[rename-split-to-pp-regrid<regrid_static>]]
-    	inherit = RENAME-SPLIT-TO-PP-REGRID
-        [[[environment]]]
-			component = $CYLC_TASK_PARAM_regrid_static
+    	inherit = RENAME-SPLIT-TO-PP-REGRID, <regrid_static>
+##      [[[environment]]]
+##			component = $CYLC_TASK_PARAM_regrid_static
 	{% endif %}
 {% endif %}
 
@@ -771,7 +771,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[COMBINE-TIMEAVGS]]
     	script = rose task-run --verbose --app-key combine-timeavgs
         [[[environment]]]
-			component = $CYLC_TASK_PARAM_component
+##			component = $CYLC_TASK_PARAM_component
 			end = $(cylc cycle-point --print-year)
 			outputDir = {{ PP_DIR }}/$component/av
 	[[COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}]]
@@ -826,7 +826,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
-			component = $CYLC_TASK_PARAM_native
+##			component = $CYLC_TASK_PARAM_native
 {% endif %}
 
 {% if DO_REGRID %}
@@ -834,7 +834,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
 			inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
-			component = $CYLC_TASK_PARAM_regrid
+##			component = $CYLC_TASK_PARAM_regrid
 			use_subdirs = 1
 {% endif %}
 
@@ -853,7 +853,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 	[[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}]]
 		inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_A }}
 	[[make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>]]
-		inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}
+		inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_A }}, <regrid>
 {% endif %}
 
 {% if DO_SECONDARY_PP %}
@@ -866,14 +866,14 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 	[[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}]]
 		inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
 	[[make-timeseries-native-{{ PP_CHUNK_B }}<native>]]
-		inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}
+		inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK_B }}, <native>
 	{% endif %}
 
 	{% if DO_REGRID %}
 	[[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}]]
 		inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK_B }}
 	[[make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>]]
-		inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}
+		inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK_B }}, <regrid>
 	{% endif %}
 {% endif %}
 
@@ -886,16 +886,16 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 			outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
 			begin = $CYLC_TASK_CYCLE_POINT
 			fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-			component = $CYLC_TASK_PARAM_regrid
+##			component = $CYLC_TASK_PARAM_regrid
 			gridSpec = {{ PP_GRID_SPEC }}
 			defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
-		inherit = REGRID-XY
+		inherit = REGRID-XY, <regrid>
 	{% if DO_STATICS %}
     [[regrid-xy<regrid_static>]]
-		inherit = REGRID-XY
-        [[[environment]]]
-			component = $CYLC_TASK_PARAM_regrid_static
+		inherit = REGRID-XY, <regrid_static>
+##        [[[environment]]]
+##			component = $CYLC_TASK_PARAM_regrid_static
 	{% endif %}
 {% endif %}
 
@@ -1097,9 +1097,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 
 
-{% if True %}
-# dev bootstrap- deactivate the block
-
 {# ----experiments with jinja2 + python dictionaries---- #}
 {# ----aka "associative arrays in jinja2"---- #}
 {% if DO_REGRID %}
@@ -1134,7 +1131,4 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             component = {{ NATIVE_STATIC_COMPONENTS[KEY] }}
 		{% endfor %}
 	{% endif %}
-{% endif %}
-
-
 {% endif %}
