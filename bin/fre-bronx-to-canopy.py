@@ -353,6 +353,7 @@ def main(args):
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
+    chunks = set()
     comp_count = 0
     for comp in comps:
         comp_count += 1
@@ -400,7 +401,6 @@ def main(args):
 
         sources = set()
         sources.add(comp_source)
-        chunks = set()
         timeseries_count = 0
 
         # Get the number of TS nodes
