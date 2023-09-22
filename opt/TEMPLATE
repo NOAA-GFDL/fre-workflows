@@ -1,3 +1,7 @@
+# Example experiment configuration template
+# To use, rename to:
+# rose-suite-EXPNAME.conf
+
 #[template variables]
 ### Settings about the history files
 # Directory to the primary location for history files
