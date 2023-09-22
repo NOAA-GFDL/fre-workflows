@@ -1,6 +1,5 @@
 {% set EPMT_PREAMBLE %}
             eval $(rose task-env)
-            module load epmt
             env
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
