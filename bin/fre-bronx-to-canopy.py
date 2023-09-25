@@ -184,7 +184,6 @@ def main(args):
     #    rose_suite.set(keys=['template variables', 'PREANALYSIS_NAME'],
     #                   value="'vitals'")
     #else:
-    rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
 
     #rose_suite.set(keys=['template variables', 'DO_ANALYSIS'],
     #               value=args.do_analysis)
@@ -289,16 +288,38 @@ def main(args):
                                        universal_newlines=True)
     refineDiag_scripts = refineDiag_process.stdout.strip('\n')
 
-    if refineDiag_process.stdout:
+    # If one of the refinediag scripts contains "vitals", assume it
+    # won't generate output, so relabel it as a preAnalysis script.
+    # There is only one preAnalysis slot currently, so if there are multiple
+    # refineDiag scripts that match "vitals" throw away the rest.
+    list_refinediags = []
+    str_preanalysis = None
+    for x in refineDiag_scripts.split():
+        if "vitals" in x:
+            if str_preanalysis is None:
+                str_preanalysis = x
+        else:
+            list_refinediags.append(x)
+
+    if list_refinediags:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
         rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
                     value=f"'{historyDirRefined}_canopy'")
         rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
-                     value="'{}'".format(refineDiag_scripts))
-        logging.info(f"Refinediag scripts: {refineDiag_scripts}")
+                     value="'{}'".format(" ".join(list_refinediags)))
+        logging.info(f"Refinediag scripts: {' '.join(list_refinediags)}")
     else:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
         logging.info("No refineDiag scripts written. )")
+
+    if str_preanalysis is not None:
+        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='True')
+        rose_suite.set(keys=['template variables', 'PREANALYSIS_SCRIPT'],
+                     value="'{}'".format(str_preanalysis))
+        logging.info(f"Preanalysis script: {str_preanalysis}")
+    else:
+        rose_suite.set(keys=['template variables', 'DO_PREANALYSIS'], value='False')
+        logging.info("No preAnalysis scripts written. )")
 
     # Grab all of the necessary PP component items/elements from the XML
     comps = frelist_xpath(args, 'postProcess/component/@type').split()
@@ -353,6 +374,7 @@ def main(args):
 
     # Loop over all of the PP components, fetching the sources, xyInterp, 
     # and sourceGrid.
+    chunks = set()
     comp_count = 0
     for comp in comps:
         comp_count += 1
@@ -400,7 +422,6 @@ def main(args):
 
         sources = set()
         sources.add(comp_source)
-        chunks = set()
         timeseries_count = 0
 
         # Get the number of TS nodes
