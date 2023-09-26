@@ -253,10 +253,16 @@ def main(args):
     rose_suite.set(keys=['template variables', 'HISTORY_DIR'],
                    value="'{}'".format(historyDir))
     # set some dirs to something else to allow bronx dual-pps easily
-    rose_suite.set(keys=['template variables', 'PP_DIR'],
-                   value=f"'{ppDir}_canopy'")
-    rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
-                   value=f"'{analysisDir}_canopy'")
+    if args.dual:
+        rose_suite.set(keys=['template variables', 'PP_DIR'],
+                       value=f"'{ppDir}_canopy'")
+        rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
+                       value=f"'{analysisDir}_canopy'")
+    else:
+        rose_suite.set(keys=['template variables', 'PP_DIR'],
+                       value=f"'{ppDir}'")
+        rose_suite.set(keys=['template variables', 'ANALYSIS_DIR'],
+                       value=f"'{analysisDir}'")
     rose_suite.set(keys=['template variables', 'PP_GRID_SPEC'],
                    value="'{}'".format(gridSpec))
 
@@ -303,8 +309,12 @@ def main(args):
 
     if list_refinediags:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
-        rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
-                    value=f"'{historyDirRefined}_canopy'")
+        if args.dual:
+            rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+                           value=f"'{historyDirRefined}_canopy'")
+        else:
+            rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+                           value=f"'{historyDirRefined}'")
         rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
                      value="'{}'".format(" ".join(list_refinediags)))
         logging.info(f"Refinediag scripts: {' '.join(list_refinediags)}")
@@ -542,6 +552,8 @@ if __name__ == '__main__':
                         help="Optional. Display detailed output")
     parser.add_argument('--quiet', '-q', action='store_true',
                         help="Optional. Display only serious messages and/or errors")
+    parser.add_argument('--dual', action='store_true',                                 \
+                        help="Optional. Append '_canopy' to pp, analysis, and refinediag dirs")
 
     args = parser.parse_args()
 
