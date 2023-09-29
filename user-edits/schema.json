@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/product.schema.json",
+  "title": "user-edits",
+  "description": "A yaml populated with user-defined edits for multiple configurations in the workflow" ,
+  "type": "object",
+  "properties": {
+       "postprocess": {
+                      "description": "User-defined configurations for postprocessing", 
+                      "type": "array/dictionaries",
+                      "items": {"$ref": "#/$defs/pp"} 
+                      }
+  },
+  "$defs":{
+       "pp": {
+            "type": "object",   
+            "properties": {
+                 "path": { "type": "string",
+                         "description": "Path to the referenced file"},
+                 "rose-suite-exp-configuration":{
+                      "properties": {
+                           "SITE": {
+                                "type": "string",
+                                "description": "Specific site used for workflow" 
+                           },
+                           "CLEAN_WORK": {
+                                "type": "boolean",
+                                "description": "Switch to remove intermediate data files when they are no longer "
+                           },
+                           "PTMP_DIR": {
+                                "type": "string",
+                                "description": "Directory to use for history file cache"
+                           },
+                           "DO_MDTF": {
+                                "type": "boolean",
+                                "description": "Switch to run MDTF on generated pp output"
+                           },
+                           "DO_STATICS": {
+                                "type": "boolean",
+                                "description": "Switch to turn on/off statics processing"
+                           },
+                           "DO_TIMEAVGS": {
+                                "type": "boolean",
+                                "description": "Switch to turn on/off time-average file generation"
+                           },
+                           "DO_REFINEDIAG": {
+                                "type": "boolean",
+                                "description": "Switch to run refine-diag scripts"
+                           },
+                           "REFINEDIAG_SCRIPTS": {
+                                "type": "string",
+                                "description": "Filepath to the space-separated user script"
+                           },
+                           "DO_PREANALYSIS": {
+                                "type": "boolean",
+                                "description": "Switch to run a pre-analysis script on history files"
+                           },
+                           "PREANALYSIS_SCRIPT": {
+                                "type": "string",
+                                "description": "Filepath to the user script"
+                           },
+                           "DO_ANALYSIS": {
+                                "type": "boolean",
+                                "description": "Switch to launch analysis scripts"
+                           },
+                           "DO_ANALYSIS_ONLY": {
+                                "type": "boolean",
+                                "description": "Switch to only launch analysis scripts"
+                           },
+                           "FRE_ANALYSIS_HOME": {
+                                "type": "string",
+                                "description": "Location for shared analysis scripts"
+                           },
+                           "HISTORY_DIR": {
+                                "type": "string",
+                                "description": "Directory to the primary location for history files"
+                           },
+                           "HISTORY_DIR_REFINED": {
+                                "type": "string",
+                                "description": "Directory to the secondary location for history files"
+                           },
+                           "HISTORY_SEGMENT": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the length of the history segment"
+                           },
+                           "PP_CHUNK_A": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the desired post-processing output"
+                           },
+                           "PP_CHUNK_B": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the second desired post-processing output"
+                           },
+                           "PP_COMPONENTS": {
+                                "type": "string",
+                                "description": "Space separated list of pp components to process"
+                           },
+                           "PP_DIR": {
+                                "type": "string",
+                                "description": "Directory to write pp products to"
+                           },
+                           "PP_START": {
+                                "type": "string",
+                                "description": "ISO8601 date to begin postprocessing"
+                           },
+                           "PP_STOP": {
+                                "type": "string",
+                                "description": "ISO8601 date to end postprocessing"
+                           },
+                           "PP_DEFAULT_XYINTERP": {
+                                "type": "string", 
+                                "description": "Default regridded resolution"
+                           },
+                           "PP_GRID_SPEC": {
+                                "type": "string",
+                                "description": "Filepath to an FMS gridSpec netCDF file or a tarfile"
+                           },
+                           "EXPERIMENT": {
+                                "type": "string",
+                                "description": "Label for the experiment"
+                           },
+                           "PLATFORM": {
+                                "type": "string",
+                                "description": "LAbel for the hardware and software environment"
+                           },
+                           "TARGET": {
+                                "type": "string",
+                                "description": "Label for the FRE compilation target used in the simulation"
+                           }
+                      }
+                 },
+                
+                 "install-option":{
+                       "properties": {
+                            "install": {
+                                 "type": "string",
+                                 "description": "Additional sym-link option (or other options) to add to cylc install command"
+                             }
+                       }
+                 },
+
+                 "rose-app-configuration":{
+                      "properties": {
+                           "component": {
+                                "properties": {
+                                     "type": {
+                                          "type": "string",
+                                          "description": "Name of component" 
+                                     }, 
+                                     "inputGrid": {
+                                          "type": "string",
+                                          "description": "Cubedsphere or tripolar"
+                                     },
+                                     "inputRealm": {
+                                          "type": "string",
+                                          "description": "Used for identifying land or atmos grid mosaic file"
+                                     },
+                                     "interpMethod": {
+                                          "type": "string",
+                                          "description": "Conserve_order1, conserve_order2 or bilinear"
+                                     },
+                                     "outputGridLon": {
+                                          "type": "string",
+                                          "description": "a"
+                                     },
+                                     "outputGridLat": {
+                                          "type": "string",
+                                          "description": "a"
+                                     },
+                                     "outputGridType": {
+                                          "type": "string",
+                                          "description": "a"
+                                     },
+                                     "sources": {
+                                          "type": "string",
+                                          "description": "a"
+                                     },
+                                     "grid": {
+                                          "type": "string",
+                                          "description": "Native, regrid-xy/default or regrid-xy/LABEL"
+                                     }
+                                }
+                           }
+                      }
+                 }
+            }
+       }
+  }
+}
