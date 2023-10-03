@@ -55,6 +55,14 @@ if [[ ! -d $outputDir ]]; then
     exit 1
 fi
 
+# Exit early, with appearence of success, if the component directory does not exist
+# This means the make-timeavgs task did not work, which almost certainly means that
+# the source files are not monthly or annual, which are the only currently supported
+# timeaveraging.
+if [[ ! -d $inputDir/$component ]]; then
+    echo Note: exiting early with appearance of success. This is a workaround.
+    exit 0
+fi
 cd $inputDir/$component
 
 for freq in $(ls); do

@@ -29,7 +29,7 @@ def check_components(list1, list2):
                 return(False)
     return(True)
 
-def get_item_info(node, keys, pp_components):
+def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, print_stderr=False):
     """Utility method to retrieve config information about an analysis script.
 
     Accepts 3 arguments:
@@ -56,36 +56,66 @@ def get_item_info(node, keys, pp_components):
     # if not adding, write a note why
     #sys.stderr.write(f"DEBUG: Considering '{item}'\n")
 
-    # skip this analysis script if pp component not requested
-    item_comps = node.get_value(keys=[item, 'components']).split()
-    if not check_components(item_comps, pp_components):
-        #sys.stderr.write(f"DEBUG: Skipping '{item}' as it requests a component not available\n")
-        return(False)
-
-    # get the mandatory options: script path and frequency
+    # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
     assert item_script
     item_freq = node.get_value(keys=[item, 'freq'])
     assert item_freq
+    item_product = node.get_value(keys=[item, 'product'])
+    assert item_product
+    item_switch = node.get_value(keys=[item, 'switch'])
+    assert item_switch
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
+
+    # skip if switch is off
+    if item_switch == "off":
+        return(False)
+
+    # skip this analysis script if pp component not requested
+    item_comps = node.get_value(keys=[item, 'components']).split()
+    if not check_components(item_comps, pp_components):
+        if print_stderr:
+            sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
+        return(False)
+
+    # The first "word" of item_script will be the script, but there could be more command-line args.
+    if " " in item_script:
+        split = item_script.split()
+        item_script_file = split.pop(0)
+        item_script_extras = ' '.join(split)
+    else:
+        item_script_file = item_script
+        item_script_extras = ""
+
+    # Expand the script arguments if they are needed. cvdp at least includes $ANALYSIS_START
+    if ana_start is not None:
+        item_script_extras = item_script_extras.replace('$ANALYSIS_START', metomi.isodatetime.dumpers.TimePointDumper().strftime(ana_start, '%Y'))
 
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
     item_end_str = node.get_value(keys=[item,'end'])
+    # expand $ANALYSIS_START and $ANALYSIS_STOP if they exist, replacing with ana_start and ana_stop
     if item_start_str:
-        try:
-            item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
-        except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 start date {item_start_str}")
-            item_start = None
+        if item_start_str == '$ANALYSIS_START' and ana_start is not None:
+            item_start = ana_start
+        else:
+            try:
+                item_start = metomi.isodatetime.parsers.TimePointParser().parse(item_start_str)
+            except:
+                if print_stderr:
+                    sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the start date '{item_start_str}' is invalid\n")
+                return(False)
     else:
         item_start = None
     if item_end_str:
-        try:
-            item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
-        except:
-            sys.stderr.write(f"ANALYSIS: WARNING: Could not parse ISO8601 end date {item_end_str}")
-            item_end = None
+        if item_end_str == '$ANALYSIS_STOP' and ana_stop is not None:
+            item_end = ana_stop
+        else:
+            try:
+                item_end = metomi.isodatetime.parsers.TimePointParser().parse(item_end_str)
+            except:
+                sys.stderr.write(f"ANALYSIS: WARNING: Skipping '{item}' as the stop date '{item_end_str}' is invalid\n")
+                return(False)
     else:
         item_end = None
     #if item_start and item_end:
@@ -99,7 +129,7 @@ def get_item_info(node, keys, pp_components):
         item_cumulative = False
     #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
-    return(item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative)
+    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product)
 
 def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all cumulative-mode analysis scripts.
@@ -120,7 +150,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
@@ -137,21 +167,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             continue
 
         # add the analysis script details that don't depend on time
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
-        defs += f"""
-    [[analysis-{item}]]
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-        '''
-        [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
-            datachunk = {chunk.years}
-        """
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
         # loop over the dates
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
@@ -175,6 +191,18 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
             yr2 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}
             """
 
+            # add the timeaverage in_data_file
+            if item_product == "av":
+                if item_freq == "P1M":
+                    times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+                else:
+                    times = 'ann'
+                defs += """
+    [[analysis-{}-{}]]
+        [[[environment]]]
+            in_data_file = {}.{}.{}.nc
+                """.format(item, date_str, item_comps[0], '{$(seq -s, -f "%04g" $yr1 $yr2)}', times)
+
             date += chunk
 
         # now set the task graphs
@@ -182,12 +210,18 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
         while date <= stop:
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
-                graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+                if item_product == "av":
+                    graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
+                else:
+                    graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
             d = date
             i = -1
             while d > start + chunk:
                 if not analysis_only:
-                    graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                    if item_product == "av":
+                        graph += f"            & COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
+                    else:
+                        graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
             if analysis_only:
@@ -218,7 +252,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
@@ -233,21 +267,17 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
-        # add the task definitions
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+        # add the task definitions that don't depend on time
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+
+        # task defined just above needs to inherit from the task family defined next
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-        '''
-        [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
+        """
+
+        # set some other stuff
+        defs += f"""
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -255,19 +285,62 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             datachunk = {chunk.years}
         """
 
+        # add the timeaverage in_data_file
+        if item_product == "av":
+            if item_freq == "P1M":
+                times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+            else:
+                times = 'ann'
+            defs += """
+    [[analysis-{}]]
+        [[[environment]]]
+            in_data_file = {}.{}.{}.nc
+            """.format(item, item_comps[0], '$yr1-$yr2', times)
+
         # now add the task graphs
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
         if analysis_only:
             graph += f"            ANALYSIS-{chunk}\n"
         else:
-            graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+            if item_product == "av":
+                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+            else:
+                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
         graph += f"        \"\"\"\n"
 
         #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")
 
     return(defs, graph)
 
-def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
+def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, script_extras, product):
+    """Form the task definition string"""
+
+    bronx_freq = convert_iso_duration_to_bronx_freq(freq)
+    bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+
+    # ts and av distinction
+    if product == "ts":
+        in_data_dir = f"{pp_dir}/{comps[0]}/ts/{bronx_freq}/{bronx_chunk}"
+    else:
+        in_data_dir = f"{pp_dir}/{comps[0]}/av/{bronx_freq}_{bronx_chunk}"
+
+    string = f"""
+    [[analysis-{item}]]
+        script = '''
+            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script_file}.$yr1-$yr2
+            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script_file}.$yr1-$yr2 {script_extras}
+        '''
+        [[[environment]]]
+            in_data_dir = {in_data_dir}
+            freq = {freq}
+            staticfile = {pp_dir}/{comps[0]}/{comps[0]}.static.nc
+            scriptLabel = {item}
+            datachunk = {chunk.years}
+        """
+
+    return(string)
+
+def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all user-defined range analysis scripts.
 
     Accepts 7 arguments:
@@ -285,9 +358,9 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
-        item_info = get_item_info(node, keys, pp_components)
+        item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop, print_stderr)
         if item_info:
-            item, item_comps, item_script, item_freq, item_start, item_end, item_cumulative = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
@@ -304,18 +377,18 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         # if requested year range is outside the workflow range, then skip
         item_start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_start, '%Y')
         item_end_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(item_end, '%Y')
-        start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
-        stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(stop, '%Y')
-        if item_start < start or item_end > stop:
+        start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_start, '%Y')
+        stop_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_stop, '%Y')
+        if item_start < pp_start or item_end > pp_stop:
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Defined-interval ({item_start_str}-{item_end_str}) outside workflow range ({start_str}-{stop_str}), skipping\n")
             continue
 
         # locate the nearest enclosing chunks
-        d1 = start
+        d1 = pp_start
         while d1 <= item_start - chunk:
             d1 += chunk
-        d2 = stop
+        d2 = pp_stop
         while d2 >= item_end + chunk:
             d2 -= chunk
         d1_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(d1, '%Y')
@@ -323,22 +396,17 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
         if print_stderr:
             sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
-        # set the task definitions`
-        bronx_freq = convert_iso_duration_to_bronx_freq(item_freq)
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+        # set the task definitions that don't depend on time
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+
+        # set the task definition above to inherit from the task family below
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
-        script = '''
-            chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-            $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{item_script}.$yr1-$yr2
-        '''
-        [[[environment]]]
-            in_data_dir = {pp_dir}/{item_comps[0]}/ts/{bronx_freq}/{bronx_chunk}
-            freq = {item_freq}
-            staticfile = {pp_dir}/{item_comps[0]}/{item_comps[0]}.static.nc
-            scriptLabel = {item}
-            datachunk = {chunk.years}
+        """
+
+        # set time-varying stuff
+        defs += f"""
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -346,16 +414,34 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
             yr2 = {item_end_str}
         """
 
+        # now set the in_data_file for av's
+        if item_product == "av":
+            if item_freq == "P1M":
+                times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
+            else:
+                times = 'ann'
+            defs += """
+    [[analysis-{}]]
+        [[[environment]]]
+            in_data_file = {}.{}.{}.nc
+            """.format(item, item_comps[0], '{$(seq -s, -f "%04g" $yr1 $yr2)}', times)
+
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
         if not analysis_only:
-            graph += f"            REMAP-PP-COMPONENTS-{chunk}:succeed-all\n"
+            if item_product == "av":
+                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
+            else:
+                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
         d = d2
         i = -1
-        while d > start + chunk:
+        while d > pp_start + chunk:
             if not analysis_only:
-                graph += f"            & REMAP-PP-COMPONENTS-{chunk}[{i*chunk}]:succeed-all\n"
+                if item_product == "av":
+                    graph += f"            & COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
+                else:
+                    graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
             i -= 1
             d -= chunk
         if analysis_only:
@@ -366,7 +452,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, a
 
     return(defs, graph)
 
-def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str, chunk, analysis_only=False, print_stderr=False):
+def get_analysis_info(info_type, pp_components_str, pp_dir, pp_start_str, pp_stop_str, ana_start_str, ana_stop_str, chunk, analysis_only=False, print_stderr=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
     Accepts 7 arguments:
@@ -387,10 +473,13 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         print_stderr (bool): print a summary of analysis scripts that would be run
 """
     # convert strings to date objects
-    start = metomi.isodatetime.parsers.TimePointParser().parse(start_str)
-    stop = metomi.isodatetime.parsers.TimePointParser().parse(stop_str)
+    #sys.stderr.write(f"DEBUG: {pp_start_str} to {pp_stop_str}, and chunk {chunk}, and {ana_start_str} to {ana_stop_str}\n")
+    pp_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_start_str)
+    pp_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_stop_str)
     chunk = metomi.isodatetime.parsers.DurationParser().parse(chunk)
-    #sys.stderr.write(f"DEBUG: {start} to {stop}, and chunk {chunk}\n")
+    ana_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_start_str)
+    ana_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_stop_str)
+    #sys.stderr.write(f"DEBUG: {pp_start} to {pp_stop}, and chunk {chunk}, and {ana_start} to {ana_stop}\n")
 
     # split the pp_components into a list
     pp_components = pp_components_str.split()
@@ -405,19 +494,19 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, start_str, stop_str,
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[0])
     elif info_type == 'per-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return per-interval task graph only\n")
-        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[1])
+        return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, False)[1])
     elif info_type == 'cumulative-task-graph':
         #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return cumulative task definitions only\n")
-        return(get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
+        return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[0])
     elif info_type == 'defined-interval-task-graph':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task graph only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[1])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[1])
     elif info_type == 'defined-interval-task-definitions':
         #sys.stderr.write(f"DEBUG: Will return defined-interval task definitions only\n")
-        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only, print_stderr)[0])
+        return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
 

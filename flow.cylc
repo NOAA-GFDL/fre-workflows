@@ -25,6 +25,14 @@
     {% set DO_SECONDARY_PP = True %}
 {% endif %}
 
+{# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
+{% if ANALYSIS_START is not defined %}
+    {% set ANALYSIS_START = PP_START %}
+{% endif %}
+{% if ANALYSIS_STOP is not defined %}
+    {% set ANALYSIS_STOP = PP_STOP %}
+{% endif %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -87,13 +95,13 @@
     [[graph]]
 {% if DO_ANALYSIS_ONLY %}
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
     {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% endif %}
 {% else %}
         #
@@ -272,7 +280,9 @@ rename-split-to-pp-native<native>
 
 {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_A }}<component> => combine-timeavgs-{{ PP_CHUNK_A }}<component>
+    {% if CLEAN_WORK %}
 COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_A }}
+    {% endif %}
 {% endif %}
 
 # 3 scenarios of CHUNK-A workdir cleaning
@@ -346,7 +356,9 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
 
     {% if DO_TIMEAVGS %}
 remap-pp-components-av-{{ PP_CHUNK_B }}<component> => combine-timeavgs-{{ PP_CHUNK_B }}<component>
+        {% if CLEAN_WORK %}
 COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_B }}
+        {% endif %}
     {% endif %}
 
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
@@ -384,13 +396,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 #
     {% if DO_ANALYSIS %}
         {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
         {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
         {% endif %}
     {% endif %}
 
@@ -591,57 +603,56 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
-                exit 1
-            fi
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
-                mv -f * $TMPDIR/modify_refineDiag
-                mv -f $TMPDIR/modify_refineDiag/* .
-                rm -rf $TMPDIR/modify_refineDiag
-            fi
-        """
-
-{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
-{# Create a 'macro' function to reduce code repeat #}
-    {% macro exec_refine(script_name) -%}
-            inherit = REFINE-DIAG
-            script = """
-                ls
-                echo NOTE: About to source user script
-                if csh {{ script_name }}; then
-                    echo NOTE: User script exited normally
-                else
-                    echo ERROR: User script got an error status $?
-                    exit 1
-                fi
-            """
-    {%- endmacro %}
-{# Use the 'split' function to transform string into an iterable list, including of length 1 #}
-    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
-    {% for refineDiag_path in refineDiag_scripts %}
-            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] }}]]
-        {{ exec_refine(refineDiag_path) }}
-    {% endfor %}
-{% endif %}
-
-{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
-    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] %}
-    [[preAnalysis-{{ preanalysis_name }}]]
-        inherit = PRE-ANALYSIS
-        script = """
-            ls
-            echo NOTE: About to source user script
-            if csh {{ PREANALYSIS_SCRIPT }}; then
-                echo NOTE: User script exited normally
-            else
-                echo ERROR: User script got an error status $?
-                exit 1
-            fi
-        """
-{% endif %}
+                exit 1  
+            fi  
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then  
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."  
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}  
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."  
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc 
+                mv -f * $TMPDIR/modify_refineDiag  
+                mv -f $TMPDIR/modify_refineDiag/* . 
+                rm -rf $TMPDIR/modify_refineDiag  
+            fi  
+        """  
+{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}  
+{# Create a 'macro' function to reduce code repeat #}  
+    {% macro exec_refine(script_name) -%}  
+            inherit = REFINE-DIAG  
+            script = """  
+                ls  
+                echo NOTE: About to source user script  
+                if csh {{ script_name }}; then  
+                    echo NOTE: User script exited normally  
+                else  
+                    echo ERROR: User script got an error status $?  
+                    exit 1  
+                fi  
+            """  
+    {%- endmacro %}  
+{# Use the 'split' function to transform string into an iterable list, including of length 1 #}  
+    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}  
+    {% for refineDiag_path in refineDiag_scripts %}  
+            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] | replace(".", "_") }}]]  
+        {{ exec_refine(refineDiag_path) }}  
+    {% endfor %}  
+{% endif %}  
+  
+{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}  
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] | replace(".", "_") %}  
+    [[preAnalysis-{{ preanalysis_name }}]]  
+        inherit = PRE-ANALYSIS  
+        script = """  
+            ls  
+            echo NOTE: About to source user script  
+            if csh {{ PREANALYSIS_SCRIPT }}; then  
+                echo NOTE: User script exited normally 
+            else  
+                echo ERROR: User script got an error status $?  
+                exit 1  
+            fi 
+        """ 
+{% endif %} 
 
     [[SPLIT-NETCDF]]
         pre-script = mkdir -p $outputDir
@@ -961,13 +972,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
     {% else %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
     {% endif %}
 {% endif %}
 
