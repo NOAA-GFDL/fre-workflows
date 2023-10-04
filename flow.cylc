@@ -603,56 +603,56 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
-                exit 1  
-            fi  
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then  
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."  
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}  
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."  
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc 
-                mv -f * $TMPDIR/modify_refineDiag  
-                mv -f $TMPDIR/modify_refineDiag/* . 
-                rm -rf $TMPDIR/modify_refineDiag  
-            fi  
-        """  
-{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}  
-{# Create a 'macro' function to reduce code repeat #}  
-    {% macro exec_refine(script_name) -%}  
-            inherit = REFINE-DIAG  
-            script = """  
-                ls  
-                echo NOTE: About to source user script  
-                if csh {{ script_name }}; then  
-                    echo NOTE: User script exited normally  
-                else  
-                    echo ERROR: User script got an error status $?  
-                    exit 1  
-                fi  
-            """  
-    {%- endmacro %}  
-{# Use the 'split' function to transform string into an iterable list, including of length 1 #}  
-    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}  
-    {% for refineDiag_path in refineDiag_scripts %}  
-            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] | replace(".", "_") }}]]  
-        {{ exec_refine(refineDiag_path) }}  
-    {% endfor %}  
-{% endif %}  
-  
-{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}  
-    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] | replace(".", "_") %}  
-    [[preAnalysis-{{ preanalysis_name }}]]  
-        inherit = PRE-ANALYSIS  
-        script = """  
-            ls  
-            echo NOTE: About to source user script  
-            if csh {{ PREANALYSIS_SCRIPT }}; then  
-                echo NOTE: User script exited normally 
-            else  
-                echo ERROR: User script got an error status $?  
-                exit 1  
-            fi 
-        """ 
-{% endif %} 
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+        """
+{# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
+{# Create a 'macro' function to reduce code repeat #}
+    {% macro exec_refine(script_name) -%}
+            inherit = REFINE-DIAG
+            script = """
+                ls
+                echo NOTE: About to source user script
+                if csh {{ script_name }}; then
+                    echo NOTE: User script exited normally
+                else
+                    echo ERROR: User script got an error status $?
+                    exit 1
+                fi
+            """
+    {%- endmacro %}
+{# Use the 'split' function to transform string into an iterable list, including of length 1 #}
+    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
+    {% for refineDiag_path in refineDiag_scripts %}
+            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] | replace(".", "_") }}]]
+        {{ exec_refine(refineDiag_path) }}
+    {% endfor %}
+{% endif %}
+
+{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] | replace(".", "_") %}
+    [[preAnalysis-{{ preanalysis_name }}]]
+        inherit = PRE-ANALYSIS
+        script = """
+            ls
+            echo NOTE: About to source user script
+            if csh {{ PREANALYSIS_SCRIPT }}; then
+                echo NOTE: User script exited normally
+            else
+                echo ERROR: User script got an error status $?
+                exit 1
+            fi
+        """
+{% endif %}
 
     [[SPLIT-NETCDF]]
         pre-script = mkdir -p $outputDir
@@ -819,7 +819,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[combine-timeavgs-{{ PP_CHUNK_A }}<component>]]
         inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}, <component>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_component		
+            component = $CYLC_TASK_PARAM_component
 
     {% if DO_SECONDARY_PP %}
     [[COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}]]
@@ -832,7 +832,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}, <component>
         [[[environment]]]
             component = $CYLC_TASK_PARAM_component
-        
+
     {% endif %}
 {% endif %}
 
@@ -850,9 +850,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
     [[data-catalog]]
         script = """
-        cd $TMPDIR
-        git clone git@github.com:aradhakrishnanGFDL/CatalogBuilder.git
-        cd CatalogBuilder
+        cd $TMPDIR && git clone https://www.github.com/aradhakrishnanGFDL/CatalogBuilder.git && cd CatalogBuilder
         ./gen_intake_gfdl.py --overwrite $ppdir $ppdir/catalog.csv
         """
         [[[environment]]]
@@ -1120,4 +1118,3 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[<component>]]
     [[PP-STARTER]]
 {% endif %}
-

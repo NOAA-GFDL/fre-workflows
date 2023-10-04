@@ -20,8 +20,8 @@
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -41,23 +41,23 @@
     [[PP-STARTER]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:pp-starter;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
-        """	
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:pp-starter;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
+        """
     [[STAGE-HISTORY]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
-        """	
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
+        """
         pre-script = module load gcp hsm/test
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         pre-script = """
             env
@@ -75,8 +75,8 @@
     [[REFINE-DIAG]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:refineDiag;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:refineDiag;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         post-script = """
             cd $refineDiagDir
@@ -119,8 +119,8 @@
     [[data-catalog]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         pre-script = module load conda && conda activate /net2/Ciheim.Brown/conda/envs/DCEnv
 
@@ -141,12 +141,21 @@
         pre-script = module load fre/test && mkdir -p $outputDir
 {% endif %}
 
+    [[CLEAN]]
+        env-script = """
+            {{ EPMT_PREAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:clean;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
+        """
+        pre-script = "set -x"
+		
+
 {% if DO_MDTF %}
     [[mdtf]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:mdtf;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:mdtf;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         pre-script = mkdir -p $MDTF_TMPDIR
         [[[environment]]]
@@ -157,8 +166,8 @@
     [[combine-statics]]
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:combine-statics;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }}script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
-			{{ EPMT_POSTAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:combine-statics;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            {{ EPMT_POSTAMBLE }}
         """
         pre-script = module load cdo && mkdir -p $outputDir
 {% endif %}
@@ -185,7 +194,7 @@
         {{ EPMT_POSTAMBLE }}
         """
     {% endfor %}
-	
+
     {% if DO_STATICS %}
         {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in REGRID_STATIC_COMPONENTS %}
