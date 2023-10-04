@@ -13,16 +13,23 @@
 {# Calculate the number of history segments per a-chunk #}
 {% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
 
-##fill these in
-{% set MOS_PER_HIST_SEGMENT = 0 | int %}
-{% set MOS_PER_CHUNK_A = 0 | int %}
-{% set MOS_PER_CHUNK_B = 0 | int %}
+{# secs_per_365cal_month #}
+{% set SECS_PER_365CAL_MONTH = (365 / 12 * 24 * 60 * 60) %}
+{# months_per_hist_segment #}
+{% set MOS_PER_HIST_SEGMENT = (HISTORY_SEGMENT | duration_as('s') / SECS_PER_365CAL_MONTH) | int %}
+{# months_per_chunk_a #}
+{% set MOS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / SECS_PER_365CAL_MONTH) | int %}
+
 
 {# Calculate the number of a-chunks per b-chunk (if desired) #}
 {% set DO_SECONDARY_PP = False %}
 {% if PP_CHUNK_B is defined and PP_CHUNK_B != PP_CHUNK_A %}
     {% set CHUNK_AS_PER_CHUNK_B = (PP_CHUNK_B | duration_as('s') / PP_CHUNK_A | duration_as('s')) | int %}
     {% set DO_SECONDARY_PP = True %}
+    {# months_per_chunk_b #}
+	{% set MOS_PER_CHUNK_B = (PP_CHUNK_B | duration_as('s') / SECS_PER_365CAL_MONTH) | int %}
+{% else %}
+    {% set MOS_PER_CHUNK_B = -1 %}
 {% endif %}
 
 {# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
