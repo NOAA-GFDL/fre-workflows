@@ -1,3 +1,5 @@
+#!/app/conda/miniconda/envs/cylc/bin/python
+
 import re
 
 # this script comes from
@@ -144,10 +146,10 @@ def papiex_tag_file(fin_name, fms_modulefiles):
           if k == 'exp_component': sname['exp_component'] = line[l:].lstrip()
           if k == 'exp_time': sname['exp_time'] = line[l:].lstrip()
 
-    EPMT_JOB_TAGS = EPMT_JOB_TAGS + 'script_name:' \
-                                  + sname['exp_name'] +"_" \
-                                  + sname['exp_component'] +"_" \
-                                  + sname['exp_time'] + "'"
+    EPMT_JOB_TAGS += 'script_name:' 
+    if sname.get('exp_name')      is not None: EPMT_JOB_TAGS += sname['exp_name']      +"_" 
+    if sname.get('exp_component') is not None: EPMT_JOB_TAGS += sname['exp_component'] +"_" 
+    if sname.get('exp_time')      is not None: EPMT_JOB_TAGS += sname['exp_time']      +"'"
 
     epmt_instrument = 'setenv PAPIEX_OPTIONS $PAPIEX_OLD_OPTIONS; setenv LD_PRELOAD $PAPIEX_LD_PRELOAD; setenv PAPIEX_OUTPUT $PAPIEX_OLD_OUTPUT;'
     epmt_uninstrument = 'unsetenv PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD'
@@ -197,5 +199,9 @@ def papiex_tag_file(fin_name, fms_modulefiles):
     # Write the file out again
     with open(fout_name, 'w') as file:
         file.write('\n'.join(script))
-
+    
     del script
+
+
+##### local testing/debugging
+papiex_tag_file('/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh', '')
