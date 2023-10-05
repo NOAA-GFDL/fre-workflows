@@ -509,7 +509,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
             ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc cycle-point --template CCYYMMDD).nc/*.nc .
         """
-        [[[environment]]]
 
 {% endif %}
 
@@ -1114,9 +1113,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
 
-#this is required for portability
-#should probably only include inherit = <some_task_param> if SITE = ppan.
-#but empty task-family inheritence is inconsequential for now.
+{# this is required for portability should probably only include #}
+{# inherit = <some_task_param> if SITE = ppan. #}
+{# but empty task-family inheritence is inconsequential for now. #}
 {% if SITE != 'ppan' %}
     [[<regrid>]]
     [[<regrid_static>]]

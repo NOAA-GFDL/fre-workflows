@@ -36,7 +36,6 @@
             --comment=xtmp,epmt,canopy
         [[[environment]]]
             COPY_TOOL=gcp
-            COMPONENT=PLACEHOLDER
 
     [[PP-STARTER]]
         env-script = """
@@ -173,7 +172,6 @@
 {% endif %}
 
 
-{# epmt metadata annotation- aka "job tags" #}
 {% set PP_COMPONENTS_LIST = PP_COMPONENTS.split(' ') %}
 {% for COMPONENT in PP_COMPONENTS_LIST %}
     [[<component={{ COMPONENT }}>]]
@@ -206,7 +204,6 @@
         """
         {% endfor %}
     {% endif %}
-
 {% endif %}
 
 {% if DO_NATIVE %}
