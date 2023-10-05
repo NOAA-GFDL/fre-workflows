@@ -85,12 +85,12 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
     return results
 
 
-##### local debug/testing
-### requires some kind of configuration present in app/remap_pp_components/rose-app.conf
-### *AND* within app/regridy-xy/rose-app.conf
-grid_type='regrid-xy'
-temporal_type='temporal'
-pp_components_str="atmos atmos_cmip"
-print(f"\nform_task_parameter_components({grid_type}, {temporal_type}, {pp_components_str}) \n yields...")
-print(form_task_parameter_components(grid_type=grid_type, temporal_type=temporal_type, pp_components_str=pp_components_str))
+###### local debug/testing
+#### requires some kind of configuration present in app/remap_pp_components/rose-app.conf
+#### *AND* within app/regridy-xy/rose-app.conf
+#grid_type='regrid-xy'
+#temporal_type='temporal'
+#pp_components_str="atmos atmos_cmip"
+#print(f"\nform_task_parameter_components({grid_type}, {temporal_type}, {pp_components_str}) \n yields...")
+#print(form_task_parameter_components(grid_type=grid_type, temporal_type=temporal_type, pp_components_str=pp_components_str))
 
