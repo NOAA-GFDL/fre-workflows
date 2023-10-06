@@ -7,3 +7,10 @@ if ($status) then
     exit 1
 endif
 cylc install -O $1 --workflow-name $1
+
+set tool_ops=`cat ./rose-suite.conf  | grep SITE | sed 's/SITE=//' | sed 's/\"//' | sed 's/\"//'`
+echo "tool_ops = ${tool_ops}"
+if ($tool_ops == "ppan") then
+	echo "will tool ops."
+	ls /home/$USER/cylc-run/$1/runN/
+endif
