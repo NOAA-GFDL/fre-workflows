@@ -94,8 +94,8 @@ a. Edits:
 
 		1. If not on gfdl pp/an, set `site` = `generic`
 		2. Correct PTMPDIR path - create ptmp directory
-		2. DO_REFINEDIAG=False
-		3. DO_PREANALYSIS=False
+		3. DO_REFINEDIAG=False
+		4. DO_PREANALYSIS=False
 
 	ii. opt/rose-suite-experiment configurations
 
