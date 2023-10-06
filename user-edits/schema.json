@@ -121,7 +121,7 @@
                            },
                            "PLATFORM": {
                                 "type": "string",
-                                "description": "LAbel for the hardware and software environment"
+                                "description": "Label for the hardware and software environment"
                            },
                            "TARGET": {
                                 "type": "string",
@@ -161,15 +161,15 @@
                                      },
                                      "outputGridLon": {
                                           "type": "string",
-                                          "description": "a"
+                                          "description": "Longitudinal output grid"
                                      },
                                      "outputGridLat": {
                                           "type": "string",
-                                          "description": "a"
+                                          "description": "Latitudinal output grid"
                                      },
                                      "outputGridType": {
                                           "type": "string",
-                                          "description": "a"
+                                          "description": "Grid label"
                                      },
                                      "sources": {
                                           "type": "string",
