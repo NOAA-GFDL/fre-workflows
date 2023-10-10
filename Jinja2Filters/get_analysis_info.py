@@ -59,23 +59,19 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
     if item_script is None:
-        raise Exception(f"got None from: get_value([{item},'script'])")
-        return False
+        raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'script']) is None!")
     
     item_freq = node.get_value(keys=[item, 'freq'])
     if item_freq is None:
-        raise Exception(f"got None from: get_value([{item},'freq'])")
-        return False
+        raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'freq']) is None!")
 
     item_product = node.get_value(keys=[item, 'product'])
     if item_product is None:
-        raise Exception(f"got None from: get_value([{item},'product'])")
-        return False
+        raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'product']) is None!")
 
     item_switch = node.get_value(keys=[item, 'switch'])
     if item_switch is None:
-        raise Exception(f"got None from: get_value([{item},'switch'])")
-        return False
+        raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'switch']) is None!")
 
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
