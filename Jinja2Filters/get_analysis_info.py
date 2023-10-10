@@ -22,12 +22,12 @@ def check_components(list1, list2):
     Otherwise, return False.
     """
     if "all" in list2:
-        return(True)
+        return True
     else:
         for item in list1:
             if item not in list2:
-                return(False)
-    return(True)
+                return False
+    return True
 
 def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, print_stderr=False):
     """Utility method to retrieve config information about an analysis script.
@@ -45,12 +45,12 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     """
     # only target the keys
     if len(keys) != 1:
-        return(False)
+        return False
 
     # skip env and command keys
     item = keys[0]
     if item == "env" or item == "command":
-        return(False)
+        return False
 
     # consider adding analysis script to workflow
     # if not adding, write a note why
@@ -58,25 +58,37 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
 
     # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
-    assert item_script
+    if item_script is None:
+        raise Exception(f"got None from: get_value([{item},'script'])")
+        return False
+    
     item_freq = node.get_value(keys=[item, 'freq'])
-    assert item_freq
+    if item_freq is None:
+        raise Exception(f"got None from: get_value([{item},'freq'])")
+        return False
+
     item_product = node.get_value(keys=[item, 'product'])
-    assert item_product
+    if item_product is None:
+        raise Exception(f"got None from: get_value([{item},'product'])")
+        return False
+
     item_switch = node.get_value(keys=[item, 'switch'])
-    assert item_switch
+    if item_switch is None:
+        raise Exception(f"got None from: get_value([{item},'switch'])")
+        return False
+
     #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
     # skip if switch is off
     if item_switch == "off":
-        return(False)
+        return False
 
     # skip this analysis script if pp component not requested
     item_comps = node.get_value(keys=[item, 'components']).split()
     if not check_components(item_comps, pp_components):
         if print_stderr:
             sys.stderr.write(f"ANALYSIS: {item}: Skipping as it requests component(s) not available ({item_comps})\n")
-        return(False)
+        return False
 
     # The first "word" of item_script will be the script, but there could be more command-line args.
     if " " in item_script:
