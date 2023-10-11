@@ -155,6 +155,7 @@ def main(args):
     rose_suite.set(keys=['template variables', 'DO_TIMEAVGS'],       value='True')
     rose_suite.set(keys=['template variables', 'DO_ANALYSIS_ONLY'],  value='False')
     rose_suite.set(keys=['template variables', 'FRE_ANALYSIS_HOME'], value='"/home/fms/local/opt/fre-analysis/test"')
+    rose_suite.set(keys=['template variables', 'DO_ATMOS_PLEVEL_MASKING'], value='True')
 
     # not sure about these
     rose_suite.set(keys=['template variables', 'PP_DEFAULT_XYINTERP'], value='"360,180"')
@@ -308,16 +309,18 @@ def main(args):
             list_refinediags.append(x)
 
     if list_refinediags:
-        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='True')
+        # turn refinediag off by default in favor of the built-in plevel masking
+        rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
         if args.dual:
-            rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+            rose_suite.set(keys=['template variables', '#HISTORY_DIR_REFINED'],
                            value=f"'{historyDirRefined}_canopy'")
         else:
-            rose_suite.set(keys=['template variables', 'HISTORY_DIR_REFINED'],
+            rose_suite.set(keys=['template variables', '#HISTORY_DIR_REFINED'],
                            value=f"'{historyDirRefined}'")
-        rose_suite.set(keys=['template variables', 'REFINEDIAG_SCRIPTS'],
+        rose_suite.set(keys=['template variables', '#REFINEDIAG_SCRIPTS'],
                      value="'{}'".format(" ".join(list_refinediags)))
         logging.info(f"Refinediag scripts: {' '.join(list_refinediags)}")
+        logging.info(f"NOTE: Now turned off by default; please re-enable in config file if needed")
     else:
         rose_suite.set(keys=['template variables', 'DO_REFINEDIAG'], value='False')
         logging.info("No refineDiag scripts written. )")
@@ -431,7 +434,10 @@ def main(args):
             grid = "native"
 
         sources = set()
-        sources.add(comp_source)
+        if comp_source.endswith('_refined'):
+            logging.info(f"NOTE: Skipping history file '{comp_source}' as refineDiag is turned off by default.")
+        else:
+            sources.add(comp_source)
         timeseries_count = 0
 
         # Get the number of TS nodes
@@ -447,7 +453,10 @@ def main(args):
             source = frelist_xpath(args, '{}/timeSeries[{}]/@source'                   \
                                          .format(pp_comp_xpath_header, i))
             if source:
-                sources.add(source)
+                if source.endswith('_refined'):
+                    logging.info(f"NOTE: Skipping history file '{source}' as refineDiag is turned off by default.")
+                else:
+                    sources.add(source)
 
             #freq = freq_from_legacy(frelist_xpath(args,                                
             #                                      '{}/timeSeries[{}]/@freq'            \
