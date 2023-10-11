@@ -1,31 +1,85 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/product.schema.json",
-  "title": "user-edits",
+  "title": "User-edits",
   "description": "A yaml populated with user-defined edits for multiple configurations in the workflow" ,
   "type": "object",
   "properties": {
        "postprocess": {
                       "description": "User-defined configurations for postprocessing", 
-                      "type": "array/dictionaries",
+                      "type": "object",
                       "items": {"$ref": "#/$defs/pp"} 
-                      }
+       }
   },
   "$defs":{
        "pp": {
             "type": "object",   
             "properties": {
-                 "path": { "type": "string",
-                         "description": "Path to the referenced file"},
-                 "rose-suite-exp-configuration":{
+                 "ROSE-EXPERIMENT-CONFIGURATION": {
+                      "description": "Information for experiment configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/exp-config"}
+                 },
+                 "INSTALL-EXP-SCRIPT": {
+                      "description": "User-edit of additional option for `cylc install` command",
+                      "type": "object",
                       "properties": {
-                           "SITE": {
+                          "path": {
+                               "type": "string",
+                               "description": "Path to script that installs and validates experiment configuration"
+                          },
+                          "install-option": {
+                               "type": "object",
+                               "properties": {
+                                    "install": {
+                                         "type": "string",
+                                         "description": "Additional sym-link option (or other options) to add to cylc install command"
+                                    }
+                               }
+                          }
+                      }
+                 },
+                 "TMPDIR": {
+                      "description": "User-edit for location of temporary directory",
+                      "type": "object",
+                      "properties": {
+                           "path": {
                                 "type": "string",
-                                "description": "Specific site used for workflow" 
+                                "description": "Path to where user wnts tmpDir created"
+                           }
+                      } 
+                 },
+                 "REGRID-XY": {
+                      "description": "User-edits for regrid-xy rose-app configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/regrid-config"}
+                 },
+                 "REMAP-PP-COMPONENTS": {
+                      "description": "User-edits for remap-pp-components rose-app configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/remap-config"}
+                 }
+            }    
+       }
+  },
+  "$info": {
+       "exp-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "type": "string",
+                      "description": "Path to rose-suite-exp configuration"
+                 },
+                 "rose-suite-exp-configuration": {
+                      "type": "object",
+                      "properties": {
+                           "SITE":{
+                                "type": "string",
+                                "description": "Specific site used for workflow"
                            },
                            "CLEAN_WORK": {
                                 "type": "boolean",
-                                "description": "Switch to remove intermediate data files when they are no longer "
+                                "description": "Switch to remove intermediate data files when they are no longer"
                            },
                            "PTMP_DIR": {
                                 "type": "string",
@@ -108,7 +162,7 @@
                                 "description": "ISO8601 date to end postprocessing"
                            },
                            "PP_DEFAULT_XYINTERP": {
-                                "type": "string", 
+                                "type": "string",
                                 "description": "Default regridded resolution"
                            },
                            "PP_GRID_SPEC": {
@@ -120,33 +174,39 @@
                                 "description": "Label for the experiment"
                            },
                            "PLATFORM": {
-                                "type": "string",
+                                "type": "sting",
                                 "description": "Label for the hardware and software environment"
                            },
                            "TARGET": {
                                 "type": "string",
                                 "description": "Label for the FRE compilation target used in the simulation"
+                           },
+                           "ANALYSIS_DIR": {
+                                "type": "string",
+                                "description": "Directory to write analysis output"
                            }
-                      }
+                      },
+                      "required": [ "SITE","PTMP_DIR","HISTORY_DIR","HISTORY_SEGMENT","PP_CHUNK_A","PP_COMPONENTS","PP_DIR","PP_START","PP_STOP","PP_DEFAULT_XYINTERP","PP_GRID_SPEC","EXPERIMENT","PLATFORM","TARGET" ]
+                 }
+            }
+       },
+       "regrid-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "description": "Path to rose-app configuration for regrid-xy",
+                      "type": "string"
                  },
-                
-                 "install-option":{
-                       "properties": {
-                            "install": {
-                                 "type": "string",
-                                 "description": "Additional sym-link option (or other options) to add to cylc install command"
-                             }
-                       }
-                 },
-
-                 "rose-app-configuration":{
+                 "rose-app-configuration": {
+                      "type": "object",
                       "properties": {
                            "component": {
+                                "type": "object",
                                 "properties": {
                                      "type": {
                                           "type": "string",
-                                          "description": "Name of component" 
-                                     }, 
+                                          "description": "Name of component"
+                                     },
                                      "inputGrid": {
                                           "type": "string",
                                           "description": "Cubedsphere or tripolar"
@@ -173,17 +233,44 @@
                                      },
                                      "sources": {
                                           "type": "string",
-                                          "description": "a"
-                                     },
-                                     "grid": {
-                                          "type": "string",
-                                          "description": "Native, regrid-xy/default or regrid-xy/LABEL"
+                                          "description": "Sources associated with the component"
                                      }
                                 }
                            }
                       }
                  }
             }
-       }
+       },
+       "remap-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "description": "Path to rose-app configuration for remap-pp-components",
+                      "type": "string"
+                 },
+                 "rose-app-configuration": {
+                      "type": "object",
+                      "properties": {
+                           "component": {
+                                "type": "object",
+                                "properties": {
+                                     "type": {
+                                          "type": "string",
+                                          "description": "Name of component"
+                                     },
+                                     "sources": {
+                                          "type": "string",
+                                          "description": "Sources associated with the component"
+                                     },
+                                     "grid": {
+                                          "type": "string",
+                                          "description": "Native, regrid-xy/default or regrid-xy.LABEL"
+                                     }
+                                }
+                           }
+                      }
+                 }
+            }
+       }     
   }
 }
