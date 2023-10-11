@@ -177,10 +177,12 @@ stage-history-refined => split-netcdf-native<native>
 {# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
 {% if CLEAN_WORK %}
     {% if DO_REGRID %}
+regrid-xy<regrid>                 => clean-history-native
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
+split-netcdf-native<native>       => clean-history-native
 rename-split-to-pp-native<native> => clean-split-native
     {% endif %}
 {% endif %}
@@ -226,10 +228,12 @@ stage-history-refined => split-netcdf-native<native_static>
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
 {% if CLEAN_WORK and DO_STATICS %}
     {% if DO_REGRID %}
+regrid-xy<regrid_static> => clean-history-native
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
+split-netcdf-native<native_static> => clean-history-native
 rename-split-to-pp-native<native_static> => clean-split-native
     {% endif %}
 remap-pp-components-static => clean-shards-static
@@ -1009,6 +1013,12 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
     [[CLEAN]]
         pre-script = "set -x"
+
+{% if DO_NATIVE %}
+    [[clean-history-native]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native"
+{% endif %}
 
 {% if DO_REGRID %}
     [[clean-history-regrid-xy]]
