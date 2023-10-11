@@ -663,13 +663,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
 {% if DO_NATIVE %}
     [[mask-atmos-plevel<native>]]
-        inherit = MASK-ATMOS-PLEVEL
+        inherit = MASK-ATMOS-PLEVEL, <native>
         [[[environment]]]
             component = $CYLC_TASK_PARAM_native
 {% endif %}
 {% if DO_REGRID %}
     [[mask-atmos-plevel<regrid>]]
-        inherit = MASK-ATMOS-PLEVEL
+        inherit = MASK-ATMOS-PLEVEL, <regrid>
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid
 {% endif %}
