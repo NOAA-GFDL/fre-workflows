@@ -149,23 +149,26 @@ stage-history => PRE-ANALYSIS
 {# Each history file needed for native grid processing is similar, except skipping the regridding.         #}
 {% if DO_REGRID %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+    {% if DO_ATMOS_PLEVEL_MASKING %}
+STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid> => regrid-xy<regrid>
+    {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
 STAGE-HISTORY:succeed-all => split-netcdf-native<native> => rename-split-to-pp-native<native>
+    {% if DO_ATMOS_PLEVEL_MASKING %}
+STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<native>
+    {% endif %}
 {% endif %}
 
 {# If HISTORY_DIR_REFINED is set, then use the next 3 lines.              #}
-{# After all staging is done, then hard link the refined history files to #}
-{# the history file location (not a great solution). #}
 {# Regridding and splitting native history files should not start until the history-refined output is available.   #}
 {% if HISTORY_DIR_REFINED is defined %}
-STAGE-HISTORY:succeed-all  => stage-history-refined-link
     {% if DO_REGRID %}
-stage-history-refined-link => regrid-xy<regrid>
+stage-history-refined => regrid-xy<regrid>
     {% endif %}
     {% if DO_NATIVE %}
-stage-history-refined-link => split-netcdf-native<native>
+stage-history-refined => split-netcdf-native<native>
     {% endif %}
 {% endif %}
 
@@ -174,10 +177,12 @@ stage-history-refined-link => split-netcdf-native<native>
 {# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
 {% if CLEAN_WORK %}
     {% if DO_REGRID %}
+regrid-xy<regrid>                 => clean-history-native
 split-netcdf-regrid<regrid>       => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
+split-netcdf-native<native>       => clean-history-native
 rename-split-to-pp-native<native> => clean-split-native
     {% endif %}
 {% endif %}
@@ -210,13 +215,12 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
 {% if HISTORY_DIR_REFINED is defined %}
-STAGE-HISTORY:succeed-all => stage-history-refined-link
     {% if DO_STATICS %}
         {% if DO_REGRID %}
-stage-history-refined-link => regrid-xy<regrid_static>
+stage-history-refined => regrid-xy<regrid_static>
         {% endif %}
         {% if DO_NATIVE %}
-stage-history-refined-link => split-netcdf-native<native_static>
+stage-history-refined => split-netcdf-native<native_static>
         {% endif %}
     {% endif %}
 {% endif %}
@@ -224,10 +228,12 @@ stage-history-refined-link => split-netcdf-native<native_static>
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
 {% if CLEAN_WORK and DO_STATICS %}
     {% if DO_REGRID %}
+regrid-xy<regrid_static> => clean-history-native
 split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
 rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
+split-netcdf-native<native_static> => clean-history-native
 rename-split-to-pp-native<native_static> => clean-split-native
     {% endif %}
 remap-pp-components-static => clean-shards-static
@@ -482,6 +488,10 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                  echo "Error: Cant stage history files in ${file} to PTMP"
                  exit 1
             fi
+            # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
+            mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
             echo "Natural end of the history file staging"
             exit 0
         """
@@ -500,15 +510,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             historyDir = {{ HISTORY_DIR_REFINED }}
             ptmpDir = {{ PTMP_DIR }}
-
-    [[stage-history-refined-link]]
-        script = """
-            {# a disagreeable workaround to use PTMP as a data input location #}
-            {# assumes no name collisions, and pollutes PTMP                   #}
-            set -x
-            cd {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
-            ln -f {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$(cylc cycle-point --template CCYYMMDD).nc/*.nc .
-        """
 
 {% endif %}
 
@@ -660,6 +661,23 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         """
 {% endif %}
 
+    [[MASK-ATMOS-PLEVEL]]
+        script = rose task-run --verbose --app-key mask-atmos-plevel
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+{% if DO_NATIVE %}
+    [[mask-atmos-plevel<native>]]
+        inherit = MASK-ATMOS-PLEVEL, <native>
+        [[[environment]]]
+            component = $CYLC_TASK_PARAM_native
+{% endif %}
+{% if DO_REGRID %}
+    [[mask-atmos-plevel<regrid>]]
+        inherit = MASK-ATMOS-PLEVEL, <regrid>
+        [[[environment]]]
+            component = $CYLC_TASK_PARAM_regrid
+{% endif %}
+
     [[SPLIT-NETCDF]]
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key split-netcdf
@@ -670,7 +688,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
-            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             component = $CYLC_TASK_PARAM_native
 {% endif %}
@@ -930,7 +948,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
-            inputDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}/$(cylc cycle-point --template CCYYMMDD).nc
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
@@ -995,6 +1013,12 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
     [[CLEAN]]
         pre-script = "set -x"
+
+{% if DO_NATIVE %}
+    [[clean-history-native]]
+        inherit = CLEAN
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native"
+{% endif %}
 
 {% if DO_REGRID %}
     [[clean-history-regrid-xy]]

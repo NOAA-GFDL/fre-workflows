@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+#
+# Mask atmos plevel files below surface pressure
+#
+
+echo Arguments:
+echo "    input dir: $inputDir"
+echo "    component(s): $component"
+echo Utilities:
+type python
+type refine_Atmos_no_redux.py
+
+# Verify input directory exists and is a directory
+if [[ ! -d $inputDir ]]; then
+    err "Error: Input directory '${inputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+cd $inputDir
+
+for file in $(ls *.$component.*.nc); do
+    refine_Atmos_no_redux.py $file -o $file.masked -p $file
+    if [[ -f $file.masked ]]; then
+        mv -f $file.masked $file
+        echo "Updated '$file'"
+    fi
+done
+
+echo Natural end of the atmos plevel masking
+exit 0

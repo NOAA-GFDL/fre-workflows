@@ -140,6 +140,9 @@
         pre-script = module load fre/test && mkdir -p $outputDir
 {% endif %}
 
+    [[MASK-ATMOS-PLEVEL]]
+        pre-script = module load python
+
     [[CLEAN]]
         env-script = """
             {{ EPMT_PREAMBLE }}
