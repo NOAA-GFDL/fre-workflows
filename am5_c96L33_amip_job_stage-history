@@ -1,0 +1,127 @@
+#!/bin/bash -l
+#
+# ++++ THIS IS A CYLC JOB SCRIPT ++++
+# Workflow: am5_c96L33_amip/run6
+# Task: 19800101T0000Z/stage-history
+# Job log directory: 19800101T0000Z/stage-history/01
+# Job runner: slurm
+# Execution time limit: 28800.0
+
+# DIRECTIVES:
+#SBATCH --job-name=stage-history.19800101T0000Z.am5_c96L33_amip/run6
+#SBATCH --output=cylc-run/am5_c96L33_amip/run6/log/job/19800101T0000Z/stage-history/01/job.out
+#SBATCH --error=cylc-run/am5_c96L33_amip/run6/log/job/19800101T0000Z/stage-history/01/job.err
+#SBATCH --time=480:00
+#SBATCH --comment=xtmp,epmt,canopy
+if [[ $1 == 'noreinvoke' ]]; then
+    shift
+else
+    exec bash -l "$0" noreinvoke "$@"
+fi
+
+CYLC_FAIL_SIGNALS='EXIT ERR TERM XCPU'
+export PATH=/home/fms/fre-canopy/system-settings/bin:$PATH
+export CYLC_VERBOSE=false
+export CYLC_DEBUG=false
+export CYLC_VERSION='8.2.1'
+export CYLC_WORKFLOW_ID="am5_c96L33_amip/run6"
+
+cylc__job__inst__cylc_env() {
+    # CYLC WORKFLOW ENVIRONMENT:
+    export CYLC_CYCLING_MODE="gregorian"
+    export CYLC_UTC="True"
+    export CYLC_WORKFLOW_FINAL_CYCLE_POINT="19810101T0000Z"
+    export CYLC_WORKFLOW_INITIAL_CYCLE_POINT="19800101T0000Z"
+    export CYLC_WORKFLOW_NAME="am5_c96L33_amip"
+    export CYLC_WORKFLOW_NAME_BASE="am5_c96L33_amip"
+    export TZ="UTC"
+    export CYLC_WORKFLOW_UUID="f1a7448d-b9f7-44de-a409-0811f0c20831"
+
+    # CYLC TASK ENVIRONMENT:
+    export CYLC_TASK_COMMS_METHOD=zmq
+    export CYLC_TASK_JOB="19800101T0000Z/stage-history/01"
+    export CYLC_TASK_NAMESPACE_HIERARCHY="root STAGE-HISTORY stage-history"
+    export CYLC_TASK_DEPENDENCIES="19800101T0000Z/pp-starter"
+    export CYLC_TASK_TRY_NUMBER=1
+    export CYLC_TASK_FLOW_NUMBERS=1
+}
+
+cylc__job__inst__user_env() {
+    # TASK RUNTIME ENVIRONMENT:
+    export COPY_TOOL COMPONENT historyDir ptmpDir
+    COPY_TOOL="gcp"
+    COMPONENT="PLACEHOLDER"
+    historyDir="/archive/inl/am5/2022.01/c96L33_am5a0_cmip6Diag/gfdl.ncrc5-intel22-classic-prod-openmp/history"
+    ptmpDir="/xtmp/Ian.Laflotte/ptmp"
+}
+
+cylc__job__inst__init_script() {
+# INIT-SCRIPT:
+module use -a /home/fms/local/modulefiles
+module load epmt
+module list
+epmt check
+}
+
+cylc__job__inst__env_script() {
+# ENV-SCRIPT:
+eval $(rose task-env)
+env
+export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
+export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
+unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
+epmt annotate EPMT_JOB_TAGS="exp_name:am5_c96L33_amip;exp_platform:gfdl.ncrc5-intel22-classic;exp_target:prod-openmp;exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:P1Y;pp_chunk_a_months:0;pp_chunk_b_months:0script_name:FOO.sh;task_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+export PAPIEX_OPTIONS=$PAPIEX_OLD_OPTIONS
+export LD_PRELOAD=$PAPIEX_LD_PRELOAD
+export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
+}
+
+cylc__job__inst__pre_script() {
+# PRE-SCRIPT:
+module load gcp hsm/test
+}
+
+cylc__job__inst__script() {
+# SCRIPT:
+set -euo pipefail
+#Stage the contents of a tarfile to PTMP
+module list
+echo Arguments:
+echo "    history dir: $historyDir"
+echo "    ptmp dir: $ptmpDir"
+echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
+echo "    TMPDIR (not used yet): ${TMPDIR:=/tmp}"
+echo Utilities:
+type hsmget
+type cylc
+#Verify history directory exists and is a directory
+if [[ ! -d $historyDir ]]; then
+     echo "Error: Archive directory ${historyDir} does not exist or isnt a directory"
+     exit 1
+fi
+#Verify history file exists
+file=$historyDir/$(cylc cycle-point --template CCYYMMDD).nc.tar
+if ls ${file}; then
+     echo "Going to stage ${file} to PTMP"
+else
+     echo "Error: Could not locate ${file}"
+     exit 1
+fi
+#We want to stage the history files to PTMP without transferring to VFTMP.
+#Calling hsmget on a file with wildcards that doesnt exist does this,
+#e.g. "dummy*" as below, but prints a warning
+if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
+     echo "History files in ${file} have been staged to PTMP successfully"
+else
+     echo "Error: Cant stage history files in ${file} to PTMP"
+     exit 1
+fi
+echo "Natural end of the history file staging"
+exit 0
+}
+
+CYLC_RUN_DIR="${CYLC_RUN_DIR:-$HOME/cylc-run}"
+. "${CYLC_RUN_DIR}/${CYLC_WORKFLOW_ID}/.service/etc/job.sh"
+cylc__job__main
+
+#EOF: 19800101T0000Z/stage-history/01

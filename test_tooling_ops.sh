@@ -13,31 +13,13 @@ mv stuffA STUFFB
 
 cp stuff2 stuffEXCESSIVE
 
-tar cvf sumthin.tar thisdirdoesntexist/*.FOO
 
+mv gobbledeGuk hoo_haa
 
-          ████                      
-        ██▒▒░░██                    
-      ██░░▒▒░░▒▒██                  
-      ██░░▒▒░░▒▒██                  
-      ██░░▒▒░░▒▒██                  
-      ██▒▒░░▒▒▒▒██                  
-      ██▒▒░░▒▒▒▒██                  
-    ██▒▒▒▒▒▒▒▒▒▒▒▒██                
-  ██░░░░░░░░░░░░▒▒▒▒██              
-██░░░░░░░░░░░░░░░░▒▒▒▒██      ████  
-██░░██░░░░░░░░░░░░▒▒▒▒██    ██    ██
-██░░██░░░░░░░░░░░░▒▒▒▒██  ██  ▒▒▒▒██
-██░░░░░░░░░░▒▒░░▒▒▒▒▒▒████▒▒▒▒    ██
-██    ░░░░▒▒░░▒▒▒▒▒▒████▒▒        ██
-  ██    ░░░░▒▒▒▒░░░░░░▒▒  ▒▒▒▒▒▒▒▒██
-    ████  ▒▒▒▒▒▒▒▒░░▒▒▒▒██      ██  
-        ██▒▒▒▒▒▒▒▒▒▒▒▒▒▒  ██████    
-        ██▒▒▒▒████▒▒▒▒██            
-          ████    ████              
+tar czvf sumthin.tgz thisdirdoesntexist/*.FOO
 
-
-
-		  
-
-		  
+if tar zxvf sumthin.tgz; then
+	echo "hello! success!"
+else
+	echo "hello! failure"
+fi

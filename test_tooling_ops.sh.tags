@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#----#... that's not a real module is it?
+module load HOOEY
+
+#here's more garbage characters to see if i can confuse this
+####@$%^#%^&#%^&#%*##$%!
+
+
+
+### THIS IS A FAKE SCRIPT FOR TESTING PURPOSES!!!!
+export PAPIEX_TAGS="op:mv;op_instance:1" ; mv stuffA STUFFB ; unset PAPIEX_TAGS
+
+export PAPIEX_TAGS="op:cp;op_instance:1" ; cp stuff2 stuffEXCESSIVE ; unset PAPIEX_TAGS
+
+
+export PAPIEX_TAGS="op:mv;op_instance:2" ; mv gobbledeGuk hoo_haa ; unset PAPIEX_TAGS
+
+export PAPIEX_TAGS="op:tar;op_instance:1" ; tar czvf sumthin.tgz thisdirdoesntexist/*.FOO ; unset PAPIEX_TAGS
+
+if { export PAPIEX_TAGS="op:tar;op_instance:2"; tar zxvf sumthin.tgz; export SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then
+	echo "hello! success!"
+else
+	echo "hello! failure"
+fi
