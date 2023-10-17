@@ -975,6 +975,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 {% if DO_ANALYSIS %}
     [[ANALYSIS]]
+        # Increase time limit for analysis jobs to 24 hours
+        execution time limit = PT24H
         pre-script = """
             env
             mkdir -p $outputDir $out_dir
@@ -1013,6 +1015,11 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
     [[CLEAN]]
         pre-script = "set -x"
+        # find commands can fail if the files change underneath, even if the change
+        # is not the files that are desired. e.g. we are cleaning year 2000 and year 1999
+        # was removed/cleaned half-way through. The find will fail.
+        # It would be best to ignore the missing files, but retrying will help.
+        execution retry delays = PT5M, PT10M, PT15M
 
 {% if DO_NATIVE %}
     [[clean-history-native]]
