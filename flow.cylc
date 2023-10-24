@@ -316,7 +316,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_S
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 {% endif %}
 
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
+REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
 """
 
 
@@ -491,7 +491,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
+                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
             echo "Natural end of the history file staging"
             exit 0
         """
@@ -952,6 +953,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
+            component = $CYLC_TASK_PARAM_regrid
             gridSpec = {{ PP_GRID_SPEC }}
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
@@ -1021,11 +1023,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         # It would be best to ignore the missing files, but retrying will help.
         execution retry delays = PT5M, PT10M, PT15M
 
-{% if DO_NATIVE %}
     [[clean-history-native]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native"
-{% endif %}
 
 {% if DO_REGRID %}
     [[clean-history-regrid-xy]]
@@ -1148,10 +1148,18 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {# inherit = <some_task_param> if SITE = ppan. #}
 {# but empty task-family inheritence is inconsequential for now. #}
 {% if SITE != 'ppan' %}
+    {% if DO_REGRID %}
     [[<regrid>]]
+        {% if DO_STATICS %}
     [[<regrid_static>]]
+        {% endif %}
+    {% endif %}
+    {% if DO_NATIVE %}
     [[<native>]]
+        {% if DO_STATICS %}
     [[<native_static>]]
+        {% endif %}
+    {% endif %}
     [[<component>]]
     [[PP-STARTER]]
 {% endif %}
