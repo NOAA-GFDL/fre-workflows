@@ -1,7 +1,7 @@
 #!/app/conda/miniconda/envs/cylc/bin/python
 
 import re
-
+import pathlib as pl
 # this script is a re-adaptation of the following lines for FRE Canopy specifically
 # https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
@@ -266,7 +266,7 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
 ##### local testing/debugging, ONE script input to test on.
 def test_papiex_tooling(infile = None):
     
-    import pathlib as pl
+
     outfile=infile+".tags"
     if pl.Path(outfile).exists():
         #print(f'removing output {outfile}')
@@ -322,3 +322,7 @@ def test_import():
 
 ##### local testing/debugging, MANY input scripts to test on.
 #many_tests_papiex_tooling(200000)
+
+
+if __name__=='__main__':
+    tool_ops_w_papiex('FOO',None)

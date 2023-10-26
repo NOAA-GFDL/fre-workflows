@@ -1,18 +1,10 @@
-#!/app/conda/miniconda/envs/cylc/bin/python
 
-#import sys
-#for path in sys.path: print(f'sys.path entry: {path}')
-
-import pathlib
+#import pathlib 
 from pathlib import Path
-from subprocess import DEVNULL
 
-from typing import (
-    Iterable,
-    List,
-    Tuple,
-    TYPE_CHECKING,
-)
+from subprocess import DEVNULL
+#import os 
+
 import shlex
 
 from cylc.flow.job_runner_handlers.slurm import SLURMHandler
@@ -25,29 +17,33 @@ class PPANHandler(SLURMHandler):
     # when this is not None, and then stick that flow-control into submit()
     SUBMIT_CMD_TMPL = None
 
-    # internal canary/coal mine test
-    @classmethod
-    def test_import(cls) -> int:
-        return 0
+#    # internal canary/coal mine test
+#    @classmethod
+##    def test_import(cls) -> int:
+#    def test_import(cls):
+#        return 0
+#
+#    # internal canary/coal mine test for ops tooling
+#    @classmethod
+#    #def test_tool_ops_import(cls) -> int:
+#    def test_tool_ops_import(cls):
+#        import tool_ops_w_papiex
+#        return tool_ops_w_papiex.test_import()
 
-    # internal canary/coal mine test for ops tooling
-    @classmethod
-    def test_tool_ops_import(cls) -> int:
-        import tool_ops_w_papiex
-        return tool_ops_w_papiex.test_import()
-
-    # to try to gurantee the text output isn't messed with... for now
-    @classmethod
-    def filter_submit_output(cls,
-                             out: str, err: str) -> Tuple[str, str]:
-        return (out, err)
+#    # to try to gurantee the text output isn't messed with... for now
+#    @classmethod
+#    #def filter_submit_output(cls,                         out: str, err: str) -> Tuple[str, str]:
+#    def filter_submit_output(cls, out, err) :
+#        return (out, err)
 
     # the thing I wish would actually work.
+    #@classmethod
+    #def submit(cls,               job_file_path: str,               submit_opts: dict,               dry_run=True   )  -> Tuple[int, str, str]:
     @classmethod
     def submit(cls,
-               job_file_path: str,
-               submit_opts: dict,
-               dry_run=False   )  -> Tuple[int, str, str]:
+               job_file_path,
+               submit_opts,
+               dry_run=False   ):
         """Submit a job.
     
         Submit a job and return an instance of the Popen object for the
@@ -69,6 +65,9 @@ class PPANHandler(SLURMHandler):
     
         """
 
+        proc_stdin_arg = None
+        proc_stdin_value = DEVNULL
+
         
         # the slurm handler has no real submit command- just a SUBMIT_CMD_TMPL
         # when job_runner_mgr.py will check for the submit, and default to using
@@ -78,13 +77,15 @@ class PPANHandler(SLURMHandler):
         # just wrapped into the submit function. 
         # to start, we copy/pasted lines 717 - 738 in cylc/flow/job_runner_mgr.py
         # below is the version i've landed on currently.
-        ret_code = 0
+        ret_code = 1
         out = ''
         err = ''
 
         # canary-in-coalmine output i would like to see everytime.        
         out+='(ppan_handler.py) hello world!\n'
 
+
+        #----------------------
         import tool_ops_w_papiex
         try:
             tool_ops_w_papiex.tool_ops_w_papiex(
@@ -93,80 +94,105 @@ class PPANHandler(SLURMHandler):
             out+='(ppan_handler.py) looks like papiex ops tooler finished OK.'
         except:
             err+='(ppan_handler.py) papiex ops tooler did not work.'
-
+            #return 1
+        
         assert all( [ Path(job_file_path).exists(),
                       Path(job_file_path+'.tags').exists() ] )
-        job_file_path=job_file_path+'.tags'
+        Path(job_file_path).rename(job_file_path+'.notags') #move job to job.notags
+        Path(job_file_path+'.tags').rename(job_file_path) #move job.tags to job
+        Path(job_file_path).chmod(0o755) #give the script execute permissions. 
+        #----------------------
         
         if dry_run: out+='(ppan_handler.py) ======= dry_run = True ====== \n'
-        out+=f'(ppan_handler.py) arg submit_opts = \n\n{submit_opts}\n\n' #warning, very long.
-        out+=f'(ppan_handler.py) arg job_file_path = {job_file_path}\n'
+        #out+=f'(ppan_handler.py) arg submit_opts = \n\n{submit_opts}\n\n' #warning, very long.
+        #out+=f'(ppan_handler.py) arg job_file_path = {job_file_path}\n'
 
-        err+='(ppan_handler.py) hello ERROR world!!!\n'
+        #err+='(ppan_handler.py) hello ERROR world!!!\n'
 
         env = submit_opts.get('env')
-        out+=f'(ppan_handler.py) submit_opts.get(\'env\') = \n {env} \n'
+        #out+=f'(ppan_handler.py) submit_opts.get(\'env\') = \n {env} \n'
         
         if env is None:
-            err+= "(ppan_handler.py) submit_opts.get('env') returned None in lib/python/ppan_handler.py\n"
-            return (1, out, err)
+            err+= "submit_opts.get('env') returned None in lib/python/ppan_handler.py\n"
+            return (ret_code, out, err)
 
-        if dry_run:
-            cmd_tmpl = "sleep 5s"
-        else:
-            cmd_tmpl = "sbatch '%(job)s'"
+        if dry_run:            cmd_tmpl = "sleep 5s"
+        else:            cmd_tmpl = "sbatch '%(job)s'"
+        #else:            cmd_tmpl = "sbatch -v -v '%(job)s'"
             
+        #try:
+        command = shlex.split(
+            cmd_tmpl % {"job": job_file_path})
+        #except:
+            #err+=f"(ppan_handler.py) shlex.split(\n    {cmd_tmpl} % {'job':{job_file_path}}\n\n did not work.\n"
+        #    command=shlex.split(
+        #        cmd_tmpl)
+
+
+        #out+='(ppan_handler.py) command is: '
+        #for part in command:
+        #    out+=f' {part}'
+        #out+='\n'                
+
+                
         try:
-            command = shlex.split(
-                cmd_tmpl % {"job": job_file_path})
-        except:
-            err+=f"(ppan_handler.py) shlex.split(\n    {cmd_tmpl} % {'job':{job_file_path}}\n\n did not work.\n"
-            command=shlex.split(
-                cmd_tmpl)
-
-
-        out+='(ppan_handler.py) command is: '
-        for part in command:
-            out+=f' {part}'
-        out+='\n'                
-
-        
-        
-        proc_stdin_value = DEVNULL
-        try:
-            cwd = pathlib.Path('~').expanduser()
-            out+=f'(ppan_handler.py) cwd={str(cwd)}\n'
+            cwd = Path('~').expanduser()
+            #out+=f'(ppan_handler.py) cwd={str(cwd)}\n'
             
             proc = procopen(
                 command,
-                stdin=None,
+                stdin=proc_stdin_arg,
                 stdoutpipe = True,
                 stderrpipe = True,
                 env = env,
-                # paths in directives should be interpreted relative to  $HOME                                                 
-                # https://github.com/cylc/cylc-flow/issues/4247         
                 cwd = cwd
             )
         except OSError as exc:
             # subprocess.Popen has a bad habit of not setting the       
             # filename of the executable when it raises an OSError.
-            out+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
-            err+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
+            #out+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
+            #err+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
             if not exc.filename:
                 exc.filename = command[0]                        
-            return 1, out, err
-
+            return (ret_code, out, err)
+        
         proc_out, proc_err = (f.decode() for f in proc.communicate(proc_stdin_value))
-        out+=f'(ppan_handler.py) procopen output: {proc_out}\n'
-        err+=f'(ppan_handler.py) procopen err output: {proc_err}\n'
+        #out+=f'(ppan_handler.py) procopen output: \n(ppan_handler) {proc_out}\n'
+        #err+=f'(ppan_handler.py) procopen err output: \n(ppan_handler) {proc_err}\n'
         try:
             ret_code = proc.wait()
         except:
-            err+='(ppan_handler.py) proc.wait() did not work. moving on.'
+            #err+='(ppan_handler.py) proc.wait() did not work. moving on.\n'
             ret_code=1
 
-        return (ret_code, out, err)
+        #out+=f'(ppan_handler) type(ret_code)={type(ret_code)}, \n(ppan_handler.py) ret_code={ret_code}\n'
+        return (ret_code, proc_out, proc_err)
+
+
 
 # based on
 #https://cylc.github.io/cylc-doc/stable/html/plugins/job-runners/index.html
 JOB_RUNNER_HANDLER = PPANHandler()
+
+
+
+
+
+
+
+
+
+
+
+#import os
+#out+='(ppan_handler.py) PRINTING ENVIRONMENT (THANKS PYTHON HOUR)\n'
+#for key, value in os.environ.items():
+#    out+=f'(ppan_handler.py) key={key}: val={value}\n'
+
+
+
+
+
+
+
+        
