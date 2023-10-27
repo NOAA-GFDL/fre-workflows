@@ -1,10 +1,4 @@
-#!/app/conda/miniconda/envs/cylc/bin/python
-
-import os
-lib_python_path=str(os.environ.get('PWD'))+'/lib/python'
-
-import sys
-sys.path.append(lib_python_path)
+#!/usr/bin/env python
 
 def test_import():
     import tool_ops_w_papiex

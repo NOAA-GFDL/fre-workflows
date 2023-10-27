@@ -1,56 +1,60 @@
+#!/usr/bin/env python3
+'''a custom-made SLURMHandler specifically for GFDL\'s PP/AN resource'''
 
-#import pathlib 
 from pathlib import Path
-
 from subprocess import DEVNULL
-#import os 
 
 import shlex
 
 from cylc.flow.job_runner_handlers.slurm import SLURMHandler
 from cylc.flow.cylc_subproc import procopen
 
+import typing
+from typing import Tuple
 
 class PPANHandler(SLURMHandler):
 
-    # set this to None- we want to take the approach used by job_runner_mgr
-    # when this is not None, and then stick that flow-control into submit()
+    # job_runner_mgr will never use SLURMHandler's SUBMIT_CMD_TMPL 
+    # once it realizes that a proper submit() classmethod exists. 
+    # so it is set to None.
     SUBMIT_CMD_TMPL = None
 
-#    # internal canary/coal mine test
-#    @classmethod
-##    def test_import(cls) -> int:
-#    def test_import(cls):
-#        return 0
-#
-#    # internal canary/coal mine test for ops tooling
-#    @classmethod
-#    #def test_tool_ops_import(cls) -> int:
-#    def test_tool_ops_import(cls):
-#        import tool_ops_w_papiex
-#        return tool_ops_w_papiex.test_import()
+    # internal canary/coal mine function for tests
+    @classmethod
+    def test_import(cls) -> int:
+        return 0
 
-#    # to try to gurantee the text output isn't messed with... for now
-#    @classmethod
-#    #def filter_submit_output(cls,                         out: str, err: str) -> Tuple[str, str]:
-#    def filter_submit_output(cls, out, err) :
-#        return (out, err)
+    # internal canary/coal mine test for tests
+    @classmethod
+    def test_tool_ops_import(cls) -> int:
+        from tool_ops_w_papiex import test_import
+        return test_import()
 
     # the thing I wish would actually work.
-    #@classmethod
-    #def submit(cls,               job_file_path: str,               submit_opts: dict,               dry_run=True   )  -> Tuple[int, str, str]:
     @classmethod
-    def submit(cls,
-               job_file_path,
-               submit_opts,
-               dry_run=False   ):
+    def submit(cls,               
+               job_file_path: str,               
+               submit_opts: dict,               
+               dry_run: bool = False,
+               tool_ops: bool = True )  -> Tuple[int, str, str]:
         """Submit a job.
     
         Submit a job and return an instance of the Popen object for the
-        submission. This method is useful if the job submission requires logic
-        beyond just running a system or shell command.
-    
-        See also :py:attr:`ExampleHandler.SUBMIT_CMD_TMPL`.
+        submission. This handler inherits from SLURMHandler, and is 
+        catered to GFDL's PP/AN compute resource. 
+
+        SLURMHandler has no real submit command- just SUBMIT_CMD_TMPL.
+        this class member is set to None and a submit method defined 
+        instead. as the SUBMIT_CMD_TMPL approach is locked up within 
+        the cylc code base.
+
+        when job_runner_mgr._jobs_submit_impl finds PPANHandler.submit()
+        via hasattr() or getattr(), it will be used. if it were not, it 
+        would default to using SUBMIT_CMD_TMPL to form a shell command, 
+        which is then issued via procopen in cylc/flow/cylc_subproc.py.  
+
+        based heavily lines 717 - 738 in cylc/flow/job_runner_mgr.py           
+        see github.com/cylc/cylc-flow, tag 8.2.1                               
     
         You must pass "env=submit_opts.get('env')" to Popen - see
         :py:mod:`cylc.flow.job_runner_handlers.background`
@@ -59,86 +63,68 @@ class PPANHandler(SLURMHandler):
         Args:
             job_file_path: The job file for this submission.
             submit_opts: Job submission options.
+            tool_ops: parse created job scripts to add in tags for
+                      scraping data via PAPIEX/EPMT
+            dry_run: don't actually submit any jobs. 
     
         Returns:
-            (ret_code, out, err)
-    
+            (ret_code, out, err)    
         """
 
+        # choices here identitcal to those in ._jobs_submit_impl
+        # when SUBMIT_CMD_TMPL exists instead of submit(). the
+        # choices are security-minded, 
         proc_stdin_arg = None
         proc_stdin_value = DEVNULL
 
-        
-        # the slurm handler has no real submit command- just a SUBMIT_CMD_TMPL
-        # when job_runner_mgr.py will check for the submit, and default to using
-        # SUBMIT_CMD_TMPL to form a shell command, then issued
-        # via procopen in cylc/flow/cylc_subproc.py.
-        # so this submit command is essentially going to be what happens there,
-        # just wrapped into the submit function. 
-        # to start, we copy/pasted lines 717 - 738 in cylc/flow/job_runner_mgr.py
-        # below is the version i've landed on currently.
+        # strongly recommended to not add too many things to either err
+        # or out. both are parsed to help confirm successful submission
+        # to SLURM. if the regex search fails, the submission will
+        # incorrectly be pegged as unsuccessful, and the submit retry
+        # delay will begin ticking down. 
+        # if adding to either, end with newline.
         ret_code = 1
         out = ''
         err = ''
 
-        # canary-in-coalmine output i would like to see everytime.        
-        out+='(ppan_handler.py) hello world!\n'
-
-
-        #----------------------
-        import tool_ops_w_papiex
-        try:
-            tool_ops_w_papiex.tool_ops_w_papiex(
-                fin_name=job_file_path,
-                fms_modulefiles=None)
-            out+='(ppan_handler.py) looks like papiex ops tooler finished OK.'
-        except:
-            err+='(ppan_handler.py) papiex ops tooler did not work.'
-            #return 1
-        
-        assert all( [ Path(job_file_path).exists(),
-                      Path(job_file_path+'.tags').exists() ] )
-        Path(job_file_path).rename(job_file_path+'.notags') #move job to job.notags
-        Path(job_file_path+'.tags').rename(job_file_path) #move job.tags to job
-        Path(job_file_path).chmod(0o755) #give the script execute permissions. 
-        #----------------------
-        
-        if dry_run: out+='(ppan_handler.py) ======= dry_run = True ====== \n'
-        #out+=f'(ppan_handler.py) arg submit_opts = \n\n{submit_opts}\n\n' #warning, very long.
-        #out+=f'(ppan_handler.py) arg job_file_path = {job_file_path}\n'
-
-        #err+='(ppan_handler.py) hello ERROR world!!!\n'
-
+        # check that we have a non-empty env dictionary
         env = submit_opts.get('env')
-        #out+=f'(ppan_handler.py) submit_opts.get(\'env\') = \n {env} \n'
-        
         if env is None:
-            err+= "submit_opts.get('env') returned None in lib/python/ppan_handler.py\n"
+            err += "error, submit_opts.get('env') returned None.\n"
             return (ret_code, out, err)
+        
+        # set command template according to dry_run
+        if dry_run: 
+            out+='(ppan_handler) dry_run = True\n'
+            cmd_tmpl = "sleep 5s"
+        else:
+            cmd_tmpl = "sbatch '%(job)s'"
 
-        if dry_run:            cmd_tmpl = "sleep 5s"
-        else:            cmd_tmpl = "sbatch '%(job)s'"
-        #else:            cmd_tmpl = "sbatch -v -v '%(job)s'"
+        #----------------------
+        if tool_ops:
+            from tool_ops_w_papiex import tool_ops_w_papiex
+            try:
+                tool_ops_w_papiex(
+                    fin_name=job_file_path,
+                    fms_modulefiles=None)
+                out+='(ppan_handler.py) looks like papiex ops tooler finished OK.'
+            except: 
+                err+='(ppan_handler.py) papiex ops tooler did not work.'
+                return 1
             
-        #try:
+            # this should be handled inside tool_ops_w_papiex TODO
+            assert all( [ Path(job_file_path).exists(),
+                          Path(job_file_path+'.tags').exists() ] )
+            Path(job_file_path).rename(job_file_path+'.notags') #move job to job.notags
+            Path(job_file_path+'.tags').rename(job_file_path) #move job.tags to job
+            Path(job_file_path).chmod(0o755) #give the script execute permissions. 
+        #----------------------
+        
         command = shlex.split(
             cmd_tmpl % {"job": job_file_path})
-        #except:
-            #err+=f"(ppan_handler.py) shlex.split(\n    {cmd_tmpl} % {'job':{job_file_path}}\n\n did not work.\n"
-        #    command=shlex.split(
-        #        cmd_tmpl)
-
-
-        #out+='(ppan_handler.py) command is: '
-        #for part in command:
-        #    out+=f' {part}'
-        #out+='\n'                
-
                 
         try:
             cwd = Path('~').expanduser()
-            #out+=f'(ppan_handler.py) cwd={str(cwd)}\n'
-            
             proc = procopen(
                 command,
                 stdin=proc_stdin_arg,
@@ -150,45 +136,23 @@ class PPANHandler(SLURMHandler):
         except OSError as exc:
             # subprocess.Popen has a bad habit of not setting the       
             # filename of the executable when it raises an OSError.
-            #out+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
-            #err+='\n (ppan_handler.py) !!!!!!!!!!!!!!!!!!!!OSError as exc!!!!!!!!!!!!!!!!!!!!!!\n\n'
             if not exc.filename:
                 exc.filename = command[0]                        
             return (ret_code, out, err)
         
-        proc_out, proc_err = (f.decode() for f in proc.communicate(proc_stdin_value))
-        #out+=f'(ppan_handler.py) procopen output: \n(ppan_handler) {proc_out}\n'
-        #err+=f'(ppan_handler.py) procopen err output: \n(ppan_handler) {proc_err}\n'
+        proc_out, proc_err = (
+            f.decode() for f in proc.communicate(proc_stdin_value) )
         try:
             ret_code = proc.wait()
-        except:
-            #err+='(ppan_handler.py) proc.wait() did not work. moving on.\n'
+        except: OSError as exc:
+            err+='OSError.'
             ret_code=1
 
-        #out+=f'(ppan_handler) type(ret_code)={type(ret_code)}, \n(ppan_handler.py) ret_code={ret_code}\n'
         return (ret_code, proc_out, proc_err)
 
-
-
-# based on
+# doc source for approach
 #https://cylc.github.io/cylc-doc/stable/html/plugins/job-runners/index.html
 JOB_RUNNER_HANDLER = PPANHandler()
-
-
-
-
-
-
-
-
-
-
-
-#import os
-#out+='(ppan_handler.py) PRINTING ENVIRONMENT (THANKS PYTHON HOUR)\n'
-#for key, value in os.environ.items():
-#    out+=f'(ppan_handler.py) key={key}: val={value}\n'
-
 
 
 

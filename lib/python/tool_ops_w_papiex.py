@@ -1,12 +1,13 @@
-#!/app/conda/miniconda/envs/cylc/bin/python
+#!/usr/bin/env python
+''' tags specific operations for data-scraping via PAPIEX and EPMT '''
 
 import re
 import pathlib as pl
-# this script is a re-adaptation of the following lines for FRE Canopy specifically
-# https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
+# this is an adaptation of the following for FRE Canopy specifically
+# https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
+#     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
 # Set up postprocessing operation dictionaries
-
 cp = {'op_name'       : 'cp',
       'op_instance'   : 0,
       's_string'      : 'cp ',
@@ -108,12 +109,16 @@ op_list = [
 #    untar
 ]
 
+# for metadata annotations. 
 jtag_dict = {'exp_name' : 'set name =',
              'exp_component' : '#INFO:component=',
              'exp_time' : 'set oname =',
              'exp_platform' : 'set platform =',
              'exp_target' : 'set target =',
              'exp_seg_months' : 'set segment_months ='}
+
+def test_import():
+    return 0
 
 #def papiex_tag_file(fin_name, fms_modulefiles):
 def tool_ops_w_papiex(fin_name, fms_modulefiles):
@@ -266,7 +271,6 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
 ##### local testing/debugging, ONE script input to test on.
 def test_papiex_tooling(infile = None):
     
-
     outfile=infile+".tags"
     if pl.Path(outfile).exists():
         #print(f'removing output {outfile}')
@@ -312,8 +316,10 @@ def many_tests_papiex_tooling( run_this_many_tests=1):
             if count >= run_this_many_tests: break
         return
 
-def test_import():
-    return 0
+
+if __name__=='__main__':
+    tool_ops_w_papiex('FOO',None)
+
 ###### local testing/debugging, ONE script input to test on.
 ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
 #infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
@@ -323,6 +329,3 @@ def test_import():
 ##### local testing/debugging, MANY input scripts to test on.
 #many_tests_papiex_tooling(200000)
 
-
-if __name__=='__main__':
-    tool_ops_w_papiex('FOO',None)
