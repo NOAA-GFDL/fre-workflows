@@ -308,12 +308,12 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # now add the task graphs
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
         if analysis_only:
-            graph += f"            ANALYSIS-{chunk}\n"
+            graph += f"            ANALYSIS-{chunk}?\n"
         else:
             if item_product == "av":
-                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+                graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
             else:
-                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}\n"
+                graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
         graph += f"        \"\"\"\n"
 
         #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")

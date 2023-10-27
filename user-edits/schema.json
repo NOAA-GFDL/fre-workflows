@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/product.schema.json",
+  "title": "User-edits",
+  "description": "A yaml populated with user-defined edits for multiple configurations in the workflow" ,
+  "type": "object",
+  "properties": {
+       "postprocess": {
+                      "description": "User-defined configurations for postprocessing", 
+                      "type": "object",
+                      "items": {"$ref": "#/$defs/pp"} 
+       }
+  },
+  "$defs":{
+       "pp": {
+            "type": "object",   
+            "properties": {
+                 "ROSE-EXPERIMENT-CONFIGURATION": {
+                      "description": "Information for experiment configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/exp-config"}
+                 },
+                 "INSTALL-EXP-SCRIPT": {
+                      "description": "User-edit of additional option for `cylc install` command",
+                      "type": "object",
+                      "properties": {
+                          "path": {
+                               "type": "string",
+                               "description": "Path to script that installs and validates experiment configuration"
+                          },
+                          "install-option": {
+                               "type": "object",
+                               "properties": {
+                                    "install": {
+                                         "type": "string",
+                                         "description": "Additional sym-link option (or other options) to add to cylc install command"
+                                    }
+                               }
+                          }
+                      }
+                 },
+                 "TMPDIR": {
+                      "description": "User-edit for location of temporary directory",
+                      "type": "object",
+                      "properties": {
+                           "path": {
+                                "type": "string",
+                                "description": "Path to where user wnts tmpDir created"
+                           }
+                      } 
+                 },
+                 "REGRID-XY": {
+                      "description": "User-edits for regrid-xy rose-app configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/regrid-config"}
+                 },
+                 "REMAP-PP-COMPONENTS": {
+                      "description": "User-edits for remap-pp-components rose-app configuration",
+                      "type": "object",
+                      "items": {"$ref": "#/$info/remap-config"}
+                 }
+            }    
+       }
+  },
+  "$info": {
+       "exp-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "type": "string",
+                      "description": "Path to rose-suite-exp configuration"
+                 },
+                 "rose-suite-exp-configuration": {
+                      "type": "object",
+                      "properties": {
+                           "SITE":{
+                                "type": "string",
+                                "description": "Specific site used for workflow"
+                           },
+                           "CLEAN_WORK": {
+                                "type": "boolean",
+                                "description": "Switch to remove intermediate data files when they are no longer"
+                           },
+                           "PTMP_DIR": {
+                                "type": "string",
+                                "description": "Directory to use for history file cache"
+                           },
+                           "DO_MDTF": {
+                                "type": "boolean",
+                                "description": "Switch to run MDTF on generated pp output"
+                           },
+                           "DO_STATICS": {
+                                "type": "boolean",
+                                "description": "Switch to turn on/off statics processing"
+                           },
+                           "DO_TIMEAVGS": {
+                                "type": "boolean",
+                                "description": "Switch to turn on/off time-average file generation"
+                           },
+                           "DO_REFINEDIAG": {
+                                "type": "boolean",
+                                "description": "Switch to run refine-diag scripts"
+                           },
+                           "REFINEDIAG_SCRIPTS": {
+                                "type": "string",
+                                "description": "Filepath to the space-separated user script"
+                           },
+                           "DO_PREANALYSIS": {
+                                "type": "boolean",
+                                "description": "Switch to run a pre-analysis script on history files"
+                           },
+                           "PREANALYSIS_SCRIPT": {
+                                "type": "string",
+                                "description": "Filepath to the user script"
+                           },
+                           "DO_ANALYSIS": {
+                                "type": "boolean",
+                                "description": "Switch to launch analysis scripts"
+                           },
+                           "DO_ANALYSIS_ONLY": {
+                                "type": "boolean",
+                                "description": "Switch to only launch analysis scripts"
+                           },
+                           "FRE_ANALYSIS_HOME": {
+                                "type": "string",
+                                "description": "Location for shared analysis scripts"
+                           },
+                           "HISTORY_DIR": {
+                                "type": "string",
+                                "description": "Directory to the primary location for history files"
+                           },
+                           "HISTORY_DIR_REFINED": {
+                                "type": "string",
+                                "description": "Directory to the secondary location for history files"
+                           },
+                           "HISTORY_SEGMENT": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the length of the history segment"
+                           },
+                           "PP_CHUNK_A": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the desired post-processing output"
+                           },
+                           "PP_CHUNK_B": {
+                                "type": "string",
+                                "description": "ISO8601 duration of the second desired post-processing output"
+                           },
+                           "PP_COMPONENTS": {
+                                "type": "string",
+                                "description": "Space separated list of pp components to process"
+                           },
+                           "PP_DIR": {
+                                "type": "string",
+                                "description": "Directory to write pp products to"
+                           },
+                           "PP_START": {
+                                "type": "string",
+                                "description": "ISO8601 date to begin postprocessing"
+                           },
+                           "PP_STOP": {
+                                "type": "string",
+                                "description": "ISO8601 date to end postprocessing"
+                           },
+                           "PP_DEFAULT_XYINTERP": {
+                                "type": "string",
+                                "description": "Default regridded resolution"
+                           },
+                           "PP_GRID_SPEC": {
+                                "type": "string",
+                                "description": "Filepath to an FMS gridSpec netCDF file or a tarfile"
+                           },
+                           "EXPERIMENT": {
+                                "type": "string",
+                                "description": "Label for the experiment"
+                           },
+                           "PLATFORM": {
+                                "type": "sting",
+                                "description": "Label for the hardware and software environment"
+                           },
+                           "TARGET": {
+                                "type": "string",
+                                "description": "Label for the FRE compilation target used in the simulation"
+                           },
+                           "ANALYSIS_DIR": {
+                                "type": "string",
+                                "description": "Directory to write analysis output"
+                           }
+                      },
+                      "required": [ "SITE","PTMP_DIR","HISTORY_DIR","HISTORY_SEGMENT","PP_CHUNK_A","PP_COMPONENTS","PP_DIR","PP_START","PP_STOP","PP_DEFAULT_XYINTERP","PP_GRID_SPEC","EXPERIMENT","PLATFORM","TARGET" ]
+                 }
+            }
+       },
+       "regrid-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "description": "Path to rose-app configuration for regrid-xy",
+                      "type": "string"
+                 },
+                 "rose-app-configuration": {
+                      "type": "object",
+                      "properties": {
+                           "component": {
+                                "type": "object",
+                                "properties": {
+                                     "type": {
+                                          "type": "string",
+                                          "description": "Name of component"
+                                     },
+                                     "inputGrid": {
+                                          "type": "string",
+                                          "description": "Cubedsphere or tripolar"
+                                     },
+                                     "inputRealm": {
+                                          "type": "string",
+                                          "description": "Used for identifying land or atmos grid mosaic file"
+                                     },
+                                     "interpMethod": {
+                                          "type": "string",
+                                          "description": "Conserve_order1, conserve_order2 or bilinear"
+                                     },
+                                     "outputGridLon": {
+                                          "type": "string",
+                                          "description": "Longitudinal output grid"
+                                     },
+                                     "outputGridLat": {
+                                          "type": "string",
+                                          "description": "Latitudinal output grid"
+                                     },
+                                     "outputGridType": {
+                                          "type": "string",
+                                          "description": "Grid label"
+                                     },
+                                     "sources": {
+                                          "type": "string",
+                                          "description": "Sources associated with the component"
+                                     }
+                                }
+                           }
+                      }
+                 }
+            }
+       },
+       "remap-config": {
+            "type": "object",
+            "properties": {
+                 "path": {
+                      "description": "Path to rose-app configuration for remap-pp-components",
+                      "type": "string"
+                 },
+                 "rose-app-configuration": {
+                      "type": "object",
+                      "properties": {
+                           "component": {
+                                "type": "object",
+                                "properties": {
+                                     "type": {
+                                          "type": "string",
+                                          "description": "Name of component"
+                                     },
+                                     "sources": {
+                                          "type": "string",
+                                          "description": "Sources associated with the component"
+                                     },
+                                     "grid": {
+                                          "type": "string",
+                                          "description": "Native, regrid-xy/default or regrid-xy.LABEL"
+                                     }
+                                }
+                           }
+                      }
+                 }
+            }
+       }     
+  }
+}

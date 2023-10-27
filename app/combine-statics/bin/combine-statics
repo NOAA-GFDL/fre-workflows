@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+#
+# Combine statics
+#
+
+echo Arguments:
+echo "    input dir: $inputDir"
+echo "    output dir: $outputDir"
+echo Utilities:
+type cdo
+
+# Verify input directory exists and is a directory
+if [[ ! -d $inputDir ]]; then
+    echo "Error: Input directory '${inputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+# Verify output directory exists and is a directory
+if [[ ! -d $outputDir ]]; then
+    echo "Error: Output directory '${outputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+cd $inputDir
+
+for comp in $(ls); do
+    pushd $comp/P0Y/P0Y || continue
+    mkdir -p $outputDir/$comp
+    cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
+    popd
+done
+
+echo Natural end of the static combining
+exit 0
