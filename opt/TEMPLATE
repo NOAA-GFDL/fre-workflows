@@ -3,41 +3,41 @@
 # rose-suite-EXPNAME.conf
 
 #[template variables]
-### Settings about the history files
-# Directory to the primary location for history files
+#### Settings about the history files
+## Directory to the primary location for history files
 #HISTORY_DIR=
-# Directory to the secondary location for history files
-# Comment this out if there are no history files there, as currently an error condition will result.
+## Directory to the secondary location for history files
+## Comment this out if there are no history files there, as currently an error condition will result.
 #HISTORY_DIR_REFINED=
-# ISO8601 duration of the length of the history segment
+## ISO8601 duration of the length of the history segment
 #HISTORY_SEGMENT=
 
-### Settings about the requested postprocessing
-# ISO8601 duration of the desired post-processed output
+#### Settings about the requested postprocessing
+## ISO8601 duration of the desired post-processed output
 #PP_CHUNK_A=
-# ISO8601 duration of a second desired postprocessed output
+## ISO8601 duration of a second desired postprocessed output
 #PP_CHUNK_B="P4Y"
-# Spaced list of pp components to process
+## Spaced list of pp components to process
 #PP_COMPONENTS=
-# Directory to write pp products to
+## Directory to write pp products to
 #PP_DIR=
-# ISO8601 date to begin postprocessing
+## ISO8601 date to begin postprocessing
 #PP_START=
-# ISO8601 date to stop postprocessing
+## ISO8601 date to stop postprocessing
 #PP_STOP=
-# Default regridded resolution, e.g. "288,180"
+## Default regridded resolution, e.g. "288,180"
 #PP_DEFAULT_XYINTERP=
-# Filepath to an FMS gridSpec netCDF file or a tarfile
+## Filepath to an FMS gridSpec netCDF file or a tarfile
 #PP_GRID_SPEC=
 
-### Information needed to pass to refineDiag/preAnalysis scripts AND for epmt
-# Label for the experiment
+#### Information needed to pass to refineDiag/preAnalysis scripts AND for epmt
+## Label for the experiment
 #EXPERIMENT=
-# Label for the hardware and software environment
+## Label for the hardware and software environment
 #PLATFORM=
-# Label for the FRE compilation target used in the simulation
+## Label for the FRE compilation target used in the simulation
 #TARGET=
 
-### Settings related to analysis scripts
-# Directory to write analysis output
+#### Settings related to analysis scripts
+## Directory to write analysis output
 #ANALYSIS_DIR=
