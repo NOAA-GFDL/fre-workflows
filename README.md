@@ -17,7 +17,7 @@ module load cylc
 3. Create new configuration from empty template, where EXPNAME is the name of your new configuration/experiment
 
 ```
-cp opt/rose-suite-TEMPLATE.conf opt/rose-suite-EXPNAME.conf
+cp opt/TEMPLATE.conf opt/rose-suite-EXPNAME.conf
 ```
 
 4. Add required configuration items, led by schema prompting
