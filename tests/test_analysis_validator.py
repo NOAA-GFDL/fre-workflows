@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #test analysis_validator macro
 
 import pytest

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''a custom-made SLURMHandler specifically for GFDL\'s PP/AN resource'''
 
 from pathlib import Path
@@ -27,7 +26,7 @@ class PPANHandler(SLURMHandler):
     # internal canary/coal mine test for tests
     @classmethod
     def test_tool_ops_import(cls) -> int:
-        from tool_ops_w_papiex import test_import
+        from lib.python.tool_ops_w_papiex import test_import
         return test_import()
 
     # the thing I wish would actually work.
@@ -144,7 +143,7 @@ class PPANHandler(SLURMHandler):
             f.decode() for f in proc.communicate(proc_stdin_value) )
         try:
             ret_code = proc.wait()
-        except: OSError as exc:
+        except OSError as exc:
             err+='OSError.'
             ret_code=1
 

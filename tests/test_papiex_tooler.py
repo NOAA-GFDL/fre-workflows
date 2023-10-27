@@ -1,6 +1,8 @@
-#!/usr/bin/env python
+''' tests for PP/AN specific ops-tooling of job scripts for PAPIEX'''
+import pytest
 
 def test_import():
-    import tool_ops_w_papiex
-    assert(tool_ops_w_papiex.test_import() == 0)
+    ''' check that tool_ops_w_papiex functions can be imported '''
+    from  lib.python.tool_ops_w_papiex import test_import
+    assert(test_import() == 0)
 
