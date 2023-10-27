@@ -34,7 +34,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
         
         if all([ not do_analysis, not do_analysis_only]):
             self.add_report('template variables', 'DO_ANALYSIS', do_analysis, '')
-            self.add_report('template variables', 'DO_ANALYSIS_ONLY', do_analysis_only, 'not doing any analysis. moving on.')
+            self.add_report('template variables', 'DO_ANALYSIS_ONLY', do_analysis_only, 'Not doing analysis. Moving on.')
             return self.reports
 
         if do_analysis_only and not do_analysis:
