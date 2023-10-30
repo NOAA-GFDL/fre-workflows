@@ -82,51 +82,65 @@ class PPANHandler(SLURMHandler):
         # incorrectly be pegged as unsuccessful, and the submit retry
         # delay will begin ticking down. 
         # if adding to either, end with newline.
-        ret_code = 1
         out = ''
         err = ''
+        ret_code = 1
 
         # check that we have a non-empty env dictionary
         env = submit_opts.get('env')
         if env is None:
-            err += "error, submit_opts.get('env') returned None.\n"
-            return (ret_code, out, err)
+            err = "(ppan_handler) error, submit_opts.get('env') returned None."
+            return (1, out, err)
         
         # set command template according to dry_run
         if dry_run: 
-            out+='(ppan_handler) dry_run = True\n'
             cmd_tmpl = "sleep 5s"
         else:
             cmd_tmpl = "sbatch '%(job)s'"
 
         #----------------------
         if tool_ops:
-            from tool_ops_w_papiex import tool_ops_w_papiex
+            if 'tests.test_' in __name__:
+                from lib.python.tool_ops_w_papiex import tool_ops_w_papiex
+            else:
+                try:
+                    from tool_ops_w_papiex import tool_ops_w_papiex
+                except:
+                    err = f'(ppan_handler) error, tool_ops_w_papiex import issues. \n__name__={__name__}'
+                    return (1, out, err)
+                
+            
             try:
                 tool_ops_w_papiex(
                     fin_name=job_file_path,
                     fms_modulefiles=None)
-                out+='(ppan_handler.py) looks like papiex ops tooler finished OK.'
             except: 
-                err+='(ppan_handler.py) papiex ops tooler did not work.'
-                return 1
+                err = '(ppan_handler) error, papiex ops tooler did not work.'
+                return (1, out, err)
             
             # this should be handled inside tool_ops_w_papiex TODO
-            assert all( [ Path(job_file_path).exists(),
-                          Path(job_file_path+'.tags').exists() ] )
             Path(job_file_path).rename(job_file_path+'.notags') #move job to job.notags
             Path(job_file_path+'.tags').rename(job_file_path) #move job.tags to job
-            Path(job_file_path).chmod(0o755) #give the script execute permissions. 
+            Path(job_file_path).chmod(0o755) #give the script execute permissions.
+            try:
+                assert all( [ Path(job_file_path).exists(),
+                              Path(job_file_path+'.notags').exists() ] )
+            except:
+                err = '(ppan_handler) error, one of the job files does not exist.'
+                return (1, out, err)
         #----------------------
-        
+
+        # this helps prevent code-injection attacks. shlex won't parse ';'
+        # nor other chars for issuing multiple commands
         command = shlex.split(
             cmd_tmpl % {"job": job_file_path})
-                
+
+        # try submitting the job. 
         try:
             cwd = Path('~').expanduser()
             proc = procopen(
                 command,
-                stdin=proc_stdin_arg,
+                stdin = proc_stdin_arg,
                 stdoutpipe = True,
                 stderrpipe = True,
                 env = env,
@@ -137,17 +151,18 @@ class PPANHandler(SLURMHandler):
             # filename of the executable when it raises an OSError.
             if not exc.filename:
                 exc.filename = command[0]                        
-            return (ret_code, out, err)
-        
-        proc_out, proc_err = (
-            f.decode() for f in proc.communicate(proc_stdin_value) )
+            return (1, out, err)
+
+        # grab return code, stdout, stderr from proc
         try:
+            out, err = (
+                f.decode() for f in proc.communicate(proc_stdin_value) )
             ret_code = proc.wait()
         except OSError as exc:
-            err+='OSError.'
-            ret_code=1
+            err = 'problem getting output from job-submission proc.'
+            ret_code = 1
 
-        return (ret_code, proc_out, proc_err)
+        return (ret_code, out, err)
 
 # doc source for approach
 #https://cylc.github.io/cylc-doc/stable/html/plugins/job-runners/index.html

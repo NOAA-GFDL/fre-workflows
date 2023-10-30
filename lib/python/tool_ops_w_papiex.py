@@ -7,9 +7,10 @@ import pathlib as pl
 # https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
 #     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
-import lib.python.papiex_ops as po
-op_list=po.op_list
-
+if 'tests.tests_' in __name__:
+    from lib.python.papiex_ops import op_list
+else:
+    from papiex_ops import op_list
 
 def test_import():
     ''' for testing import of module via pytest only '''
@@ -113,7 +114,7 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         file.write('\n'.join(script))
     
     del script
-    return
+    #return
 
 
 
@@ -167,9 +168,7 @@ def annotate_metadata(): # TODO (NotYetImplemented())
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-    raise NotImplementedError()
-    assert False
-    
+    raise NotImplementedError()    
 
 
 def test_papiex_tooling(infile = None):

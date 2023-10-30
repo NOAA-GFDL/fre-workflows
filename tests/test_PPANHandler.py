@@ -1,12 +1,13 @@
 ''' tests for PP/AN specific job_runner_handler class '''
 
 import pytest
+print(f'location 1: __name__={__name__}')
 
 def test_import():
     ''' check that ppan_handler can be imported.'''
     from lib.python.ppan_handler import PPANHandler
     test_handler=PPANHandler()
-    
+    print(f'location 2: __name__={__name__}')
     assert(test_handler.test_import() == 0)
 
 
@@ -14,7 +15,7 @@ def test_tool_ops_import_in_handler():
     ''' check that ppan_handler can import tool_ops_w_papiex'''
     from lib.python.ppan_handler import PPANHandler
     test_handler=PPANHandler()
-    
+    print(f'location 3: __name__={__name__}')
     assert(test_handler.test_tool_ops_import() == 0)
 
 #def test_submit():
