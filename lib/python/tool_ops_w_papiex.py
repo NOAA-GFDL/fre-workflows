@@ -7,126 +7,23 @@ import pathlib as pl
 # https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
 #     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
-## Set up postprocessing operation dictionaries
-#cp = {'op_name'       : 'cp',
-#      'op_instance'   : 0,
-#      's_string'      : 'cp ',
-#      'r_string'      : 'export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE" ; cp ',
-#      'r_string_w_if' : '{ export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp '
-#}
-##dmput = {'op_name' : 'dmput',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for dmput:     real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:dmput;op_instance:OP_INSTANCE";'}
-##dmget = {'op_name' : 'dmget',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for dmget:     real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:dmget;op_instance:OP_INSTANCE";'}
-##fregrid = {'op_name' : 'fregrid',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for fregrid:   real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:fregrid;op_instance:OP_INSTANCE";'}
-#hsmget = {'op_name'       : 'hsmget',
-#          'op_instance'   : 0,
-#          's_string'      : 'hsmget ',
-#          'r_string'      : 'export PAPIEX_TAGS="op:hsmget;op_instance:OP_INSTANCE" ; hsmget ',
-#          'r_string_w_if' : '{ export PAPIEX_TAGS="op:hsmget;op_instance:OP_INSTANCE"; hsmget '
-#}
-#hsmput = {'op_name'       : 'hsmput',
-#          'op_instance'   : 0,
-#          's_string'      : 'hsmput ',
-#          'r_string'      : 'export PAPIEX_TAGS="op:hsmput;op_instance:OP_INSTANCE" ; hsmput ',
-#          'r_string_w_if' : '{ export PAPIEX_TAGS="op:hsmput;op_instance:OP_INSTANCE"; hsmput '
-#}
-#gcp = {'op_name'       : 'gcp',
-#       'op_instance'   : 0,
-#       's_string'      : 'gcp ',
-#       'r_string'      : 'export PAPIEX_TAGS="op:gcp;op_instance:OP_INSTANCE" ; gcp ',
-#       'r_string_w_if' : '{ export PAPIEX_TAGS="op:gcp;op_instance:OP_INSTANCE"; gcp '
-#}
-#
-#mv = {'op_name'       : 'mv',
-#      'op_instance'   : 0,
-#      's_string'      : 'mv ',
-#      'r_string'      : 'export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE" ; mv ',
-#      'r_string_w_if' : '{ export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE"; mv '
-#}
-##ncatted = {'op_name' : 'ncatted',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for ncatted:   real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:ncatted;op_instance:OP_INSTANCE";'}
-##nccopy = {'op_name' : 'nccopy',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for nccopy:    real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:nccopy;op_instance:OP_INSTANCE";'}
-##ncks = {'op_name' : 'ncks',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for ncks:      real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:ncks;op_instance:OP_INSTANCE";'}
-##ncrcat = {'op_name' : 'ncrcat',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for ncrcat:    real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:ncrcat;op_instance:OP_INSTANCE";'}
-##plevel = {'op_name' : 'plevel',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for plevel:    real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:plevel;op_instance:OP_INSTANCE";'}
-#rm = {'op_name'       : 'rm',
-#      'op_instance'   : 0,
-#      's_string'      : 'rm ',
-#      'r_string'      : 'export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE" ; rm ',
-#      'r_string_w_if' : '{ export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE"; rm '
-#}
-##splitvars = {'op_name' : 'splitvars',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for splitvars: real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:splitvars;op_instance:OP_INSTANCE";'}
-#tar = {'op_name'       : 'tar',
-#       'op_instance'   : 0,
-#       's_string'      : 'tar ',
-#       'r_string'      : 'export PAPIEX_TAGS="op:tar;op_instance:OP_INSTANCE" ; tar ',
-#       'r_string_w_if' : '{ export PAPIEX_TAGS="op:tar;op_instance:OP_INSTANCE"; tar '
-#}
-#timavg = {'op_name'       : 'make-timeavgs',
-#          'op_instance'   : 0,
-#          's_string'      : 'make-timeavgs ',
-#          'r_string'      : 'export PAPIEX_TAGS="op:timavg;op_instance:OP_INSTANCE" ; make-timeavgs ',
-#          'r_string_w_if' : '{ export PAPIEX_TAGS="op:timavg;op_instance:OP_INSTANCE"; make-timeavgs '
-#}
-##untar = {'op_name' : 'untar',    'op_instance' : 0,
-##    's_string' : '/usr/bin/time -f "     TIME for untar:     real %e user %U sys %S"',
-##    'r_string' : 'export PAPIEX_TAGS="op:untar;op_instance:OP_INSTANCE";'}
-#
-#op_list = [
-#    cp,
-##    dmput,
-##    dmget,
-##    fregrid,
-#    hsmget,
-#    hsmput,
-#    gcp,
-#    mv,
-##    ncatted,
-##    nccopy,
-##    ncks,
-##    ncrcat,
-##    plevel,
-#    rm,
-##    splitvars,
-#    tar,
-#    timavg#,
-##    untar
-#]
-#
-## for metadata annotations. 
-#jtag_dict = {'exp_name' : 'set name =',
-#             'exp_component' : '#INFO:component=',
-#             'exp_time' : 'set oname =',
-#             'exp_platform' : 'set platform =',
-#             'exp_target' : 'set target =',
-#             'exp_seg_months' : 'set segment_months ='}
-
 import lib.python.papiex_ops as po
 op_list=po.op_list
 
+
 def test_import():
+    ''' for testing import of module via pytest only '''
     return 0
 
 #def papiex_tag_file(fin_name, fms_modulefiles):
 def tool_ops_w_papiex(fin_name, fms_modulefiles):
+    ''' parses a job bash-script assembled by script, tags operations of interest.
+    accomplished by setting/unsetting PAPIEX_TAGS env var around operation of interest,
+    referred to as a caliper approach.
+    an if-statement in bash will have a slightly different structure to preserve the 
+    exit status and the resultant if/elif/else continuation of the job script '''
 
-    # Reset op_instance (cnt)
+    # init op_instance (cnt)
     for op in op_list:
         #print(f"initializing op_instance count for {op}")
         op['op_instance'] = 0
@@ -134,13 +31,100 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
     # Read in the file
     lines = []
     with open(fin_name, 'r') as file :
-        #script = file.read()
-        lines = file.read().splitlines()
-    
+        lines = file.read().splitlines()    
     script = []
     prevline = ''
     #first_time = True
 
+    # parse line-by-line
+    for line in lines:
+
+        # is it a comment? skip.
+        if re.match( r'[ \t\r\f\v]*#', line) is not None:
+            script.append(line)
+            continue
+
+        # is it a module-load kind of step? skip.
+        if re.match( r'[ \t\r\f\v]*module ', line) is not None:
+            script.append(line)
+            continue
+    
+        # does the line have an op of interest?
+        has_op=False
+        for op in op_list:
+            if re.search(op['s_string'],line) is not None:
+                #print(f"found op={op['op_name']} \n {line}")
+                has_op=True
+                op_found=op
+                break
+
+        # if no op, add line as-is and continue.
+        if not has_op:
+            script.append(line)
+            continue
+        
+        # if there's an op, is it locked up in a condition statement?
+        is_bashif=False
+        if any([ re.search('if ', line)   is not None,
+                 re.search('elif ', line) is not None ]):
+            #print(f'found bash if-statement')
+            is_bashif=True
+
+        # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
+        #print(f'changing line ...  {line}')
+        if not is_bashif: 
+            # if no logic, tool in the usual way.
+            line=line.replace(op['s_string'], op['r_string']) + ' ; unset PAPIEX_TAGS'
+        else: 
+            # if there is logic, tool such that exit code preserved
+            then_loc_group_span=re.search('; then',line).span()
+            line =  line[0:then_loc_group_span[0]]            
+            line =  line.replace(op['s_string'], op['r_string_w_if'])
+            line += '; export SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
+        #print(f'line changed  ...  \n {line}')
+
+        ### Refine the PAPIEX_TAGS for a particular operation ###
+        # is the op a retry? If so, mark as such via tag and OP_INSTANCE
+        # this assists in identifying operation correlations and/or
+        # pathologies across jobs that should be similar.
+        if 'failure, retrying' in prevline:
+            retry = ';retry:1'
+        else:
+            retry = ''
+                
+        # Increment the operation instance. 
+        # op_instance correlates to a specific line in the script.
+        this_op = re.search('PAPIEX_TAGS="op:(.*);op_instance:OP_INSTANCE',line)
+        assert(this_op is not None)
+        this_op = this_op.group(1)
+        for op in op_list:
+            if this_op == op['op_name']:
+                op['op_instance'] += 1
+                line = line.replace("OP_INSTANCE",str(op['op_instance'])+retry)
+                break
+        #done with this line, append and track what we just did for retries
+        script.append(line)
+        prevline = line    
+
+    # end file with a new line, write out the file.
+    script[-1] += '\n'
+    fout_name = fin_name + '.tags'
+    with open(fout_name, 'w') as file:
+        file.write('\n'.join(script))
+    
+    del script
+    return
+
+
+
+
+
+
+def annotate_metadata(): # TODO (NotYetImplemented())
+    ''' parses a job bash-script assembled by script, annotating metadata of interest.
+    accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
+    parsing the job script for metadata of interest. '''
+    
     ## we are gonna strip this out- the papiex options are tricky enough and the metadata annotation
     ## is handled OK by Jinja2 at this point the way it is. 
     ## Reset the EPMT_JOB_TAGS root
@@ -169,111 +153,27 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
 
     #print('parsing lines again!')
 
+    ## Place the EPMT_JOB_TAGS
+    #if '#INFO:max_years' in prevline:
+    #   script.append('')
+    #   script.append('if ( $?SLURM_JOBID ) then')
+    #   script.append('    source $MODULESHOME/init/csh')
+    #   script.append('    module use -a ' + fms_modulefiles)
+    #   script.append('    module load epmt')
+    #   script.append('    set PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT')
+    #   script.append('    set PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS')
+    #   script.append('    ' + epmt_uninstrument)
+    #   script.append('    ' + EPMT_JOB_TAGS)
+    #   script.append('    ' + epmt_instrument)
+    #   script.append('endif')
 
-    for line in lines:
-
-        # is it a comment? skip.
-        if re.match( r'[ \t\r\f\v]*#', line) is not None:
-            script.append(line)
-            continue
-
-        # is it a module-load kind of step? skip.
-        if re.match( r'[ \t\r\f\v]*module ', line) is not None:
-            script.append(line)
-            continue
+    raise NotImplementedError()
+    assert False
     
-        # does the line have an op of interest?
-        has_op=False
-        for op in op_list:
-            if re.search(op['s_string'],line) is not None:
-                #print(f"found op={op['op_name']} \n {line}")
-                has_op=True
-                op_found=op
-                break
-        if not has_op:
-            script.append(line)
-            continue
-        
-        # if there's an op, is it locked up in a condition statement?
-        is_bashif=False
-        if any([ re.search('if ', line)   is not None,
-                 re.search('elif ', line) is not None ]):
-            #print(f'found bash if-statement')
-            is_bashif=True
-
-        # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
-        #print(f'changing line ...  {line}')
-        if not is_bashif: # if no logic to worry about, tool in the usual way.
-            line=line.replace(op['s_string'], op['r_string']) + ' ; unset PAPIEX_TAGS'
-        else: # if there is logic to worry about, tool such that exit code preserved
-            then_loc_group_span=re.search('; then',line).span()
-            line =  line[0:then_loc_group_span[0]]            
-            line =  line.replace(op['s_string'], op['r_string_w_if'])
-            line += '; export SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
-        #print(f'line changed  ...  \n {line}')
-
-        ## Place the EPMT_JOB_TAGS
-        #if '#INFO:max_years' in prevline:
-        #   script.append('')
-        #   script.append('if ( $?SLURM_JOBID ) then')
-        #   script.append('    source $MODULESHOME/init/csh')
-        #   script.append('    module use -a ' + fms_modulefiles)
-        #   script.append('    module load epmt')
-        #   script.append('    set PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT')
-        #   script.append('    set PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS')
-        #   script.append('    ' + epmt_uninstrument)
-        #   script.append('    ' + EPMT_JOB_TAGS)
-        #   script.append('    ' + epmt_instrument)
-        #   script.append('endif')
-    
-        # Refine the PAPIEX_TAGS for a particular operation
-    
-        # Is this operation actually a retrun of the previous? If so, mark as such. 
-        # Note that the operations sequence value is *not* incremented. This is
-        # intended to assist in identifying operation correlations and/or
-        # pathologies across jobs that should be similar.
-        if 'failure, retrying' in prevline:
-            retry = ';retry:1'
-        else:
-            retry = ''
-                
-        # Increment the operation instance. 
-        # op_instance correlates to a specific line in the script.
-        this_op = re.search('PAPIEX_TAGS="op:(.*);op_instance:OP_INSTANCE',line)
-        assert(this_op is not None)
-        
-        #if this_op is None:
-            #print('this_op is NONE, PAPIEX_TAGS not found...')
-            
-        #else:
-        #    print('this_op found PAPIEX_TAGS, i think (not None == True)')
-        this_op = this_op.group(1)
-        #print(f'this_op.group(1)={this_op}')
-        for op in op_list:
-            if this_op == op['op_name']:
-                #print(f'found this_op instance, incrementing and unsetting PAPIEX_TAGS')
-                op['op_instance'] += 1
-                line = line.replace("OP_INSTANCE",str(op['op_instance'])+retry)
-                            
-        script.append(line)
-        prevline = line
-    
-    script[-1] += '\n'
-
-    # Write the file out again
-    fout_name = fin_name + '.tags'
-    with open(fout_name, 'w') as file:
-        file.write('\n'.join(script))
-    
-    del script
 
 
-
-
-
-##### local testing/debugging, ONE script input to test on.
 def test_papiex_tooling(infile = None):
-    
+    ''' local testing/debugging, ONE script input to test on. '''    
     outfile=infile+".tags"
     if pl.Path(outfile).exists():
         #print(f'removing output {outfile}')
@@ -309,6 +209,7 @@ def test_papiex_tooling(infile = None):
             continue
 
 def many_tests_papiex_tooling( run_this_many_tests=1):
+    ''' local debug test, to be moved to top-level dir tests? '''
     with open('./scripts_to_test_papiex_tooling_with.txt', 'r') as filelist_in :
         count=0
         for line in filelist_in.read().splitlines() :
@@ -327,8 +228,9 @@ if __name__=='__main__':
 ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
 #infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
 #test_papiex_tooling(infile)
-
-
 ##### local testing/debugging, MANY input scripts to test on.
 #many_tests_papiex_tooling(200000)
+
+
+
 
