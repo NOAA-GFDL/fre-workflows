@@ -1,21 +1,9 @@
-[submodule "app/rename-split-to-pp"]
-	path = app/rename-split-to-pp
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/rename-split-to-pp.git
-[submodule "app/make-timeseries"]
-	path = app/make-timeseries
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/make-timeseries.git
 [submodule "app/remap-pp-components"]
 	path = app/remap-pp-components
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/remap-pp-components.git
+    url = https://gitlab.gfdl.noaa.gov/fre2/apps/remap-pp-components.git
 [submodule "app/regrid-xy"]
 	path = app/regrid-xy
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/regrid-xy.git
-[submodule "app/combine-statics"]
-	path = app/combine-statics
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/combine-statics.git
-[submodule "app/mdtf"]
-	path = app/mdtf
-	url = https://gitlab.gfdl.noaa.gov/fre2/apps/mdtf.git
+	url = https://gitlab.gfdl.noaa.gov/fre2/apps/regrid-xy.git
 [submodule "app/analysis"]
 	path = app/analysis
-	url = git@gitlab.gfdl.noaa.gov:fre2/apps/analysis.git
+	url = https://gitlab.gfdl.noaa.gov/fre2/apps/analysis.git
