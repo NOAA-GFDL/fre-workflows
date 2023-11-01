@@ -1,4 +1,4 @@
-------------- testing the custom job runner branch 59.papiex_op_tags -------------
+### ------------- testing the custom job runner branch 59.papiex_op_tags -------------
 note- this is PPAN/GFDL specific while EPMT is still specific to the lab. this has
 not been tested anywhere else.
 
@@ -6,7 +6,8 @@ not been tested anywhere else.
 ## ------ set-up
 this should largely follow the current README.md instructions. with two exceptions.
 
-FIRST: TARGET CORRECT BRANCH, add `-b 59.papiex_op_tags` to the clone command.
+FIRST: USE CORRECT BRANCH, add `-b 59.papiex_op_tags` to the clone command, or
+check the branch out after cloning.
 
 SECOND: EDIT CYLC GLOBAL CONFIG and make sure the settings get picked up.
 by default it should be in `~/.cylc/flow/global.cylc`. if you haven't messed with
@@ -17,8 +18,9 @@ under the `[[ppan]]` platform. using `sed -i` this can be done like:
 sed -i 's/job runner = slurm/job runner = ppan_handler/' ~/.cylc/flow/global.cylc
 ```
 
-to make sure the change is picked up, do `module load cylc`. unload first and
-re-load if you need to. to confirm the change was picked up, the following command
+to make sure the change is picked up, do `module load cylc` (or `conda activate`).
+unload first and re-load if you need to. to confirm the change was picked up, the
+following command
 
 ```
 cylc config  | grep -A 1 -B 2 ppan_handler
@@ -71,19 +73,19 @@ e.g. a syntax/import error in `lib/python/ppan_handler.py`, the error message
 is often silenced or not output to screen in the way one expects.
 
 to verify functionality I suggest two approaches:
-1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
+#-- 1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
 this typically shows you the exit code of `ppan_handler.submit()`,
 which is 0 upon successful submission (and confirmation via parsing
 the STDOUT/ERR).
 
-2) cat pp-starter job-activity immediately after submission:
+#-- 2) cat pp-starter job-activity immediately after submission:
 `cat ~/cylc-run/EXPNAME/runN/log/job/YYYYMMDDT0000Z/pp-starter/NN/job-activity.log`
 job-activity.log essentially tracks job-submission success/failure.
 
-3) monitor total-workflow activity:
+#-- 3) monitor total-workflow activity:
 `watch -n "cylc workflow-state -v EXPNAME/runN | grep -v succeeded"`
 
-4) verify that the papiex-tooler did something:
+#-- 4) verify that the papiex-tooler did something:
 not every task has ops-of-interest to the papiex tooler (e.g `pp-starter`).
 `stage-history` is an early task in the workflow that typically reflects both
 submission success and lets you assess how the job script was parsed. to easily
