@@ -7,16 +7,21 @@ import pathlib as pl
 # https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
 #     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
-if 'tests.tests_' in __name__:
-    from lib.python.papiex_ops import op_list
-else:
-    from papiex_ops import op_list
+try:
+    if any([ 'lib.python'  in __name__ ,
+             'tests.test_' in __name__  ]) :
+        print('(tool_ops_w_papiex) attempting RELATIVE import from .papiex_ops ...\n')
+        from .papiex_ops import op_list
+    else:
+        print('(tool_ops_w_papiex) attempting import from papiex_ops ... \n')
+        from papiex_ops import op_list
+except:
+    print(f'(tool_ops_w_papiex) error! op_list import issues.')
 
 def test_import():
     ''' for testing import of module via pytest only '''
     return 0
 
-#def papiex_tag_file(fin_name, fms_modulefiles):
 def tool_ops_w_papiex(fin_name, fms_modulefiles):
     ''' parses a job bash-script assembled by script, tags operations of interest.
     accomplished by setting/unsetting PAPIEX_TAGS env var around operation of interest,
@@ -114,20 +119,15 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         file.write('\n'.join(script))
     
     del script
-    #return
 
 
-
-
-
-
-def annotate_metadata(): # TODO (NotYetImplemented())
+    
+def annotate_metadata(): # TODO 
     ''' parses a job bash-script assembled by script, annotating metadata of interest.
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
     parsing the job script for metadata of interest. '''
-    
-    ## we are gonna strip this out- the papiex options are tricky enough and the metadata annotation
-    ## is handled OK by Jinja2 at this point the way it is. 
+    raise NotImplementedError()        
+
     ## Reset the EPMT_JOB_TAGS root
     #EPMT_JOB_TAGS = "epmt annotate EPMT_JOB_TAGS='"
     #
@@ -168,8 +168,6 @@ def annotate_metadata(): # TODO (NotYetImplemented())
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-    raise NotImplementedError()    
-
 
 def test_papiex_tooling(infile = None):
     ''' local testing/debugging, ONE script input to test on. '''    
@@ -180,7 +178,6 @@ def test_papiex_tooling(infile = None):
         
     print('//////////////----------------- calling: tool_ops_w_papiex ---------------///////////////// ')
     tool_ops_w_papiex(infile, '')
-    #print('\\\\\\\\\\\\\\-------------DONE calling: tool_ops_w_papiex DONE-----------\\\\\\\\\\\\\\\\\ ')
     
     import filecmp as fc
     is_different=not fc.cmp(infile, outfile, shallow=False)
@@ -207,6 +204,9 @@ def test_papiex_tooling(infile = None):
         else:
             continue
 
+
+
+
 def many_tests_papiex_tooling( run_this_many_tests=1):
     ''' local debug test, to be moved to top-level dir tests? '''
     with open('./scripts_to_test_papiex_tooling_with.txt', 'r') as filelist_in :
@@ -218,17 +218,17 @@ def many_tests_papiex_tooling( run_this_many_tests=1):
             count+=1
             if count >= run_this_many_tests: break
         return
-
+    
 
 if __name__=='__main__':
     tool_ops_w_papiex('FOO',None)
 
-###### local testing/debugging, ONE script input to test on.
-##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
-#infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
-#test_papiex_tooling(infile)
-##### local testing/debugging, MANY input scripts to test on.
-#many_tests_papiex_tooling(200000)
+    ###### local testing/debugging, ONE script input to test on.
+    ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
+    #infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
+    #test_papiex_tooling(infile)
+    ##### local testing/debugging, MANY input scripts to test on.
+    #many_tests_papiex_tooling(200000)
 
 
 

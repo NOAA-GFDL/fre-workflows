@@ -12,10 +12,20 @@ import typing
 from typing import Tuple
 
 class PPANHandler(SLURMHandler):
+    ''' major differences from inherited SLURMHandler class:
+    1) class method for submit() is defined- it has enough flexibility to 
+    allow us to parse the job script the way we want. 
+    2) SUBMIT_CMD_TMPL set to None- this is to prevent 
+    cylc/flow/job_runner_mgr.py from trying to use it in lieu of the submit()
+    class method.
+    
+    of slightly less note, methods test_import and test_tool_ops_import are 
+    for assessing import functionality via pytest, in the tests/dir
+    '''
 
     # job_runner_mgr will never use SLURMHandler's SUBMIT_CMD_TMPL 
     # once it realizes that a proper submit() classmethod exists. 
-    # so it is set to None.
+    # set to None, just in case. 
     SUBMIT_CMD_TMPL = None
 
     # internal canary/coal mine function for tests
@@ -26,10 +36,10 @@ class PPANHandler(SLURMHandler):
     # internal canary/coal mine test for tests
     @classmethod
     def test_tool_ops_import(cls) -> int:
-        from lib.python.tool_ops_w_papiex import test_import
+        from .tool_ops_w_papiex import test_import
         return test_import()
 
-    # the thing I wish would actually work.
+    # for submitting a job to SLURM via subprocess call
     @classmethod
     def submit(cls,               
                job_file_path: str,               
@@ -88,34 +98,40 @@ class PPANHandler(SLURMHandler):
 
         # check that we have a non-empty env dictionary
         env = submit_opts.get('env')
-        if env is None:
-            err = "(ppan_handler) error, submit_opts.get('env') returned None."
+        if dry_run:
+            env = None
+        elif env is None:
+            err = "(ppan_handler) error, submit_opts.get('env') returned None.\n"
             return (1, out, err)
-        
+            
         # set command template according to dry_run
         if dry_run: 
-            cmd_tmpl = "sleep 5s"
+            #cmd_tmpl = "sleep 5s"
+            cmd_tmpl = "echo HELLO"
         else:
             cmd_tmpl = "sbatch '%(job)s'"
 
         #----------------------
         if tool_ops:
-            if 'tests.test_' in __name__:
-                from lib.python.tool_ops_w_papiex import tool_ops_w_papiex
-            else:
-                try:
+            try:
+                if any([ 'lib.python.' in __name__ ,
+                         'tests.test_' in __name__  ]) :
+                    out = '(ppan_handler) attempting RELATIVE import from .tool_ops_w_papiex ...\n'
+                    from .tool_ops_w_papiex import tool_ops_w_papiex
+                else:
+                    out = '(ppan_handler) attempting import from tool_ops_w_papiex ...\n'
                     from tool_ops_w_papiex import tool_ops_w_papiex
-                except:
-                    err = f'(ppan_handler) error, tool_ops_w_papiex import issues. \n__name__={__name__}'
-                    return (1, out, err)
-                
+                    
+            except:
+                err = f'(ppan_handler) error, tool_ops_w_papiex import issues. __name__={__name__}\n'
+                return (1, out, err)
             
             try:
                 tool_ops_w_papiex(
                     fin_name=job_file_path,
                     fms_modulefiles=None)
             except: 
-                err = '(ppan_handler) error, papiex ops tooler did not work.'
+                err = '(ppan_handler) error, papiex ops tooler did not work.\n'
                 return (1, out, err)
             
             # this should be handled inside tool_ops_w_papiex TODO
@@ -126,7 +142,7 @@ class PPANHandler(SLURMHandler):
                 assert all( [ Path(job_file_path).exists(),
                               Path(job_file_path+'.notags').exists() ] )
             except:
-                err = '(ppan_handler) error, one of the job files does not exist.'
+                err = '(ppan_handler) error, one of the job files does not exist.\n'
                 return (1, out, err)
         #----------------------
 
@@ -150,7 +166,8 @@ class PPANHandler(SLURMHandler):
             # subprocess.Popen has a bad habit of not setting the       
             # filename of the executable when it raises an OSError.
             if not exc.filename:
-                exc.filename = command[0]                        
+                exc.filename = command[0]
+            err = '(ppan_handler) OSError thrown, procopen call.\n'
             return (1, out, err)
 
         # grab return code, stdout, stderr from proc
@@ -159,7 +176,7 @@ class PPANHandler(SLURMHandler):
                 f.decode() for f in proc.communicate(proc_stdin_value) )
             ret_code = proc.wait()
         except OSError as exc:
-            err = 'problem getting output from job-submission proc.'
+            err = 'problem getting output from job-submission proc.\n'
             ret_code = 1
 
         return (ret_code, out, err)
