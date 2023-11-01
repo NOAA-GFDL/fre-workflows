@@ -72,7 +72,7 @@ and manages a cylc-user's handler of choice. this means that if there's
 e.g. a syntax/import error in `lib/python/ppan_handler.py`, the error message
 is often silenced or not output to screen in the way one expects.
 
-to verify functionality I suggest two approaches:
+to verify functionality I suggest thw following approaches:
 
 ## -- 1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
 this typically shows you the exit code of `ppan_handler.submit()`,
