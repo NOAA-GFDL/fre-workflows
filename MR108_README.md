@@ -73,7 +73,8 @@ e.g. a syntax/import error in `lib/python/ppan_handler.py`, the error message
 is often silenced or not output to screen in the way one expects.
 
 to verify functionality I suggest two approaches:
-#-- 1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
+
+## -- 1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
 this typically shows you the exit code of `ppan_handler.submit()`,
 which is 0 upon successful submission (and confirmation via parsing
 the STDOUT/ERR).
