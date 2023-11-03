@@ -184,7 +184,8 @@ def annotate_metadata(): #TODO 7
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-
+# move to tests/ folder #TODO
+# add in test files to tests/ folder #TODO
 def test_papiex_tooling(infile = None):
     ''' local testing/debugging, ONE script input to test on. '''    
     outfile=infile+".tags"
@@ -222,7 +223,7 @@ def test_papiex_tooling(infile = None):
 
 
 
-
+# move to tests/ folder #TODO
 def many_tests_papiex_tooling( run_this_many_tests=1):
     ''' local debug test, to be moved to top-level dir tests? '''
     with open('./scripts_to_test_papiex_tooling_with.txt', 'r') as filelist_in :
@@ -245,7 +246,3 @@ if __name__=='__main__':
     #test_papiex_tooling(infile)
     ##### local testing/debugging, MANY input scripts to test on.
     #many_tests_papiex_tooling(200000)
-
-
-
-
