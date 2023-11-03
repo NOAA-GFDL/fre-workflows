@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ''' tags specific operations for data-scraping via PAPIEX and EPMT 
-# this is an adaptation of the following for FRE Canopy specifically
-# https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
-#     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258 '''
+this is an adaptation of the following for FRE Canopy specifically
+https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
+387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258 '''
 
 # should this be a class? #TODO 1
 # should we rename some things? e.g. tool_ops_w_papiex --> papiex_ops_tooler ? #TODO 2
