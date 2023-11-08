@@ -205,7 +205,7 @@ import os
 username=os.environ['USER']
 
 import epmt_query as eq
-my_jobs=eq.get_jobs(tags='pp_is_canopy:YES;exp_name:am5_c96L33_amip',fltr=(eq.Job.user_id == username),after=-1, fmt='terse)
+my_jobs=eq.get_jobs(tags='pp_is_canopy:YES;exp_name:am5_c96L33_amip',fltr=(eq.Job.user_id == username),after=-1, fmt='terse')
 
 len(my_jobs)
 ```
@@ -213,7 +213,7 @@ this should grab some of the jobs you just ran, and the length of the jobid list
 
 convert the jobs to dict format and filter them for `stage-history` tasks
 ```
-my_jobs=eq.get_jobs(jobs=my_jobs,fmt='dict')
+my_jobs=eq.get_jobs(jobs=my_jobs,tags='exp_component:stage-history',fmt='dict')
 len(my_jobs)==4
 ```
 the last statement should evaluate to true, assuming you didn't have to resubmit the workflow more than once when using this guide.
