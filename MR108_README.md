@@ -50,7 +50,7 @@ to take my approach, we will pip-install pytest into your `~/.local`. be aware o
 potential clashes with any currently installed packages. once you've pondered that
 and decided in a pythonic (ad-hoc) spirit that it's likely fine, you can proceed.
 
-from the repo's root dir pp_MR108rev, we will use the cylc conda env. the pip install
+from the repo's root dir `pp_MR108rev/`, we will use the cylc conda env. the pip install
 will generate a warning that's addressed by the `export` statement. 
 ```
 module unload cylc && module load conda && conda activate cylc
@@ -146,7 +146,7 @@ regrid-xy_atmos_month, 19800101T0000Z, waiting
 successes are a good sign. we can assess the job runner's functioning in other
 ways too.
 
-### ------ assessing runner functionality in a workflow
+### ------ GENERAL NOTES ON THE CYLC JOB RUNNER MANAGER AND CUSTOM JOB RUNNERS
 There is a somewhat annoying problem here- if we're using a custom
 job runner like `lib/python/ppan_handler.py`, it's `STDOUT` and `STDERR` get
 filtered at different points by the cylc.flow.job_runner_mgr, which creates
@@ -155,9 +155,9 @@ e.g. a syntax/import error in `lib/python/ppan_handler.py`, the error message
 is often silenced or not output to screen in the way one expects.
 
 I've attempted to rig the class output `out` and `err` s.t. this is a less 
-frustrating experience, but one should know it can still happen. 
-
-### ------ to verify functionality:
+frustrating experience, but one should know it can still happen. if you
+at some point suspect silent failure, you have options. `pytest` should catch
+the most frequent causes of these silent errors, minor syntax issues.
 
 ## -- 1) (verbose)x2 + no-detach mode: `cylc play -v -v -N EXPNAME/runN`
 this typically shows you the exit code of `ppan_handler.submit()`,
@@ -166,11 +166,14 @@ the STDOUT/ERR).
 
 ## -- 2) cat pp-starter job-activity immediately after submission:
 `cat ~/cylc-run/EXPNAME/runN/log/job/YYYYMMDDT0000Z/pp-starter/NN/job-activity.log`
-essentially tracks job-submission success/failure.
+essentially tracks job-submission success/failure. 
 
-## -- 3) monitor total-workflow activity:
+## -- 3) continuously monitor total-workflow activity:
 `watch -n "cylc workflow-state -v EXPNAME/runN | grep -v succeeded"`
-omit the grep to view tasks in all different states
+omit the grep to view tasks in all different states. generally when `ppan_handler`
+was not working, the problem shows up first in `pp-starter`, preventing the workflow
+from kicking off, or causing the cylc scheduler to exhaust all possible retries,
+both execution+submission retries. 
 
 ## -- 4) verify that the papiex-tooler did something:
 not every task has ops-of-interest to the papiex tooler (e.g `pp-starter`).
@@ -178,24 +181,12 @@ not every task has ops-of-interest to the papiex tooler (e.g `pp-starter`).
 initial submission success. It also shows the functionality of `tool_ops_w_papiex`.
 to easily compare the parsed job script with the original, do:
 ```
-diff ~/cylc-run/EXPNAME/runN/log/job/YYYYMMDDT0000Z/stage-history/NN/job ~/cylc-run/EXPNAME/runN/log/job/YYYYMMDDT0000Z/stage-history/NN/job.notags
+diff ~/cylc-run/am5_c96L33_amip/runN/log/job/19800101T0000Z/stage-history/NN/job ~/cylc-run/am5_c96L33_amip/runN/log/job/19800101T0000Z/stage-history/NN/job.notags
 ```
-where YYYYMMDDT0000Z represents a cycle point (e.g. `19800101T0000Z`). you should 
-see only one line of difference having to do with an `hsmget` call within a bash 
-`if` statement. 
-
-
-
-
-
-
-when running the tests via `pytest`, target the `cylc` `miniconda` env `python3`
+where 19800101T0000Z represents a cycle point. you should see only one line of
+difference having to do with an `hsmget` call within a bash `if` statement.
 ```
-export __CONDA_CYLC_PYTHON=/app/conda/miniconda/envs/cylc/bin/python
-```
-
-now run the tests:
-```
-
-```
+< if { export PAPIEX_TAGS="op:hsmget;op_instance:1"; hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; export SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then
+---
+> if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
 ```
