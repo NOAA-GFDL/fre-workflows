@@ -8,7 +8,7 @@ inputRealm=atmos
 interpMethod=conserve_order2
 outputGridType=default
 sources=atmos_month
-        atmos_daily
+
 
 [land]
 inputGrid=cubedsphere

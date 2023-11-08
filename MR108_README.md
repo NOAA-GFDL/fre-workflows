@@ -10,7 +10,7 @@ already exists, rename/backup/delete it as needed. to get the default settings i
 there if they don't exist, `mkdir` as needed and:
 ```
 module load cylc
-cylc config | ~/.cylc/flow/global.cylc
+cylc config >> ~/.cylc/flow/global.cylc
 ```
 
 change the `job runner` field under the `[[ppan]]` platform. this can be done and
@@ -50,21 +50,17 @@ to take my approach, we will pip-install pytest into your `~/.local`. be aware o
 potential clashes with any currently installed packages. once you've pondered that
 and decided in a pythonic (ad-hoc) spirit that it's likely fine, you can proceed.
 
-unload cylc and load cylc from the `pp_MR108rev` dir. export `~/.local` to `PATH`.
+from the repo's root dir pp_MR108rev, we will use the cylc conda env. the pip install
+will generate a warning that's addressed by the `export` statement. 
 ```
-module unload cylc && module load cylc
+module unload cylc && module load conda && conda activate cylc
 pip install pytest
 export PATH=$PATH:/home/$USER/.local/bin
 ```
 
-when running the tests via `pytest`, target the `cylc` `miniconda` env `python3`
-```
-export __CONDA_CYLC_PYTHON=/app/conda/miniconda/envs/cylc/bin/python
-```
-
 now run the tests:
 ```
-$__CONDA_CYLC_PYTHON -m pytest tests/test_PPANHandler.py tests/test_papiex_tooler.py tests/tests_analysis_validator.py
+python -m pytest tests/test_PPANHandler.py tests/test_papiex_tooler.py tests/tests_analysis_validator.py
 ```
 the targeted tests above should succeed and not be based on any rose configuraiton
 steps. not every test in `tests/` succeeds at this time, but the ones above should.
@@ -75,6 +71,17 @@ sure you only see `VERY GOOD`s and no `VERY BAD`s.
 source tests/test_papiex_tags_with_bash_if.bash
 ```
 
+now we do this because we can't submit jobs from the conda env. we do it this way to get
+`pytest` interacting with the cylc env. which is terrible. so now do the following even
+though it tastes bad.
+```
+conda deactivate && module unload conda && module load cylc
+export __CONDA_CYLC_PYTHON=/app/conda/miniconda/envs/cylc/bin/python
+$__CONDA_CYLC_PYTHON -m pytest tests/test_PPANHandler.py tests/test_papiex_tooler.py tests/test_analysis_validator.py
+```
+you should see all successful tests again. 
+
+
 
 ### ------ insert a real workflow configuration and real-workflow test
 if you've gotten this far, congrats! our environments are the same more or less,
@@ -83,7 +90,7 @@ and we're ready to conifigure the workflow.
 first, uncomment the configuartion fields in `rose-suite.conf`. then, use this
 `rose-suite` optional configuration i use for `am5`:
 ```
-mv opt/MR108_TEMPLATE.conf opt/rose-suite-am5_c96L33_amip.conf
+cp opt/MR108_TEMPLATE.conf opt/rose-suite-am5_c96L33_amip.conf
 ```
 
 now, we need to configure `regrid-xy` and `remap-pp-components`. i put the ones
@@ -94,22 +101,51 @@ cp MR108_remap_pp_rose_app app/remap_pp_components/rose-app.conf
 ```
 
 i think it's worthwhile to create the `history-manifest` for validation's sake.
-look at your `HISTORY_DIR` value in `opt/rose-suite-am5_c96L33_amip.conf`, peek
-at the location and
 ```
-tar -tf <some history file in HISTORY_DIR> | grep -v "tile[2-6]" | sort >> history-manifest
+tar -tf /archive/inl/am5/2022.01/c96L33_am5a0_cmip6Diag/gfdl.ncrc5-intel22-classic-prod-openmp/history/19800101.nc.tar | grep -v "tile[2-6]" | sort >> history-manifest & cat history-manifest
 ```
 
-now `rose macro --validate` and squash complaints. mostly the ones you need to
-worry about to test the job runner are the ones regarding directories not existing.
+make sure you see output like this after this step:
+```
+...
+./19800101.atmos_level_cmip.tile1.nc
+./19800101.atmos_level_daily_cmip.tile1.nc
+./19800101.atmos_month_aer.tile1.nc
+./19800101.atmos_month_cmip.tile1.nc
+./19800101.atmos_month.tile1.nc
+./19800101.atmos_scalar.nc
+...
+```
+
+now `rose macro --validate` and squash complaints about directories yet to be
+created, simply by creating them. others are irrelevant to testing `ppan_handler`.
 
 the workflow can then be submitted in the usual way from the repo's root directory-
 ```
 bin/install-exp am5_c96L33_amip && cylc play am5_c96L33_amip/run1
 ```
-now you need to assess the functioning of the job runner. 
 
-### REFINING TESTING ABOVE FIRST
+wait a few minutes, and you should see something like the following from
+`cylc workflow-state -v am5_c96L33_amip/run1`:
+```
+connecting to workflow db for /home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run1
+pp-starter, 19800101T0000Z, succeeded
+pp-starter, 19810101T0000Z, succeeded
+stage-history, 19800101T0000Z, succeeded
+stage-history-refined, 19800101T0000Z, running
+stage-history, 19810101T0000Z, running
+stage-history-refined, 19810101T0000Z, running
+regrid-xy_land_daily_cmip, 19800101T0000Z, waiting
+mask-atmos-plevel_atmos_month, 19800101T0000Z, waiting
+regrid-xy_land_month_cmip, 19800101T0000Z, waiting
+split-netcdf-native_atmos_global_cmip, 19800101T0000Z, waiting
+regrid-xy_atmos_month, 19800101T0000Z, waiting
+...
+```
+
+successes are a good sign. we can assess the job runner's functioning in other
+ways too.
+
 ### ------ assessing runner functionality in a workflow
 There is a somewhat annoying problem here- if we're using a custom
 job runner like `lib/python/ppan_handler.py`, it's `STDOUT` and `STDERR` get
@@ -149,3 +185,17 @@ see only one line of difference having to do with an `hsmget` call within a bash
 `if` statement. 
 
 
+
+
+
+
+when running the tests via `pytest`, target the `cylc` `miniconda` env `python3`
+```
+export __CONDA_CYLC_PYTHON=/app/conda/miniconda/envs/cylc/bin/python
+```
+
+now run the tests:
+```
+
+```
+```

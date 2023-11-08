@@ -3,7 +3,6 @@ default=remap-pp-components
 
 [atmos]
 sources=atmos_month
-        atmos_daily
 grid=regrid-xy/default
 
 [land]
