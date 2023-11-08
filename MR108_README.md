@@ -149,7 +149,7 @@ ways too.
 ### ------ GENERAL NOTES ON THE CYLC JOB RUNNER MANAGER AND CUSTOM JOB RUNNERS
 There is a somewhat annoying problem here- if we're using a custom
 job runner like `lib/python/ppan_handler.py`, it's `STDOUT` and `STDERR` get
-filtered at different points by the cylc.flow.job_runner_mgr, which creates
+filtered at different points by the `cylc.flow.job_runner_mgr`, which creates
 and manages a cylc-user's handler of choice. this means that if there's
 e.g. a syntax/import error in `lib/python/ppan_handler.py`, the error message
 is often silenced or not output to screen in the way one expects.
@@ -190,3 +190,37 @@ difference having to do with an `hsmget` call within a bash `if` statement.
 ---
 > if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
 ```
+
+
+## -- 5) verify that epmt got the data
+in a separate analysis node login
+```
+module load epmt
+epmt shell
+```
+
+in the ipython shell:
+```
+import os
+username=os.environ['USER']
+
+import epmt_query as eq
+my_jobs=eq.get_jobs(tags='pp_is_canopy:YES;exp_name:am5_c96L33_amip',fltr=(eq.Job.user_id == username),after=-1, fmt='terse)
+
+len(my_jobs)
+```
+this should grab some of the jobs you just ran, and the length of the jobid list should be 0.
+
+convert the jobs to dict format and filter them for `stage-history` tasks
+```
+my_jobs=eq.get_jobs(jobs=my_jobs,fmt='dict')
+len(my_jobs)==4
+```
+the last statement should evaluate to true, assuming you didn't have to resubmit the workflow more than once when using this guide.
+
+now check that the scraped `hsmget` call  in the tooled `stage-history` script was put in the dicitonary:
+```
+hsmget_proc=my_jobs[0].get('all_proc_tags')
+if hsmget_proc is not None: print('yay')
+```
+I hope you see a "yay"!
