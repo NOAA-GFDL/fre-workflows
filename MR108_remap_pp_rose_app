@@ -1,0 +1,22 @@
+[command]
+default=remap-pp-components
+
+[atmos]
+sources=atmos_month
+        atmos_daily
+grid=regrid-xy/default
+
+[land]
+sources=land_month_cmip
+        land_daily_cmip
+grid=regrid-xy/2deg
+
+[land.static]
+sources=land_static
+grid=regrid-xy/default
+freq=P0Y
+
+[atmos_scalar]
+sources=atmos_scalar
+        atmos_global_cmip
+grid=native

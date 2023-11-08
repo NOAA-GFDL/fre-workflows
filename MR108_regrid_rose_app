@@ -1,0 +1,22 @@
+[command]
+default=regrid-xy
+
+
+[atmos]
+inputGrid=cubedsphere
+inputRealm=atmos
+interpMethod=conserve_order2
+outputGridType=default
+sources=atmos_month
+        atmos_daily
+
+[land]
+inputGrid=cubedsphere
+inputRealm=land
+interpMethod=conserve_order1
+outputGridLon=144
+outputGridLat=90
+outputGridType=2deg
+sources=land_month_cmip
+        land_daily_cmip
+        land_static
