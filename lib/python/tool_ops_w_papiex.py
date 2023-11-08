@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-''' tags specific operations for data-scraping via PAPIEX and EPMT '''
+''' tags specific operations for data-scraping via PAPIEX and EPMT 
+this is an adaptation of the following for FRE Canopy specifically
+https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
+387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258 '''
 
+# should this be a class? #TODO 1
+# should we rename some things? e.g. tool_ops_w_papiex --> papiex_ops_tooler ? #TODO 2
+# typing/type hints? #TODO 3
 import re
 import pathlib as pl
-# this is an adaptation of the following for FRE Canopy specifically
-# https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
-#     387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
 
 try:
     if any([ 'lib.python'  in __name__ ,
@@ -34,23 +37,25 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         #print(f"initializing op_instance count for {op}")
         op['op_instance'] = 0
 
-    # Read in the file
+    # init lists of lines (list[strs]), prevline (str)
     lines = []
-    with open(fin_name, 'r') as file :
-        lines = file.read().splitlines()    
     script = []
     prevline = ''
     #first_time = True
 
+    # Read in the file
+    with open(fin_name, 'r') as file :
+        lines = file.read().splitlines()    
+
     # parse line-by-line
     for line in lines:
 
-        # is it a comment? skip.
+        # is this line a comment? skip.
         if re.match( r'[ \t\r\f\v]*#', line) is not None:
             script.append(line)
             continue
 
-        # is it a module-load kind of step? skip.
+        # is this line a module-load kind of step? skip.
         if re.match( r'[ \t\r\f\v]*module ', line) is not None:
             script.append(line)
             continue
@@ -76,11 +81,14 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
             #print(f'found bash if-statement')
             is_bashif=True
 
+        # if there's an op, is it a rose script-run or task-run type line?
+        # NotYetImplemented #TODO 4
+
         # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
         #print(f'changing line ...  {line}')
         if not is_bashif: 
             # if no logic, tool in the usual way.
-            line=line.replace(op['s_string'], op['r_string']) + ' ; unset PAPIEX_TAGS'
+            line = line.replace(op['s_string'], op['r_string']) + ' ; unset PAPIEX_TAGS'
         else: 
             # if there is logic, tool such that exit code preserved
             then_loc_group_span=re.search('; then',line).span()
@@ -106,13 +114,19 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         for op in op_list:
             if this_op == op['op_name']:
                 op['op_instance'] += 1
-                line = line.replace("OP_INSTANCE",str(op['op_instance'])+retry)
+                line = line.replace( "OP_INSTANCE", 
+                                     str(op['op_instance'] ) + retry)
                 break
-        #done with this line, append and track what we just did for retries
+
+        # done with this line, append and track what we just did 
+        # to catch retry ops
         script.append(line)
         prevline = line    
 
     # end file with a new line, write out the file.
+    # this script (not tool_ops_w_papiex) should do the replacing of old script
+    # renaming... etc. #TODO 5
+    # more flexible options? replace? keep both? #TODO 6
     script[-1] += '\n'
     fout_name = fin_name + '.tags'
     with open(fout_name, 'w') as file:
@@ -122,7 +136,7 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
 
 
     
-def annotate_metadata(): # TODO 
+def annotate_metadata(): #TODO 7
     ''' parses a job bash-script assembled by script, annotating metadata of interest.
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
     parsing the job script for metadata of interest. '''
@@ -149,7 +163,9 @@ def annotate_metadata(): # TODO
     #if sname.get('exp_component') is not None: EPMT_JOB_TAGS += sname['exp_component'] +"_" 
     #if sname.get('exp_time')      is not None: EPMT_JOB_TAGS += sname['exp_time']      +"'"
     #
-    #epmt_instrument = 'setenv PAPIEX_OPTIONS $PAPIEX_OLD_OPTIONS; setenv LD_PRELOAD $PAPIEX_LD_PRELOAD; setenv PAPIEX_OUTPUT $PAPIEX_OLD_OUTPUT;'
+    #epmt_instrument = 'setenv PAPIEX_OPTIONS $PAPIEX_OLD_OPTIONS; \
+    #.                  setenv LD_PRELOAD $PAPIEX_LD_PRELOAD; \
+    #                   setenv PAPIEX_OUTPUT $PAPIEX_OLD_OUTPUT;'
     #epmt_uninstrument = 'unsetenv PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD'
 
     #print('parsing lines again!')
@@ -168,7 +184,8 @@ def annotate_metadata(): # TODO
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-
+# move to tests/ folder #TODO
+# add in test files to tests/ folder #TODO
 def test_papiex_tooling(infile = None):
     ''' local testing/debugging, ONE script input to test on. '''    
     outfile=infile+".tags"
@@ -176,7 +193,7 @@ def test_papiex_tooling(infile = None):
         #print(f'removing output {outfile}')
         pl.Path(outfile).unlink()
         
-    print('//////////////----------------- calling: tool_ops_w_papiex ---------------///////////////// ')
+    print('/////// ----------------- calling: tool_ops_w_papiex --------------- /////////')
     tool_ops_w_papiex(infile, '')
     
     import filecmp as fc
@@ -206,7 +223,7 @@ def test_papiex_tooling(infile = None):
 
 
 
-
+# move to tests/ folder #TODO
 def many_tests_papiex_tooling( run_this_many_tests=1):
     ''' local debug test, to be moved to top-level dir tests? '''
     with open('./scripts_to_test_papiex_tooling_with.txt', 'r') as filelist_in :
@@ -229,7 +246,3 @@ if __name__=='__main__':
     #test_papiex_tooling(infile)
     ##### local testing/debugging, MANY input scripts to test on.
     #many_tests_papiex_tooling(200000)
-
-
-
-

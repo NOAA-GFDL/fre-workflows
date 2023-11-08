@@ -184,10 +184,3 @@ class PPANHandler(SLURMHandler):
 # doc source for approach
 #https://cylc.github.io/cylc-doc/stable/html/plugins/job-runners/index.html
 JOB_RUNNER_HANDLER = PPANHandler()
-
-
-
-
-
-
-        

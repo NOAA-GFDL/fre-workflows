@@ -1,17 +1,32 @@
-# Set up postprocessing operation dictionaries
+'''
+this file shows the target ops of interest within the FRE/Canopy 
+postprocessing repo. this file is strictly data.
+'''
+
+## #TODO list
+## Set up postprocessing operation dictionaries
+# not all ops currently covered- improve #TODO 1
+# add in case where the op is essentially \
+# `rose task-run <script>` #TODO 2
+
+# op dictionary definitions
+# for certain ops- add "FRE/bronx" equiv field? #TODO 3
 cp = {'op_name'       : 'cp',
       'op_instance'   : 0,
       's_string'      : 'cp ',
       'r_string'      : 'export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE" ; cp ',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp '
 }
-#dmput = {'op_name' : 'dmput',    'op_instance' : 0,
+#dmput = {'op_name' : 'dmput',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for dmput:     real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:dmput;op_instance:OP_INSTANCE";'}
-#dmget = {'op_name' : 'dmget',    'op_instance' : 0,
+#dmget = {'op_name' : 'dmget',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for dmget:     real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:dmget;op_instance:OP_INSTANCE";'}
-#fregrid = {'op_name' : 'fregrid',    'op_instance' : 0,
+#fregrid = {'op_name' : 'fregrid',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for fregrid:   real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:fregrid;op_instance:OP_INSTANCE";'}
 hsmget = {'op_name'       : 'hsmget',
@@ -39,19 +54,24 @@ mv = {'op_name'       : 'mv',
       'r_string'      : 'export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE" ; mv ',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE"; mv '
 }
-#ncatted = {'op_name' : 'ncatted',    'op_instance' : 0,
+#ncatted = {'op_name' : 'ncatted',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for ncatted:   real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:ncatted;op_instance:OP_INSTANCE";'}
-#nccopy = {'op_name' : 'nccopy',    'op_instance' : 0,
+#nccopy = {'op_name' : 'nccopy',    
+#.   'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for nccopy:    real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:nccopy;op_instance:OP_INSTANCE";'}
-#ncks = {'op_name' : 'ncks',    'op_instance' : 0,
+#ncks = {'op_name' : 'ncks',    
+#.   'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for ncks:      real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:ncks;op_instance:OP_INSTANCE";'}
-#ncrcat = {'op_name' : 'ncrcat',    'op_instance' : 0,
+#ncrcat = {'op_name' : 'ncrcat',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for ncrcat:    real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:ncrcat;op_instance:OP_INSTANCE";'}
-#plevel = {'op_name' : 'plevel',    'op_instance' : 0,
+#plevel = {'op_name' : 'plevel',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for plevel:    real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:plevel;op_instance:OP_INSTANCE";'}
 rm = {'op_name'       : 'rm',
@@ -60,7 +80,8 @@ rm = {'op_name'       : 'rm',
       'r_string'      : 'export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE" ; rm ',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE"; rm '
 }
-#splitvars = {'op_name' : 'splitvars',    'op_instance' : 0,
+#splitvars = {'op_name' : 'splitvars',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for splitvars: real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:splitvars;op_instance:OP_INSTANCE";'}
 tar = {'op_name'       : 'tar',
@@ -75,10 +96,12 @@ timavg = {'op_name'       : 'make-timeavgs',
           'r_string'      : 'export PAPIEX_TAGS="op:timavg;op_instance:OP_INSTANCE" ; make-timeavgs ',
           'r_string_w_if' : '{ export PAPIEX_TAGS="op:timavg;op_instance:OP_INSTANCE"; make-timeavgs '
 }
-#untar = {'op_name' : 'untar',    'op_instance' : 0,
+#untar = {'op_name' : 'untar',    
+#    'op_instance' : 0,
 #    's_string' : '/usr/bin/time -f "     TIME for untar:     real %e user %U sys %S"',
 #    'r_string' : 'export PAPIEX_TAGS="op:untar;op_instance:OP_INSTANCE";'}
 
+# list of all op dictionaries shown above
 op_list = [
     cp,
 #    dmput,
