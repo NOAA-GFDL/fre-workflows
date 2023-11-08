@@ -59,7 +59,7 @@ export PATH=$PATH:/home/$USER/.local/bin
 
 now run the tests:
 ```
-python -m pytest tests/test_PPANHandler.py tests/test_papiex_tooler.py tests/tests_analysis_validator.py
+python -m pytest tests/test_PPANHandler.py tests/test_papiex_tooler.py tests/test_analysis_validator.py
 ```
 the targeted tests above should succeed and not be based on any rose configuraiton
 steps. not every test in `tests/` succeeds at this time, but the ones above should.
@@ -86,15 +86,12 @@ you should see all successful tests again.
 if you've gotten this far, congrats! our environments are the same more or less,
 and we're ready to conifigure the workflow.
 
-first, uncomment the configuartion fields in `rose-suite.conf`. then, use this
-`rose-suite` optional configuration i use for `am5`:
+first, uncomment the configuration fields in `rose-suite.conf`.
+
+then, copy the stock config made for this MR. it basically follows the `main` branch `am5`
+configuration examples, minus the `atmos_daily` source file in the component sources list. 
 ```
 cp opt/MR108_TEMPLATE.conf opt/rose-suite-am5_c96L33_amip.conf
-```
-
-now, we need to configure `regrid-xy` and `remap-pp-components`. i put the ones
-i've used in the base directory of this repo.
-```
 cp MR108_regrid_rose_app app/regrid-xy/rose-app.conf
 cp MR108_remap_pp_rose_app app/remap_pp_components/rose-app.conf
 ```
@@ -124,8 +121,8 @@ the workflow can then be submitted in the usual way from the repo's root directo
 bin/install-exp am5_c96L33_amip && cylc play am5_c96L33_amip/run1
 ```
 
-wait a few minutes, and you should see something like the following from
-`cylc workflow-state -v am5_c96L33_amip/run1`:
+do `watch -n 5 "cylc workflow-state -v am5_c96L33_amip/run1"`, wait a few minutes, and
+you should see something like the following after a bit
 ```
 connecting to workflow db for /home/Ian.Laflotte/cylc-run/am5_c96L33_amip/run1
 pp-starter, 19800101T0000Z, succeeded
