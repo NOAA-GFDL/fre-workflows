@@ -13,7 +13,7 @@
 
     [[root]]
         init-script = """
-            module use -a /home/fms/local/modulefiles
+            module load ppan_environment
             module load epmt
             module list
             epmt check
