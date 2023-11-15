@@ -4,7 +4,7 @@ not been tested anywhere else.
 
 
 ### ------ check your env
-test using the default `global.cylc` settings on PP/AN. if `.cylc/flow/global.cylc`
+test using the default `global.cylc` settings on PP/AN. if `~/.cylc/flow/global.cylc`
 already exists, rename/backup/delete it as needed. to get the default settings in
 there if they don't exist, `mkdir` as needed and:
 ```
