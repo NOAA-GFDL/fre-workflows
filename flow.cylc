@@ -95,7 +95,15 @@
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
     # max number of active cycle points (default 5)
-    runahead limit = P10
+    # this should be something sensible assuming tasks with required outputs
+    # (i.e. not marked as "ok to fail") such as analysis scripts.
+    # But until the analysis scripts can be marked optional then let's
+    # set this to be very high, 100 cycle points.
+    runahead limit = P100
+    [[queues]]
+        # limit the entire workflow to 20 active tasks at once
+        [[[default]]]
+            limit = 20
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
