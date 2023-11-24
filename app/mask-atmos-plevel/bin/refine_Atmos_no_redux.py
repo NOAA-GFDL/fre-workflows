@@ -74,8 +74,13 @@ def mask_field_above_surface_pressure(ds, var, ds_ps):
     ps_extended, _ = xr.broadcast(ds_ps["ps"], ds[var])
     # masking do not need looping
     masked = xr.where(plev_extended > ps_extended, 1.0e20, ds[var])
-    # copy attributes and transpose dims like the original array
-    masked.attrs = ds[var].attrs.copy()
+    # copy attributes, but it doesn't include the missing values
+    attrs = ds[var].attrs.copy()
+    # add the missing values back
+    attrs['missing_value'] = 1.0e20
+    attrs['_FillValue'] = 1.0e20
+    masked.attrs = attrs
+    # transpose dims like the original array
     masked = masked.transpose(*ds[var].dims)
 
     print(f"Processed {var}")
