@@ -184,59 +184,6 @@ def annotate_metadata(): #TODO 7
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-# move to tests/ folder #TODO
-# add in test files to tests/ folder #TODO
-def test_papiex_tooling(infile = None):
-    ''' local testing/debugging, ONE script input to test on. '''    
-    outfile=infile+".tags"
-    if pl.Path(outfile).exists():
-        #print(f'removing output {outfile}')
-        pl.Path(outfile).unlink()
-        
-    print('/////// ----------------- calling: tool_ops_w_papiex --------------- /////////')
-    tool_ops_w_papiex(infile, '')
-    
-    import filecmp as fc
-    is_different=not fc.cmp(infile, outfile, shallow=False)
-    #print(f'different? {is_different}\n\n')
-    if not is_different:
-        print('output == input, continue. \n')
-        return
-    
-
-    import sys
-    import difflib as dl
-    
-    the_infile = open(infile)
-    infile_contents=the_infile.readlines()
-    the_infile.close()
-    
-    the_outfile = open(outfile)
-    outfile_contents=the_outfile.readlines()
-    the_outfile.close()
-
-    for line in dl.ndiff(infile_contents, outfile_contents):
-        if line[0]=='-' or line[0]=='+':
-            print(line)
-        else:
-            continue
-
-
-
-# move to tests/ folder #TODO
-def many_tests_papiex_tooling( run_this_many_tests=1):
-    ''' local debug test, to be moved to top-level dir tests? '''
-    with open('./scripts_to_test_papiex_tooling_with.txt', 'r') as filelist_in :
-        count=0
-        for line in filelist_in.read().splitlines() :
-            #print(f'line={line}')
-            print(f'testing job script={line}')
-            test_papiex_tooling(line)
-            count+=1
-            if count >= run_this_many_tests: break
-        return
-    
-
 if __name__=='__main__':
     tool_ops_w_papiex('FOO',None)
 
