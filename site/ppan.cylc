@@ -35,7 +35,7 @@
         [[[directives]]]
             --comment=xtmp,epmt,canopy
         [[[environment]]]
-            COPY_TOOL=gcp
+            COPY_TOOL=gcp --verbose
 
     [[PP-STARTER]]
         env-script = """
