@@ -1,4 +1,4 @@
 #!/bin/bash
 set -eou pipefail
 
-mv DNE_file DNE2_file
+rose task-run --verbose --app-key mask-atmos-plevel
