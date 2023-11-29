@@ -89,7 +89,7 @@ def test_simple_failing_command():
                    control_ret_code == ret_code ] )
 
 
-def test_check_for_diff():    
+def test_check_simple_failing_command_for_diff():    
     ''' check the simple_failing_command script for differences after the
     prev test, which could in theory succeed if tool_ops_w_papiex copies 
     the script but without adding tooling.'''
@@ -108,6 +108,63 @@ def test_check_for_diff():
     assert is_different        
 
     # now we will explicitly check for those differencves
+    import difflib as dl
+    the_infile = open(control_script_targ)
+    infile_contents=the_infile.readlines()
+    the_infile.close()
+    
+    the_outfile = open(script_targ)
+    outfile_contents=the_outfile.readlines()
+    the_outfile.close()
+    differences=dl.ndiff(infile_contents, outfile_contents)
+
+    # better be something in here.
+    assert differences is not None
+    
+    # pytest suppresses print output by default.
+    # to view this and other print output in pytest
+    # from PASSING tests, run something like:
+    #      python -m pytest -rP tests/test_papiex_tooler
+    # to get the same for FAILING tests,
+    #      python -m pytest -rx tests/test_papiex_tooler
+    for line in differences:
+        if line[0]=='-' or line[0]=='+':
+            print(line)
+        else:
+            continue
+
+def test_rose_task_run_for_diff():    
+    from pathlib import Path
+    control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
+
+
+    # if we're testing over and over and '.notags' version exists,
+    # clobber the tagged version and replace it with '.notags' version
+    test_script_targ=control_script_targ+'.tags'
+    if Path(test_script_targ).exists():
+        Path(test_script_targ).unlink()    
+
+    # call the routine
+    from lib.python.tool_ops_w_papiex import tool_ops_w_papiex    
+    tool_ops_w_papiex(fin_name = control_script_targ,
+                      fms_modulefiles = None)
+    
+    # check that output files were created as we expect
+    assert Path(test_script_targ).exists()
+
+
+    script_targ=control_script_targ+'.tags'
+    assert Path(control_script_targ).exists() #quick check
+    assert Path(script_targ).exists() #quick check
+
+    # check quickly that they are different in some manner.
+    import filecmp as fc
+    is_different=not fc.cmp( control_script_targ, script_targ,
+                             shallow=False)
+    print(f'different? {is_different}\n\n')
+    assert is_different        
+
+    # now we will explicitly check for those differences
     import difflib as dl
     the_infile = open(control_script_targ)
     infile_contents=the_infile.readlines()

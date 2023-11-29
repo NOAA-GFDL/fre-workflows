@@ -13,10 +13,10 @@ import pathlib as pl
 try:
     if any([ 'lib.python'  in __name__ ,
              'tests.test_' in __name__  ]) :
-        print('(tool_ops_w_papiex) attempting RELATIVE import from .papiex_ops ...\n')
+        #print('(tool_ops_w_papiex) attempting RELATIVE import from .papiex_ops ...\n')
         from .papiex_ops import op_list
     else:
-        print('(tool_ops_w_papiex) attempting import from papiex_ops ... \n')
+        #print('(tool_ops_w_papiex) attempting import from papiex_ops ... \n')
         from papiex_ops import op_list
 except:
     print(f'(tool_ops_w_papiex) error! op_list import issues.')
@@ -55,6 +55,11 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
             script.append(line)
             continue
 
+        # is this line an env var export?
+        if re.match( r'[ \t\r\f\v]*export', line) is not None:
+            script.append(line)
+            continue
+
         # is this line a module-load kind of step? skip.
         if re.match( r'[ \t\r\f\v]*module ', line) is not None:
             script.append(line)
@@ -76,25 +81,37 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         
         # if there's an op, is it locked up in a condition statement?
         is_bashif=False
+        is_rose_task_run=False
         if any([ re.search('if ', line)   is not None,
                  re.search('elif ', line) is not None ]):
-            #print(f'found bash if-statement')
+            #print(f'found bash-if statement')
             is_bashif=True
+        elif re.search('rose task-run ', line) is not None:
+            #print(f'found rose task-run statement')
+            is_rose_task_run=True
 
-        # if there's an op, is it a rose script-run or task-run type line?
-        # NotYetImplemented #TODO 4
-
+        #print(re.search('rose task-run ', line))
+        #re.search(r'[ \t\r\f\v]*rose task-run ', line)
+        
         # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
         #print(f'changing line ...  {line}')
-        if not is_bashif: 
-            # if no logic, tool in the usual way.
-            line = line.replace(op['s_string'], op['r_string']) + ' ; unset PAPIEX_TAGS'
-        else: 
+        if is_bashif:  
             # if there is logic, tool such that exit code preserved
             then_loc_group_span=re.search('; then',line).span()
             line =  line[0:then_loc_group_span[0]]            
-            line =  line.replace(op['s_string'], op['r_string_w_if'])
-            line += '; export SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
+            line =  line.replace(op['s_string'], op_found['r_string_w_if'])
+            line += '; SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
+        elif is_rose_task_run:
+            line = op_found['r_string_rose'] + line + '; unset PAPIEX_TAGS;'
+        else:
+            # if no logic, tool in the usual way.
+            #print(f"op_found={op_found['op_name']}")
+            #print(f'line=\n{line}')
+            if op_found['r_string'] is None:
+                continue
+            line = line.replace( op_found['s_string'], op_found['r_string'])
+            line += '; unset PAPIEX_TAGS;'
+            
         #print(f'line changed  ...  \n {line}')
 
         ### Refine the PAPIEX_TAGS for a particular operation ###
