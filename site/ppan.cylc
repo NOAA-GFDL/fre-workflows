@@ -28,7 +28,7 @@
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
         # Set default time limit to 4 hours
         execution time limit = PT4H
-        platform = ppan
+        platform = ppan_test
         [[[events]]]
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
