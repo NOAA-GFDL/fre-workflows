@@ -27,17 +27,16 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
     """
     def validate(self, config, meta_config=None):
         '''Takes in the config accessible via rose-suite.conf in main and opt,  Return a list of errors, if any upon validation'''
-        do_analysis = config.get_value(['template variables', 'DO_ANALYSIS'])
-        do_analysis_only = config.get_value(['template variables', 'DO_ANALYSIS_ONLY'])
-        if do_analysis == "True":
-            do_analysis = bool(1)
-        else:
-            do_analysis = bool(0)
-        if do_analysis_only == "True":
-            do_analysis_only = bool(1)
-        else:
-            do_analysis_only = bool(0)
-        #Validation: ANALYSIS_DIR exists and is valid or not depending on the configuration settings used 
+
+        # informed by # https://stackoverflow.com/questions/715417/converting-from-a-string-to-boolean-in-python
+        do_analysis = config.get_value(['template variables', 'DO_ANALYSIS']).lower() in ('true')
+        do_analysis_only = config.get_value(['template variables', 'DO_ANALYSIS_ONLY']).lower() in ('true')
+        
+        if all([ not do_analysis, not do_analysis_only]):
+            self.add_report('template variables', 'DO_ANALYSIS', do_analysis, '')
+            self.add_report('template variables', 'DO_ANALYSIS_ONLY', do_analysis_only, 'Not doing analysis. Moving on.')
+            return self.reports
+
         if do_analysis_only and not do_analysis:
             self.add_report(
                 'template variables', 'DO_ANALYSIS', do_analysis,
@@ -113,3 +112,4 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                    "Not readable")
              
         return(self.reports) #TODO return error just once 
+
