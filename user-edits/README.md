@@ -17,7 +17,11 @@ There is another optional user change included in the INSTALL-EXP-SCRIPT field. 
 ### Apply-edits.py
 <ins>**Non-container use**</ins>
 
-In order to run the apply-edits script without the use of a container, the following packages are necessary: pyyaml, pathlib, jsonschema, and click. Once the edits are filled into the yaml, the `apply-edits.py` can be run from the `user-edits` directory, using the yaml that was populated:
+In order to run the apply-edits script without the use of a container, the following packages are necessary: pyyaml, pathlib, jsonschema, and click. On PP/AN, these can be accessible by 
+
+`module load python`
+
+Once the edits are filled into the yaml, the `apply-edits.py` can be run from the `user-edits` directory, using the yaml that was populated:
 
 1) In the postprocessing repo, copy the edits-template.yaml
 	
@@ -26,7 +30,7 @@ In order to run the apply-edits script without the use of a container, the follo
 2) Fill out the created user-edit yaml
 3) `./apply-edits.py [edits.yaml]`
 
-<ins>**Container Use**</ins>
+<ins>**Container Use**</ins> (CURRENTLY IN DEVELOPMENT)
 
 A container was created to run the apply-edits script. In order to run the container, 3 things are needed: the `.sif` container file, the postprocessing repository, and the runscript for the container. Currently, for testing purposes, these are the locations of usable locations:
 
@@ -40,11 +44,11 @@ A container was created to run the apply-edits script. In order to run the conta
 
 1) On PP/AN:
 	
-		a. Container build info and `.sif` file: fill in 
+		a. Container build info and `.sif` file: tbd
 	
-		b. Postprocessing repo: fill in  
+		b. Postprocessing repo: tbd
 	
-		c. Runscript directory: fill in 
+		c. Runscript directory: tbd
 
 **To run the container, follow these steps:**
 
