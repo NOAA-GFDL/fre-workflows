@@ -5,7 +5,7 @@ postprocess:
         # Create path to a new rose-suite-EXP.conf; this should be in the same directory as the rose-suite-TEMPLATE configuration (opt/ folder)
         - path: # TYPE = single-quoted string
         - rose-suite-exp-configuration:
-            # Specific site used for workflow
+            # Specific site used for workflow; must be 'generic', 'gfdl-ws' or 'ppan'
             SITE: # TYPE = single-quoted string
             
             # Switch to remove intermediate data files when they are no longer needed                
@@ -103,7 +103,7 @@ postprocess:
     # This edit is not needed when working on pp/an. If not working on pp/an, a tmpDir must be defined.
     TMPDIR:
         # Directory for tmp location (used in stage-history in workflow)
-        - path: # TYPE = single-quoted string
+        - tmpdirpath: # TYPE = single-quoted string
 
     # REMAP AND REGRID variable groups
     # Create 'type' sections for each PP_COMPONENT
@@ -141,11 +141,11 @@ postprocess:
 
 ## OPTIONAL EDITS                        
     # BIN/INSTALL-EXP
-    # Optional edit: Add --sym-link option to install cylc-run directory to location with more space available; default installation location for cylc-run directory is $HOME;
+    # Optional edit: Add --symlink-dirs option to install cylc-run directory to location with more space available; default installation location for cylc-run directory is $HOME;
     # Utilize this edit if you do not have enough space in home directory
     INSTALL-EXP-SCRIPT:
         # Directory to install-exp script
         - path: # TYPE = single-quoted string
         - install-option:
-            # Add --sym-link option (or any other option) to install cylc-run directory to location with more space available
+            # Add --symlink-dirs option (or any other option) to install cylc-run directory to location with more space available
             install: # TYPE = single-quoted string
