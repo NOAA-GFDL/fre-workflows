@@ -49,26 +49,31 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
 
     # parse line-by-line
     for line in lines:
-
+        
         # is this line a comment? skip.
-        if re.match( r'[ \t\r\f\v]*#', line) is not None:
+        if re.match( r'\s*#', line) is not None:
             script.append(line)
             continue
 
         # is this line an env var export?
-        if re.match( r'[ \t\r\f\v]*export', line) is not None:
+        if re.match( r'\s*export', line) is not None:
             script.append(line)
             continue
 
         # is this line a module-load kind of step? skip.
-        if re.match( r'[ \t\r\f\v]*module ', line) is not None:
+        if re.match( r'\s*module ', line) is not None:
             script.append(line)
             continue
-    
+
+        # is this line a bash 'type' kind of step? skip.
+        if re.match( r'\s*type ', line) is not None:
+            script.append(line)
+            continue
+
         # does the line have an op of interest?
         has_op=False
         for op in op_list:
-            if re.search(op['s_string'],line) is not None:
+            if re.search(op['s_string'], line) is not None:
                 #print(f"found op={op['op_name']} \n {line}")
                 has_op=True
                 op_found=op
@@ -90,16 +95,16 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
             #print(f'found rose task-run statement')
             is_rose_task_run=True
 
-        #print(re.search('rose task-run ', line))
-        #re.search(r'[ \t\r\f\v]*rose task-run ', line)
-        
         # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
-        #print(f'changing line ...  {line}')
         if is_bashif:  
             # if there is logic, tool such that exit code preserved
             then_loc_group_span=re.search('; then',line).span()
-            line =  line[0:then_loc_group_span[0]]            
-            line =  line.replace(op['s_string'], op_found['r_string_w_if'])
+            #print(f'is_bashif: before selecting part of line, line = \n {line}')
+            line =  line[0:then_loc_group_span[0]]
+            #print(f'is_bashif: before replace, line = \n {line}')
+            line =  line.replace(op_found['op_name']+' ',
+                                 op_found['r_string_w_if'])
+            #print(f'is_bashif: after replace, line = \n {line}')
             line += '; SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
         elif is_rose_task_run:
             line = op_found['r_string_rose'] + line + '; unset PAPIEX_TAGS;'
@@ -109,11 +114,10 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
             #print(f'line=\n{line}')
             if op_found['r_string'] is None:
                 continue
-            line = line.replace( op_found['s_string'], op_found['r_string'])
+            line = line.replace( op_found['op_name']+' ',
+                                 op_found['r_string'])
             line += '; unset PAPIEX_TAGS;'
             
-        #print(f'line changed  ...  \n {line}')
-
         ### Refine the PAPIEX_TAGS for a particular operation ###
         # is the op a retry? If so, mark as such via tag and OP_INSTANCE
         # this assists in identifying operation correlations and/or
@@ -126,7 +130,10 @@ def tool_ops_w_papiex(fin_name, fms_modulefiles):
         # Increment the operation instance. 
         # op_instance correlates to a specific line in the script.
         this_op = re.search('PAPIEX_TAGS="op:(.*);op_instance:OP_INSTANCE',line)
-        assert(this_op is not None)
+        if this_op is None:
+            print(line)
+            raise KeyError
+        
         this_op = this_op.group(1)
         for op in op_list:
             if this_op == op['op_name']:

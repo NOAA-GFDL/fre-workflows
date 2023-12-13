@@ -105,7 +105,6 @@ def test_check_simple_failing_command_for_diff():
     is_different=not fc.cmp( control_script_targ, script_targ,
                              shallow=False)
     print(f'different? {is_different}\n\n')
-    assert is_different        
 
     # now we will explicitly check for those differencves
     import difflib as dl
@@ -118,9 +117,6 @@ def test_check_simple_failing_command_for_diff():
     the_outfile.close()
     differences=dl.ndiff(infile_contents, outfile_contents)
 
-    # better be something in here.
-    assert differences is not None
-    
     # pytest suppresses print output by default.
     # to view this and other print output in pytest
     # from PASSING tests, run something like:
@@ -132,6 +128,11 @@ def test_check_simple_failing_command_for_diff():
             print(line)
         else:
             continue
+
+    assert is_different        
+    # better be something in here.
+    assert differences is not None
+    
 
 def test_rose_task_run_for_diff():    
     from pathlib import Path
@@ -162,7 +163,6 @@ def test_rose_task_run_for_diff():
     is_different=not fc.cmp( control_script_targ, script_targ,
                              shallow=False)
     print(f'different? {is_different}\n\n')
-    assert is_different        
 
     # now we will explicitly check for those differences
     import difflib as dl
@@ -175,17 +175,85 @@ def test_rose_task_run_for_diff():
     the_outfile.close()
     differences=dl.ndiff(infile_contents, outfile_contents)
 
-    # better be something in here.
-    assert differences is not None
-    
     # pytest suppresses print output by default.
     # to view this and other print output in pytest
     # from PASSING tests, run something like:
     #      python -m pytest -rP tests/test_papiex_tooler
     # to get the same for FAILING tests,
     #      python -m pytest -rx tests/test_papiex_tooler
+    def_is_different_for_sure=False
     for line in differences:
         if line[0]=='-' or line[0]=='+':
+            def_is_different_for_sure=True
             print(line)
         else:
             continue
+            
+    assert is_different        
+    # better be something in here.
+    assert differences is not None
+    assert def_is_different_for_sure
+
+
+
+def test_pp_starter_for_no_diff():    
+    from pathlib import Path
+    control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/test_pp-starter'
+
+    # if we're testing over and over and '.notags' version exists,
+    # clobber the tagged version and replace it with '.notags' version
+    test_script_targ=control_script_targ+'.tags'
+    if Path(test_script_targ).exists():
+        Path(test_script_targ).unlink()    
+
+    # call the routine
+    from lib.python.tool_ops_w_papiex import tool_ops_w_papiex    
+    tool_ops_w_papiex(fin_name = control_script_targ,
+                      fms_modulefiles = None)
+    
+    # check that output files were created as we expect
+    assert Path(test_script_targ).exists()
+
+
+    script_targ=control_script_targ+'.tags'
+    assert Path(control_script_targ).exists() #quick check
+    assert Path(script_targ).exists() #quick check
+
+    # check quickly that they are different in some manner.
+    import filecmp as fc
+    is_different=not fc.cmp( control_script_targ, script_targ,
+                             shallow=False)
+    print(f'different? {is_different}\n\n')
+
+    # now we will explicitly check for those differences
+    import difflib as dl
+    the_infile = open(control_script_targ)
+    infile_contents=the_infile.readlines()
+    the_infile.close()
+    
+    the_outfile = open(script_targ)
+    outfile_contents=the_outfile.readlines()
+    the_outfile.close()
+    differences=dl.ndiff(infile_contents, outfile_contents)
+
+    # pytest suppresses print output by default.
+    # to view this and other print output in pytest
+    # from PASSING tests, run something like:
+    #      python -m pytest -rP tests/test_papiex_tooler
+    # to get the same for FAILING tests,
+    #      python -m pytest -rx tests/test_papiex_tooler
+    def_is_different_for_sure=False
+    if differences is not None:
+        for line in differences:
+            if line[0]=='-' or line[0]=='+':
+                def_is_different_for_sure=True
+                print(line)
+            else:
+                continue
+
+    # note- just because the files are the same doesn't
+    #       mean that difflib.ndiff returns None
+    #assert differences is None
+    assert (not is_different)
+    assert (not def_is_different_for_sure)
+    
