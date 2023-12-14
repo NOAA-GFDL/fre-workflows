@@ -54,7 +54,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
 
     # consider adding analysis script to workflow
     # if not adding, write a note why
-    #sys.stderr.write(f"DEBUG: Considering '{item}'\n")
 
     # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
@@ -72,8 +71,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     item_switch = node.get_value(keys=[item, 'switch'])
     if item_switch is None:
         raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'switch']) is None!")
-
-    #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
     # skip if switch is off
     if item_switch == "off":
@@ -102,6 +99,7 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
     item_end_str = node.get_value(keys=[item,'end'])
+
     # expand $ANALYSIS_START and $ANALYSIS_STOP if they exist, replacing with ana_start and ana_stop
     if item_start_str:
         if item_start_str == '$ANALYSIS_START' and ana_start is not None:
@@ -126,8 +124,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
                 return(False)
     else:
         item_end = None
-    #if item_start and item_end:
-        #sys.stderr.write(f"DEBUG: {item}: defined date range: {item_start} to {item_end}\n")
 
     # get the optional cumulative option
     item_cumulative = node.get_value(keys=[item, 'cumulative'])
@@ -135,7 +131,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
         item_cumulative = str_to_bool(item_cumulative)
     else:
         item_cumulative = False
-    #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
     return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product)
 
@@ -370,13 +365,15 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
 def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all user-defined range analysis scripts.
 
-    Accepts 7 arguments:
+    Accepts 10 arguments, last 2 optional:
         node                    Rose ConfigNode object
         pp_components           PP components that the workflow is using
         pp_dir                  PP directory to be used for setting in_data_dir template variable
         chunk                   ISO8601 duration used by the workflow
-        start                   date object of the beginning of PP
-        stop                    date object of the end of PP
+        pp_start                date object of the beginning of PP
+        pp_stop                 date object of the end of PP
+        ana_start               date object of the beginning of analysis request
+        ana_stop                date object of the end of analysis request
         analysis_only           optional boolean to indicate no pre-requisites needed
         print_stderr            print analysis script information to screen
     """
@@ -395,10 +392,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         if item_start and item_end:
             pass
         elif item_cumulative:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
         # if requested year range is outside the workflow range, then skip
