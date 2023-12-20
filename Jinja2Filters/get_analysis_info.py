@@ -54,7 +54,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
 
     # consider adding analysis script to workflow
     # if not adding, write a note why
-    #sys.stderr.write(f"DEBUG: Considering '{item}'\n")
 
     # get the mandatory options: script path, frequency, product (ts or av), and switch
     item_script = os.path.basename(node.get_value(keys=[item, 'script']))
@@ -72,8 +71,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     item_switch = node.get_value(keys=[item, 'switch'])
     if item_switch is None:
         raise Exception(f"Jinja2Filters/get_analysis_info.py \n get_value([{item},'switch']) is None!")
-
-    #print(f"DEBUG: script '{item_script}' and frequency {item_freq}")
 
     # skip if switch is off
     if item_switch == "off":
@@ -102,6 +99,7 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     # get the optional start and stop
     item_start_str = node.get_value(keys=[item, 'start'])
     item_end_str = node.get_value(keys=[item,'end'])
+
     # expand $ANALYSIS_START and $ANALYSIS_STOP if they exist, replacing with ana_start and ana_stop
     if item_start_str:
         if item_start_str == '$ANALYSIS_START' and ana_start is not None:
@@ -126,8 +124,6 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
                 return(False)
     else:
         item_end = None
-    #if item_start and item_end:
-        #sys.stderr.write(f"DEBUG: {item}: defined date range: {item_start} to {item_end}\n")
 
     # get the optional cumulative option
     item_cumulative = node.get_value(keys=[item, 'cumulative'])
@@ -135,27 +131,28 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
         item_cumulative = str_to_bool(item_cumulative)
     else:
         item_cumulative = False
-    #print("DEBUG: Start, end, cumulative:", item_start_str, item_end_str, item_cumulative)
 
     return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product)
 
-def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysis_only=False, print_stderr=False):
+def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all cumulative-mode analysis scripts.
 
-    Accepts 7 arguments:
+    Accepts 8 arguments, last 2 optional:
         node                    Rose ConfigNode object
         pp_components           PP components that the workflow is using
         pp_dir                  PP directory to be used for setting in_data_dir template variable
         chunk                   ISO8601 duration used by the workflow
-        start                   date object of the beginning of PP
-        stop                    date object of the end of PP
+        pp_start                date object of the beginning of PP
+        pp_stop                 date object of the end of PP
         analysis_only           optional boolean to indicate no pre-requisites needed
+        print_stderr            optional boolean to print analysis scripts that will be launched
     """
     defs = ""
     graph = ""
 
     for keys, sub_node in node.walk():
         # retrieve information about the script
+        # scripts that use pp components that are not being used are skipped
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
             item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
@@ -164,24 +161,24 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
 
         # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
         if item_start and item_end:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
-            start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')
+            start_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_start, '%Y')
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Will run from {start_str} to current available (cumulative mode)\n")
         else:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
-        # add the analysis script details that don't depend on time
+        # form a base task definition for the analysis script
+        # to be called "analysis-{item}"
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
-        # loop over the dates
+        # to make the task run, we will create a task family for
+        # each chunk/interval, starting from the beginning of pp data
+        # then we create an analysis script task for each of these task families
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
-        date = start + chunk - oneyear
-        #print(f"DEBUG: start {start} and stop {stop}")
-        while date <= stop:
+        date = pp_start + chunk - oneyear
+        while date <= pp_stop:
             date_str = metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')
 
             # add the task definition for each ending time
@@ -195,7 +192,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
     [[ANALYSIS-CUMULATIVE-{date_str}]]
         inherit = ANALYSIS
         [[[environment]]]
-            yr1 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(start, '%Y')}
+            yr1 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(pp_start, '%Y')}
             yr2 = {metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}
             """
 
@@ -213,9 +210,14 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
 
             date += chunk
 
-        # now set the task graphs
-        date = start + chunk - oneyear
-        while date <= stop:
+        # now set the task graphs.
+        # We need one recurrence interval for each analysis stop time.
+        # In that interval, the ts analysis scripts depend on the remap-pp-component tasks,
+        # and the av analysis scripts depend on combine-timeavgs.
+        # If "analysis only" option is set, then do not use those prereq dependences
+        # and assume the pp data is already there.
+        date = pp_start + chunk - oneyear
+        while date <= pp_stop:
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
                 if item_product == "av":
@@ -224,7 +226,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
                     graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
             d = date
             i = -1
-            while d > start + chunk:
+            while d > pp_start + chunk:
                 if not analysis_only:
                     if item_product == "av":
                         graph += f"            & COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
@@ -242,49 +244,58 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, start, stop, analysi
     return(defs, graph)
 
 def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=False, print_stderr=False):
-    """Return the task definitions and task graph for all every-interval-mode analysis scripts.
+    """Return task definitions and the task graph for all every-interval analysis scripts.
 
-    Accepts 5 arguments:
+    Accepts 6 arguments, last 2 optional:
         node                    Rose ConfigNode object
         pp_components           PP components that the workflow is using
+                                Skip scripts that use components not present
         pp_dir                  PP directory to be used for setting in_data_dir template variable
-        chunk                   ISO8601 duration used by the workflow
+        chunk                   Launch the analysis scripts every interval of this chunk
         analysis_only           optional boolean to indicate no pre-requisites needed
-        print_stderr            print analysis script information
+                                normally, ts scripts depend on remap-pp-components, and
+                                av scripts depend on combine-timeavgs
+        print_stderr            print analysis script information to screen
+                                only for humans to see what analysis scripts will be launched
     """
     defs = ""
     graph = ""
     oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
 
+    # loop over all analysis scripts
     for keys, sub_node in node.walk():
         # retrieve information about the script
+        # if the analysis script uses a component not present, then item_info will be empty
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
             item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
         else:
             continue
 
-        # skip if the analysis type (interval, cumulative, defined) isn't what we're looking for
+        # skip the analysis script if it is cumulative or defined-interval
+        # we only care about every-interval ones
         if item_start and item_end:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is defined interval\n")
             continue
         elif item_cumulative:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
             if print_stderr:
                 sys.stderr.write(f"ANALYSIS: {item}: Will run every chunk {chunk}\n")
 
-        # add the task definitions that don't depend on time
+        # form a base task definition for the analysis script
+        # to be called "analysis-{item}"
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
-        # task defined just above needs to inherit from the task family defined next
+        # to make the task run, we will create a corresponding task graph below
+        # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
+        # Then, the analysis script will inherit from that family, to enable
+        # both the task triggering and the yr1 and datachunk template vars.
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
         """
 
-        # set some other stuff
+        # create the task family for all every-interval analysis scripts
         defs += f"""
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
@@ -293,7 +304,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             datachunk = {chunk.years}
         """
 
-        # add the timeaverage in_data_file
+        # for timeaverages, set the in_data_file variable
         if item_product == "av":
             if item_freq == "P1M":
                 times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
@@ -305,7 +316,12 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             in_data_file = {}.{}.{}.nc
             """.format(item, item_comps[0], '$yr1-$yr2', times)
 
-        # now add the task graphs
+        # now set the task graph
+        # The analysis chunk is the recurrence inteval.
+        # Normally, the ts scripts depend on remap-pp-components, and the
+        # av scripts depend on combine-timeavgs.
+        # If "analysis only" option is set, then do not use the prerequisite dependencies
+        # and assume the pp data is already there.
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
         if analysis_only:
             graph += f"            ANALYSIS-{chunk}?\n"
@@ -315,8 +331,6 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
         graph += f"        \"\"\"\n"
-
-        #sys.stderr.write(f"DEBUG: Ending processing of '{item}'\n")
 
     return(defs, graph)
 
@@ -351,13 +365,15 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
 def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all user-defined range analysis scripts.
 
-    Accepts 7 arguments:
+    Accepts 10 arguments, last 2 optional:
         node                    Rose ConfigNode object
         pp_components           PP components that the workflow is using
         pp_dir                  PP directory to be used for setting in_data_dir template variable
         chunk                   ISO8601 duration used by the workflow
-        start                   date object of the beginning of PP
-        stop                    date object of the end of PP
+        pp_start                date object of the beginning of PP
+        pp_stop                 date object of the end of PP
+        ana_start               date object of the beginning of analysis request
+        ana_stop                date object of the end of analysis request
         analysis_only           optional boolean to indicate no pre-requisites needed
         print_stderr            print analysis script information to screen
     """
@@ -376,10 +392,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         if item_start and item_end:
             pass
         elif item_cumulative:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is cumulative\n")
             continue
         else:
-            #sys.stderr.write(f"DEBUG: Skipping {item} as it is every chunk\n")
             continue
 
         # if requested year range is outside the workflow range, then skip
@@ -463,31 +477,32 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
 def get_analysis_info(info_type, pp_components_str, pp_dir, pp_start_str, pp_stop_str, ana_start_str, ana_stop_str, chunk, analysis_only=False, print_stderr=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
-    Accepts 7 arguments:
-        info_type: one of these types
+    Accepts 10 arguments, last 2 optional:
+        info_type (str): one of these
             per-interval-task-definitions           Returns task environments for every-chunk analysis scripts
             per-interval-task-graph                 Returns task graph for every-chunk analysis scripts
             cumulative-task-definitions             Returns task environments for cumulative-mode analysis scripts
             cumulative-task-graph                   Returns task graph for cumulative-mode analysis scripts
             defined-task-definitions                Returns task environments for user-defined year range analysis scripts
             defined-task-graph                      Returns task graph for user-defined year range analysis scripts
-        pp_components_str (str): all, or a space-separated list
-                                 analysis scripts depending on others will be skipped
-        pp_dir (str): absolute filepath root (up to component, not including)
-        start_str (str): will use at yr1 if cumulative mode on
-        stop_str (str): last cycle point to process
-        chunk (str): chunk to use for task graphs at least
-        analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
-        print_stderr (bool): print a summary of analysis scripts that would be run
+        pp_components_str (str):        all, or a space-separated list of pp components that are being generated
+                                        analysis scripts depending on non-present components will be skipped
+        pp_dir (str):                   absolute filepath root (up to component, not including)
+                                        used for forming the in_data_dir/in_data_file template vars
+        pp_start_str (str):             start of pp data availability
+                                        Not used for every-interval scripts.
+                                        For cumulative scripts, use for yr1
+        pp_stop_str (str):              last cycle point to process
+        chunk (str):                    chunk to use for task graphs at least
+        analysis_only (bool):           make task graphs not depend on REMAP-PP-COMPONENTS
+        print_stderr (bool):            print a summary of analysis scripts that would be run
 """
     # convert strings to date objects
-    #sys.stderr.write(f"DEBUG: {pp_start_str} to {pp_stop_str}, and chunk {chunk}, and {ana_start_str} to {ana_stop_str}\n")
     pp_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_start_str)
     pp_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(pp_stop_str)
     chunk = metomi.isodatetime.parsers.DurationParser().parse(chunk)
     ana_start = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_start_str)
     ana_stop = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0,0)).parse(ana_stop_str)
-    #sys.stderr.write(f"DEBUG: {pp_start} to {pp_stop}, and chunk {chunk}, and {ana_start} to {ana_stop}\n")
 
     # split the pp_components into a list
     pp_components = pp_components_str.split()
@@ -498,30 +513,19 @@ def get_analysis_info(info_type, pp_components_str, pp_dir, pp_start_str, pp_sto
 
     # return the requested information
     if info_type == 'per-interval-task-definitions':
-        #sys.stderr.write(f"DEBUG: Will return per-interval task definitions only\n")
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, print_stderr)[0])
     elif info_type == 'per-interval-task-graph':
-        #sys.stderr.write(f"DEBUG: Will return per-interval task graph only\n")
         return(get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only, False)[1])
     elif info_type == 'cumulative-task-graph':
-        #sys.stderr.write(f"DEBUG: Will return cumulative task graph only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[1])
     elif info_type == 'cumulative-task-definitions':
-        #sys.stderr.write(f"DEBUG: Will return cumulative task definitions only\n")
         return(get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only, print_stderr)[0])
     elif info_type == 'defined-interval-task-graph':
-        #sys.stderr.write(f"DEBUG: Will return defined-interval task graph only\n")
         return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[1])
     elif info_type == 'defined-interval-task-definitions':
-        #sys.stderr.write(f"DEBUG: Will return defined-interval task definitions only\n")
         return(get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, ana_start, ana_stop, analysis_only, print_stderr)[0])
     else:
         raise Exception(f"Invalid information type: {info_type}")
 
-# for interactive debugging use below
+# for interactive debugging use, uncomment and modify below
 #print(get_analysis_info('per-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
-#print(get_analysis_info('per-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P3Y', True))
-#print(get_analysis_info('cumulative-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y'))
-#print(get_analysis_info('cumulative-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '1988', 'P2Y', False))
-#print(get_analysis_info('defined-interval-task-definitions', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P6Y', False))
-#print(get_analysis_info('defined-interval-task-graph', 'all', '/archive/Chris.Blanton/am5/2022.01/c96L33_am4p0_cmip6Diag/gfdl.ncrc4-intel21-prod-openmp/pp', '1979', '2020', 'P12Y', True))
