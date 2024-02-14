@@ -66,9 +66,57 @@ are being called by the environment.
 
 Usage on runnung this app test for regrid_xy is as follows: 
 ```
-cd /path/to/postprocessing
-#can use fre/bronx-20 instead if needed
-module load fre/test cylc python
-cd app/regrid_xy 
-python -m pytest t/test_regrid_xy.py
+module load fre/test cylc cdo python
+cd regrid_xy 
+pytest t/test_regrid_xy.py
+```
+
+***regarding the above module combo...***
+```
+an203:~/Working/postprocessing> module load cylc python cdo fre/test
+Loading python/3.9
+  Loading requirement: conda
+
+Loading cdo/2.1.1
+  Loading requirement: hdf5/1.14.1-2 netcdf-c/4.9.2 proj/9.2.0 udunits/2.2.28
+
+Loading perlbrew/5.38.0
+  ERROR: Conflicting perlbrew is loaded
+
+Loading gcp/test
+  ERROR: Requirement perlbrew/5.38.0 is not loaded
+
+Loading fre/test
+  ERROR: Load of requirement perlbrew/5.38.0 failed
+  ERROR: Load of requirement gcp/test failed
+```
+
+***regarding status of tests***
+`fre/test` not loading as a module... using `fre/bronx-20` instead...
+test 1 test_regrid_xy failure:
+```
+ncgen: NetCDF: Not a valid data type or _FillValue type mismatch
+	(/home/conda/feedstock_root/build_artifacts/libnetcdf_1660350760069/work/ncgen/genbin.c:genbin_netcdf:130)
+...
+Error from pe 0: mpp_io(mpp_open): error in opening file /vftmp/Ian.Laflotte/pid182978/pytest-of-Ian.Laflotte/pytest-2/test_regrid_xy0/20030101.nc/C96_grid.tile1.nc: NetCDF: Unknown file format
+...
+...
+...
+>       assert sp.returncode == 0
+E       AssertionError: assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['rose', 'app-run', '-D', '[env]inputDir=/vftmp/Ian.Laflotte/pid182978/pytest-of-Ian.Laflotte/py...ridLat=180', '-D', '[atmos_static_cmip]gridSpec=/archive/gold/datasets/OM4_05/mosaic_c96.v20180227.tar'], returncode=1).returncode
+```
+
+
+test 2 failure: gridSpec unbound variable NO ITS NOT
+```
++ echo Arguments:
++ echo '    input dir: /vftmp/Ian.Laflotte/pid182978/pytest-of-Ian.Laflotte/pytest-2/test_regrid_xy0/20030101.nc'
++ echo '    output dir: /vftmp/Ian.Laflotte/pid182978/pytest-of-Ian.Laflotte/pytest-2/test_success_regrid_xy0/out-dir'
++ echo '    begin: 20030101T000000'
++ echo '    TMPDIR: /vftmp/Ian.Laflotte/pid182978'
++ echo '    fregrid mapfile dir: /vftmp/Ian.Laflotte/pid182978/pytest-of-Ian.Laflotte/pytest-2/test_success_regrid_xy0/remap-dir'
++ echo '    component(s): atmos_static_cmip'
+/home/Ian.Laflotte/Working/postprocessing/app/regrid-xy/bin/regrid-xy: line 25: gridSpec: unbound variable
+[FAIL] regrid-xy # return-code=1
 ```
