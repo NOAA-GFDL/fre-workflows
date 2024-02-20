@@ -198,8 +198,16 @@ for set in $($config --keys | grep -v command | grep -v env); do
     pushd $TMPDIR/work
 
     for input_file in $(ls $input_dir); do
+
+	if [[ ! "$input_file" == *".$component."* ]]; then
+	    continue
+	fi 
+
+	begin=$(date +%s)
  	export input_file_list=${input_file_list}$(shasum -a 512256 $input_dir/$input_file),
-	echo -e "\n[COLE] added $input_dir/$input_file to input list"
+	end=$(date +%s)
+	duration=$((end - begin))
+	echo -e "\n[COLE] added $input_dir/$input_file to input list\nTime spent : $duration seconds"
     done
     fregrid \
         --standard_dimension \
