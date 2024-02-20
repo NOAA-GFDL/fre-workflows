@@ -1,0 +1,95 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+#
+# Fill in fre-legacy analysis scripts
+#
+
+source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
+
+config="rose config --file $(dirname ${BASH_SOURCE[0]})/../rose-app.conf"
+
+echo Arguments:
+echo "    script output dir: $outputDir"
+echo "    WORKDIR: ${WORKDIR:=$TMPDIR}"
+echo "    mode: ${mode:=}"
+echo "    out_dir: $out_dir"
+echo "    printout: ${printout:=}"
+echo "    freq: ${freq:=}"
+echo "    MODEL_start_yr: ${MODEL_start_yr:=}"
+echo "    mom_version: ${mom_version:=}"
+echo "    gridspecfile: ${gridspecfile:=}"
+echo "    staticfile: $staticfile"
+echo "    argu: ${argu:=}"
+echo "    in_data_dir: ${in_data_dir:=}"
+echo "    in_data_file: ${in_data_file:=}"
+echo "    descriptor: ${descriptor:=}"
+echo "    yr1: $yr1"
+echo "    yr2: $yr2"
+echo "    databegyr: ${databegyr:=$yr1}"
+echo "    dataendyr: ${dataendyr:=$yr2}"
+echo "    datachunk: ${datachunk:=}"
+echo "    specify_yr: ${specify_yr:=}"
+echo "    hist_dir: ${hist_dir:=}"
+echo "    nlon: ${nlon:=}"
+echo "    nlat: ${nlat:=}"
+echo "    frexml: ${frexml:=}"
+echo "    fremodule: ${fremodule:=}"
+echo "    freanalysismodule: ${freanalysismodule:=}"
+echo "    analysis_options: ${analysis_options:=}"
+echo "    stdoutdir: ${stdoutdir:=}"
+echo "    platform: ${platform:=}"
+echo "    target: ${target:=}"
+echo "    unique: ${unique:=}"
+
+if [[ ! -d $outputDir ]]; then
+    err "Error: Script output directory '$outputDir' does not exist or isn't a directory"
+    exit 1
+fi
+
+if [[ ! -d $out_dir ]]; then
+    err "Error: Analysis output directory '$out_dir' does not exist or isn't a directory"
+    exit 1
+fi
+
+# write the sed script to a temp file
+# need posix mode to output variables in a simple list (not json)
+set -o posix
+# filter out all the uppercase variables
+# the lowercase variables are very likely to be fre-analysis related
+vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z] | grep -v modshare | grep -v config)
+# WORKDIR is the exception to include
+vars="$vars WORKDIR"
+
+# this counting variables is junky...
+# aside from the above 31 vars, plus scriptLabel
+count=$(echo $vars | wc -w)
+if [[ $count != 32 ]]; then
+    err Possible problem in determining template variables. Expected 32, got $count.
+    echo $vars
+fi
+
+for var in $vars; do
+    eval var2=\$$var
+    if [[ -n $var2 ]]; then
+        echo "s|set $var\s*$|set $var = $var2|" >> sed-script
+        echo "s|^\s*$var\s*$|$var = '$var2'|" >> sed-script
+    fi
+done
+
+# write the filled-in script
+# resolve env vars in the script filename
+# todo: resolve all env vars, not just $FRE_ANALYSIS_HOME
+script_unexpanded=$($config $scriptLabel script)
+# any arguments to the script are handled by the Jinja filter, that writes the scripting
+# so we want to ignore the arguments here
+script_unexpanded=$(echo $script_unexpanded | sed -e 's/ .*//')
+script=$(echo $script_unexpanded | sed -e "s|\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|")
+echo "Processing template '$script', label '$scriptLabel'"
+scriptOut=$outputDir/$(basename $script).$yr1-$yr2
+sed -f sed-script $script > $scriptOut
+echo "Saved script '$scriptOut'"
+ls -l $scriptOut
+
+rm sed-script
