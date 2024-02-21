@@ -20,11 +20,13 @@ DATA_DIR_OUT  = Path("out-test-dir")
 DATA_FILE_GRID = Path("C96_mosaic.cdl")
 DATA_FILE_NC_GRID = Path("C96_mosaic.nc")
 GOLD_GRID_SPEC = Path("/archive/gold/datasets/OM4_05/mosaic_c96.v20180227.tar")
+GLOBAL_TEST_DIR = Path("/home/Ian.Laflotte/Working/postprocessing_regridxy_pyrewrite/app/regrid-xy/t/test_inputs_outputs")
 
 # DONE X--- TODO: currently failing, should pass!
 # needed to remake the C96 grid file with make_hgrid
 #@pytest.mark.skip(reason='focusing on next test...')
-def test_regrid_xy(capfd, tmp_path):
+#def test_regrid_xy(capfd, tmp_path):
+def test_regrid_xy(capfd):
         """
         Subroutine input arguments is tmp_path which is a randomly generated temporary directory of type
         pathlib.Path. The capfd argument that allows to capture access to stdout/stderr output created during
@@ -34,22 +36,22 @@ def test_regrid_xy(capfd, tmp_path):
         global dir_tmp, remap_dir_out, file_output_dir
         global outputFile, fregridRemapFile
 
-        dir_tmp = tmp_path / '20030101.nc'
-        d = tmp_path / '20030101.nc'
+        dir_tmp = GLOBAL_TEST_DIR / '20030101.nc'
+        d = GLOBAL_TEST_DIR / '20030101.nc'
         d.mkdir()
         d = str(d)
         dt = str(DATA_DIR)
         input_mosaic = str(dir_tmp)
         input_dir = str(dir_tmp)
 
-        remap_dir_out = tmp_path / 'remap-test-dir'
-        file_output_dir = tmp_path / 'out-test-dir'
+        remap_dir_out = GLOBAL_TEST_DIR / 'remap-test-dir'
+        file_output_dir = GLOBAL_TEST_DIR / 'out-test-dir'
 
-        output_dir = tmp_path / str(DATA_DIR_OUT)
+        output_dir = GLOBAL_TEST_DIR / str(DATA_DIR_OUT)
         output_dir.mkdir()
         output_dir = str(output_dir)
 
-        remap_dir = tmp_path / 'remap-test-dir'
+        remap_dir = GLOBAL_TEST_DIR / 'remap-test-dir'
         remap_dir.mkdir()
         remap_dir = str(remap_dir)
 
@@ -116,18 +118,19 @@ def test_regrid_xy(capfd, tmp_path):
 
 # TODO: currently failing, should pass!
 #@pytest.mark.skip(reason='one failure at a time...')
-def test_success_regrid_xy(capfd, tmp_path):
+#def test_success_regrid_xy(capfd, tmp_path):
+def test_success_regrid_xy(capfd):
     """In this test app checks for success of regridding files with rose app
     as the valid definitions are being called by the environment.
     """
     din = str(dir_tmp)
     global dr_remap_out, dr_file_output
-    dr_file_output = tmp_path / 'out-dir'
-    dr_remap_out = tmp_path / 'remap-dir'
-    dout = tmp_path / 'out-dir'
+    dr_file_output = GLOBAL_TEST_DIR / 'out-dir'
+    dr_remap_out = GLOBAL_TEST_DIR / 'remap-dir'
+    dout = GLOBAL_TEST_DIR / 'out-dir'
     dout.mkdir()
     dout = str(dout)
-    dr_remap = tmp_path / 'remap-dir'
+    dr_remap = GLOBAL_TEST_DIR / 'remap-dir'
     dr_remap.mkdir()
     dr_remap = str(dr_remap)
     ex = [ 'rose', 'app-run', '--debug', '-v', '--profile',
@@ -145,46 +148,48 @@ def test_success_regrid_xy(capfd, tmp_path):
            '-D',  '[atmos_static_cmip]outputGridLat=180' ]
     print (' '.join(ex));
     sp = subprocess.run( ex )
+    captured = capfd.readouterr()
     assert sp.returncode == 0
-    captured = capfd.readouterr()
 
 
-#TODO: make this code fail!!! muahaha *evil_grin*
-@pytest.mark.skip(reason='currently passing when should be failing')
-def test_failure_regrid_xy(capfd, tmp_path):
-    """In this test app checks for failure  of regridding files with rose app
-    as the invalid date definition is being called by the environment.
-    """
-    din = str(dir_tmp)
-    dout = tmp_path / 'out-dir'
-    dout.mkdir()
-    dout = str(dout)
-    dremap = tmp_path / 'remap-dir'
-    dremap.mkdir()
-    dremap = str(dremap)
-
-    ex = [ "rose", "app-run", "-v", "--debug",
-           '-D',  f'[env]inputDir={din}',
-           '-D',  f'[env]outputDir={dout}',
-           '-D',   '[env]begin=20220101T120000',
-           '-D',  f'[env]fregridRemapDir={dremap}',
-           '-D',   '[env]component=atmos_static_cmip',
-           '-D',  f'[env]gridSpec={GOLD_GRID_SPEC}',
-           '-D',   '[env]defaultxyInterp="288,180"',           
-           '-D',   '[atmos_static_cmip]sources=atmos_static_cmip',
-           '-D',   '[atmos_static_cmip]inputGrid=cubedsphere',
-           '-D',   '[atmos_static_cmip]inputRealm=atmos',
-           '-D',   '[atmos_static_cmip]outputGridLon=288',
-           '-D',   '[atmos_static_cmip]outputGridLat=180' ]
-
-    print (' '.join(ex));
-    sp = subprocess.run( ex )
-    assert sp.returncode == 1
-    captured = capfd.readouterr()
+##TODO: make this code fail!!! muahaha *evil_grin*
+##@pytest.mark.skip(reason='currently passing when should be failing')
+##def test_failure_regrid_xy(capfd, tmp_path):
+#def test_failure_regrid_xy(capfd):
+#    """In this test app checks for failure  of regridding files with rose app
+#    as the invalid date definition is being called by the environment.
+#    """
+#    din = str(dir_tmp)
+#    dout = GLOBAL_TEST_DIR / 'out-dir'
+#    dout.mkdir()
+#    dout = str(dout)
+#    dremap = GLOBAL_TEST_DIR / 'remap-dir'
+#    dremap.mkdir()
+#    dremap = str(dremap)
+#
+#    ex = [ "rose", "app-run", "-v", "--debug",
+#           '-D',  f'[env]inputDir={din}',
+#           '-D',  f'[env]outputDir={dout}',
+#           '-D',   '[env]begin=20220101T120000',
+#           '-D',  f'[env]fregridRemapDir={dremap}',
+#           '-D',   '[env]component=atmos_static_cmip',
+#           '-D',  f'[env]gridSpec={GOLD_GRID_SPEC}',
+#           '-D',   '[env]defaultxyInterp="288,180"',           
+#           '-D',   '[atmos_static_cmip]sources=atmos_static_cmip',
+#           '-D',   '[atmos_static_cmip]inputGrid=cubedsphere',
+#           '-D',   '[atmos_static_cmip]inputRealm=atmos',
+#           '-D',   '[atmos_static_cmip]outputGridLon=288',
+#           '-D',   '[atmos_static_cmip]outputGridLat=180' ]
+#
+#    print (' '.join(ex));
+#    sp = subprocess.run( ex )
+#    captured = capfd.readouterr()
+#    assert sp.returncode == 1
 
 #TODO: why's it TBD...
 #@pytest.mark.skip(reason='TBD')
-def test_nccmp_regrid_xy(capfd, tmp_path):
+#def test_nccmp_regrid_xy(capfd, tmp_path):
+def test_nccmp_regrid_xy(capfd):
     """This test compares the results of both above success tests making sure that the two new created regrid files are the same.
     """
     inputGrid = 'cubedsphere'
