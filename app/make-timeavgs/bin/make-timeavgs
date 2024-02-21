@@ -5,6 +5,15 @@ set -euo pipefail
 # use fre-python-tools generate_time_average module to average history files 
 #
 
+echo "[COLE] this is a test"
+echo "module load python..."
+module load python
+echo "module load fre-nctools..."
+module load fre-nctools
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
 echo Arguments:
 echo "    cycle point: $CYLC_TASK_CYCLE_POINT"
 echo "    input dir: $inputDir"
@@ -30,8 +39,8 @@ fi
 echo "number of dirs found is : ${#dirs[@]}"
 
 for dir in ${dirs[@]}; do
-	echo "---DEBUG--- FOUND dir: $dir"	
-	echo "looking at directory structure file frequency..."
+    echo "---DEBUG--- FOUND dir: $dir"	
+    echo "looking at directory structure file frequency..."
 
     # retrieve the regrid resolution subtype
     if [[ $use_subdirs ]]; then
@@ -70,6 +79,10 @@ for dir in ${dirs[@]}; do
         # reduce date precision of output name to year-only,
         # and include only one year if a one-year interval
         basename=$(basename $file)
+        export input_file_list=${input_file_list}$(shasum -a 512256 $file),
+	echo "[COLE] added ${file} to input list"
+	echo "[COLE] basename : ${basename}"
+
         date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
         date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
         date1=${date1:0:4}
@@ -99,7 +112,8 @@ for dir in ${dirs[@]}; do
         else
             output_dir=$outputDir/$component/$file_freq/$interval
         fi
-		mkdir -p $output_dir
+        output_file=${output_dir}/$newfile
+        mkdir -p $output_dir
         cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
         echo "---DEBUG--- to run: $cmd"
 		
@@ -107,8 +121,30 @@ for dir in ${dirs[@]}; do
 		    echo "---ERROR--- Failed: timeaverage: $cmd"
             exit $?
         fi
+        export output_file_list=${output_file_list}$(shasum -a 512256 $output_file),
+        echo "[COLE] added ${output_file} to output list"
+        echo "[COLE] output file = ${output_dir} + ${newfile}"
+
 	done
 	
 done
+
+
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
+
 
 exit 0
