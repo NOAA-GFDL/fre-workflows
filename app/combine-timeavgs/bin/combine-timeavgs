@@ -32,6 +32,10 @@ function form_av_dirs {
 # Combine (variables) and split (monthly) timeaverages
 #
 
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
 echo Arguments:
 echo "    input dir: $inputDir"
 echo "    output dir: $outputDir"
@@ -98,6 +102,16 @@ for freq in $(ls); do
             done
         fi
         cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
+
+        for file in $component.$dates.*.nc; do
+            export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$component/$freq/$currentChunk/$file),
+            echo -e "\n[COLE] added $inputDir/$component/$freq/$currentChunk/$file to input list"
+        done
+        for output_file in "$outputDir/$subdir/$component.$dates."*; do
+            export output_file_list=${output_file_list}$(shasum -a 512256 $output_file),
+            echo -e "\n[COLE] added $output_file to output list\n"
+        done
+
     elif [[ $freq == P1Y ]]; then
         if ! cdo -O merge $component.$dates.*.nc $outputDir/$subdir/$component.$dates.ann.nc; then
             for file in $component.$dates.*.nc; do
@@ -106,6 +120,16 @@ for freq in $(ls); do
                 fi
             done
         fi
+
+        for file in $component.$dates.*.nc; do
+            export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$component/$freq/$currentChunk/$file),
+            echo -e "\n[COLE] added $inputDir/$component/$freq/$currentChunk/$file to input list\n"
+        done
+
+        output_file = $component.$dates.ann.nc
+        export input_file_list=${input_file_list}$(shasum -a 512256 $output_file),
+        echo -e "\n[COLE] added $output_file to input list"
+        echo -e "[COLE] output file location for P1Y : $outputDir/$subdir/$output_file\n"
     else
         echo "Error: frequency $freq not supported"
         exit 2
@@ -113,6 +137,22 @@ for freq in $(ls); do
 
     popd
 done
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
+
 
 echo Natural end of the timeavg combining
 exit 0
