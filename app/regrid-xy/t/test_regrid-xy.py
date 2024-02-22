@@ -23,7 +23,24 @@ Usage on runnung this app test for regrid_xy is as follows:
 3) python -m pytest t/test_regrid_xy.py
 """
 
-def test_make_ncgen_inputs(capfd):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------
+
+def test_make_ncgen3_inputs(capfd):
+        '''set-up test: ncgen3 output'''
         global d, dt
         d = GLOBAL_TEST_DIR / '20030101.nc'
         d.mkdir()
@@ -34,13 +51,17 @@ def test_make_ncgen_inputs(capfd):
         print (' '.join(ex));
         sp = subprocess.run( ex )
         assert sp.returncode == 0  
+        out, err = capfd.readouterr()
 
+def test_make_ncgen_tile_inputs(capfd):
+        
         for i in range(1, 6+1):
           i = str(i)
           ex = [ 'ncgen', '-o', f'{d}/20030101.atmos_static_cmip.tile{i}.nc', f'{dt}/20030101.atmos_static_cmip.tile{i}.cdl' ];
           print (' '.join(ex));
           sp = subprocess.run( ex )
           assert sp.returncode == 0
+          out, err = capfd.readouterr()
           
         for i in range(1, 6+1):
           i = str(i)
@@ -48,14 +69,19 @@ def test_make_ncgen_inputs(capfd):
           print (' '.join(ex));
           sp = subprocess.run( ex )
           assert sp.returncode == 0
+          out, err = capfd.readouterr()
+                  
 
+def test_make_hgrid_gold_input(capfd):
+        
         # this "gold" C96 file seems to have been made with fre/bronx-4 according to the netcdf header...
         # remaking locally.. then will move..
         ex = [ "make_hgrid", "--grid_type", "gnomonic_ed", "--nlon", "192", "--grid_name", "C96_grid" ]
         print (' '.join(ex))
         sp = subprocess.run( ex )
         assert sp.returncode == 0
-        
+        out, err = capfd.readouterr()
+                        
         # now move the files...
         for i in range(1, 6+1):
           i = str(i)
@@ -63,11 +89,19 @@ def test_make_ncgen_inputs(capfd):
           print (' '.join(ex))
           sp = subprocess.run( ex )
           assert sp.returncode == 0
+          out, err = capfd.readouterr()
+
           
 
 
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------
 #@pytest.mark.skip(reason='BAR')
-def test_regrid_xy(capfd):
+#def test_regrid_xy(capfd):
+def test_makehgrid_input(capfd):
         """Subroutine input arguments is tmp_path which is a randomly generated temporary directory of type pathlib.Path
         The capfd argument that allows to capture access to stdout/stderr output created during test execution.
         Regridding the file is executed via the proper fregrid and python libraries.
@@ -107,9 +141,19 @@ def test_regrid_xy(capfd):
               '--nlon', f'{nlon}', '--nlat', f'{nlat}', '--scalar_field', f'{vars}',
                '--output_file', f'{output_dir}/{outputFile}' ];
         print (' '.join(ex))
-        sp = subprocess.run( ex )
+        sp = subprocess.run( ex )        
         assert sp.returncode == 0
+        out, err = capfd.readouterr()
 
+
+
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------
 # ISSUES WITH THE ROSE-APP.CONF
 #@pytest.mark.skip(reason='currently passing when should be failing')
 def test_failure_regrid_xy(capfd):
@@ -133,8 +177,7 @@ def test_failure_regrid_xy(capfd):
 
     ex = [ 'rose', 'app-run',
            '-D', f'[env]inputDir={din}',
-     #      '-D',  '[env]begin=20220101T120000',
-           '-D',  '[env]begin=99999999T120000',
+           '-D',  '[env]begin=99999999T999999',
            '-D', f'[env]outputDir={dout}',
            '-D', f'[env]fregridRemapDir={dremap}',
            '-D',  '[env]component=atmos_static_cmip',
@@ -163,8 +206,25 @@ def test_failure_regrid_xy(capfd):
     print (' '.join(ex));
     sp = subprocess.run( ex )
     assert sp.returncode == 1 
-    captured = capfd.readouterr()
+    out, err = capfd.readouterr()
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+#------------------------------------------------------------------------------------------------------------------------------
 # ISSUES WITH THE ROSE-APP.CONF
 #@pytest.mark.skip(reason='FOO')
 def test_success_regrid_xy(capfd):
@@ -203,24 +263,48 @@ def test_success_regrid_xy(capfd):
     print (' '.join(ex));
     sp = subprocess.run( ex )
     assert sp.returncode == 0
-    captured = capfd.readouterr()
+    out, err = capfd.readouterr()
 
-@pytest.mark.skip(reason='TBD')
-def test_nccmp_regrid_xy(capfd):
-    """This test compares the results of both above success tests making sure that the two new created regrid files are the same.
-    """
-    inputGrid = 'cubedsphere'
-    inputRealm = 'atmos'
-    sources_xy = '96-by-96'
 
-    nccmp= [ 'nccmp', '-m', '--force', dr_remap_out / inputGrid / inputRealm / sources_xy / fregridRemapFile, remap_dir_out / fregridRemapFile ];
-    print (' '.join(nccmp));
-    sp = subprocess.run(nccmp)
-    assert sp.returncode == 0
-    captured = capfd.readouterr()
 
-    nccmp= [ 'nccmp', '-m', '--force', dr_file_output / outputFile, file_output_dir / outputFile ];
-    print (' '.join(nccmp));
-    sp = subprocess.run(nccmp)
-    assert sp.returncode == 0
-    captured = capfd.readouterr()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+#
+##------------------------------------------------------------------------------------------------------------------------------
+#@pytest.mark.skip(reason='TBD')
+#def test_nccmp_regrid_xy(capfd):
+#    """This test compares the results of both above success tests making sure that the two new created regrid files are the same.
+#    """
+#    inputGrid = 'cubedsphere'
+#    inputRealm = 'atmos'
+#    sources_xy = '96-by-96'
+#
+#    nccmp= [ 'nccmp', '-m', '--force', dr_remap_out / inputGrid / inputRealm / sources_xy / fregridRemapFile, remap_dir_out / fregridRemapFile ];
+#    print (' '.join(nccmp));
+#    sp = subprocess.run(nccmp)
+#    assert sp.returncode == 0
+#    out, err = capfd.readouterr()
+#
+#    nccmp= [ 'nccmp', '-m', '--force', dr_file_output / outputFile, file_output_dir / outputFile ];
+#    print (' '.join(nccmp));
+#    sp = subprocess.run(nccmp)
+#    assert sp.returncode == 0
+#    out, err = capfd.readouterr()
+#

@@ -9,10 +9,14 @@ set -x
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
 
 # To read the Rose config file
+echo "CYLC_TASK_WORK_DIR = ${CYLC_TASK_WORK_DIR}"
+echo "looking for config file at..."
 if [[ -z ${CYLC_TASK_WORK_DIR:-} ]]; then
+	echo "$(dirname ${BASH_SOURCE[0]})/../rose-app.conf"
     config="rose config --file $(dirname ${BASH_SOURCE[0]})/../rose-app.conf"
 else
-    config="rose config --file $CYLC_TASK_WORK_DIR/rose-app-run.conf"
+	echo "$CYLC_TASK_WORK_DIR/rose-app-run.conf"
+	config="rose config --file $CYLC_TASK_WORK_DIR/rose-app-run.conf"
 fi
 
 echo Arguments:
