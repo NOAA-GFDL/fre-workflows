@@ -6,6 +6,10 @@ set -x
 # Remap variables from one convention (i.e. history) to another (i.e. PP components)
 #
 
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
 
 shopt -s extglob
@@ -152,10 +156,15 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     fi
 
                     for file in $files; do
+                        export input_file_list=${input_file_list}$(shasum -a 512256 $(pwd)/$file),
+                        echo -e "\n[COLE] added $(pwd)/$file to input list"
+
                         newfile=$compOut.${file#*.}
                         if [[ ! -f $dir/$newfile ]]; then
                             ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
                         fi
+                        export output_file_list=${output_file_list}$(shasum -a 512256 $dir/$newfile),
+                        echo -e "\n[COLE] added $dir/$newfile to output list\n"
                     done
 
                     cd ..
@@ -167,6 +176,22 @@ for key in $($config --keys | grep -v command | grep -v env); do
         popd
     done
 done
+
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
 
 echo Natural end of the component remapping
 exit 0
