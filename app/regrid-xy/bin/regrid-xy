@@ -6,6 +6,10 @@ set -x
 # Regrid variables from latlon/cubed-sphere/tripolar to latlon
 #
 
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
 
 # To read the Rose config file
@@ -193,6 +197,21 @@ for set in $($config --keys | grep -v command | grep -v env); do
     input_dir=$(pwd)
     pushd $TMPDIR/work
 
+    # Cole - iterates over input. if the component a substring in the input file name, skip it.
+    #        there are many files inside the inputDir and iterating over all of the unnecessary
+    #        files would take very long to calculate the checksum of. 
+    for input_file in $(ls $input_dir); do
+        if [[ ! "$input_file" == *".$component."* ]]; then
+            continue
+        fi 
+
+        begin=$(date +%s)
+        export input_file_list=${input_file_list}$(shasum -a 512256 $input_dir/$input_file),
+        end=$(date +%s)
+        duration=$((end - begin))
+        echo -e "\n[COLE] added $input_dir/$input_file to input list\nTime spent : $duration seconds"
+    done
+
     fregrid \
         --standard_dimension \
         --input_mosaic $input_mosaic \
@@ -216,15 +235,36 @@ for set in $($config --keys | grep -v command | grep -v env); do
     if [[ -z $outputGridType ]]; then
         # Copy the regridded output to the output location
         cp $outputFile $outputDir
+        export output_file_list=${output_file_list}$(shasum -a 512256 $outputDir/$outputFile),
+        echo -e "\n[COLE] added $outputDir/$outputFile to output list"
+
     else
         # Create output location if needed
         mkdir -p $outputDir/$outputGridType
         # Copy the regridded output to the output location
         cp $outputFile $outputDir/$outputGridType
+        export output_file_list=${output_file_list}$(shasum -a 512256 $outputDir/$outputGridType/$outputFile),
+        echo -e "\n[COLE] added $outputDir/$outputGridType/$outputFile to output list"
     fi 
     
     popd
 done
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
+
 
 echo Natural end of the xy regridding
 exit 0
