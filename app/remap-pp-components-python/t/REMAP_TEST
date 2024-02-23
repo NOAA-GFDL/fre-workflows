@@ -1,0 +1,65 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+# To read the Rose config file
+file="/home/Dana.Singh/pp/refactor/remap-python/app/remap-pp-components/rose-app.conf"
+config="rose config --file $file"
+components="atmos"
+currentChunk="P5Y"
+dirTSWorkaround=1
+
+#remap script
+for key in $($config --keys | grep -v command | grep -v env); do
+    compOut=${key%.*}
+    #echo $compOut
+    # if $components is set, it is a space-separated list of acceptable components
+    if [[ -n $components ]] && ! [[ " $components " =~ " $compOut " ]]; then
+        continue
+    fi
+    echo "Processing component '$compOut' ($key)"
+ 
+    echo key=$key
+    vars=$($config --default=all $key variables)
+    echo $vars
+
+    for grid in $($config --default=* $key grid); do
+        #pushd $grid || continue
+        echo "grid=$grid"
+
+        for s in $($config --default=* $key sources); do
+            #cd $source || continue
+            echo source=$s
+
+            for freq in $($config --default=* $key freq); do
+                #cd $freq || continue
+                echo freq=$freq
+
+                for chunk in $($config --default=* $key chunk); do
+                    if [[ $chunk != $currentChunk ]]; then
+                        continue
+                    fi
+                    #cd $chunk || continue
+                    echo chunk=$chunk
+
+#                    if [[ $dirTSWorkaround ]]; then
+#                        dir=$outputDir/$compOut/ts/$freq/$chunk
+#                        echo dir=$dir
+#                    else
+#                        dir=$outputDir/$compOut/$freq/$chunk
+#                        echo dir=$dir
+#                    fi
+#                    mkdir -p $dir
+
+                done
+            done
+        done
+    done
+#            for freq in $($config --default=* $key freq); do
+#                #cd $freq || continue
+#                echo freq=$freq
+#            done
+#        done
+#    done 
+
+done
