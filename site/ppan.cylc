@@ -61,8 +61,8 @@
         pre-script = """
             env
             set -x
-            module load gcp/test
-            module load fre/test
+            module load gcp
+            module load fre/canopy
             mkdir -p $work $tempCache $refineDiagDir
             export PAPIEX_TAGS="op:hsmget;op_instance:1;op_is_canopy:1" ; hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\* ; unset PAPIEX_TAGS
             cd $work/$hsmdate
