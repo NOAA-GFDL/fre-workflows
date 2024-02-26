@@ -21,26 +21,14 @@ Usage on runnung this app test for regrid_xy is as follows:
 1) module load fre/bronx-20 cylc python
 2) cd app/regrid_xy
 3) python -m pytest t/test_regrid_xy.py
+
+To rerun when using GLOBAL_TEST_DIR, remove created output:
+4) rm -rf t/test_inputs_outputs/* && python -m pytest t/test_regrid-xy.py
 """
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------
-
 def test_make_ncgen3_inputs(capfd):
-        '''set-up test: ncgen3 output'''
+        '''set-up test: ncgen3 inputs for later steps'''
         global d, dt
         d = GLOBAL_TEST_DIR / '20030101.nc'
         d.mkdir()
@@ -53,8 +41,9 @@ def test_make_ncgen3_inputs(capfd):
         assert sp.returncode == 0  
         out, err = capfd.readouterr()
 
+
 def test_make_ncgen_tile_inputs(capfd):
-        
+        '''set-up test: ncgen tile inputs for later steps'''
         for i in range(1, 6+1):
           i = str(i)
           ex = [ 'ncgen', '-o', f'{d}/20030101.atmos_static_cmip.tile{i}.nc', f'{dt}/20030101.atmos_static_cmip.tile{i}.cdl' ];
@@ -73,6 +62,7 @@ def test_make_ncgen_tile_inputs(capfd):
                   
 
 def test_make_hgrid_gold_input(capfd):
+        '''set-up test: hgrid gold inputs for later steps'''
         
         # this "gold" C96 file seems to have been made with fre/bronx-4 according to the netcdf header...
         # remaking locally.. then will move..
@@ -92,17 +82,9 @@ def test_make_hgrid_gold_input(capfd):
           out, err = capfd.readouterr()
 
           
-
-
-
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------
-#@pytest.mark.skip(reason='BAR')
-#def test_regrid_xy(capfd):
 def test_makehgrid_input(capfd):
-        """Subroutine input arguments is tmp_path which is a randomly generated temporary directory of type pathlib.Path
+        """
+        Subroutine input arguments is tmp_path which is a randomly generated temporary directory of type pathlib.Path
         The capfd argument that allows to capture access to stdout/stderr output created during test execution.
         Regridding the file is executed via the proper fregrid and python libraries.
         """ 
@@ -128,7 +110,8 @@ def test_makehgrid_input(capfd):
 
         nlat=180
         nlon=288
-        vars = 'grid_xt,grid_yt,orog,time'
+        #vars = 'grid_xt,grid_yt,orog,time'
+        vars = 'grid_xt,grid_yt,orog'
         fregrid_input_file = '20030101.atmos_static_cmip'
         outputFile = '20030101.atmos_static_cmip.nc'
         fregridRemapFile = 'fregrid_remap_file_288_by_180.nc' 
@@ -146,23 +129,18 @@ def test_makehgrid_input(capfd):
         out, err = capfd.readouterr()
 
 
-
-
-
-
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------
-# ISSUES WITH THE ROSE-APP.CONF
-#@pytest.mark.skip(reason='currently passing when should be failing')
-def test_failure_regrid_xy(capfd):
-    """In this test app checks for failure  of regridding files with rose app             
+def test_failure_wrong_DT_regrid_xy(capfd):
+    """
+    In this test app checks for failure  of regridding files with rose app             
     as the invalid date definition is being called by the environment.
     """
+    global inputGrid, inputRealm, interpMethod
+    inputGrid = 'cubedsphere'
+    inputRealm = 'atmos'
+    interpMethod = 'conserve_order1'
+
     global fake_tmp_dir, dout
     fake_tmp_dir = GLOBAL_TEST_DIR
-    #fake_tmp_dir.mkdir()
     fake_tmp_dir = str(fake_tmp_dir)
 
     din = str(dir_tmp)
@@ -185,65 +163,33 @@ def test_failure_regrid_xy(capfd):
            '-D', f'[env]TMPDIR={fake_tmp_dir}',
            '-D',  '[env]defaultxyInterp="288,180"',
            '-D',  '[atmos_static_cmip]sources=atmos_static_cmip',
-           '-D',  '[atmos_static_cmip]inputGrid=cubedsphere',
-           '-D',  '[atmos_static_cmip]inputRealm=atmos',
+           '-D',  f'[atmos_static_cmip]inputGrid={inputGrid}',
+           '-D',  f'[atmos_static_cmip]inputRealm={inputRealm}',
+           '-D',  f'[atmos_static_cmip]interpMethod={interpMethod}',
            '-D',  '[atmos_static_cmip]outputGridLon=288',
            '-D',  '[atmos_static_cmip]outputGridLat=180'
           ];
-#    ex = [ "rose", "app-run",
-#           '-D',  '[env]inputDir='f'{din}',
-#           '-D',  '[env]begin=20220101T120000',
-#           '-D',  '[env]outputDir='f'{dout}',
-#           '-D',  '[env]fregridRemapDir='f'{dremap}',
-#           '-D',  '[env]component=atmos_static_cmip',
-#           '-D', f'[env]gridSpec={GOLD_GRID_SPEC}',
-#           '-D',  '[atmos_static_cmip]sources=atmos_static_cmip',
-#           '-D',  '[atmos_static_cmip]inputGrid=cubedsphere',
-#           '-D',  '[atmos_static_cmip]inputRealm=atmos',
-#           '-D',  '[atmos_static_cmip]outputGridLon=288',
-#           '-D',  '[atmos_static_cmip]outputGridLat=180'
-#          ]
+
     print (' '.join(ex));
     sp = subprocess.run( ex )
-    assert sp.returncode == 1 
+    assert sp.returncode != 0 #assert sp.returncode == 2 # specific code for cylc cycle-point CLI utility
     out, err = capfd.readouterr()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-#------------------------------------------------------------------------------------------------------------------------------
-# ISSUES WITH THE ROSE-APP.CONF
-#@pytest.mark.skip(reason='FOO')
 def test_success_regrid_xy(capfd):
-    """In this test app checks for success of regridding files with rose app 
+    """
+    In this test app checks for success of regridding files with rose app 
     as the valid definitions are being called by the environment.
     """
-    din = str(dir_tmp)
 
     global dr_remap_out, dr_file_output
     dr_file_output = GLOBAL_TEST_DIR / 'out-dir'
     dr_remap_out = GLOBAL_TEST_DIR / 'remap-dir'
 
-    #dout = GLOBAL_TEST_DIR / 'out-dir'
-    #dout.mkdir()
-    #dout = str(dout)
-
     dr_remap = GLOBAL_TEST_DIR / 'remap-dir'
-    #dr_remap.mkdir()
     dr_remap = str(dr_remap)
+
+    din = str(dir_tmp)
 
     ex = [ 'rose', 'app-run',
            '-D', f'[env]inputDir={din}',
@@ -257,6 +203,7 @@ def test_success_regrid_xy(capfd):
            '-D',  '[atmos_static_cmip]sources=atmos_static_cmip',
            '-D',  '[atmos_static_cmip]inputGrid=cubedsphere',
            '-D',  '[atmos_static_cmip]inputRealm=atmos',
+           '-D',  '[atmos_static_cmip]interpMethod=conserve_order1',           
            '-D',  '[atmos_static_cmip]outputGridLon=288',
            '-D',  '[atmos_static_cmip]outputGridLat=180'
           ]
@@ -266,45 +213,27 @@ def test_success_regrid_xy(capfd):
     out, err = capfd.readouterr()
 
 
+def test_nccmp1_regrid_xy(capfd):
+    """
+    This test compares the output of make_hgrid and fregrid, which are expected to be identical
+    """
+    sources_xy = '96-by-96'
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    nccmp= [ 'nccmp', '-m', '--force', str(dr_remap_out / inputGrid / inputRealm / sources_xy / interpMethod / fregridRemapFile), str(remap_dir_out / fregridRemapFile) ];
+    print (' '.join(nccmp));
+    sp = subprocess.run(nccmp)
+    assert sp.returncode == 0
+    out, err = capfd.readouterr()
 
     
-#
-##------------------------------------------------------------------------------------------------------------------------------
-#@pytest.mark.skip(reason='TBD')
-#def test_nccmp_regrid_xy(capfd):
-#    """This test compares the results of both above success tests making sure that the two new created regrid files are the same.
-#    """
-#    inputGrid = 'cubedsphere'
-#    inputRealm = 'atmos'
-#    sources_xy = '96-by-96'
-#
-#    nccmp= [ 'nccmp', '-m', '--force', dr_remap_out / inputGrid / inputRealm / sources_xy / fregridRemapFile, remap_dir_out / fregridRemapFile ];
-#    print (' '.join(nccmp));
-#    sp = subprocess.run(nccmp)
-#    assert sp.returncode == 0
-#    out, err = capfd.readouterr()
-#
-#    nccmp= [ 'nccmp', '-m', '--force', dr_file_output / outputFile, file_output_dir / outputFile ];
-#    print (' '.join(nccmp));
-#    sp = subprocess.run(nccmp)
-#    assert sp.returncode == 0
-#    out, err = capfd.readouterr()
-#
+def test_nccmp2_regrid_xy(capfd):
+    """
+    This test compares the regridded source file output(s), which are expected to be identical
+    """
+
+    nccmp= [ 'nccmp', '-m', '--force', str(dr_file_output / outputFile), str(file_output_dir / outputFile) ];
+    print (' '.join(nccmp));
+    sp = subprocess.run(nccmp)
+    assert sp.returncode == 0
+    out, err = capfd.readouterr()
+
