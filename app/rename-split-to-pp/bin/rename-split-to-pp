@@ -6,8 +6,13 @@ set -x
 # Create per-variable timeseries from shards
 #
 
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
 # Link each input file into a canonical directory structure
 function process_files {
+    path="$1" #subdir or regular inputDir based on case
     for file in $files; do
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
@@ -115,6 +120,9 @@ function process_files {
             fi
         fi
 
+        export input_file_list=${input_file_list}$(shasum -a 512256 $path/$file),
+        echo -e "\n[COLE] added $path/$file to input list"
+
         # If in subdir mode, preserve the subdir
         if [[ $use_subdirs ]]; then
             dir=$outputDir/$subdir/$label/$freq/$chunk
@@ -131,9 +139,13 @@ function process_files {
                     f=${file/tile1/$t}
                     newf=${newfile/tile1/$t}
                     ln $f $dir/$newf
+                    export output_file_list=${output_file_list}$(shasum -a 512256 $dir/$newf),
+                    echo -e "\n[COLE] added $dir/$newf to output list"
                 done
             else
                 ln $file $dir/$newfile
+                export output_file_list=${output_file_list}$(shasum -a 512256 $dir/$newfile),
+                echo -e "\n[COLE] added $dir/$newfile to output list"
             fi
         fi
     done
@@ -181,7 +193,7 @@ if [[ $use_subdirs ]]; then
         if [[ $files =~ \* ]]; then
             err No input files
         else
-            process_files
+            process_files "$inputDir/$subdir"
         fi
         popd
     done
@@ -195,8 +207,24 @@ else
         exit 1
     fi
 
-    process_files
+    process_files "$inputDir"
 fi
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [[ -n "$output_file_list" ]]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
+
 
 echo Natural end of the shard renaming
 exit 0

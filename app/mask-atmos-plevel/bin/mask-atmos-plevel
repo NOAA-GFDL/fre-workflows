@@ -26,7 +26,7 @@ fi
 cd $inputDir
 
 for file in $(ls *.$component.*.nc); do
-    
+
     export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$file),
     echo -e "\n[COLE] added $inputDir/$file to input list"
 
@@ -35,6 +35,7 @@ for file in $(ls *.$component.*.nc); do
         mv -f $file.masked $file
         echo "Updated '$file'"
     fi
+
     # output files, although named the same as the input files, have different contents so their
     # checksums need to be calculated as well
     export output_file_list=${output_file_list}$(shasum -a 512256 $inputDir/$file),
@@ -44,13 +45,18 @@ done
 
 echo "[COLE] epmt analysis and annotate"
 which epmt
-echo -e "\n---input---"
-echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
 
-echo -e "\n---output---"
-echo -e "epmt annotate DATA_LINEAGE_OUT = \n	${output_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
 
 echo Natural end of the atmos plevel masking
 exit 0

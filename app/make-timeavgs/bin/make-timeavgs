@@ -39,8 +39,8 @@ fi
 echo "number of dirs found is : ${#dirs[@]}"
 
 for dir in ${dirs[@]}; do
-	echo "---DEBUG--- FOUND dir: $dir"	
-	echo "looking at directory structure file frequency..."
+    echo "---DEBUG--- FOUND dir: $dir"	
+    echo "looking at directory structure file frequency..."
 
 	# retrieve the regrid resolution subtype
 	if [[ $use_subdirs ]]; then
@@ -76,69 +76,75 @@ for dir in ${dirs[@]}; do
 
 	debugCount=0
 	for file in ${files[@]}; do
-        	# reduce date precision of output name to year-only,
-        	# and include only one year if a one-year interval
-        	basename=$(basename $file)
-		export input_file_list=${input_file_list}$(shasum -a 512256 $file),
-		echo "[COLE] added ${file} to input list"
-		echo "[COLE] basename : ${basename}"
-        	date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
-        	date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
-        	date1=${date1:0:4}
-        	date2=${date2:0:4}
-        	var=$(echo $basename | cut -d. -f3)
-        	if (( $(echo $basename | grep -o '\.' | wc -l) == 4 )); then
-            		tile=$(echo $basename | cut -d. -f4)
-		else
-        	    tile=""
-        	fi
-        	if [[ $date1 == $date2 ]]; then
-            		if [[ -n $tile ]]; then
-                		newfile=$component.$date1.$var.$tile.nc
-            		else
-                		newfile=$component.$date1.$var.nc
-            		fi
-        	else
-            		if [[ -n $tile ]]; then
-                		newfile=$component.$date1-$date2.$var.$tile.nc
-            		else
-                		newfile=$component.$date1-$date2.$var.nc
-            		fi
-        	fi
+        # reduce date precision of output name to year-only,
+        # and include only one year if a one-year interval
+        basename=$(basename $file)
+        export input_file_list=${input_file_list}$(shasum -a 512256 $file),
+	echo "[COLE] added ${file} to input list"
+	echo "[COLE] basename : ${basename}"
 
-        	if [[ $use_subdirs ]]; then
-            		output_dir=$outputDir/$subdir/$component/$file_freq/$interval
-        	else
-            		output_dir=$outputDir/$component/$file_freq/$interval
-        	fi
+        date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
+        date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
+        date1=${date1:0:4}
+        date2=${date2:0:4}
+        var=$(echo $basename | cut -d. -f3)
+        if (( $(echo $basename | grep -o '\.' | wc -l) == 4 )); then
+            tile=$(echo $basename | cut -d. -f4)
+        else
+            tile=""
+        fi
+        if [[ $date1 == $date2 ]]; then
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1.$var.$tile.nc
+            else
+                newfile=$component.$date1.$var.nc
+            fi
+        else
+            if [[ -n $tile ]]; then
+                newfile=$component.$date1-$date2.$var.$tile.nc
+            else
+                newfile=$component.$date1-$date2.$var.nc
+            fi
+        fi
 
-		output_file=${output_dir}/$newfile
-		mkdir -p $output_dir
-        	cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_file}"
-	        
-		echo "---DEBUG--- to run: $cmd"
+        if [[ $use_subdirs ]]; then
+            output_dir=$outputDir/$subdir/$component/$file_freq/$interval
+        else
+            output_dir=$outputDir/$component/$file_freq/$interval
+        fi
+        output_file=${output_dir}/$newfile
+        mkdir -p $output_dir
+        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
+        echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
-			echo "---ERROR--- Failed: timeaverage: $cmd"
-            		exit $?
-        	fi
-
-		export output_file_list=${output_file_list}$(shasum -a 512256 $output_file),
-                echo "[COLE] added ${output_file} to output list"
-                echo "[COLE] output file = ${output_dir} + ${newfile}"
+		    echo "---ERROR--- Failed: timeaverage: $cmd"
+            exit $?
+        fi
+        export output_file_list=${output_file_list}$(shasum -a 512256 $output_file),
+        echo "[COLE] added ${output_file} to output list"
+        echo "[COLE] output file = ${output_dir} + ${newfile}"
 
 	done
 	
 done
 
+
+
 echo "[COLE] epmt analysis and annotate"
 which epmt
-echo -e "\n---input---"
-echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
 
-echo -e "\n---output---"
-echo -e "epmt annotate DATA_LINEAGE_OUT = \n	${output_file_list%*,}"
-epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [ -n "$output_file_list" ]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+fi
+
 
 exit 0

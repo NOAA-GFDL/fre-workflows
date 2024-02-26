@@ -20,7 +20,7 @@
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:canopy;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:canopy;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME"
             {{ EPMT_POSTAMBLE }}
         """
         script = rose task-run --verbose
@@ -35,7 +35,7 @@
         [[[directives]]]
             --comment=xtmp,epmt,canopy
         [[[environment]]]
-            COPY_TOOL=gcp --verbose
+            COPY_TOOL=gcp
 
     [[PP-STARTER]]
         env-script = """
@@ -113,7 +113,7 @@
         pre-script = module load netcdf-c cdo && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load cdo gcp/test && mkdir -p $outputDir
+        pre-script = module load cdo gcp && mkdir -p $outputDir
 
     [[data-catalog]]
         env-script = """

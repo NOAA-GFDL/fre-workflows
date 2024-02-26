@@ -11,6 +11,29 @@ set -x
 # Output format: date.component.var(.tileX).nc
 #
 
+export input_file_list=
+export output_file_list=
+echo "[COLE] created i/o lists"
+
+find_output() {
+    local directory="$1"
+    echo "[COLE] FIND_OUTPUT directory : $directory"
+
+    if [[ -d $directory ]]; then
+        for item in $(ls $directory); do
+            echo "item : $item"
+            if [[ -d $item ]]; then
+                find_output $item
+            elif [[ $item == *.nc ]]; then
+                export output_file_list=${output_file_list}$(shasum -a 512256 $directory/$item),
+                echo -e "\n[COLE] added $directory/$item to output list"
+            fi
+        done
+    else
+        echo "[COLE] ERROR: $directory is invalid"
+    fi
+}
+
 echo Arguments:
 echo "    input dir: $inputDir"
 echo "    output dir: $outputDir"
@@ -57,6 +80,8 @@ if [[ $use_subdirs ]]; then
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
             cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
+            export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$subdir/$file),
+            echo -e "\n[COLE] added $inputDir/$subdir/$file to input list"
         done
 
         popd
@@ -73,7 +98,27 @@ else
     # Split the files by variable
     for file in $files; do
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
+        export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$file),
+        echo -e "\n[COLE] added $inputDir/$file to input list"
+
     done
+fi
+
+find_output "$outputDir"
+
+echo "[COLE] epmt analysis and annotate"
+which epmt
+
+if [[ -n "$input_file_list" ]]; then
+    echo -e "\n---input---"
+    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+fi
+
+if [[ -n "$output_file_list" ]]; then
+    echo -e "\n---output---"
+    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
 fi
 
 echo Natural end of the NetCDF splitting
