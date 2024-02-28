@@ -1,7 +1,8 @@
 #!/usr/env/bin python3
 
 from epmt import epmt_query as eq
-print('[COLE] imported epmt successfully')
+print('EPMT successfully loaded')
+
 debug = False
 
 
@@ -23,7 +24,7 @@ def filter_jobs(jobs):
     for i in reversed(jobs_to_be_removed):
         jobs.pop(i)
         jobs_filtered += 1
-    print(f'[COLE] Total jobs removed : {jobs_filtered}')
+    print(f'Total jobs removed : {jobs_filtered}')
     return jobs
 
 
@@ -45,7 +46,10 @@ def grab_data(job):
 
 
 def format_io_file_annotations(files):
-
+    """
+    Creates a new data struct for the epmt annotations and makes them easier
+    to iterate over. Passed into
+    """
     file_pairs = files.split(',')
     file_data = {}
 
@@ -53,7 +57,7 @@ def format_io_file_annotations(files):
         data = pair.split('  ')
         checksum, file_path = data[0], data[1]
         file_name = file_path.split('/')[-1]
-        file_data[file_name] = {'checksum': checksum, 'file_path': file_path}
+        file_data[file_name] = (checksum, file_path)
 
     return file_data
 
@@ -85,11 +89,11 @@ def main():
                            after=start_date)
 
     total_job_num = len(jobs_all)
-    print(f'[COLE] Found {total_job_num} jobs from {username} and the tag {experiment}')
+    print(f'Found {total_job_num} jobs from {username} with the tag {experiment}')
 
     filtered_jobs = filter_jobs(jobs_all)
-    print(f'[COLE] Double check jobs removed : {total_job_num - len(filtered_jobs)}')
-    print(f'[COLE] Jobs remaining : {len(filtered_jobs)}')
+    print(f'Double check jobs removed : {total_job_num - len(filtered_jobs)}')
+    print(f'Jobs remaining : {len(filtered_jobs)}')
 
     for job in filtered_jobs:
         job_name, input_files, output_files = grab_data(job)
