@@ -1,4 +1,5 @@
 #!/usr/env/bin python3
+import datetime
 
 from epmt import epmt_query as eq
 print('EPMT successfully loaded')
@@ -15,7 +16,7 @@ def filter_jobs(jobs):
     for job in jobs:
         if 'EPMT_DATA_LINEAGE_IN' not in job['annotations'] \
                 or 'EPMT_DATA_LINEAGE_OUT' not in job['annotations'] \
-                or '/run49' not in job['jobname']:
+                or '/run52' not in job['jobname']:
             if debug:
                 print(f'[DEBUG] deleting {job["jobname"]}')
                 print_job(job)
@@ -28,7 +29,7 @@ def filter_jobs(jobs):
     return jobs
 
 
-def grab_data(job):
+def grab_data_from_job(job):
 
     job_name = job['jobname']
     input_files = ''
@@ -54,6 +55,8 @@ def format_io_file_annotations(files):
     file_data = {}
 
     for pair in file_pairs:
+        if pair == '':
+            break
         data = pair.split('  ')
         checksum, file_path = data[0], data[1]
         file_name = file_path.split('/')[-1]
@@ -76,10 +79,10 @@ def print_job(job):
 
 def main():
 
-    limit = 450
+    limit = 1000
     username = 'Cole.Harvey'
     experiment = 'exp_name:am5_c96L33_amip'
-    start_date = -4
+    start_date = datetime.datetime(2024, 2, 25)
     job_dict = {}
 
     jobs_all = eq.get_jobs(limit=limit,
@@ -96,7 +99,7 @@ def main():
     print(f'Jobs remaining : {len(filtered_jobs)}')
 
     for job in filtered_jobs:
-        job_name, input_files, output_files = grab_data(job)
+        job_name, input_files, output_files = grab_data_from_job(job)
         input_dict = format_io_file_annotations(input_files)
         output_dict = format_io_file_annotations(output_files)
         job_dict[job_name] = {'input_files': input_dict, 'output_files': output_dict}
