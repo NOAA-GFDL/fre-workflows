@@ -80,10 +80,15 @@ if [[ $use_subdirs ]]; then
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
             cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
-            export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$subdir/$file),
+            export input_file_list=${input_file_list}$(shasum -a 1 $file),
             echo -e "\n[COLE] added $inputDir/$subdir/$file to input list"
         done
-
+        cd $outputDir/$subdir
+            for output_file in $(ls); do
+                export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
+                echo -e "\n[COLE] added $(basename $output_file) to output list"
+            done
+        cd ../..
         popd
     done
 else
@@ -98,13 +103,17 @@ else
     # Split the files by variable
     for file in $files; do
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
-        export input_file_list=${input_file_list}$(shasum -a 512256 $inputDir/$file),
+        export input_file_list=${input_file_list}$(shasum -a 1 $file),
         echo -e "\n[COLE] added $inputDir/$file to input list"
-
     done
+    cd $outputDir
+        for output_file in $(ls); do
+            export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
+            echo -e "\n[COLE] added $(basename $output_file) to output list"
+        done
+    cd ..
 fi
 
-find_output "$outputDir"
 
 echo "[COLE] epmt analysis and annotate"
 which epmt
