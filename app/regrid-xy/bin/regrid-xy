@@ -204,12 +204,14 @@ for set in $($config --keys | grep -v command | grep -v env); do
         if [[ ! "$input_file" == *".$component."* ]]; then
             continue
         fi 
-
-        begin=$(date +%s)
-        export input_file_list=${input_file_list}$(shasum -a 512256 $input_dir/$input_file),
-        end=$(date +%s)
-        duration=$((end - begin))
-        echo -e "\n[COLE] added $input_dir/$input_file to input list\nTime spent : $duration seconds"
+        current_loc=$(pwd)
+        cd $input_dir
+            begin=$(date +%s)
+            export input_file_list=${input_file_list}$(shasum -a 1 $input_file),
+            end=$(date +%s)
+            duration=$((end - begin))
+            echo -e "\n[COLE] added $input_file to input list\nTime spent : $duration seconds"
+        cd $current_loc
     done
 
     fregrid \
@@ -235,16 +237,21 @@ for set in $($config --keys | grep -v command | grep -v env); do
     if [[ -z $outputGridType ]]; then
         # Copy the regridded output to the output location
         cp $outputFile $outputDir
-        export output_file_list=${output_file_list}$(shasum -a 512256 $outputDir/$outputFile),
-        echo -e "\n[COLE] added $outputDir/$outputFile to output list"
-
+        current_loc=$(pwd)
+        cd $outputDir
+            export output_file_list=${output_file_list}$(shasum -a 1 $outputFile),
+            echo -e "\n[COLE] added $outputFile to output list"
+        cd $current_loc
     else
         # Create output location if needed
         mkdir -p $outputDir/$outputGridType
         # Copy the regridded output to the output location
         cp $outputFile $outputDir/$outputGridType
-        export output_file_list=${output_file_list}$(shasum -a 512256 $outputDir/$outputGridType/$outputFile),
-        echo -e "\n[COLE] added $outputDir/$outputGridType/$outputFile to output list"
+        current_loc=$(pwd)
+        cd $outputDir/$outputGridType
+            export output_file_list=${output_file_list}$(shasum -a 1 $outputFile),
+            echo -e "\n[COLE] added $outputFile to output list"
+        cd $current_loc
     fi 
     
     popd

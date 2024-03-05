@@ -156,15 +156,18 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     fi
 
                     for file in $files; do
-                        export input_file_list=${input_file_list}$(shasum -a 512256 $(pwd)/$file),
-                        echo -e "\n[COLE] added $(pwd)/$file to input list"
+                        export input_file_list=${input_file_list}$(shasum -a 1 $file),
+                        echo -e "\n[COLE] added $file to input list"
 
                         newfile=$compOut.${file#*.}
                         if [[ ! -f $dir/$newfile ]]; then
                             ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
                         fi
-                        export output_file_list=${output_file_list}$(shasum -a 512256 $dir/$newfile),
-                        echo -e "\n[COLE] added $dir/$newfile to output list\n"
+                        current_loc=$(pwd)
+                        cd $dir
+                            export output_file_list=${output_file_list}$(shasum -a 1 $newfile),
+                            echo -e "\n[COLE] added $newfile to output list\n"
+                        cd $current_loc
                     done
 
                     cd ..
