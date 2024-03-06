@@ -79,9 +79,13 @@ for dir in ${dirs[@]}; do
         # reduce date precision of output name to year-only,
         # and include only one year if a one-year interval
         basename=$(basename $file)
-        export input_file_list=${input_file_list}$(shasum -a 512256 $file),
-	echo "[COLE] added ${file} to input list"
-	echo "[COLE] basename : ${basename}"
+
+        current_loc=$(pwd)
+        input_dir_path=$(dirname $file)
+        cd $input_dir_path
+            export input_file_list=${input_file_list}$(shasum -a 1 $basename),
+	    echo "[COLE] added $basename to input list"
+        cd $current_loc
 
         date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
         date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
@@ -121,9 +125,13 @@ for dir in ${dirs[@]}; do
 		    echo "---ERROR--- Failed: timeaverage: $cmd"
             exit $?
         fi
-        export output_file_list=${output_file_list}$(shasum -a 512256 $output_file),
-        echo "[COLE] added ${output_file} to output list"
-        echo "[COLE] output file = ${output_dir} + ${newfile}"
+
+        current_loc=$(pwd)
+        output_dir_path=$(dirname $output_file)
+        cd $output_dir_path
+            export output_file_list=${output_file_list}$(shasum -a 1 $newfile),
+            echo "[COLE] added $newfile to output list"
+        cd $current_loc
 
 	done
 	

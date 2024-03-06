@@ -78,21 +78,26 @@ function process_timeseries {
                     newfile=$component.$d1-$d2.$var.tile$tile.nc
                     tiled_files=$(echo ${files[@]} | sed -e s/tile1/tile$tile/g)
                     for input_file in $tiled_files; do
-                        export input_file_list=${input_file_list}$(shasum -a 512256 $(pwd)/$input_file),
-                        echo -e "\n[COLE] added $(pwd)/$input_file to input list"
+                        export input_file_list=${input_file_list}$(shasum -a 1 $input_file),
+                        echo -e "\n[COLE] added $input_file to input list"
                     done
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
                 done
             else
                 for input_file in ${files[@]}; do
-                    export input_file_list=${input_file_list}$(shasum -a 512256 $(pwd)/$input_file),
-                    echo -e "\n[COLE] added $(pwd)/$input_file to input list"
+                    export input_file_list=${input_file_list}$(shasum -a 1 $input_file),
+                    echo -e "\n[COLE] added $input_file to input list"
                 done
                 newfile=$component.$d1-$d2.$var.nc
                 cdo --history -O mergetime ${files[@]} $newdir/$newfile
             fi
-            export output_file_list=${output_file_list}$(shasum -a 512256 $newdir/$newfile),
-            echo -e "\n[COLE] added $newdir/$newfile to output list"
+
+            current_loc=$(pwd)
+            cd $newdir
+                export output_file_list=${output_file_list}$(shasum -a 1 $newfile),
+                echo -e "\n[COLE] added $newfile to output list"
+            cd $current_loc
+
             did_something=1
         done
         popd
