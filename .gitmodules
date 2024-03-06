@@ -1,6 +1,9 @@
 [submodule "app/remap-pp-components"]
 	path = app/remap-pp-components
     url = https://gitlab.gfdl.noaa.gov/fre2/apps/remap-pp-components.git
+[submodule "app/regrid-xy"]
+	path = app/regrid-xy
+	url = https://gitlab.gfdl.noaa.gov/fre2/apps/regrid-xy.git
 [submodule "app/analysis"]
 	path = app/analysis
 	url = https://gitlab.gfdl.noaa.gov/fre2/apps/analysis.git
