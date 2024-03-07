@@ -10,6 +10,7 @@ import fetch
 debug = False
 
 
+# TODO add to new file
 def draw(dag):
     pos = nx.planar_layout(dag)
     args = {
@@ -24,9 +25,8 @@ def draw(dag):
     nx.draw(dag, pos, **args)
 
     plt.title("Directed Acyclic Graph for am5_c96L33_amip/run52")
-
+    print("Finished drawing dag, closing the graph window will terminate the program.")
     plt.show()
-    print("Finished drawing dag")
 
 
 def add_nodes(dag, job_dict):
@@ -92,7 +92,12 @@ def create_dag(job_dict):
     return dag, edge_dict
 
 
+# TODO add to new file
 def traverse_dag(dag, edge_dict):
+    print(f'---DAG Stats---')
+    print(f'Number of nodes: {len(dag.nodes)}')
+    print(f'Number of edges: {len(dag.edges)}')
+    print(f'Is Acyclic? {str(nx.is_directed_acyclic_graph(dag))}')
     for node in dag.nodes():
         print(f'\nLooking at node {node}')
         edges = dag.edges(node, data=True)
@@ -108,6 +113,8 @@ def traverse_dag(dag, edge_dict):
                     print(f'        ├ {file}')
         else:
             print(f'{node} does not share any edges')
+    print('\nFinished traversing dag')
+    return 0
 
 
 def main():

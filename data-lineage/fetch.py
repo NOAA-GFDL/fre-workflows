@@ -2,23 +2,29 @@
 import datetime
 
 from epmt import epmt_query as eq
+
 print('EPMT successfully loaded')
 
 debug = False
 
 
-def filter_jobs(jobs):
+# Working runs :
+#    6 - working with 35 kept jobs (2024, 3, 6, 11, 00
+#    52 - terminated early for smaller size dag (2024, 2, 24, 12, 00)
 
+
+def filter_jobs(jobs):
     jobs_filtered = 0
     idx = 0
     jobs_to_be_removed = []
 
     for job in jobs:
-        if 'EPMT_DATA_LINEAGE_IN' not in job['annotations'] \
-                or 'EPMT_DATA_LINEAGE_OUT' not in job['annotations'] \
-                or '/run52' not in job['jobname']:
+        jobname = job['jobname']
+        # if job is not in specific workflow run, or does not have input AND output files
+        if '/run6' not in jobname or ('EPMT_DATA_LINEAGE_IN' not in job['annotations']
+                                      and 'EPMT_DATA_LINEAGE_OUT' not in job['annotations']):
             if debug:
-                print(f'[DEBUG] deleting {job["jobname"]}')
+                print(f'[DEBUG] deleting {jobname}')
                 print_job(job)
             jobs_to_be_removed.append(idx)
         idx += 1
@@ -30,8 +36,7 @@ def filter_jobs(jobs):
 
 
 def grab_data_from_job(job):
-
-    job_name = job['jobname']
+    jobname = job['jobname']
     input_files = ''
     output_files = ''
 
@@ -40,10 +45,10 @@ def grab_data_from_job(job):
     if 'EPMT_DATA_LINEAGE_OUT' in job['annotations']:
         output_files = job['annotations']['EPMT_DATA_LINEAGE_OUT']
     if debug:
-        print(f'[DEBUG] analyzing {job["jobname"]}')
-        print_job(job)
+        print(f'[DEBUG] analyzing {jobname}')
+        # print_job(job)
 
-    return job_name, input_files, output_files
+    return jobname, input_files, output_files
 
 
 def format_io_file_annotations(files):
@@ -66,7 +71,6 @@ def format_io_file_annotations(files):
 
 
 def print_job(job):
-
     job_name = job['jobname']
     input_files = job['annotations']['EPMT_DATA_LINEAGE_IN'] if 'EPMT_DATA_LINEAGE_IN' in job['annotations'] else ''
     output_files = job['annotations']['EPMT_DATA_LINEAGE_OUT'] if 'EPMT_DATA_LINEAGE_OUT' in job['annotations'] else ''
@@ -78,11 +82,12 @@ def print_job(job):
 
 
 def main():
-
+    # TODO: separate epmt query from fetch.py and store the dict in a separate file
     limit = 1000
     username = 'Cole.Harvey'
     experiment = 'exp_name:am5_c96L33_amip'
-    start_date = datetime.datetime(2024, 2, 25)
+    #                              YYYY  M  D  HH  MM
+    start_date = datetime.datetime(2024, 3, 6, 11, 00)
     job_dict = {}
 
     jobs_all = eq.get_jobs(limit=limit,
@@ -90,6 +95,12 @@ def main():
                            fltr=(eq.Job.user_id == username),
                            tags=experiment,
                            after=start_date)
+
+    # Make sure the epmt query returns the correct job
+    if debug:
+        for job in jobs_all:
+            print(f'[DEBUG] from epmt query :{job["jobname"]}')
+        print('\n')
 
     total_job_num = len(jobs_all)
     print(f'Found {total_job_num} jobs from {username} with the tag {experiment}')
