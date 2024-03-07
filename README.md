@@ -14,7 +14,9 @@ fre pp convert -e EXPNAME -p PLATFORM -t TARGET -x XML
 
 or
 
-fre pp configure -e EXPNAME -p PLATFORM -t TARGET -y YAML
+fre pp configure -y YAML (currently)
+
+(To-do: add -e, -p, -t options; fre pp configure -e EXPNAME -p PLATFORM -t TARGET -y YAML)
 ```
 
 3. Validate the configuration
