@@ -9,8 +9,7 @@ debug = False
 
 
 # Working runs :
-#    6 - working with 35 kept jobs (2024, 3, 6, 11, 00
-#    52 - terminated early for smaller size dag (2024, 2, 24, 12, 00)
+#    6 - working with 35 kept jobs (2024, 3, 6, 11, 00)
 
 
 def filter_jobs(jobs):
@@ -27,6 +26,9 @@ def filter_jobs(jobs):
                 print(f'[DEBUG] deleting {jobname}')
                 print_job(job)
             jobs_to_be_removed.append(idx)
+        # remove the redundant tail of every job name
+        else:
+            job['jobname'] = job['jobname'].split('T0000')[0]
         idx += 1
     for i in reversed(jobs_to_be_removed):
         jobs.pop(i)
@@ -82,7 +84,11 @@ def print_job(job):
 
 
 def main():
+    """
+    Returns a dictionary of all jobs that were run together in a workflow.
+    """
     # TODO: separate epmt query from fetch.py and store the dict in a separate file
+    print('----Fetching job data from epmt----')
     limit = 1000
     username = 'Cole.Harvey'
     experiment = 'exp_name:am5_c96L33_amip'
