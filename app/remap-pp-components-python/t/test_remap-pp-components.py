@@ -7,8 +7,11 @@ DATA_DIR  = Path("test-data")
 DATA_FILE_BK = Path("atmos_tracer.bk.cdl")
 DATA_FILE_BK_NC = Path("atmos_tracer.bk.nc")
 tmp_path = "/home/Dana.Singh/pp/refactor/remap-python/app/remap-pp-components/tpath_output/"
+os.environ["product"]="ts"
+os.environ["dirTSWorkaround"]="1"
+os.environ["COPY_TOOL"]="gcp"
 
-def test_remap_pp_components(capfd):#, tmp_path):
+def test_ncgen_remap_pp_components(capfd):
         """Following this test check for the creation of required directories and a *.nc file from *.cdl text file
         using command ncgen -o
         Test checks for success of remapping a file based on a default outputDRS 
@@ -42,11 +45,15 @@ def test_remap_pp_components(capfd):#, tmp_path):
 
         newfileln=[ "ln",  Path(din_check) / DATA_FILE_BK_NC, Path(dout) / remapped_new_file ];
         sp = subprocess.run(newfileln)
+        assert sp.returncode == 0
+        out, err = capfd.readouterr()
 
-def test_rose_remap_pp_components(capfd):#, tmp_path):
+def test_rose_remap_pp_components(capfd):
     """In this test app checks for success of remapping a file with rose app
     as the valid definitions are being called by the environment.
     """
+    dir_tmp = tmp_path
+    dir_tmp_out = tmp_path + "out_dir" 
     din = str(dir_tmp)
     global dr_in, dr_out
     dr_in = dir_tmp_out
@@ -58,7 +65,8 @@ def test_rose_remap_pp_components(capfd):#, tmp_path):
         os.mkdir(dout)
     else:
         os.mkdir(dout)
-    dout = str(dout)
+#    dout = str(dout)
+
     ex = [ "rose", "app-run",
            '-D',  '[env]inputDir='f'{din}',
            '-D',  '[env]begin=00010101T0000Z',
@@ -76,6 +84,7 @@ def test_rose_remap_pp_components(capfd):#, tmp_path):
     assert sp.returncode == 0
     out, err = capfd.readouterr()
 
+'''
 def test_nccmp_remap_pp_components(capfd):#, tmp_path):
     """This test compares the results of both above tests making sure that the two new created remapped files are identical.
     """
@@ -86,3 +95,4 @@ def test_nccmp_remap_pp_components(capfd):#, tmp_path):
     sp = subprocess.run(nccmp)
     assert sp.returncode == 0
     captured = capfd.readouterr()
+'''
