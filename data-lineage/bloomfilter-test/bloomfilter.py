@@ -1,5 +1,5 @@
 import mmh3
-from bitarray import bitarray
+# from bitarray import bitarray
 import array
 import my_bitarray
 
@@ -19,13 +19,12 @@ class BloomFilter(object):
         3. Modulus the hash by the size of the bitarray
         4. Update cell[modulus-value] = !cell
         """
-        bit_array = bitarray(self.size)
-        bit_array.setall(0)
+        bit_array = my_bitarray.BitArray(self.size)
 
         for i in range(self.hash_count):
             digest = mmh3.hash(item, i) % self.size
 
-            bit_array[digest] = not bit_array[digest]
+            # bit_array[digest] = not bit_array[digest]
+            bit_array.set_bit(index=digest, value=1)
 
-        # hex_data = bitarray_to_hex(bit_array)
         return bit_array
