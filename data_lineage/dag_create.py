@@ -4,7 +4,7 @@ import networkx as nx
 import fetch
 
 # TODO: import pylint requires pip
-# TODO: import joblib for fetch.py
+# TODO: import joblib for Fetch.py
 
 debug = False
 
@@ -16,7 +16,7 @@ def add_nodes(dag, job_dict):
                 job_name = job.split('T0000')[0]
                 if debug:
                     print(f'[DEBUG] Job name : {job_name}')
-                dag.add_node(job_name)
+                # dag.add_node(job_name)
                 if debug:
                     print(f'[DEBUG] added {job_name} as a node')
 

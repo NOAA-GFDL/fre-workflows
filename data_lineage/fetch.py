@@ -87,7 +87,7 @@ def main():
     """
     Returns a dictionary of all jobs that were run together in a workflow.
     """
-    # TODO: separate epmt query from fetch.py and store the dict in a separate file
+    # TODO: separate epmt query from Fetch.py and store the dict in a separate file
     print('----Fetching job data from epmt----')
     limit = 1000
     username = 'Cole.Harvey'
