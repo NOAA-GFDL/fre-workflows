@@ -1,12 +1,9 @@
-from collections import defaultdict
-
-
 class DAG:
     def __init__(self):
+        # TODO : refactor as a dictionary to speed up lookup time
         self.nodes = []
         self.edges = []
         self.fidelity = 100
-        self.graph = defaultdict(list)
 
     def __str__(self):
         return f'Directed Acyclic Graph with {len(self.nodes)} nodes and {len(self.edges)} edges'
@@ -15,8 +12,9 @@ class DAG:
         return f'Directed Acyclic Graph with {len(self.nodes)} nodes and {len(self.edges)} edges'
 
     def add_node(self, node):
-        if node.name in self.nodes:
-            raise ValueError(f"Node '{node.name}' already exists in this DAG")
+        for existing_node in self.get_nodes():
+            if node.name in existing_node.get_name():
+                raise ValueError(f"ERROR: Node '{node.name}' already exists in this DAG")
         self.nodes.append(node)
 
     def add_edge(self, edge):
@@ -43,7 +41,7 @@ class DAG:
     def find_neighbors(self, node):
         neighbors = []
         for edge in self.edges:
-            if edge.get_start() is node:
+            if edge.get_start() is node and edge.get_end() not in neighbors:
                 neighbors.append(edge.get_end())
         return neighbors
 
@@ -78,6 +76,9 @@ class DAG:
         return False
 
     def check_cyclic(self):
+        """
+        Returns true if there is a cycle in the graph
+        """
         visited = [False] * len(self.nodes)
 
         for node in self.nodes:

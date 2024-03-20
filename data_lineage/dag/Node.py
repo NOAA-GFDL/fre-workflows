@@ -12,21 +12,22 @@ class Node:
     def __repr__(self):
         return f'{self.name}'
 
-    def find_edges(self):
-        pass
-
     def find_neighbors(self, edges):
-        pass
+        neighbors = []
+        for edge in edges:
+            if edge.get_start() == self and edge.get_end not in neighbors:
+                neighbors.append(edge.get_end())
+        return neighbors
 
     def get_name(self):
         return self.name
 
     def get_input(self):
         if not hasattr(self, 'input'):
-            raise AttributeError("No input files found")
+            raise AttributeError(f'ERROR: No input files found')
         return self.input
 
     def get_output(self):
         if not hasattr(self, 'output'):
-            raise AttributeError("No output files found")
+            raise AttributeError(f'ERROR: No output files found')
         return self.output

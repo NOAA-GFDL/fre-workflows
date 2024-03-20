@@ -1,10 +1,10 @@
-import Node
+import data_lineage.dag.Node as Node
 
 
 class Edge:
-    def __init__(self, u: Node, v: Node):
-        self.start = u
-        self.end = v
+    def __init__(self, start: Node, end: Node):
+        self.start = start
+        self.end = end
         self.contents = []
 
     def __str__(self):
@@ -14,16 +14,17 @@ class Edge:
         return f'{{{self.start.get_name()}, {self.end.get_name()}}}'
 
     def add_content(self, content):
+        if type(content) != str:
+            raise TypeError('ERROR: Content is not a string')
         if content in self.get_contents():
-            raise ValueError(f'{content} already exists in {self}')
-        self.contents.append(content)
+            raise ValueError(f'ERROR: {content} already exists in {self}')
+        self.contents.append(str(content))
 
     def get_start(self):
         return self.start
 
     def get_end(self):
-        end = self.end
-        return end
+        return self.end
 
     def get_contents(self):
         return self.contents
