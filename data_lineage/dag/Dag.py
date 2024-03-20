@@ -44,7 +44,7 @@ class DAG:
         neighbors = []
         for edge in self.edges:
             if edge.get_start() is node:
-                neighbors.append(edge.get_end)
+                neighbors.append(edge.get_end())
         return neighbors
 
     def get_nodes(self):
@@ -60,38 +60,36 @@ class DAG:
         self.fidelity -= 1
         return
 
-    def check_cyclic_util(self, node, visited, stack):
+    def check_cyclic_util(self, node, visited, parent):
 
-        visited[node] = True
-        stack[node] = True
+        idx = self.nodes.index(node)
+        visited[idx] = True
         neighbors = self.find_neighbors(node)
 
         for neighbor in neighbors:
-            if not visited[neighbor]:
-                if self.check_cyclic_util(neighbor, visited, stack):
+            neighbor_idx = self.nodes.index(neighbor)
+            if not visited[neighbor_idx]:
+                if self.check_cyclic_util(neighbor, visited, node):
                     return True
-            elif stack[neighbor]:
+            elif parent != neighbor and parent is not None:
+                # If the neighbor is visited, and it's not the parent node
                 return True
 
-        # if there is no further nodes, pop from stack and return
-        stack[node] = False
         return False
 
     def check_cyclic(self):
+        visited = [False] * len(self.nodes)
 
-        nodes = self.nodes
-        visited = [False] * (len(nodes) + 1)
-        stack = [False] * (len(nodes) + 1)
-
-        for node in range(len(nodes)):
-            if not visited[node]:
-                if self.check_cyclic_util(node, visited, stack):
+        for node in self.nodes:
+            if not visited[self.nodes.index(node)]:
+                if self.check_cyclic_util(node, visited, None):
                     return True
-            return False
+        return False
 
     def dag_print(self):
         print(f'----DAG Statistics----')
-        print(f'Nodes : {len(self.nodes)}')
-        print(f'Edges : {len(self.edges)}')
+        print(f'Nodes    : {len(self.nodes)}')
+        print(f'Edges    : {len(self.edges)}')
+        print(f'Acyclic  : {self.check_cyclic()}')
         print(f'Fidelity : {self.fidelity}/100')
         return

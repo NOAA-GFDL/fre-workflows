@@ -1,7 +1,7 @@
 import mmh3
 # from bitarray import bitarray
 import array
-import my_bitarray
+import bitarray
 
 size = 2 ** 13
 hash_count = 100

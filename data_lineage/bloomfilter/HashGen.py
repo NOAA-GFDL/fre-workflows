@@ -11,6 +11,7 @@ def main():
     bf = BloomFilter()
     print(f'Size of bit array : {bf.size}')
     print(f'Number of hash functions : {bf.hash_count}')
+    print(f'Hash Power : {bf.size * bf.hash_count}')
 
     path = "test"
     file = path * 1_000_000

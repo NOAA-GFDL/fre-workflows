@@ -22,7 +22,8 @@ class Edge:
         return self.start
 
     def get_end(self):
-        return self.end
+        end = self.end
+        return end
 
     def get_contents(self):
         return self.contents
