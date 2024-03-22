@@ -1,9 +1,9 @@
-import subprocess
+from Bloomfilter import BloomFilter
+import netCDF4 as nc
+import logging
+import binascii
 import time
 import sys
-import netCDF4 as nc
-from Bloomfilter import BloomFilter
-
 
 # ncks -M /archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/atmos/av/monthly_2yr/atmos.1980-1981.11.nc
 
@@ -21,48 +21,54 @@ def scrape_metadata(file_path):
         var_header = str(f'{var.dtype} {var_name}({var.dimensions}) ;\n')
         meta_data += var_header
 
-    # history = rootgrp.history
-    # meta_data += history
+    history = rootgrp.__dict__.get('history')
+    meta_data += str(history)
 
     rootgrp.close()
     return meta_data
 
 
 def generate_hash(meta_data):
-    # scrape_metadata(file_path)
 
     # Keep size a power of 2
-    size = 2 ** 13
+    size = 2 ** 10
     hash_count = 100
 
     bf = BloomFilter(size, hash_count)
-    # print(f'Size of bit array : {bf.size}')
-    # print(f'Number of hash functions : {bf.hash_count}')
-    # print(f'Hash Power : {bf.size * bf.hash_count}')
+
+    logging.info(f'Size of bit array : {bf.size}')
+    logging.info(f'Number of hash functions : {bf.hash_count}')
+    logging.info(f'Hash Power : {bf.size * bf.hash_count}')
 
     start_time = time.time()
-    bit_array = bf.hash(meta_data)
-    file_hash = bit_array.condense()
+    bit_array = bf.hash(meta_data)  # Creates and populates the bitarray
+    logging.info(f'--- %s seconds to create bitarray ---' % (time.time() - start_time))
 
-    # print(f'--- %s seconds to create bitarray ---' % (time.time() - start_time))
+    # Convert to readable hex
+    bit_array_int = int(str(bit_array), 2)  # bit_array to int
+    bit_array_int_reduced = bit_array_int % (2 ** 128)  # modulus to 128 bits long
+    bit_array_hex = hex(bit_array_int_reduced)
 
-    return file_hash
+    return bit_array_hex
 
 
 def main(file_path):
-    # file_path = '/archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/atmos/av/monthly_2yr/atmos.1980-1981.11.nc'
-
     meta_data = scrape_metadata(file_path)
     file_hash = generate_hash(meta_data)
-    # print(f'generated hash for {file_path} : {file_hash}')
 
+    logging.info(f'generated hash for {file_path} : {file_hash}')
     print(file_hash)
 
     return file_hash
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    if len(sys.argv) != 2:
         print("Usage: python HashGen.py <filepath>")
+        # main('/archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/atmos/av/monthly_2yr/atmos.1980-1981.11.nc')
         sys.exit(1)
-    main(sys.argv[1])
+
+    if len(sys.argv) == 2:
+        main(sys.argv[1])
