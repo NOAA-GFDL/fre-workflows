@@ -107,16 +107,18 @@ for freq in $(ls); do
         input_dir_path=$inputDir/$component/$freq/$currentChunk
         for file in $component.$dates.*.nc; do
             cd $input_dir_path
-                export input_file_list=${input_file_list}$(shasum -a 1 $file),
-                echo -e "\n[COLE] added $file to input list"
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
+                export input_file_list="${input_file_list}$file  $hash_val,"
+                echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
             cd $current_loc
         done
         output_dir_path=$outputDir/$subdir
         for output_file in "$outputDir/$subdir/$component.$dates."*; do
             basename=$(basename output_file)
             cd $output_dir_path
-                export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
-                echo -e "\n[COLE] added $output_file to output list\n"
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+                export output_file_list="${output_file_list}$output_file  $hash_val,"
+                echo -e "\n[COLE] added $output_file to output list with hash_val: $hash_val"
             cd $current_loc
         done
 
@@ -133,14 +135,16 @@ for freq in $(ls); do
         input_dir_path=$inputDir/$component/$freq/$currentChunk
         for file in $component.$dates.*.nc; do
             cd $input_dir_path
-                export input_file_list=${input_file_list}$(shasum -a 1 $file),
-                echo -e "\n[COLE] added $inputDir/$component/$freq/$currentChunk/$file to input list\n"
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
+                export input_file_list="${input_file_list}$file  $hash_val,"
+                echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
             cd $current_loc
         done
 
         output_file = $component.$dates.ann.nc
-        export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
-        echo -e "\n[COLE] added $output_file to output list"
+        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+        export output_file_list="${output_file_list}$output_file  $hash_val,"
+        echo -e "\n[COLE] added $output_file to output list with hash_val: $hash_val"
         echo -e "[COLE] output file location for P1Y : $outputDir/$subdir/$output_file\n"
     else
         echo "Error: frequency $freq not supported"

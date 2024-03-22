@@ -80,13 +80,15 @@ if [[ $use_subdirs ]]; then
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
             cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
-            export input_file_list=${input_file_list}$(shasum -a 1 $file),
-            echo -e "\n[COLE] added $inputDir/$subdir/$file to input list"
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$subdir/$file)
+            export input_file_list="${input_file_list}$file  $hash_val,"
+            echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
         done
         cd $outputDir/$subdir
             for output_file in $(ls); do
-                export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
-                echo -e "\n[COLE] added $(basename $output_file) to output list"
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+                export output_file_list="${output_file_list}${output_file}  ${hash_val},"
+                echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
             done
         cd ../..
         popd
@@ -103,13 +105,15 @@ else
     # Split the files by variable
     for file in $files; do
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
-        export input_file_list=${input_file_list}$(shasum -a 1 $file),
-        echo -e "\n[COLE] added $inputDir/$file to input list"
+        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
+        export input_file_list="${input_file_list}$file  $hash_val,"
+        echo -e "\n[COLE] added $inputDir/$file to input list with hash_val: $hash_val"
     done
     cd $outputDir
         for output_file in $(ls); do
-            export output_file_list=${output_file_list}$(shasum -a 1 $output_file),
-            echo -e "\n[COLE] added $(basename $output_file) to output list"
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+            export output_file_list="${output_file_list}${output_file}  ${hash_val},"
+            echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
         done
     cd ..
 fi

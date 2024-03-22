@@ -83,8 +83,9 @@ for dir in ${dirs[@]}; do
         current_loc=$(pwd)
         input_dir_path=$(dirname $file)
         cd $input_dir_path
-            export input_file_list=${input_file_list}$(shasum -a 1 $basename),
-	    echo "[COLE] added $basename to input list"
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $basename)
+            export input_file_list="${input_file_list}$basename $hash_val,"
+            echo -e "\n[COLE] added $basename to input list with hash_val: $hash_val"
         cd $current_loc
 
         date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
@@ -129,8 +130,9 @@ for dir in ${dirs[@]}; do
         current_loc=$(pwd)
         output_dir_path=$(dirname $output_file)
         cd $output_dir_path
-            export output_file_list=${output_file_list}$(shasum -a 1 $newfile),
-            echo "[COLE] added $newfile to output list"
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
+            export output_file_list="${output_file_list}$newfile  $hash_val,"
+            echo -e "\n[COLE] added $newfile to output list with hash_val: $hash_val"
         cd $current_loc
 
 	done
