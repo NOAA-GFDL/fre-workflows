@@ -121,8 +121,8 @@
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:canopy;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;pp_is_canopy:YES"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load conda && conda activate /net2/Ciheim.Brown/conda/envs/DCEnv
-
+        pre-script = module load fre/canopy 
+        
         [[[directives]]]
             --partition=analysis
 
