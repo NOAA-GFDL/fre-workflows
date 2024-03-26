@@ -1,7 +1,7 @@
 import Edge
 import Node
 import Dag
-from Fetch import main as fetch
+from JobData import main as fetch
 
 
 # mainly for debugging purposes, triggers dag_print
