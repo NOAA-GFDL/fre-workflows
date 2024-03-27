@@ -97,7 +97,7 @@ function process_timeseries {
             current_loc=$(pwd)
             cd $newdir
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
-                export output_file_list="${output_file_list}$newfile $hash_val,"
+                export output_file_list="${output_file_list}$newfile  $hash_val,"
                 echo -e "\n[COLE] added $newfile to output list with hash_val: $hash_val"
             cd $current_loc
 

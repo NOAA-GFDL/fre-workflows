@@ -84,7 +84,7 @@ for dir in ${dirs[@]}; do
         input_dir_path=$(dirname $file)
         cd $input_dir_path
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $basename)
-            export input_file_list="${input_file_list}$basename $hash_val,"
+            export input_file_list="${input_file_list}$basename  $hash_val,"
             echo -e "\n[COLE] added $basename to input list with hash_val: $hash_val"
         cd $current_loc
 
