@@ -1,6 +1,6 @@
 class DAG:
     def __init__(self):
-        # TODO : refactor as a dictionary to speed up lookup time
+        # TODO : refactor as a dictionary to speed up lookup time for nodes and edges
         self.nodes = []
         self.edges = []
         self.fidelity = 100
@@ -24,6 +24,8 @@ class DAG:
             raise ValueError(f"Start node '{edge.start}' does not exist in this DAG")
         if end_name not in self.nodes:
             raise ValueError(f"End node '{edge.end.name}' does not exist in this DAG")
+        if edge in self.edges:
+            raise ValueError(f"ERROR: {edge} already exists in this DAG")
         self.edges.append(edge)
 
     def find_node(self, name):

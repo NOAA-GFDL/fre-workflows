@@ -1,5 +1,4 @@
-import data_lineage.dag.Node as Node
-
+import Node
 
 class Edge:
     def __init__(self, start: Node, end: Node):
