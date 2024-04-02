@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+set -x
 
 #
 # use fre-python-tools generate_time_average module to average history files 
