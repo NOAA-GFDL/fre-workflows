@@ -162,9 +162,11 @@ for key in $($config --keys | grep -v command | grep -v env); do
                         echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
                         
                         newfile=$compOut.${file#*.}
-                        if [[ ! -f $dir/$newfile ]]; then
-                            ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
+                        if [[ -f $dir/$newfile ]]; then
+                            rm -f $dir/$newfile
                         fi
+                        ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
+
                         current_loc=$(pwd)
                         cd $dir
                             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)

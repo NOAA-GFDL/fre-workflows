@@ -79,10 +79,10 @@ if [[ $use_subdirs ]]; then
         # Split the files by variable
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
-            cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$subdir/$file)
-            export input_file_list="${input_file_list}$file  $hash_val,"
-            echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$subdir/$file)
+                export input_file_list="${input_file_list}$file  $hash_val,"
+                echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
+                cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
         done
         cd $outputDir/$subdir
             for output_file in $(ls); do
@@ -104,10 +104,10 @@ else
 
     # Split the files by variable
     for file in $files; do
-        cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
         export input_file_list="${input_file_list}$file  $hash_val,"
         echo -e "\n[COLE] added $inputDir/$file to input list with hash_val: $hash_val"
+        cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
     done
     cd $outputDir
         for output_file in $(ls); do
