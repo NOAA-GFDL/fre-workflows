@@ -153,9 +153,12 @@ for key in $($config --keys | grep -v command | grep -v env); do
 
                     for file in $files; do
                         newfile=$compOut.${file#*.}
-                        if [[ ! -f $dir/$newfile ]]; then
-                            ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
+                        # If the file already exists, which would happen if a workflow was run
+                        # more than once, remove it and replace it with the current file.
+                        if [[ -f $dir/$newfile ]]; then
+                            rm -f $dir/$newfile
                         fi
+                        ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
                     done
 
                     cd ..
