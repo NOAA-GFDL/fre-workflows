@@ -21,7 +21,10 @@ fi
 
 cd $inputDir
 
-for file in $(ls *.$component.*.nc); do
+# Search for valid netcdf files in inputDir
+for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
+    # Remove the './' prefix from file
+    file="${file#./}"
     refine_Atmos_no_redux.py $file -o $file.masked -p $file
     if [[ -f $file.masked ]]; then
         mv -f $file.masked $file
