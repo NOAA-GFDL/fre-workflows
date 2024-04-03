@@ -203,8 +203,12 @@ for set in $($config --keys | grep -v command | grep -v env); do
     for input_file in $(ls $input_dir); do
         if [[ ! "$input_file" == *".$component."* ]]; then
             continue
-        fi 
+        fi
+ 
         current_loc=$(pwd)
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir/"
+        echo -e  "\n[COLE] annotated $input_dir to EPMT_DATA_LINEAGE_IN_PATH"
+
         cd $input_dir
             begin=$(date +%s)
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_file)
@@ -238,7 +242,11 @@ for set in $($config --keys | grep -v command | grep -v env); do
     if [[ -z $outputGridType ]]; then
         # Copy the regridded output to the output location
         cp $outputFile $outputDir
+        
         current_loc=$(pwd)
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+        echo -e  "\n[COLE] annotated $outputDir to EPMT_DATA_LINEAGE_OUT_PATH"
+
         cd $outputDir
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $outputFile)
             export output_file_list="${output_file_list}$outputFile  $hash_val,"
@@ -249,7 +257,11 @@ for set in $($config --keys | grep -v command | grep -v env); do
         mkdir -p $outputDir/$outputGridType
         # Copy the regridded output to the output location
         cp $outputFile $outputDir/$outputGridType
+
         current_loc=$(pwd)
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$outputGridType/"
+        echo -e  "\n[COLE] annotated $outputDir/$outputGridType to EPMT_DATA_LINEAGE_OUT_PATH"
+
         cd $outputDir/$outputGridType
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $outputFile)
             export output_file_list="${output_file_list}$outputFile  $hash_val,"

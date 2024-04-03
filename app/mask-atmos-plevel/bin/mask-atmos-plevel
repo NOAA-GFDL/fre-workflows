@@ -25,9 +25,16 @@ fi
 
 cd $inputDir
 
-for file in $(ls *.$component.*.nc); do
+# needs to be *.$component.*.nc
+for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
+
+    file="${file#./}"
 
     current_loc=$(pwd)
+
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo -e  "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_IN_PATH"
+
     cd $inputDir
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
         export input_file_list="${input_file_list}$file  $hash_val,"
@@ -42,6 +49,10 @@ for file in $(ls *.$component.*.nc); do
 
     # output files, although named the same as the input files, may have different contents so their
     # checksums need to be calculated as well
+
+    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$inputDir/"
+    echo -e  "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_OUT_PATH"
+
     cd $inputDir
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
         export output_file_list="${output_file_list}$file  $hash_val,"

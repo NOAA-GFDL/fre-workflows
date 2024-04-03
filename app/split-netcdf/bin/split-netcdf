@@ -15,25 +15,6 @@ export input_file_list=
 export output_file_list=
 echo "[COLE] created i/o lists"
 
-find_output() {
-    local directory="$1"
-    echo "[COLE] FIND_OUTPUT directory : $directory"
-
-    if [[ -d $directory ]]; then
-        for item in $(ls $directory); do
-            echo "item : $item"
-            if [[ -d $item ]]; then
-                find_output $item
-            elif [[ $item == *.nc ]]; then
-                export output_file_list=${output_file_list}$(shasum -a 512256 $directory/$item),
-                echo -e "\n[COLE] added $directory/$item to output list"
-            fi
-        done
-    else
-        echo "[COLE] ERROR: $directory is invalid"
-    fi
-}
-
 echo Arguments:
 echo "    input dir: $inputDir"
 echo "    output dir: $outputDir"
@@ -76,6 +57,9 @@ if [[ $use_subdirs ]]; then
         # Create the output subdir if needed
         mkdir -p $outputDir/$subdir
 
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+        echo -e  "\n[COLE] annotated $inputDir/$subdir to EPMT_DATA_LINEAGE_IN_PATH"
+
         # Split the files by variable
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
@@ -84,6 +68,10 @@ if [[ $use_subdirs ]]; then
                 echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
                 cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
         done
+
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
+        echo -e  "\n[COLE] annotated $outputDir/$subdir to EPMT_DATA_LINEAGE_OUT_PATH"
+
         cd $outputDir/$subdir
             for output_file in $(ls); do
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
@@ -102,6 +90,9 @@ else
         exit 1
     fi
 
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo -e  "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_IN_PATH"
+
     # Split the files by variable
     for file in $files; do
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
@@ -109,6 +100,10 @@ else
         echo -e "\n[COLE] added $inputDir/$file to input list with hash_val: $hash_val"
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
     done
+
+    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+    echo -e  "\n[COLE] annotated $outputDir to EPMT_DATA_LINEAGE_OUT_PATH"
+
     cd $outputDir
         for output_file in $(ls); do
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)

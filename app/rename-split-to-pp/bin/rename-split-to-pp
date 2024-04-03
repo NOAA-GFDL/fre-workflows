@@ -121,6 +121,9 @@ function process_files {
         fi
 
         current_loc=$(pwd)
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$path/"
+        echo -e  "\n[COLE] annotated $path to EPMT_DATA_LINEAGE_IN_PATH"
+
         cd $path
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
             export input_file_list="${input_file_list}$file  $hash_val,"
@@ -138,6 +141,10 @@ function process_files {
         if [[ -f $dir/$newfile ]]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
+
+            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$dir/"
+            echo -e  "\n[COLE] annotated $dir to EPMT_DATA_LINEAGE_OUT_PATH"
+
             if [[ -n $tile ]]; then
                 for t in tile1 tile2 tile3 tile4 tile5 tile6; do
                     f=${file/tile1/$t}

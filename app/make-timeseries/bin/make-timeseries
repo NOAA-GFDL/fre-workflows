@@ -66,39 +66,45 @@ function process_timeseries {
 
             # If processing subdirectories, add the subdir (e.g. "1deg") above the component level
             if [[ $use_subdirs ]]; then
+                inputdir=$subdir/$component/$freq/$chunk
+                outputdir=$subdir/$component/$freq/$outputChunk
                 newdir=$outputDir/$subdir/$component/$freq/$outputChunk
             else
+                inputdir=$component/$freq/$chunk
+                outputdir=$component/$freq/$outputChunk
                 newdir=$outputDir/$component/$freq/$outputChunk
             fi
 
             # create timeseries
             mkdir -p $newdir
+
             if [[ $is_tiled ]]; then
                 for (( tile=1; tile <= 6; ++tile )); do
                     newfile=$component.$d1-$d2.$var.tile$tile.nc
                     tiled_files=$(echo ${files[@]} | sed -e s/tile1/tile$tile/g)
                     for input_file in $tiled_files; do
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_file)
-                        export input_file_list="${input_file_list}$input_file  $hash_val,"
-                        echo -e "\n[COLE] added $input_file to input list with hash_val: $hash_val"
+                        export input_file_list="${input_file_list}$inputdir/$input_file  $hash_val,"
+                        echo -e "\n[COLE] added $inputdir/$input_file to input list with hash_val: $hash_val"
                     done
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
                 done
             else
                 for input_file in ${files[@]}; do
                     hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_file)
-                    export input_file_list="${input_file_list}$input_file  $hash_val,"
-                    echo -e "\n[COLE] added $input_file to input list with hash_val: $hash_val"
+                    export input_file_list="${input_file_list}$inputdir/$input_file  $hash_val,"
+                    echo -e "\n[COLE] added $inputdir/$input_file to input list with hash_val: $hash_val"
                 done
                 newfile=$component.$d1-$d2.$var.nc
                 cdo --history -O mergetime ${files[@]} $newdir/$newfile
             fi
 
             current_loc=$(pwd)
+
             cd $newdir
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
-                export output_file_list="${output_file_list}$newfile  $hash_val,"
-                echo -e "\n[COLE] added $newfile to output list with hash_val: $hash_val"
+                export output_file_list="${output_file_list}$outputdir/$newfile  $hash_val,"
+                echo -e "\n[COLE] added $outputdir/$newfile to output list with hash_val: $hash_val"
             cd $current_loc
 
             did_something=1
@@ -155,6 +161,12 @@ cd $inputDir
 
 # yuck
 did_something=""
+
+epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+echo -e "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_IN_PATH"
+
+epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+echo -e  "\n[COLE] annotated $outputDir to EPMT_DATA_LINEAGE_OUT_PATH"
 
 # If processing grid subdirectories, process each
 if [[ $use_subdirs ]]; then

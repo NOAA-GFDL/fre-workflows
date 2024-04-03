@@ -155,6 +155,13 @@ for key in $($config --keys | grep -v command | grep -v env); do
                         exit 1
                     fi
 
+                    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(dirname $(pwd)/)"
+                    echo -e  "\n[COLE] annotated $(dirname $(pwd)) to EPMT_DATA_LINEAGE_IN_PATH"
+
+                    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$dir/"
+                    echo -e  "\n[COLE] annotated $dir to EPMT_DATA_LINEAGE_OUT_PATH"
+
+
                     for file in $files; do
                         
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)

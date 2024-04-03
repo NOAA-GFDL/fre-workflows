@@ -83,6 +83,9 @@ for dir in ${dirs[@]}; do
 
         current_loc=$(pwd)
         input_dir_path=$(dirname $file)
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir_path/"
+        echo -e  "\n[COLE] annotated $input_dir_path to EPMT_DATA_LINEAGE_IN_PATH"
+
         cd $input_dir_path
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $basename)
             export input_file_list="${input_file_list}$basename  $hash_val,"
@@ -130,6 +133,10 @@ for dir in ${dirs[@]}; do
 
         current_loc=$(pwd)
         output_dir_path=$(dirname $output_file)
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$output_dir_path/"
+        echo -e  "\n[COLE] annotated $output_dir_path to EPMT_DATA_LINEAGE_OUT_PATH"
+
+
         cd $output_dir_path
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
             export output_file_list="${output_file_list}$newfile  $hash_val,"
