@@ -211,7 +211,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
 
         cd $input_dir
             begin=$(date +%s)
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_file)
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$input_file)
             export input_file_list="${input_file_list}$input_file  $hash_val,"
             end=$(date +%s)
             duration=$((end - begin))
@@ -248,7 +248,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
         echo -e  "\n[COLE] annotated $outputDir to EPMT_DATA_LINEAGE_OUT_PATH"
 
         cd $outputDir
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $outputFile)
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$outputFile)
             export output_file_list="${output_file_list}$outputFile  $hash_val,"
             echo -e "\n[COLE] added $outputFile to output list with hash_val: $hash_val"
         cd $current_loc
@@ -263,7 +263,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
         echo -e  "\n[COLE] annotated $outputDir/$outputGridType to EPMT_DATA_LINEAGE_OUT_PATH"
 
         cd $outputDir/$outputGridType
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $outputFile)
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$outputFile)
             export output_file_list="${output_file_list}$outputFile  $hash_val,"
             echo -e "\n[COLE] added $outputFile to output list with hash_val: $hash_val"
         cd $current_loc

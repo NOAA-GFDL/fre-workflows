@@ -74,7 +74,7 @@ if [[ $use_subdirs ]]; then
 
         cd $outputDir/$subdir
             for output_file in $(ls); do
-                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$output_file)
                 export output_file_list="${output_file_list}${output_file}  ${hash_val},"
                 echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
             done
@@ -106,7 +106,7 @@ else
 
     cd $outputDir
         for output_file in $(ls); do
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_file)
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$output_file)
             export output_file_list="${output_file_list}${output_file}  ${hash_val},"
             echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
         done

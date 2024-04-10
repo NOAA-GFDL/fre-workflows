@@ -13,6 +13,12 @@ echo "[COLE] created i/o lists"
 # Link each input file into a canonical directory structure
 function process_files {
     path="$1" #subdir or regular inputDir based on case
+    if [[ $use_subdirs ]]; then
+        my_path=$(basename $path)/
+    else
+        my_path=
+    fi
+
     for file in $files; do
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
@@ -121,30 +127,26 @@ function process_files {
         fi
 
         current_loc=$(pwd)
-        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$path/"
-        echo -e  "\n[COLE] annotated $path to EPMT_DATA_LINEAGE_IN_PATH"
 
         cd $path
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
-            export input_file_list="${input_file_list}$file  $hash_val,"
-            echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $path/$file)
+            export input_file_list="${input_file_list}$my_path$file  $hash_val,"
+            echo -e "\n[COLE] added $path$file to input list with hash_val: $hash_val"
         cd $current_loc
 
         # If in subdir mode, preserve the subdir
         if [[ $use_subdirs ]]; then
             dir=$outputDir/$subdir/$label/$freq/$chunk
+            my_dir=$subdir/$label/$freq/$chunk
         else
             dir=$outputDir/$label/$freq/$chunk
+            my_dir=$label/$freq/$chunk
         fi
 
         mkdir -p $dir
         if [[ -f $dir/$newfile ]]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
-
-            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$dir/"
-            echo -e  "\n[COLE] annotated $dir to EPMT_DATA_LINEAGE_OUT_PATH"
-
             if [[ -n $tile ]]; then
                 for t in tile1 tile2 tile3 tile4 tile5 tile6; do
                     f=${file/tile1/$t}
@@ -152,18 +154,18 @@ function process_files {
                     ln $f $dir/$newf
                     current_loc=$(pwd)
                     cd $dir
-                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newf)
-                        export output_file_list="${input_file_list}$newf  $hash_val,"
-                        echo -e "\n[COLE] added $newf to output list with hash_val: $hash_val"
+                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newf)
+                        export output_file_list="${input_file_list}$my_dir/$newf  $hash_val,"
+                        echo -e "\n[COLE] added $my_dir/$newf to output list with hash_val: $hash_val"
                     cd $current_loc
                 done
             else
                 ln $file $dir/$newfile
                 current_loc=$(pwd)
                 cd $dir
-                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
-                    export output_file_list="${output_file_list}$newfile  $hash_val,"
-                    echo -e "\n[COLE] added $newfile to output list with hash_val: $hash_val"
+                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newfile)
+                    export output_file_list="${output_file_list}$my_dir/$newfile  $hash_val,"
+                    echo -e "\n[COLE] added $my_dir/$newfile to output list with hash_val: $hash_val"
                 cd $current_loc
             fi
         fi
@@ -231,6 +233,13 @@ fi
 
 echo "[COLE] epmt analysis and annotate"
 which epmt
+
+epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+
+epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
 
 if [[ -n "$input_file_list" ]]; then
     echo -e "\n---input---"

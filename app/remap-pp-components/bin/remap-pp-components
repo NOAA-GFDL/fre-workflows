@@ -68,6 +68,13 @@ for key in $($config --keys | grep -v command | grep -v env); do
         else
             pushd $grid || continue 
         fi
+
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(pwd)/"
+        echo -e  "\n[COLE] annotated $(pwd)/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$compOut/"
+        echo -e  "\n[COLE] annotated $outputDir/$compOut/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
      
         for source in $($config --default=* $key sources); do
             cd $source || continue
@@ -84,14 +91,18 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     if [[ $ens_mem ]]; then
                         if [[ $dirTSWorkaround ]]; then
                             dir=$outputDir/$compOut/ts/$ens_mem/$freq/$chunk
+                            cole_dir=ts/$ens_mem/$freq/$chunk
                         else
                             dir=$outputDir/$compOut/$ens_mem/$freq/$chunk
+                            cole_dir=$ens_mem/$freq/$chunk
                         fi
                     else
                         if [[ $dirTSWorkaround ]]; then
                             dir=$outputDir/$compOut/ts/$freq/$chunk
+                            cole_dir=ts/$freq/$chunk
                         else
                             dir=$outputDir/$compOut/$freq/$chunk
+                            cole_dir=$freq/$chunk
                         fi
                     fi
                     mkdir -p $dir
@@ -155,18 +166,11 @@ for key in $($config --keys | grep -v command | grep -v env); do
                         exit 1
                     fi
 
-                    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(dirname $(pwd)/)"
-                    echo -e  "\n[COLE] annotated $(dirname $(pwd)) to EPMT_DATA_LINEAGE_IN_PATH"
-
-                    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$dir/"
-                    echo -e  "\n[COLE] annotated $dir to EPMT_DATA_LINEAGE_OUT_PATH"
-
-
                     for file in $files; do
                         
-                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $file)
-                        export input_file_list="${input_file_list}$file  $hash_val,"
-                        echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
+                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$file)
+                        export input_file_list="${input_file_list}$source/$freq/$chunk/$file  $hash_val,"
+                        echo -e "\n[COLE] added $source/$freq/$chunk/$file to input list with hash_val: $hash_val"
                         
                         newfile=$compOut.${file#*.}
                         if [[ -f $dir/$newfile ]]; then
@@ -176,9 +180,9 @@ for key in $($config --keys | grep -v command | grep -v env); do
 
                         current_loc=$(pwd)
                         cd $dir
-                            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newfile)
-                            export output_file_list="${output_file_list}$newfile  $hash_val,"
-                            echo -e "\n[COLE] added $newfile to output list with hash_val: $hash_val"
+                            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newfile)
+                            export output_file_list="${output_file_list}$cole_dir/$newfile  $hash_val,"
+                            echo -e "\n[COLE] added $cole_dir/$newfile to output list with hash_val: $hash_val"
                         cd $current_loc
                     done
 

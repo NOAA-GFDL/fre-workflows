@@ -34,14 +34,14 @@ for comp in $(ls); do
     pushd $comp/P0Y/P0Y || continue
 
     current_loc=$(pwd)
-    input_dir_path=$inputDir/$comp/P0Y/P0Y/
+    input_dir_path=$inputDir/$comp/P0Y/P0Y
 
-    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir_path"
-    echo -e  "\n[COLE] annotated $input_dir_path to EPMT_DATA_LINEAGE_IN_PATH"
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir_path/"
+    echo -e  "\n[COLE] annotated $input_dir_path/ to EPMT_DATA_LINEAGE_IN_PATH"
 
     for input_file in $(ls); do 
         cd $input_dir_path
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_file)
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $input_dir_path/$input_file)
             export input_file_list="${input_file_list}$input_file  $hash_val,"
             echo -e "\n[COLE] added $input_file to input list with hash_val: $hash_val"
         cd $current_loc
@@ -50,13 +50,13 @@ for comp in $(ls); do
     mkdir -p $outputDir/$comp
     cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
 
-    output_dir_path=$outputDir/$comp/
+    output_dir_path=$outputDir/$comp
 
     epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$output_dir_path"
     echo -e  "\n[COLE] annotated $output_dir_path to EPMT_DATA_LINEAGE_OUT_PATH"
 
     cd $output_dir_path
-        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $comp.static.nc)
+        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $output_dir_path/$comp.static.nc)
         export output_file_list="${output_file_list}$comp.static.nc  $hash_val,"
         echo -e "\n[COLE] added $comp.static.nc to output list with hash_val: $hash_val"
     cd $current_loc
