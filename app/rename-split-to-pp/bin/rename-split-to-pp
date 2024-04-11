@@ -130,17 +130,29 @@ function process_files {
 
         cd $path
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $path/$file)
-            export input_file_list="${input_file_list}$my_path$file  $hash_val,"
-            echo -e "\n[COLE] added $path$file to input list with hash_val: $hash_val"
+            export input_file_list="${input_file_list}$file  $hash_val,"
+            echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
         cd $current_loc
 
         # If in subdir mode, preserve the subdir
         if [[ $use_subdirs ]]; then
             dir=$outputDir/$subdir/$label/$freq/$chunk
-            my_dir=$subdir/$label/$freq/$chunk
+            my_dir=$freq/$chunk
+
+            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+            echo -e  "\n[COLE] annotated $inputDir/$my_path to EPMT_DATA_LINEAGE_IN_PATH"
+
+            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/$label/"
+            echo -e  "\n[COLE] annotated $outputDir/$subdir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
         else
             dir=$outputDir/$label/$freq/$chunk
-            my_dir=$label/$freq/$chunk
+            my_dir=$freq/$chunk
+
+            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+            echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$label/"
+            echo -e  "\n[COLE] annotated $outputDir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
         fi
 
         mkdir -p $dir
@@ -214,6 +226,12 @@ if [[ $use_subdirs ]]; then
         if [[ $files =~ \* ]]; then
             err No input files
         else
+            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+            echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
+            echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
             process_files "$inputDir/$subdir"
         fi
         popd
@@ -228,18 +246,18 @@ else
         exit 1
     fi
 
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+    echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
     process_files "$inputDir"
 fi
 
 echo "[COLE] epmt analysis and annotate"
 which epmt
 
-epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
-echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
-
-
-epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
-echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
 
 if [[ -n "$input_file_list" ]]; then
     echo -e "\n---input---"
