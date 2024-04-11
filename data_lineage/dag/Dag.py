@@ -1,9 +1,13 @@
+import subprocess
+
+
 class DAG:
     def __init__(self):
         # TODO : refactor as a dictionary to speed up lookup time for nodes and edges
         self.nodes = []
         self.edges = []
         self.fidelity = 100
+        self.run_dir = ''
 
     def __str__(self):
         return f'Directed Acyclic Graph with {len(self.nodes)} nodes and {len(self.edges)} edges'
@@ -60,6 +64,10 @@ class DAG:
         self.fidelity -= 1
         return
 
+    def set_run_dir(self, directory):
+        self.run_dir = directory
+        return
+
     def check_cyclic_util(self, node, visited, parent):
 
         idx = self.nodes.index(node)
@@ -78,9 +86,7 @@ class DAG:
         return False
 
     def check_cyclic(self):
-        """
-        Returns true if there is a cycle in the graph
-        """
+
         visited = [False] * len(self.nodes)
 
         for node in self.nodes:
@@ -89,9 +95,51 @@ class DAG:
                     return True
         return False
 
+    def find_job(self, name):
+        for node in self.nodes:
+            if name in node.name:
+                print(f'Found {node.name}')
+                print(f'   input')
+                for i in node.input:
+                    print(i)
+                print(f'   output')
+                for o in node.output:
+                    print(o)
+                print(f'\n')
+
+    def find_file(self, io_type, file):
+        # converts io_type to a mapping for lookup
+        io_files = {
+            'input': lambda node1: node.input,
+            'output': lambda node1: node.output
+        }
+
+        for node in self.nodes:
+            files_list = io_files[io_type](node)
+            for node_file in files_list:
+                if file in node_file:
+                    print(f'{node.name} has {node_file} in its {io_type} list')
+
+    def find_total_job_count(self):
+        total_jobs = []
+        job_dir = f'{self.run_dir}/log/job/'
+        cmd = f'ls -ldt {job_dir}*/*/'
+        jobs = subprocess.run(cmd, capture_output=True, shell=True, text=True)
+        jobs_split = jobs.stdout.split('\n')
+
+        for line in jobs_split:
+            # skip jobs that contain these keywords
+            job_ignore = ['clean', 'pp-starter', 'stage-history']
+            if any(keyword in line for keyword in job_ignore):
+                continue
+            total_jobs.append(line)
+
+        return len(total_jobs)
+
     def dag_print(self):
         print(f'----DAG Statistics----')
         print(f'Nodes    : {len(self.nodes)}')
+        print(f'Omitted  : {self.find_total_job_count() - len(self.nodes)}')
         print(f'Edges    : {len(self.edges)}')
         print(f'Acyclic  : {self.check_cyclic()}')
         print(f'Fidelity : {self.fidelity}/100')
