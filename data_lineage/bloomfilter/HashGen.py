@@ -5,10 +5,9 @@ import binascii
 import time
 import sys
 
+
 # ncks -M /archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/atmos/av/monthly_2yr/atmos.1980-1981.11.nc
-
 # /home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python
-
 
 def scrape_metadata(file_path):
     rootgrp = nc.Dataset(file_path, "r")
@@ -23,18 +22,23 @@ def scrape_metadata(file_path):
 
     history = rootgrp.__dict__.get('history')
     meta_data += str(history)
+    meta_data += file_path
 
     rootgrp.close()
+
+    logging.info(f'\n\nPrinting metadata for {file_path}\n\n{meta_data}\n\nFinished printing metadata\n')
     return meta_data
 
 
 def generate_hash(meta_data):
-
+    """
+    Create a hash of the 'meta_data' object passed in. Should be a string.
+    """
     # Keep size a power of 2
-    size = 2 ** 10
-    hash_count = 100
+    size = 2 ** 8
+    hash_count = 200
 
-    bf = BloomFilter(size, hash_count)
+    bf = BloomFilter(size, hash_count)  # initialize the bloomfilter
 
     logging.info(f'Size of bit array : {bf.size}')
     logging.info(f'Number of hash functions : {bf.hash_count}')
@@ -46,14 +50,16 @@ def generate_hash(meta_data):
 
     # Convert to readable hex
     bit_array_int = int(str(bit_array), 2)  # bit_array to int
-    bit_array_int_reduced = bit_array_int % (2 ** 128)  # modulus to 128 bits long
+    bit_array_int_reduced = bit_array_int % (10 ** 16)  # modulus to 16 bytes long
     bit_array_hex = hex(bit_array_int_reduced)
 
-    return bit_array_hex
+    return bit_array_hex.split('x')[1]  # ignore the '0x' head of the hash
 
 
 def main(file_path):
     meta_data = scrape_metadata(file_path)
+    # meta_data += file_path  # to ensure a unique hash for different tile files that have the same configuration
+    # add .split('x')[1] to the end of generate_hash to remove the `0x` head on the hash
     file_hash = generate_hash(meta_data)
 
     logging.info(f'generated hash for {file_path} : {file_hash}')
@@ -66,8 +72,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     if len(sys.argv) != 2:
-        print("Usage: python HashGen.py <filepath>")
-        # main('/archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/atmos/av/monthly_2yr/atmos.1980-1981.11.nc')
+        logging.error("Usage: python HashGen.py <filepath>")
+        # Uncomment line below for testing
+        main('/archive/Cole.Harvey/canopy/am5/c96L33_amip/pp/land/ts/P1M/P2Y/land.198001-198112.cSoil.nc')
         sys.exit(1)
 
     if len(sys.argv) == 2:
