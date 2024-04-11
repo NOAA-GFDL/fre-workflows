@@ -1,5 +1,6 @@
 import Node
 
+
 class Edge:
     def __init__(self, start: Node, end: Node):
         self.start = start

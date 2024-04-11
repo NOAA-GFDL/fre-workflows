@@ -1,14 +1,11 @@
 #!/usr/env/bin python3
 import datetime
+
 from epmt import epmt_query as eq
 
 print('EPMT successfully loaded')
 
 debug = False
-
-
-# Working runs :
-#    6 - working with 35 kept jobs (2024, 3, 6, 11, 00)
 
 
 def filter_jobs(jobs):

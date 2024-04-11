@@ -20,14 +20,3 @@ class BitArray:
 
     def __repr__(self):
         return f'BitArray({self.size}): {str(self)}'
-
-    def condense(self):
-        condensed_int = 1
-        for i in range(self.size):
-            if self.get_bit(i) == 1:
-                if i == 0:
-                    continue
-                condensed_int *= i
-        condensed_hex = (hex(condensed_int))
-        stripped_hex = hex(int(condensed_hex, 16)).rstrip('0')
-        return stripped_hex

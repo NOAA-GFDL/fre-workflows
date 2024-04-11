@@ -13,8 +13,6 @@ def get_job_data(job):
     input_path = ''
     output_path = ''
 
-    print(f"     {job['jobname']}")
-
     job_input = annotations.get('EPMT_DATA_LINEAGE_IN', '')
     job_output = annotations.get('EPMT_DATA_LINEAGE_OUT', '')
 
@@ -69,6 +67,7 @@ def format_jobs(jobs):
 
 
 def fetch_jobs(fingerprint):
+
     jobs = eq.get_jobs(
         fmt='dict',
         tags=f'EPMT_EXP_UUID:{fingerprint}',
@@ -106,7 +105,10 @@ def main(fingerprint):
 
     formatted_jobs = format_jobs(job_dict)
 
-    return formatted_jobs
+    # saving run_dir to check if jobs are omitted in Dag.py
+    run_dir = job_dict[00]['env_dict']['CYLC_WORKFLOW_RUN_DIR']
+
+    return formatted_jobs, run_dir
 
 
 if __name__ == "__main__":
