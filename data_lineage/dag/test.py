@@ -7,8 +7,8 @@ from FetchFromFingerprint import main as fp_main
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# run54/log/job/19810101T0000Z/remap-pp-components-ts-P2Y_atmos_scalar/01/job.err
 
+# run54/log/job/19810101T0000Z/remap-pp-components-ts-P2Y_atmos_scalar/01/job.err
 
 # mainly for debugging purposes, triggers dag_print
 def status(dag):
@@ -16,17 +16,17 @@ def status(dag):
 
 
 def main():
-    fp = '5375d458-af0e-406f-ade0-5915e320249a'
-    jobs = fp_main(fp)
+    fp = ''  # Put your $CYLC_WORKFLOW_UUID here to run
+    jobs, run_dir = fp_main(fp)
 
     print('----Constructing DAG----')
     dag = Dag.DAG()
+    dag.set_run_dir(run_dir)
     node_count, edge_count = 0, 0
 
     # add all the nodes in job_dict
     print('Adding nodes...')
     for job in jobs.items():
-
         job_name = job[0]
         input_files = job[1]['input']
         output_files = job[1]['output']
@@ -46,7 +46,8 @@ def main():
             next_input = next_node.get_input()
             if name == next_name:  # skip if same node
                 continue
-            for output_file, output_file_hash in output.items():  # iterate over the i/o files in the two nodes
+            # iterate over the i/o files in the two nodes
+            for output_file, output_file_hash in output.items():
                 for input_file, input_file_hash in next_input.items():
                     # if the output file matches the input file
                     if output_file == input_file and output_file_hash == input_file_hash:
@@ -67,7 +68,11 @@ def main():
 
     status(dag)
 
+    # dag.find_job('combine-timeavgs-P2Y_atmos.1981')
+    # dag.find_file("output", 'enth_conv_col.nc')
+
     draw(dag)
+    print("finished")
 
 
 if __name__ == "__main__":
