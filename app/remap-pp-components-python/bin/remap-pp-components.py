@@ -6,13 +6,15 @@ import os
 import glob
 import sys
 #from pathlib import Path
-import shared
+#import shared
 import metomi.rose.config as mrc
 
 # Set variables to play with
 outputDir = os.getcwd()+"/rewrite_outputDir"
 inputDir = os.getcwd()+"/rewrite_inputDir"
+components = ["atmos", "ocean"]
 dirTSWorkaround = "1"
+ens_mem = "" 
 #ens_mem = "01"
 product = "ts"
 
@@ -41,6 +43,28 @@ product = "ts"
 #COPY_TOOL = os.environ['COPY_TOOL']
 #type(COPY_TOOL)
 
+def bronx_style(freq, chunk, ens_member, outDir, component):
+  freq_legacy = shared.freq_to_legacy(freq)
+  chunk_legacy = shared.chunk_to_legacy(chunk)
+  if chunk_legacy == "error":
+    print(f"Error: Skipping legacy directory for chunk: {chunk}")
+  else:
+    if ens_member:
+      os.chdirs(f"{outDir}/{component}/ts/{ens_member}")
+    else:
+      os.chdirs(f"{outDir}/{component}/ts")
+    
+    os.makedirs(freq_legacy, exists=ok)
+    os.chdirs(freq_legacy)
+    
+    if os.path.exists(chunk_legacy):
+      os.remove(f"{os.getcwd()}/{chunk_legacy}")
+  #    os.symlink("", chunk_legacy)
+
+
+##############################################################
+#def remap():
+
 # Verify input directory exists and is a directory
 if os.path.isdir(inputDir):
     print("Input directory is a valid directory")
@@ -58,120 +82,131 @@ else:
 
 # Read rose config files (for now)
 # Define config file
-# for now
+# JUST FOR DEVELOPMENT
 config = mrc.load("/home/Dana.Singh/pp/refactor/REMAP/app/remap-pp-components-python/bin/rose-app.conf")
-#config = mrc.load("/home/Dana.Singh/pp/refactor/REMAP/app/remap-pp-components-python/rose-app-run.conf")
-
-#def movedirs(dict,field):
-#  #if ens_mem != None:
-#  #  c = dict.get(field).get_value()
-#  #  #os.makedirs(c+"/"+ens_mem,exist_ok=True)
-#  #  os.chdir(c+"/"+ens_mem)
-#  #else:
-#    c = dict.get(field).get_value()
-#    #os.makedirs(c,exist_ok=True)
-#    os.chdir(c)
-#  #print(os.getcwd())
-
-
-#os.chdir(inputDir)
-#print(os.getcwd())
 
 for comp in config.get():
-  #print(comp)
+  #print(config.get())
   os.chdir(inputDir)
   if comp != "env" and comp != "command":
     #print(comp)
-    #if comp != None and comp != components:
-    #    break
+    if components != None and comp not in components:
+      continue  
  
-    #print(config.get([comp]))
+    ###define vars (FIX)
+    #vars = config
+    vars = "all"
+    #print(vars)
+
+    #compOut: variable/field per component in rose config
     compOut = config.get([comp])
+    #fields: info for each field 
     fields = compOut.get_value()
-    #print(fields)
-    #print(compOut)
-    #print(compOut.get_value().get("grid")) #get("grid"))
 
     #GRID
     if fields.get("grid"):
-      #movedirs(fields,"grid")
-      #if ens_mem != None:
-      #else:
       grid = fields.get("grid").get_value()
-      #os.makedirs(grid,exist_ok=True)
-      os.chdir(grid)
+      if ens_mem != None:
+        newdir = f"{grid}/{ens_mem}"
+        os.makedirs(newdir,exist_ok=True)
+        os.chdir(newdir)
+      else:
+        os.makedirs(grid,exist_ok=True)
+        os.chdir(grid)
 
       #SOURCES
       if fields.get("sources"):
-        #movedirs(fields,"sources")
         sources = fields.get("sources").get_value()
-        #os.makedirs(sources,exist_ok=True)
+        #print(sources)
+        os.makedirs(sources,exist_ok=True)
         os.chdir(sources)
-
 
         #FREQ
         if fields.get("freq"):
-          #movedirs(fields,"freq")
           freq = fields.get("freq").get_value()
-          #os.makedirs(freq,exist_ok=True)
+          os.makedirs(freq,exist_ok=True)
           os.chdir(freq)
-
 
           #CHUNK
           if fields.get("chunk"):
-            #movedirs(fields,"chunk")
             chunk = fields.get("chunk").get_value()
-            #os.makedirs(chunk,exist_ok=True)
+            os.makedirs(chunk,exist_ok=True)
             os.chdir(chunk)
 
             # DEFINE DIR
-            #if ens
-              #if dirTSWorkaround:
-              #  dir = f"{outputDir}/{comp}/ts/{ens_mem}/{freq}/{chunk}"
-              #else
-              #  dir = f"{outputDir}/{comp}/{ens_mem}/{freq}/{chunk}"
-            #else
-            if dirTSWorkaround:
-              dir = f"{outputDir}/{comp}/ts/{freq}/{chunk}" 
-              #print(dir)
+            if ens_mem:
+              if dirTSWorkaround:
+                dir = f"{outputDir}/{comp}/ts/{ens_mem}/{freq}/{chunk}"
+              else:
+                dir = f"{outputDir}/{comp}/{ens_mem}/{freq}/{chunk}"
             else:
-              dir = f"{outputDir}/{comp}/{freq}/{chunk}"
+              if dirTSWorkaround:
+                dir = f"{outputDir}/{comp}/ts/{freq}/{chunk}" 
+                #print(dir)
+              else:
+                dir = f"{outputDir}/{comp}/{freq}/{chunk}"
           
             os.makedirs(dir,exist_ok=True)
 
             ## Create bronx-style symlinks for TS only
-            hi = shared.freq_to_legacy()
-            #
-            #
- 
-            files = []
-            if freq == "P0Y":
-              #print(freq)
-              files.append("hi")
-              files.append("bye")
-              files.append("seeya")
-              #if vars
-              #else
-            #else:
-            #  if product == "ts":
-            #  elif product == "av":
-            #  else:
-            #   
-            #  if vars:
-            #  else
-            #  if product == "av" and currentChunk == "P1Y":
-            #
+            if dirTSWorkaround:
+              bronx_style(freq = freq, 
+                          chunk = chunk, 
+                          ens_member = ens_mem,
+                          outDir = outputDir,
+                          component = comp)
 
-            #### A LOT OF OUTPUT THOUGH....B/C ITS FOR EACH FILE
-            for f in files:
+########################################################################### 
+            FILES = []
+            if freq == "P0Y":
+              if vars == "all":
+                files = glob.glob(f"{sources}.*.tile?.nc")
+                print(files)
+              elif:
+                for v in vars: 
+                  files = glob.glob(f"{sources}.{v}?.tile?.nc")
+#            else:
+#              if product == "ts":
+#                date = shared.truncate_date(begin, freq)
+#              elif product == "av":
+#                date = shared.truncate_date(begin, "P1Y")
+#              else:
+#                print("Product not set to ts or av.")
+#                sys.exit(2)
+#
+#              if vars == "all":
+#                files = glob.glob(f"{sources}/{date1}-*.{vars}?.tile?.nc")
+#              else:
+#                files = ""
+#                for v in vars:
+#                  files = glob.glob(f"{sources}.{date1}-*.{v}?.tile?.nc")
+#
+#              if product == "av" and currentChunk == "P1Y":
+#                files = glob.glob(f"{sources}.{date1}.*.tile?.nc")
+	
+
+#              #print(freq)
+#              files.append("atmos_month.bk.tile2.nc")
+#              files.append("bye")
+#              files.append("seeya")
+
+
+#            #### could be a lot of output
+#            for f in files:
               #print(f)
-              if not os.path.exists(os.getcwd()+"/"+f):
-                print(f"\nError: No input files found. \n{f} not in {os.getcwd()}")
-                sys.exit(1)
-              
-              #newfile = comp.file
-              #if not os.path.isfile("f{dir}/{newfile}"):
-                #copy/softlink
-            
+##              if not os.path.exists(os.getcwd()+"/"+f):
+##                print(f"\nError: No input file found. \n{f} not in {os.getcwd()}")
+##                sys.exit(1)
+##              else:
+#                newfile = f"{comp}.{f}"
+#
+#                if os.path.exists(f"{dir}/{newfile}"):
+#                  os.remove(f"{dir}/{newfile}")
+#                
+#                #soft link
+#                os.symlink(f"{os.getcwd()}/{f}",f"{dir}/{newfile}") 
+#                ## OR COPY TOOL??????           
 
 ## To-do: what if theres multiple sources?
+
+print("Component remapping complete")
