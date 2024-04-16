@@ -6,17 +6,20 @@ import os
 import glob
 import sys
 #from pathlib import Path
-#import shared
+import shared
 import metomi.rose.config as mrc
 
 # Set variables to play with
-outputDir = os.getcwd()+"/rewrite_outputDir"
 inputDir = os.getcwd()+"/rewrite_inputDir"
+outputDir = os.getcwd()+"/rewrite_outputDir"
+begin = "00010101T0000Z" 
+currentChunk = "P0Y"
 components = ["atmos", "ocean"]
+product = "ts"
 dirTSWorkaround = "1"
 ens_mem = "" 
 #ens_mem = "01"
-product = "ts"
+
 
 ##################################
 ## Parse yaml directly for rose-app info
@@ -53,21 +56,19 @@ def bronx_style(freq, chunk, ens_member, outDir, component):
   else:
     if ens_member:
       dir1 = f"{outDir}/{component}/ts/{ens_member}"
-      os.chdirs(f"{outDir}/{component}/ts/{ens_member}")
+      os.chdir(f"{outDir}/{component}/ts/{ens_member}")
     else:
-      dir1 = f"{outDir}/{component}/ts")
-      os.chdirs(f"{outDir}/{component}/ts")
+      dir1 = f"{outDir}/{component}/ts"
+      os.chdir(f"{outDir}/{component}/ts")
     
-    os.makedirs(freq_legacy, exists=ok)
-    os.chdirs(freq_legacy)
+    os.makedirs(freq_legacy, exist_ok=True)
+    os.chdir(freq_legacy)
     
-    if os.path.exists(chunk_legacy):
-      os.remove(f"{os.getcwd()}/{chunk_legacy}")
+    if not os.path.exists(chunk_legacy):
       os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
 
-
 ##############################################################
-def remap(inputDir,outputDir,begin,currentChunk,component,product,dirTSWorkaround):
+def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkaround,ens_mem):
   # Verify input directory exists and is a directory
   if os.path.isdir(inputDir):
       print("Input directory is a valid directory")
@@ -164,8 +165,8 @@ def remap(inputDir,outputDir,begin,currentChunk,component,product,dirTSWorkaroun
               if freq == "P0Y":
                 if vars == "all":
                   files = glob.glob(f"{sources}.*.tile?.nc")
-                  print(files)
-                elif:
+                  #print(files)
+                else:
                   for v in vars: 
                     files = glob.glob(f"{sources}.{v}?.tile?.nc")
               else:
@@ -212,4 +213,16 @@ def remap(inputDir,outputDir,begin,currentChunk,component,product,dirTSWorkaroun
 
 ## To-do: what if theres multiple sources?
 
-print("Component remapping complete")
+  print("Component remapping complete")
+
+
+if __name__ == '__main__':
+   remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkaround,ens_mem)
+
+#def main():
+#    return remap()
+#
+## steering, local test/debug
+#if __name__=='__main__':
+#    main()
+
