@@ -113,20 +113,21 @@ else
     cd ..
 fi
 
-
 echo "[COLE] epmt analysis and annotate"
 which epmt
 
 if [[ -n "$input_file_list" ]]; then
+    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${input_file_list}")
     echo -e "\n---input---"
-    echo -e "epmt annotate DATA_LINEAGE_IN = \n	${input_file_list%*,}"
-    epmt annotate EPMT_DATA_LINEAGE_IN="${input_file_list%*,}"
+    echo -e "epmt annotate DATA_LINEAGE_IN=\n${input_file_list%*,}"
+    epmt annotate "EPMT_DATA_LINEAGE_IN=$compressed_bytes"
 fi
 
 if [[ -n "$output_file_list" ]]; then
+    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${output_file_list}")
     echo -e "\n---output---"
-    echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
-    epmt annotate EPMT_DATA_LINEAGE_OUT="${output_file_list%*,}"
+    echo -e "epmt annotate DATA_LINEAGE_OUT=\n${output_file_list%*,}"
+    epmt annotate "EPMT_DATA_LINEAGE_OUT=$compressed_bytes"
 fi
 
 echo Natural end of the NetCDF splitting
