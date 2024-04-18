@@ -1,4 +1,6 @@
 import subprocess
+import Node
+import Edge
 
 
 class DAG:
@@ -15,21 +17,30 @@ class DAG:
     def __repr__(self):
         return f'Directed Acyclic Graph with {len(self.nodes)} nodes and {len(self.edges)} edges'
 
-    def add_node(self, node):
+    def add_node(self, job_name, _input = None, _output = None):
+
         for existing_node in self.get_nodes():
-            if node.name in existing_node.get_name():
+            if job_name in existing_node.get_name():
                 raise ValueError(f"ERROR: Node '{node.name}' already exists in this DAG")
+
+        node = Node.Node(job_name, _input, _output)
         self.nodes.append(node)
 
-    def add_edge(self, edge):
-        start_name = self.find_node(edge.start.get_name())
-        end_name = self.find_node(edge.end.get_name())
+    def add_edge(self, node, next_node, content : str):
+
+        start_name = self.find_node(node.get_name())
+        end_name = self.find_node(next_node.get_name())
+
         if start_name not in self.nodes:
             raise ValueError(f"Start node '{edge.start}' does not exist in this DAG")
         if end_name not in self.nodes:
             raise ValueError(f"End node '{edge.end.name}' does not exist in this DAG")
+
+        edge = Edge.Edge(node, next_node, contents=[content])
+
         if edge in self.edges:
             raise ValueError(f"ERROR: {edge} already exists in this DAG")
+
         self.edges.append(edge)
 
     def find_node(self, name):
@@ -128,8 +139,8 @@ class DAG:
         jobs_split = jobs.stdout.split('\n')
 
         for line in jobs_split:
-            # skip jobs that contain these keywords
-            job_ignore = ['clean', 'pp-starter', 'stage-history']
+            # skip jobs that contain these keywords, there should not be any analysis, but just to make sure
+            job_ignore = ['clean', 'pp-starter', 'stage-history', 'analysis']
             if any(keyword in line for keyword in job_ignore):
                 continue
             total_jobs.append(line)

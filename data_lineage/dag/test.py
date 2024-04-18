@@ -1,9 +1,10 @@
-import Edge
-import Node
 import Dag
 import logging  # Not working properly
 from Visualize import draw
 from FetchFromFingerprint import main as fp_main
+from data_lineage.verification import Parse
+from data_lineage.verification import Validate
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -16,7 +17,7 @@ def status(dag):
 
 
 def main():
-    fp = ''  # Put your $CYLC_WORKFLOW_UUID here to run
+    fp = '342164be-ebb1-4d24-827c-210fdd48ec62'  # Put your $CYLC_WORKFLOW_UUID here to run
     jobs, run_dir = fp_main(fp)
 
     print('----Constructing DAG----')
@@ -30,10 +31,7 @@ def main():
         job_name = job[0]
         input_files = job[1]['input']
         output_files = job[1]['output']
-
-        job_node = Node.Node(job_name, input_files, output_files)
-        dag.add_node(job_node)
-
+        dag.add_node(job_name, input_files, output_files)
         node_count += 1
     print(f'Created {node_count} nodes')
 
@@ -58,9 +56,7 @@ def main():
                             if output_file not in existing_edge.get_contents():
                                 existing_edge.add_content(output_file)
                         else:
-                            new_edge = Edge.Edge(node, next_node)
-                            new_edge.add_content(output_file)
-                            dag.add_edge(new_edge)
+                            dag.add_edge(node, next_node, output_file)
                             edge_count += 1
                     if output_file == input_file and output_file_hash != input_file_hash:
                         dag.decrement_fidelity()
@@ -68,10 +64,12 @@ def main():
 
     status(dag)
 
-    # dag.find_job('combine-timeavgs-P2Y_atmos.1981')
-    # dag.find_file("output", 'enth_conv_col.nc')
+    # Uncomment for dag debugging
+    # dag.find_job('rename-split-to-pp-regrid_land_daily_cmip.1980')
+    # dag.find_file("input", 'land_daily_cmip.geolat_t.nc')
 
-    draw(dag)
+    # draw(dag)
+
     print("finished")
 
 
