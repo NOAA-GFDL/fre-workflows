@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
 ## fresh clone
-git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126
-cd pp_MR126
+#git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126
+#cd pp_MR126
 
 # module setups
 module load fre/bronx-22 conda
@@ -18,8 +18,7 @@ ln -s regrid-xy regrid_xy
 
 # links for similar reasons: cylc wants stuff in bin/
 cd regrid_xy
-ln -rs bin/regrid-xy regrid_xy.py
-ln -s bin/shared shared
+ln -s shared bin/shared
 
 # local pytest, pylint calls
 python -m pytest -x $PWD/t/test_regrid_xy.py
