@@ -137,7 +137,7 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = module load fre-nctools nco python/3.9 && mkdir -p $outputDir
+        pre-script = module load fre-nctools python/3.9 && mkdir -p $outputDir
 {% endif %}
 
     [[MASK-ATMOS-PLEVEL]]

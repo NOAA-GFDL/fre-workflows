@@ -12,7 +12,7 @@ pip install --user pytest pylint netCDF4
 export PATH=/home/$USER/.local/bin:$PATH
 
 # modules, non-conda flavored.
-module load fre-nctools nco nccmp
+module load fre-nctools nccmp
 
 # change directory name via link for python mod import compatibility
 cd app
@@ -31,7 +31,7 @@ cd ../..
 
 # clean up env + use module loaded cylc for workflow test
 conda deactivate
-module unload conda fre-nctools nco nccmp
+module unload conda fre-nctools nccmp
 
 
 
