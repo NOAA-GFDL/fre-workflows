@@ -1,31 +1,48 @@
 #!/bin/bash -e
 
 ## fresh clone
-#git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126
-#cd pp_MR126
+#git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126 && cd pp_MR126
 
-# module setups
-module load fre/bronx-22 conda
+#module load python/3.9
+module load conda
 conda activate cylc-8.2.1
 
-## if you don't have netCDF4, pytest, and pylint lying around or in your PATH
-#pip install netCDF4 pytest pylint
-#export PATH=/home/$USER/.local/bin:$PATH
+# if you don't have netCDF4, pytest, and pylint lying around or in your PATH
+pip install --user pytest pylint netCDF4
+export PATH=/home/$USER/.local/bin:$PATH
+
+# modules, non-conda flavored.
+module load fre-nctools nco nccmp
 
 # change directory name via link for python mod import compatibility
 cd app
-ln -s regrid-xy regrid_xy
+#ln -s regrid-xy regrid_xy
 
 # links for similar reasons: cylc wants stuff in bin/
 cd regrid_xy
-ln -s shared bin/shared
+#ln -s shared bin/shared
 
 # local pytest, pylint calls
 python -m pytest -x $PWD/t/test_regrid_xy.py
 python -m pylint --ignored-modules netCDF4,shared regrid_xy.py
 
+
+return
+
+
+
+
+
+# clean up env
+conda deactivate
+module purge
+
+
+
 # back to base dir to setup workflow for testing live:
 cd ../..
+
+module load cylc
 
 # clone snippet rose configs i use for testing workflow
 git clone https://gitlab.gfdl.noaa.gov/snippets/41.git MR126_configs
