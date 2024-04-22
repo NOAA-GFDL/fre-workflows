@@ -54,4 +54,4 @@ bin/install-exp c96L65_am5f6b9r0_amip
 cylc play c96L65_am5f6b9r0_amip/run1
 
 # watch the workflow do it's thing, watch for failed tasks
-watch -n 5 "cylc workflow-state -v c96L65_am5f6b9r0_amip/run1 | grep -v suceeded"
+watch -n 5 "cylc workflow-state -v c96L65_am5f6b9r0_amip/run1 | grep -v succeeded"
