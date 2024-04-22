@@ -3,7 +3,7 @@
 ## fresh clone
 #git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126 && cd pp_MR126
 
-#module load python/3.9
+# setup for pytest(s), pylint, etc.
 module load conda
 conda activate cylc-8.2.1
 
@@ -16,31 +16,26 @@ module load fre-nctools nco nccmp
 
 # change directory name via link for python mod import compatibility
 cd app
-#ln -s regrid-xy regrid_xy
+ln -s regrid-xy regrid_xy
 
 # links for similar reasons: cylc wants stuff in bin/
 cd regrid_xy
-#ln -s shared bin/shared
+ln -s shared bin/shared
 
 # local pytest, pylint calls
 python -m pytest -x $PWD/t/test_regrid_xy.py
 python -m pylint --ignored-modules netCDF4,shared regrid_xy.py
 
-
-return
-
-
-
-
-
-# clean up env
-conda deactivate
-module purge
-
-
-
 # back to base dir to setup workflow for testing live:
 cd ../..
+
+# clean up env + use module loaded cylc for workflow test
+conda deactivate
+module unload conda fre-nctools nco nccmp
+
+
+
+# test in workflow
 
 module load cylc
 
