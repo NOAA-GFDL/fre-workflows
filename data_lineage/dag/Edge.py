@@ -2,7 +2,7 @@ import Node
 
 
 class Edge:
-    def __init__(self, start: Node, end: Node, contents=[]):
+    def __init__(self, start: Node, end: Node, contents=None):
         self.start = start
         self.end = end
         self.contents = []

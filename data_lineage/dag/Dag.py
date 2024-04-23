@@ -26,7 +26,7 @@ class DAG:
         node = Node.Node(job_name, _input, _output)
         self.nodes.append(node)
 
-    def add_edge(self, node, next_node, content : str):
+    def add_edge(self, node, next_node, content=None):
 
         start_name = self.find_node(node.get_name())
         end_name = self.find_node(next_node.get_name())
@@ -107,6 +107,9 @@ class DAG:
         return False
 
     def find_job(self, name):
+        """
+        For debugging
+        """
         for node in self.nodes:
             if name in node.name:
                 print(f'Found {node.name}')
@@ -119,6 +122,9 @@ class DAG:
                 print(f'\n')
 
     def find_file(self, io_type, file):
+        """
+        For debugging
+        """
         # converts io_type to a mapping for lookup
         io_files = {
             'input': lambda node1: node.input,
@@ -132,6 +138,9 @@ class DAG:
                     print(f'{node.name} has {node_file} in its {io_type} list')
 
     def find_total_job_count(self):
+        """
+        Counts the number of directories in cylc-run/runN/log/job/*/*
+        """
         total_jobs = []
         job_dir = f'{self.run_dir}/log/job/'
         cmd = f'ls -ldt {job_dir}*/*/'
@@ -145,7 +154,8 @@ class DAG:
                 continue
             total_jobs.append(line)
 
-        return len(total_jobs)
+        # `.` is counted as a dir in the job_dir, subtract one entry from total_jobs
+        return len(total_jobs) - 1
 
     def dag_print(self):
         print(f'----DAG Statistics----')

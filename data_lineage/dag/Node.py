@@ -1,10 +1,16 @@
 class Node:
     def __init__(self, job_name, _input=None, _output=None):
         self.name = job_name
+
         if _input:
             self.input = _input
+        else:
+            self.input = {}
+
         if _output:
             self.output = _output
+        else:
+            self.output = {}
 
     def __str__(self):
         return f'{{{self.name}, {self.input}, {self.output}}}'
