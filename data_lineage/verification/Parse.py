@@ -43,6 +43,7 @@ def read_from_file(run_dir):
     parsing_task_parameters = False
     parsing_graph = False
     chunk = None
+    prev_line = None
     data = {}
 
     with open(cylc_file, 'r') as f:
@@ -79,12 +80,22 @@ def read_from_file(run_dir):
                     chunk = None
                     continue
 
+                if line.startswith('&') or line.startswith('=>'):
+                    line = prev_line + ' ' +  line
+
+                # Odd bug where some lines would be skipped if they occurred after a chained line that observes next(f)
+                if prev_line:
+                    if '=>' in prev_line:
+                        data, chunk = parse_graph(data, prev_line, chunk)
+                        prev_line = None
+
                 # If several lines are involved in one direction
                 if '=>' not in line and CHUNK_START_MARKER not in line:
                     next_line = next(f, None).strip()
                     while next_line.startswith('&') or next_line.startswith('=>'):
                         line = line + ' ' + next_line
                         next_line = next(f, None).strip()
+                    prev_line = next_line
 
                 data, chunk = parse_graph(data, line, chunk)
 
