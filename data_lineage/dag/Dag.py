@@ -20,7 +20,7 @@ class DAG:
     def add_node(self, job_name, _input = None, _output = None):
 
         for existing_node in self.get_nodes():
-            if job_name in existing_node.get_name():
+            if job_name == existing_node.get_name():
                 raise ValueError(f"ERROR: Node '{node.name}' already exists in this DAG")
 
         node = Node.Node(job_name, _input, _output)
@@ -37,6 +37,7 @@ class DAG:
             raise ValueError(f"End node '{edge.end.name}' does not exist in this DAG")
 
         edge = Edge.Edge(node, next_node, contents=[content])
+        next_node.increment_inbound_edeges()
 
         if edge in self.edges:
             raise ValueError(f"ERROR: {edge} already exists in this DAG")
@@ -51,7 +52,7 @@ class DAG:
 
     def find_edge(self, start_node, end_node):
         for edge in self.edges:
-            if edge.get_start() == start_node and edge.get_end() == end_node:
+            if edge.get_start().get_name() == start_node.get_name() and edge.get_end().get_name() == end_node.get_name():
                 return edge
         return None
 

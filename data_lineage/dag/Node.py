@@ -12,6 +12,8 @@ class Node:
         else:
             self.output = {}
 
+        self.inbound_edges = 0
+
     def __str__(self):
         return f'{{{self.name}, {self.input}, {self.output}}}'
 
@@ -37,3 +39,10 @@ class Node:
         if not hasattr(self, 'output'):
             raise AttributeError(f'ERROR: No output files found')
         return self.output
+
+    def get_inbound_edges(self):
+        return self.inbound_edges
+
+    def increment_inbound_edeges(self):
+        self.inbound_edges += 1
+        return
