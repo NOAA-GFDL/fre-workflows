@@ -35,7 +35,8 @@ def get_job_data(job):
             if not file:
                 return files
 
-            file_name, file_hash = file.strip().split('  ')
+            # A singular whitespace is the current delimiter that separates a file name and file hash
+            file_name, file_hash = file.strip().split(' ')
             file_name = path + file_name  # Append the absolute path to the beginning of the file_name
             files[file_name] = file_hash
         return files
