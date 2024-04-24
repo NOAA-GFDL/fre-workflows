@@ -64,7 +64,8 @@ if [[ $use_subdirs ]]; then
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
         for file in $files; do
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$subdir/$file)
-                export input_file_list="${input_file_list}$file  $hash_val,"
+                stripped_input_file=$(echo "$file" | sed "s/.nc//")
+                export input_file_list="${input_file_list}$stripped_input_file $hash_val,"
                 echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
                 cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
         done
@@ -75,7 +76,8 @@ if [[ $use_subdirs ]]; then
         cd $outputDir/$subdir
             for output_file in $(ls); do
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$output_file)
-                export output_file_list="${output_file_list}${output_file}  ${hash_val},"
+                stripped_output_file=$(echo "$output_file" | sed "s/.nc//")
+                export output_file_list="${output_file_list}${stripped_output_file} ${hash_val},"
                 echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
             done
         cd ../..
@@ -96,7 +98,8 @@ else
     # Split the files by variable
     for file in $files; do
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
-        export input_file_list="${input_file_list}$file  $hash_val,"
+        stripped_input_file=$(echo "$file" | sed "s/.nc//")
+        export input_file_list="${input_file_list}$stripped_input_file $hash_val,"
         echo -e "\n[COLE] added $inputDir/$file to input list with hash_val: $hash_val"
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
     done
@@ -107,7 +110,8 @@ else
     cd $outputDir
         for output_file in $(ls); do
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$output_file)
-            export output_file_list="${output_file_list}${output_file}  ${hash_val},"
+            stripped_output_file=$(echo "$output_file" | sed "s/.nc//")
+            export output_file_list="${output_file_list}${stripped_output_file} ${hash_val},"
             echo -e "\n[COLE] added $(basename $output_file) to output list with hash_val: $hash_val"
         done
     cd ..

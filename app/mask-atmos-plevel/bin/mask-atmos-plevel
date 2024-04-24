@@ -37,7 +37,8 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
 
     cd $inputDir
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
-        export input_file_list="${input_file_list}$file  $hash_val,"
+        stripped_input_file=$(echo "$file" | sed "s/.nc//")
+        export input_file_list="${input_file_list}$stripped_input_file $hash_val,"
         echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
     cd $current_loc
 
@@ -55,7 +56,8 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
 
     cd $inputDir
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
-        export output_file_list="${output_file_list}$file  $hash_val,"
+        stripped_output_file=$(echo "$file" | sed "s/.nc//")
+        export output_file_list="${output_file_list}$stripped_output_file $hash_val,"
         echo -e "\n[COLE] added $file to output list with hash_val: $hash_val"
     cd $current_loc
 done

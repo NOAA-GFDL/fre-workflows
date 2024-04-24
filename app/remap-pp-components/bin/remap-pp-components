@@ -169,7 +169,8 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     for file in $files; do
                         
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$file)
-                        export input_file_list="${input_file_list}$source/$freq/$chunk/$file  $hash_val,"
+                        stripped_input_file=$(echo "$file" | sed "s/.nc//")
+                        export input_file_list="${input_file_list}$source/$freq/$chunk/$stripped_input_file $hash_val,"
                         echo -e "\n[COLE] added $source/$freq/$chunk/$file to input list with hash_val: $hash_val"
                         
                         newfile=$compOut.${file#*.}
@@ -181,7 +182,8 @@ for key in $($config --keys | grep -v command | grep -v env); do
                         current_loc=$(pwd)
                         cd $dir
                             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newfile)
-                            export output_file_list="${output_file_list}$cole_dir/$newfile  $hash_val,"
+                            stripped_output_file=$(echo "$newfile" | sed "s/.nc//")
+                            export output_file_list="${output_file_list}$cole_dir/$stripped_output_file $hash_val,"
                             echo -e "\n[COLE] added $cole_dir/$newfile to output list with hash_val: $hash_val"
                         cd $current_loc
                     done
