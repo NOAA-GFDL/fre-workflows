@@ -231,3 +231,8 @@
         {% endfor %}
     {% endif %}
 {% endif %}
+
+# workaround to run Ray's analysis example on the analysis partition as it uses his /net2
+[[analysis-ray_example]]
+    [[[directives]]]
+    --partition=analysis
