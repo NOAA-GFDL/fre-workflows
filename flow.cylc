@@ -883,7 +883,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
     [[data-catalog]]
         script = """
-        fre catalog buildcatalog --overwrite $ppdir $ppdir/catalog 
+        fre catalog build --overwrite -i $ppdir -o $ppdir/catalog
         """
         [[[environment]]]
           ppdir = {{PP_DIR}}
