@@ -42,18 +42,18 @@ compare to regridded files made via regrid_xy
 
 # Usage on runnung this app test for regrid_xy is as follows:
 0) cd /path/to/postprocessing/
-1) module load fre/bronx-21 conda
+1) module conda fre-nctools nccmp
 2) conda activate cylc-8.2.1
 
 # if pytest and netCDF4 aren't present, pip install them
 # may need a --user flag.
 3) pip install netCDF4 pytest [pylint, if desired]
-4) cd app/regrid_xy
+4) export PATH=/home/$USER/.local/bin:$PATH
 
 # for rose to find the python script, AND have this be
 # an importable module, create symbolic links
-5) ln -rs bin/regrid-xy regrid_xy.py
-6) ln -s bin/shared shared/
+5) cd app && ln -s regrid-xy regrid_xy
+6) cd regrid_xy && ln -s shared bin/shared
 
 # to run tests, call pytest as module and give it the full
 # path to the test script.
