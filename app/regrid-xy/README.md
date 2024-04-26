@@ -1,76 +1,55 @@
 # ABOUT
 
-`regrid-xy` remaps scalar and/or vector fields. It is capable of remapping from a spherical grid onto a different (spherical, or tripolar) grid.
-By default, it does so using a conservative scheme. Additional, alternative schemes can be defined and used as well.
-_#TODO check this_
+`regrid_xy.py` remaps scalar and/or vector fields from one kind of lat/lon grid to another.  It can remap between different grids of the same type (e.g. spherical), and between grids of different types (e.g. spherical to tripolar). By default, it uses an O(1) conservative interpolation scheme to accomplish the regridding, except under certain conditions [defined within `fregrid`](https://github.com/NOAA-GFDL/FRE-NCtools/blob/master/tools/fregrid/fregrid.c#L915-L920) the underlying CLI tool which does the heavy lifting.
 
-# ASSUMPTIONS
+requires `fre-nctools` and `fregrid` to be in one's `PATH` variable, and `python3` (tested/developed with python 3.9.16). there should be `netCDF4` and `metomi` python modules in one's python environment for imports. `pytest` and `nccmp` is required for tests. `pylint` recommended for future developers working on this tool. 
 
-The app requires an input file name, pointing to a netCDF file holding scalar or vector data, with or without `.nc` extension. The `#tile` suffix
-should be absent in the case of multi-tile files. The file path should not be included
-_#TODO also check this_
 
-The number of files required for regridding scalar data is one. While in the case of vector data, it can be one or two files
-_#TODO check this, why?_
+# INPUT PARAMETERS (mandatory, env vars)
+format here is: 
+config field name / python variable name (type) explanation
 
-# ARGUMENTS
+the following are required to be specified:
+_______________________________________
+`inputDir` / `input_dir` (env var) specifies input directory to regrid, typically an untarredv history file archive
+_______________________________________
+`source` / `source` (env var) source name for input target file name within input directory to target for regridding. the value for `source` must be present in at least one component's configuration fields
+_______________________________________
+`begin` / `begin` (env var) ISO8601 datetime format specification for starting date of data, part of input target file name
+_______________________________________
+`outputDir` / `output_dir` (env var) specifies target location for output regridded files
+_______________________________________
+`TMPDIR` / `tmp_dir` (env var) temp directory for location of file read/writes
+_______________________________________
+`fregridRemapDir` / `remap_dir` (env var) directory containing remap file for regridding
+_______________________________________
+`gridSpec` / `grid_spec` (env var) file containing mosaic for regridding 
+_______________________________________
+`defaultxyInterp` / `def_xy_interp` (env var) default lat/lon resolution for output regridding. (change me? TODO)
 
-The `input_mosaic` argument specifies the input mosaic file, which contains list of tile files that specify grid information for each tile.
-_#TODO mosaic v grid? is jargon of choice here correct? _
 
-The `output_mosaic` argument specifies the output mosaic file.
-This file contains list of tile files which specify the grid information for each tile. When `output_mosaic` is not specified, the number of
-longitudinal and latitudinal divisions (`nlon`, `nlat` respectively) must be specified.
-_#TODO check subcases_
+# INPUT PARAMETERS (configuration fields, mandatory)
+the following parameters are REQUIRED to be specified on a per-component basis wtihin `app/regrid-xy/rose-app.conf`. A component's input parameters are delineated with a `[component_name]`
+_______________________________________
+`inputRealm` / `input_realm` (config field) realm within model from which the input component/source files are derived
+_______________________________________
+`interpMethod` / `interp_method` (config field) interpolation method to use for regridding, it may be changed if it is specified in the target source file's attributes
+_______________________________________
+`inputGrid` / `input_grid` (config field) current grid type of input source files.
+_______________________________________
+`sources` / N/A (config field)
 
-The `remap_file` argument specifies the output file name to saves remapping information to. If `remap_file` is specified but the file does not exist,
-remapping information will be calculated and stored in `remap_file`.
-If `remap_file` is specified and the file exists, remapping information will be read from `remap_file`.
-_#TODO awkward I/O, no? check and reconsider perhaps..._
-
-# ROSE CONFIGURATION
-
-**OUTDATED?***
-
-`rose-app.conf` is where configuration info is placed, and defines input/output files, grids, etc. `regrid-xy` uses this to execute the desired
-regridding of data. This configuration is user-defined and specified.
-
-Below, `gridSpec` is a given location for the grid specification dataset. The first and second components run by `regrid-xy` would be e.g.:
-```
-[atmos] 
-sources=aerosol_hourly_cmip aerosol_month_cmip atmos_co2_month atmos_diurnal atmos_diurnal_cmip atmos_global_cmip atmos_hourly atmos_level_cmip atmos_month atmos_month_aer atmos_month_cmip atmos_static_cmip atmos_tracer
-inputGrid=cubedsphere
-inputRealm=atmos
-outputGridLon=288
-outputGridLat=180
-gridSpec=/archive/../../, 
-
-[land] 
-sources=fire_month land_dust land_month land_month_cmip land_month_inst land_static land_static_cmip land_static_sg lumip_Lmon_crp lumip_Lmon_psl lumip_Lmon_pst lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst river_daily river_month river_month_inst river_static river_static_cmip
-inputGrid=cubedsphere
-inputRealm=land
-outputGridLon=288
-outputGridLat=180
-gridSpec= archive/../../, which is  a given location for the grid specification dataset
-```
-Then execute:
-`rose app-run`
-
-# REGRID_XY PYTESTS INLINE DOC SAYS
-The purpose of the code is to recreate a *.nc file(s) based on the timesteps within that file which it could be days, 
-months or years.  It is a pytest collection of routines.  all test_* routines will be called in the order defined. 
-First is to test and check for the creation of required directories and a *.nc file from *.cdl text file.
-
-FRE Canopy app regrid_xy tests by successfully regridding and remapping files with rose app as the valid definitions
-are being called by the environment.
-
-Usage on runnung this app test for regrid_xy is as follows: 
-```
-cd /path/to/postprocessing
-module load fre/test conda
-conda activate cylc-8.2.1 
-pip install cdo pytest # if needed
-cd app/regrid_xy 
-python -m pytest $PWD/t/test_regrid_xy.py
-```
-
+# INPUT PARAMETERS (configuration fields, optional)
+the following parameters are OPTIONAL for specifying on a per-component basis within `app/regrid-xy/rose-app.conf`.
+_______________________________________
+`outputGridType` / `output_grid_type` (config field) used only for output dir to specify grid type, but does not determine actual output grid type for regridding to fregrid
+_______________________________________
+`fregridRemapFile` / `fregrid_remap_file` (config field) remap file name to use for regridding
+_______________________________________
+`fregridMoreOptions` / `more_options` (config field) field for specifying additional options to `fregrid` that have not-yet been officially implemented. use with caution!
+_______________________________________
+`variables` / `regrid_vars` (config field) list of variable data to regrid within target source files. if unspecified, all variables within the target file of dimension 2 or greater will be regridded.
+_______________________________________
+`outputGridLat` / `output_grid_lat` (config field) latitude resolution for regridded output, also used for remap file targeting if there is no remap file specified.
+_______________________________________
+`outputGridLon` / `output_grid_lon` (config field) latitude resolution for regridded output, also used for remap file targeting if there is no remap file specified.
