@@ -1,7 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash 
 
 ## fresh clone
-#git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126 && cd pp_MR126
+#git clone --recursive -b 131.regrid-xy.pyrewrite https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git pp_MR126
+#cd pp_MR126
 
 # setup for pytest(s), pylint, etc.
 module load conda
@@ -22,8 +23,12 @@ ln -s regrid-xy regrid_xy
 cd regrid_xy
 ln -s shared bin/shared
 
-# local pytest, pylint calls
-python -m pytest -x $PWD/t/test_regrid_xy.py
+# pytest, specify import-mode to avoid needing content in __init__.py
+#         that is simply not required by the interpreter at run time
+python -m pytest --import-mode=importlib -x $PWD/t/test_regrid_xy.py
+
+# pylint, ignoring netCDF4 b.c. module import issues within it's pip packaging
+#         ignoring shared import issues as they do not impact script functioning
 python -m pylint --ignored-modules netCDF4,shared regrid_xy.py
 
 # back to base dir to setup workflow for testing live:
