@@ -1,0 +1,46 @@
+netcdf atmos_scalar.198001-198412.co2mass {
+dimensions:
+	time = UNLIMITED ; // (60 currently)
+	bnds = 2 ;
+	scalar_axis = 1 ;
+variables:
+	double time(time) ;
+		time:standard_name = "time" ;
+		time:long_name = "time" ;
+		time:bounds = "time_bnds" ;
+		time:units = "days since 1979-01-01 00:00:00" ;
+		time:calendar = "standard" ;
+		time:axis = "T" ;
+	double time_bnds(time, bnds) ;
+	double scalar_axis(scalar_axis) ;
+		scalar_axis:long_name = "none" ;
+		scalar_axis:axis = "X" ;
+	float co2mass(time, scalar_axis) ;
+		co2mass:standard_name = "atmosphere_mass_of_carbon_dioxide" ;
+		co2mass:long_name = "Total Atmospheric Mass of CO2" ;
+		co2mass:units = "kg" ;
+		co2mass:_FillValue = 1.e+20f ;
+		co2mass:missing_value = 1.e+20f ;
+		co2mass:cell_methods = "time: mean" ;
+		co2mass:time_avg_info = "average_T1,average_T2,average_DT" ;
+
+// global attributes:
+		:CDI = "Climate Data Interface version 2.1.1 (https://mpimet.mpg.de/cdi)" ;
+		:Conventions = "CF-1.6" ;
+		:title = "c96L33_am5a0_cmip6Diag" ;
+		:grid_type = "regular" ;
+		:grid_tile = "N/A" ;
+		:history = "Tue Apr 23 19:15:49 2024: cdo --history -O mergetime atmos_scalar.198001-198012.co2mass.nc atmos_scalar.198101-198112.co2mass.nc atmos_scalar.198201-198212.co2mass.nc atmos_scalar.198301-198312.co2mass.nc atmos_scalar.198401-198412.co2mass.nc /home/Dana.Singh/cylc-run/am5_c96L65_amip__gfdl.ncrc5-intel22-classic__prod/share/shards/ts/native/atmos_scalar/P1M/P5Y/atmos_scalar.198001-198412.co2mass.nc\n",
+			"Tue Apr 23 19:11:45 2024: cdo --history splitname 19800101.atmos_scalar.nc /home/Dana.Singh/cylc-run/am5_c96L65_amip__gfdl.ncrc5-intel22-classic__prod/share/cycle/19800101T0000Z/split/native/19800101.atmos_scalar." ;
+		:CDO = "Climate Data Operators version 2.1.1 (https://mpimet.mpg.de/cdo)" ;
+data:
+
+ time = 380.5, 410.5, 440.5, 471, 501.5, 532, 562.5, 593.5, 624, 654.5, 685, 
+    715.5, 746.5, 776, 805.5, 836, 866.5, 897, 927.5, 958.5, 989, 1019.5, 
+    1050, 1080.5, 1111.5, 1141, 1170.5, 1201, 1231.5, 1262, 1292.5, 1323.5, 
+    1354, 1384.5, 1415, 1445.5, 1476.5, 1506, 1535.5, 1566, 1596.5, 1627, 
+    1657.5, 1688.5, 1719, 1749.5, 1780, 1810.5, 1841.5, 1871.5, 1901.5, 1932, 
+    1962.5, 1993, 2023.5, 2054.5, 2085, 2115.5, 2146, 2176.5 ;
+
+ scalar_axis = 0 ;
+}
