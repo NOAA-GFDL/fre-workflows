@@ -1,4 +1,4 @@
-#!/app/conda/miniconda/envs/cylc/bin/python3
+#!/usr/bin/env python3
 '''
   remaps scalar and/or vector fields. It is capable of remapping
   from a spherical grid onto a different one, e.g. spherical,
@@ -15,9 +15,45 @@ from pathlib import Path
 import metomi.rose.config as rose_cfg
 from netCDF4 import Dataset
 
-# in-house
-import shared as sh
+# formerly in shared.sh
+def truncate_date(date, freq):
+    format=freq_to_date_format(freq)
 
+    #in the shell version, this line simply gets run.
+    #we will simply print this command to screen for now. TO DO (maybe we can work around it?)
+    #not clear to me why piping to tr is necessary, doesnt seem to change output at all
+    #print('cylc date --template '+format+' '+date+' | tr -d T')
+    #output =subprocess.Popen(["cylc", "date", "--template", format, date,
+    #                          "|","tr","-d","T"],
+    #                          stdout=subprocess.PIPE)
+    output =subprocess.Popen(["cylc", "cycle-point", "--template", format, date],
+                              stdout=subprocess.PIPE)
+    bytedate = output.communicate()[0]
+    date=str(bytedate.decode())
+
+    #remove trailing newline
+    date=date[:(len(date)-1)]
+
+    #check for and remove 'T' if present
+    if not date.isnumeric():
+        date=date[:8]+date[-2:]
+    return date
+
+# formerly in shared.sh
+# Print legacy Bronx-like date template format given a frequency (ISO 8601 duration)
+def freq_to_date_format(iso_freq):
+
+    if iso_freq=='P1Y':
+        return 'CCYY'
+    elif iso_freq=='P1M':
+        return 'CCYYMM'
+    elif iso_freq=='P1D':
+        return 'CCYYMMDD'
+    elif (iso_freq[:2]=='PT') and (iso_freq[-1:]=='H'):
+        return 'CCYYMMDDThh'
+    else:
+        print('ERROR: Unknown Frequency '+iso_freq)
+        return
 
 def test_import():
     '''for quickly testing import within pytest'''
@@ -264,9 +300,9 @@ def regrid_xy( ):
         #target input variable resolution
         is_tiled = 'cubedsphere' in input_grid
         target_file  = input_dir
-        target_file += f"/{sh.truncate_date(begin,'P1D')}.{source}.tile1.nc" \
+        target_file += f"/{truncate_date(begin,'P1D')}.{source}.tile1.nc" \
             if is_tiled \
-            else  f"/{sh.truncate_date(begin,'P1D')}.{source}.nc"
+            else  f"/{truncate_date(begin,'P1D')}.{source}.nc"
         if not Path( target_file ).exists():
             raise Exception(f'regrid_xy target does not exist. \ntarget_file={target_file}')
         print(f'target_file={target_file}') #DELETE
