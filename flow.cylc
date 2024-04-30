@@ -960,7 +960,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            component = $CYLC_TASK_PARAM_regrid
+            source = $CYLC_TASK_PARAM_regrid
             gridSpec = {{ PP_GRID_SPEC }}
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
@@ -969,7 +969,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_regrid_static
+            source = $CYLC_TASK_PARAM_regrid_static
 
     {% endif %}
 {% endif %}
