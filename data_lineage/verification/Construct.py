@@ -43,6 +43,8 @@ def process_graph(data):
 
                 previous_jobs = exact_jobs
 
+    dag.dag_print()
+
     return dag
 
 

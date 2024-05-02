@@ -40,11 +40,10 @@ def parse_graph(data, line, chunk):
 def read_from_file(run_dir):
     cylc_file = run_dir + '/log/config/01-start-01.cylc'
 
-    parsing_task_parameters = False
-    parsing_graph = False
     chunk = None
     prev_line = None
-    data = {}
+    current_section = None
+    data = {'task_parameters': {}, 'graph': {}}
 
     with open(cylc_file, 'r') as f:
 
@@ -61,21 +60,18 @@ def read_from_file(run_dir):
                 data['end'] = int(line.split(' = ')[1])
 
             elif line == TASK_PARAMETERS_SECTION:
-                parsing_task_parameters = True
-                data.setdefault('task_parameters', {})
+                current_section = 'task_parameters'
 
             elif line == GRAPH_SECTION:
-                parsing_graph = True
-                data.setdefault('graph', {})
+                current_section = 'graph'
 
-            elif '[' in line and (parsing_task_parameters or parsing_graph) and not chunk:
-                parsing_task_parameters = False
-                parsing_graph = False
+            elif '[' in line and current_section and not chunk:
+                current_section = None
 
-            elif parsing_task_parameters:
+            elif current_section == 'task_parameters':
                 data = parse_task_parameters(data, line)
 
-            elif parsing_graph:
+            elif current_section == 'graph':
                 if line == CHUNK_END_MARKER:
                     chunk = None
                     continue

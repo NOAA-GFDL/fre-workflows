@@ -2,22 +2,13 @@ import Dag
 import logging  # Not working properly
 from Visualize import draw
 from FetchFromFingerprint import main as fp_main
-from data_lineage.verification import Parse
-from data_lineage.verification import Validate
+from data_lineage.verification.Validate import main as validate
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-# run54/log/job/19810101T0000Z/remap-pp-components-ts-P2Y_atmos_scalar/01/job.err
-
-# mainly for debugging purposes, triggers dag_print
-def status(dag):
-    dag.dag_print()
-
-
 def main():
-    fp = '342164be-ebb1-4d24-827c-210fdd48ec62'  # Put your $CYLC_WORKFLOW_UUID here to run
+    fp = '3afb50cb-0061-4740-9c35-d09a1749e313'  # Put your $CYLC_WORKFLOW_UUID here to run
     jobs, run_dir = fp_main(fp)
 
     print('----Constructing DAG----')
@@ -29,9 +20,12 @@ def main():
     print('Adding nodes...')
     for job in jobs.items():
         job_name = job[0]
+        job_name = job_name.split('0101')[0]
+        job_name, job_date = job_name.split('.')
+        formatted_name = job_date + '_' + job_name
         input_files = job[1]['input']
         output_files = job[1]['output']
-        dag.add_node(job_name, input_files, output_files)
+        dag.add_node(formatted_name, input_files, output_files)
         node_count += 1
     print(f'Created {node_count} nodes')
 
@@ -62,14 +56,15 @@ def main():
                         dag.decrement_fidelity()
     print(f'Created {edge_count} edges')
 
-    status(dag)
+    dag.dag_print()
+    draw(dag)
 
     # Uncomment for dag debugging
-    # dag.find_job('rename-split-to-pp-regrid_land_daily_cmip.1980')
-    # dag.find_file("input", 'land_daily_cmip.geolat_t.nc')
+    # dag.find_job('1981_remap-pp-components-ts-P2Y_land')
+    # dag.find_file("output", 'land_month_cmip.198001-198112.cLand.nc')
 
-    # draw(dag)
 
+    validate(dag, run_dir)
     print("finished")
 
 
