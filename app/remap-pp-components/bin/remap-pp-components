@@ -61,21 +61,22 @@ for key in $($config --keys | grep -v command | grep -v env); do
 
     vars=$($config --default=all $key variables)
 
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(pwd)/"
+    echo -e  "\n[COLE] annotated $(pwd)/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$compOut/"
+    echo -e  "\n[COLE] annotated $outputDir/$compOut/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
     for grid in $($config --default=* $key grid); do
         if [[ $ens_mem ]]; then
             newdir=$grid/$ens_mem  #ens_%(ens)02d
+            cole_input_dir=$newdir
             pushd $newdir || continue
         else
+            cole_input_dir=$grid
             pushd $grid || continue 
         fi
 
-        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(pwd)/"
-        echo -e  "\n[COLE] annotated $(pwd)/ to EPMT_DATA_LINEAGE_IN_PATH"
-
-        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$compOut/"
-        echo -e  "\n[COLE] annotated $outputDir/$compOut/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-     
         for source in $($config --default=* $key sources); do
             cd $source || continue
 
@@ -169,9 +170,8 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     for file in $files; do
                         
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$file)
-                        stripped_input_file=$(echo "$file" | sed "s/.nc//")
-                        export input_file_list="${input_file_list}$source/$freq/$chunk/$stripped_input_file $hash_val,"
-                        echo -e "\n[COLE] added $source/$freq/$chunk/$file to input list with hash_val: $hash_val"
+                        export input_file_list="${input_file_list}$cole_input_dir/$source/$freq/$chunk/$file $hash_val,"
+                        echo -e "\n[COLE] added $cole_input_dir/$source/$freq/$chunk/$file to input list with hash_val: $hash_val"
                         
                         newfile=$compOut.${file#*.}
                         if [[ -f $dir/$newfile ]]; then
@@ -182,8 +182,7 @@ for key in $($config --keys | grep -v command | grep -v env); do
                         current_loc=$(pwd)
                         cd $dir
                             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newfile)
-                            stripped_output_file=$(echo "$newfile" | sed "s/.nc//")
-                            export output_file_list="${output_file_list}$cole_dir/$stripped_output_file $hash_val,"
+                            export output_file_list="${output_file_list}$cole_dir/$newfile $hash_val,"
                             echo -e "\n[COLE] added $cole_dir/$newfile to output list with hash_val: $hash_val"
                         cd $current_loc
                     done

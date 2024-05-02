@@ -84,8 +84,7 @@ function process_timeseries {
                     tiled_files=$(echo ${files[@]} | sed -e s/tile1/tile$tile/g)
                     for input_file in $tiled_files; do
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$inputdir/$input_file)
-                        stripped_input_file=$(echo "$input_file" | sed "s/.nc//")
-                        export input_file_list="${input_file_list}$inputdir/$stripped_input_file $hash_val,"
+                        export input_file_list="${input_file_list}$inputdir/$input_file $hash_val,"
                         echo -e "\n[COLE] added $inputdir/$input_file to input list with hash_val: $hash_val"
                     done
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
@@ -93,8 +92,7 @@ function process_timeseries {
             else
                 for input_file in ${files[@]}; do
                     hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$inputdir/$input_file)
-                    stripped_input_file=$(echo "$input_file" | sed "s/.nc//")
-                    export input_file_list="${input_file_list}$inputdir/$stripped_input_file $hash_val,"
+                    export input_file_list="${input_file_list}$inputdir/$input_file $hash_val,"
                     echo -e "\n[COLE] added $inputdir/$input_file to input list with hash_val: $hash_val"
                 done
                 newfile=$component.$d1-$d2.$var.nc
@@ -105,8 +103,7 @@ function process_timeseries {
 
             cd $newdir
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $newdir/$newfile)
-                stripped_output_file=$(echo "$newfile" | sed "s/.nc//")
-                export output_file_list="${output_file_list}$outputdir/$stripped_output_file $hash_val,"
+                export output_file_list="${output_file_list}$outputdir/$newfile $hash_val,"
                 echo -e "\n[COLE] added $outputdir/$newfile to output list with hash_val: $hash_val"
             cd $current_loc
 
