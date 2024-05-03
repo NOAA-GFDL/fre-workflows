@@ -1,8 +1,8 @@
 [scheduling]
     [[queues]]
-        # limit the entire workflow to 3 active tasks at once
+        # limit the entire workflow to 4 active tasks at once as these are background login node processes
         [[[default]]]
-            limit = 3
+            limit = 4
 
 [runtime]
     [[root]]
