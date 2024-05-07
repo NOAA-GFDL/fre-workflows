@@ -94,14 +94,10 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': True,
-    })
-    setup_logger(name='123123')
+    # setup_logger(name='123123')
+    #
+    # logger = getLogger('123123')
+    #
+    # logger.info('testing')
 
-    logger = getLogger('123123')
-
-    logger.info('testing')
-
-main()
+    main()
