@@ -1,11 +1,36 @@
 import Dag
-import logging  # Not working properly
+from logging import getLogger
+import logging.config
 from Visualize import draw
 from FetchFromFingerprint import main as fp_main
 from data_lineage.verification.Validate import main as validate
 
+def setup_logger(name):
+    cfg = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'loggers': {
+            name: {
+                'level': 'INFO',
+                'handlers': ['default']
+            }
+        },
+        'handlers': {
+            'default': {
+                'level': 'INFO',
+                'formatter': 'info',
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stdout',
+            }
+        },
+        'formatters': {
+            'info': {
+                'format': '%(asctime)s-%(levelname)s-%(name)s::%(module)s|%(lineno)s:: %(message)s'
+            },
+        },
+    }
+    logging.config.dictConfig(cfg)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def main():
     fp = '3afb50cb-0061-4740-9c35-d09a1749e313'  # Put your $CYLC_WORKFLOW_UUID here to run
@@ -69,4 +94,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+    })
+    setup_logger(name='123123')
+
+    logger = getLogger('123123')
+
+    logger.info('testing')
+
+main()
