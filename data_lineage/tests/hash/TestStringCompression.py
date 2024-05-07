@@ -2,7 +2,6 @@ import sys
 import pytest
 import gzip
 import base64
-from unittest.mock import patch
 from data_lineage.bloomfilter.StringCompression import compress_string, decompress_bytes
 
 
