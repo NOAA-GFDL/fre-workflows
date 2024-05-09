@@ -11,7 +11,7 @@ HISTORY = f'Thu Jan 01 00:00:00 1900: cdo -O splitmon {NAME}'
 @pytest.fixture
 def generate_test_netcdf_file(request):
     """
-    Generates a test netcdf file. Destroyed after test finishes
+    Generates a test netcdf file. Destroyed after test finishes.
     """
     test_dir = tempfile.mkdtemp()
     test_file = os.path.join(test_dir, NAME)
@@ -28,7 +28,7 @@ def generate_test_netcdf_file(request):
 
     def finalize():
         """
-        Removes file after the test is finished using it
+        Removes file after the test is finished using it.
         """
         os.remove(test_file)
         os.rmdir(test_dir)
@@ -40,7 +40,7 @@ def generate_test_netcdf_file(request):
 
 def mock_metadata(file_path):
     """
-    Mocks the expected behavior of scrape_metadata
+    Mocks the expected behavior of scrape_metadata.
     """
     metadata = ''
     meta_dims = ''
@@ -58,12 +58,20 @@ def mock_metadata(file_path):
 
 
 def test_create_file_hash(generate_test_netcdf_file):
+    """
+    Mainly tests the ncfile was created successfully. If file_hash
+    exists, then the ncfile was created and its metadata was scraped.
+    """
     file_path = generate_test_netcdf_file
     file_hash = hg.main(file_path)
 
     assert file_hash is not None
 
 def test_scrape_metadata(generate_test_netcdf_file):
+    """
+    Tests the function scrape_metadata with its expected output with
+    the ncfile.
+    """
     file_path = generate_test_netcdf_file
     expected = mock_metadata(file_path)
     actual = hg.scrape_metadata(file_path)
@@ -71,6 +79,10 @@ def test_scrape_metadata(generate_test_netcdf_file):
     assert actual == expected
 
 def test_hash_generation(generate_test_netcdf_file):
+    """
+    Tests the function generate_hash. Ensures it returns a hash in
+    the format of a string.
+    """
     file_path = generate_test_netcdf_file
     metadata = hg.scrape_metadata(file_path)
     hash = hg.generate_hash(metadata)
