@@ -1,8 +1,8 @@
 [scheduling]
     [[queues]]
-        # limit the entire workflow to 3 active tasks at once
+        # limit the entire workflow to 4 active tasks at once as these are background login node processes
         [[[default]]]
-            limit = 3
+            limit = 4
 
 [runtime]
     [[root]]
@@ -91,7 +91,12 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = module load fre-nctools/2023.01.02 nco && mkdir -p $outputDir
+        pre-script = """
+            module use -a /usw/conda/modulefiles
+            module load fre-nctools/2023.01.02 nco miniforge
+            conda activate /ncrc/home2/fms/conda/envs/fre-cli
+            mkdir -p $outputDir
+        """
         [[[environment]]]
             TMPDIR = $CYLC_TASK_WORK_DIR
 {% endif %}
