@@ -44,19 +44,12 @@ def get_job_data(job):
     def process_job_data(io):
         """
         If there is data in `io`
-            1. Fill in padding
-            2. Convert from string to bytes
-            3. Decompress the gizp-compressed data
-            4. Grab absolute path
-            5. Parse the decompressed data and append the path to the front
+            1. Decompress the gizp-compressed data
+            2. Grab absolute path
+            3. Parse the decompressed data and append the path to the front
         """
         if io:
-            # Base64 encodes '=' as padding at the end since it uses 24-bit sequences
-            b64_data = io.replace('_pad', '=')
-
-            # https://stackoverflow.com/questions/38763771/how-do-i-remove-double-back-slash-from-a-bytes-object
-            compressed_data = b64_data.encode().decode('unicode_escape').encode("raw_unicode_escape")
-            decompressed_data = sc.decompress_bytes(compressed_data)
+            decompressed_data = sc.decompress_bytes(io)
 
             path_key = 'EPMT_DATA_LINEAGE_IN_PATH' if io == job_input else 'EPMT_DATA_LINEAGE_OUT_PATH'
             path = annotations.get(path_key, '')
