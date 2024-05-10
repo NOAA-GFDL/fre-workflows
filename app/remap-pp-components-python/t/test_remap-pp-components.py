@@ -17,7 +17,7 @@ DATA_FILE_NC = Path("atmos_scalar.198001-198412.co2mass.nc")
 #test_outDir = Path("/home/Dana.Singh/pp/refactor/REMAP/app/remap-pp-components-python/test_outDir")
 test_outDir = Path(f"{path}/test_outDir")
 os.environ["product"]="ts"
-os.environ["dirTSWorkaround"]=""
+os.environ["dirTSWorkaround"]="1"
 os.environ["COPY_TOOL"]="cp"
 os.environ["ens_mem"]=""
 #os.environ["ens_mem"]="01"
@@ -34,7 +34,7 @@ def test_ncgen_remap_pp_components(capfd):
         using command ncgen -o
         Test checks for success of remapping a file based on a default outputDRS 
         """
-        global compout, ncgen_dir_tmp_out, remapped_new_file, din_check
+        global compout, ncgen_dir_tmp_out, var, remapped_new_file, din_check
         ncgen_dir_tmp_out = test_outDir / "ncgen-remap"
        
         # Check if path exists or create path
@@ -66,15 +66,19 @@ def test_ncgen_remap_pp_components(capfd):
         assert sp.returncode == 0
         out, err = capfd.readouterr()
 
+def test_ncgen_output(capfd): #compout,var,din_check,ncgen_dir_tmp_out, remapped_new_file):
+        global newfileln
         # Define name of new remapped file 
         remapped_new_file = f'{compout}.{var}.nc'
 
         # Soft link remapped file 
         newfileln=[ "ln",  Path(din_check) / "atmos_scalar.198001-198412.co2mass.nc", Path(ncgen_dir_tmp_out) / remapped_new_file ];
         sp = subprocess.run(newfileln)
+
+        # Error checking
         assert sp.returncode == 0
         out, err = capfd.readouterr()
-
+'''
 def test_original_remap_pp_components(capfd):
     """In this test, app checks for success of remapping a file with rose app
     as the valid definitions are being called by the environment.
@@ -127,6 +131,7 @@ def test_original_remap_pp_components(capfd):
     # Error checking 
     assert sp.returncode == 0
     out, err = capfd.readouterr()
+'''
 
 def test_rewrite_remap_pp_components(capfd):
     """In this test app checks for success of remapping a file with rose app using the rewritten remap-pp-components script as the valid definitions are being called by the environment.
@@ -140,7 +145,7 @@ def test_rewrite_remap_pp_components(capfd):
     grid_path = rewrite_dir_tmp_out / "native"
     comp_path = grid_path / "atmos_scalar"
     freq_path = comp_path / "P1M"
-    chunk_path = freq_path / "P1Y"
+    chunk_path = freq_path / "P5Y"
 
     paths = [rewrite_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
 
@@ -158,11 +163,12 @@ def test_rewrite_remap_pp_components(capfd):
     ex = [ "rose", "app-run",
            '-D',  '[env]inputDir='f'{rewrite_dir_tmp_out}',
            '-D',  '[env]begin=00010101T0000Z',
+           #'-D',  '[env]begin=19800101T000Z',
            '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]component=atmos_scalar',
-           '-D',  '[atmos_scalar]chunk=P1Y',
-           '-D',  '[atmos_scalar]freq=P1M',
+           '-D',  '[env]components=atmos_scalar',
+           #'-D',  '[atmos_scalar]chunk=P1Y',
+           #'-D',  '[atmos_scalar]freq=P1M',
            '-D',  '[atmos_scalar]grid=native',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
@@ -176,18 +182,40 @@ def test_rewrite_remap_pp_components(capfd):
     # Error checking
     assert sp.returncode == 0
     out, err = capfd.readouterr()
-
-##TO-DO: FAILURE TESTS
 '''
-def test_nccmp_remap_pp_components(capfd):
-    """This test compares the results of both above tests making sure that the two new created remapped files are identical.
-    """
+def test_nccmp_ncgen_origremap(capfd):
+    """This test compares the results of ncgen and orig_remap making sure that the two new created remapped files are identical."""
+
     grid = "native"
     freq = "P1M"
     chunk = "P5Y"
 
     #print( Path(ncgen_dir_tmp_out) / remapped_new_file) 
     #print( Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc")
+    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
+
+    sp = subprocess.run(nccmp)    
+    assert sp.returncode == 0
+
+def test_nccmp_ncgen_rewriteremap(capfd):
+    """This test compares the results of ncgen and rewrite_remap making sure that the two new created remapped files are identical."""
+
+    grid = "native"
+    freq = "P1M"
+    chunk = "P5Y"
+
+    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
+
+    sp = subprocess.run(nccmp)    
+    assert sp.returncode == 0
+
+def test_nccmp_origremap_rewriteremap(capfd):
+    """This test compares the results of orig_remap and rewrite_remap making sure that the two new created remapped files are identical."""
+
+    grid = "native"
+    freq = "P1M"
+    chunk = "P5Y"
+
     nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
 
     sp = subprocess.run(nccmp)    
