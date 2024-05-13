@@ -3,7 +3,7 @@ import networkx as nx
 
 
 def draw_helper(dag):
-    pos = nx.planar_layout(dag)
+    pos = nx.fruchterman_reingold_layout(G=dag)
     args = {
         'with_labels': True,
         'arrows': True,
@@ -15,22 +15,23 @@ def draw_helper(dag):
     }
     nx.draw(dag, pos, **args)
 
-    plt.title("Directed Acyclic Graph for am5_c96L33_amip/run52")
     print("Finished drawing dag, closing the graph window will terminate the program.")
     plt.show()
 
 
 def draw(my_dag):
+    nodes = my_dag.get_nodes()
+
     dag = nx.MultiDiGraph()
 
-    nodes = my_dag.get_nodes()
     for node in nodes:
-        name = node.get_name().split('0101T0000')[0]
-        dag.add_node(name)
+        if 'remap-pp-components' not in node.get_name():
+            name = node.get_name()
+            dag.add_node(name)
 
     for edge in my_dag.get_edges():
-        start = edge.get_start().get_name().split('0101T0000')[0]
-        end = edge.get_end().get_name().split('0101T0000')[0]
+        start = edge.get_start().get_name()
+        end = edge.get_end().get_name()
         if dag.has_edge(start, end):
             continue
         else:
