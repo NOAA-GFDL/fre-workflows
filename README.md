@@ -10,11 +10,11 @@ fre pp checkout -e EXPNAME -p PLATFORM -t TARGET
 2. Configure pp template with either XML or pp.yaml
 
 ```
-fre pp convert -e EXPNAME -p PLATFORM -t TARGET -x XML
+fre pp configure-xml -e EXPNAME -p PLATFORM -t TARGET -x XML
 
 or
 
-fre pp configure -e EXPNAME -p PLATFORM -t TARGET -y YAML 
+fre pp configure-yaml -e EXPNAME -p PLATFORM -t TARGET -y YAML 
 
 ```
 
