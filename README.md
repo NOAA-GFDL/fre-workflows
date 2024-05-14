@@ -19,7 +19,13 @@ fre pp configure-yaml -e EXPNAME -p PLATFORM -t TARGET -y YAML
 ```
 
 3. Validate the configuration
+OPTIONAL: create a `history-manifest` of a single tar file archive first for use in the validation. 
+This list represents the available source files within the history tar archives. This can be done like so-
+```
+tar -tf /archive/$USER/path/to/history/files/YYYYMMDD.nc.tar | grep -v tile[2-6] | sort > ~/cylc/src/EXPNAME__PLATFORM__TARGET/history-manifest
+```
 
+validate the configuration 
 ```
 fre pp validate -e EXPNAME -p PLATFORM -t TARGET
 ```
