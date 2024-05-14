@@ -36,7 +36,7 @@ def parse_task_parameters(config_data, line):
     return config_data
 
 
-def parse_graph(data, line, chunk):
+def parse_graph(config_data, line, chunk):
     """
     Given a line that is from the configuration file's [[graph]]
     section, parse the list in it and add the jobs to config_data.
@@ -67,13 +67,13 @@ def parse_graph(data, line, chunk):
 
         if CHUNK_START_MARKER in line:
             chunk = line.split(' =')[0]
-            data['graph'][chunk] = []
-            return data, chunk
+            config_data['graph'][chunk] = []
+            return config_data, chunk
 
         else:
-            data['graph'][chunk].append(line)
+            config_data['graph'][chunk].append(line)
 
-    return data, chunk
+    return config_data, chunk
 
 
 def read_from_file(run_dir):
