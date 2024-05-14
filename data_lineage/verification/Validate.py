@@ -56,16 +56,21 @@ def check_edge_is_present(node, serial_dag, config_dag):
             Constructed with 01-start-01.cylc
 
     Returns:
-        Boolean whether every outbound edge from node exists in config_dag
+        missing_neighbors: Array
+            List of neighboring Nodes that should share an edge according to
+            the serial_dag, but do not exist in the config_dag.
     """
     neighbors = serial_dag.find_neighbors(node)
+    missing_neighbors = []
 
     for neighbor in neighbors:
         shared_edge = config_dag.find_edge(node, neighbor)
 
+        # If an edge does not exist, append to broken_edges
         if not shared_edge:
-            # What should be done when a serialized edge exists in but is not in config?
-            print(f'ERROR: There is a broken edge between {node} and {neighbor}.')
+            missing_neighbors.append(neighbor)
+
+    return missing_neighbors
 
 def is_subgraph(serial_dag, config_dag):
     """
@@ -124,18 +129,29 @@ def compare_dags(serial_dag, config_dag):
         config_dag: Dag
             Constructed with 01-start-01.cylc
     """
-    serial_nodes = serial_dag.get_nodes()
+    node_errors = False
+    edge_errors = False
 
-    for node in serial_nodes:
-
+    for node in serial_dag.get_nodes():
         if not check_node_is_present(node, config_dag):
+            node_errors = True
             print(f'ERROR: {node.get_name()} not found in config DAG.')
 
-        if node.get_inbound_edges() == 0:
-            check_edge_is_present(node, serial_dag, config_dag)
+        potential_missing_neighbors = check_edge_is_present(node, serial_dag, config_dag)
+        if potential_missing_neighbors:
+            edge_errors = True
+            for neighbor in potential_missing_neighbors:
+                print(f'ERROR: {node.get_name()} should share an edge with {neighbor.get_name()}, '
+                      f'but that edge is not found in config DAG.')
+
+    if not node_errors:
+        print('Node presence comparison complete, no errors were encountered.')
+
+    if not edge_errors:
+        print('Edge presence comparison complete, no errors were encountered.')
 
     if not is_subgraph(serial_dag, config_dag):
-        print("ERROR: There was a problem verifying the DAG.")
+        print("ERROR: There was a problem verifying serial DAG is a subgraph of config DAG.")
     else:
         print('Subgraph comparison complete, no errors were encountered.')
 
