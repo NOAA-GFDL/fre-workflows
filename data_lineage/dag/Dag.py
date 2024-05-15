@@ -1,6 +1,6 @@
 import subprocess
-import Node
-import Edge
+from data_lineage.dag.Node import Node
+from data_lineage.dag.Edge import Edge
 
 
 class DAG:
@@ -23,7 +23,7 @@ class DAG:
             if job_name == existing_node.get_name():
                 raise ValueError(f"ERROR: Node '{node.name}' already exists in this DAG")
 
-        node = Node.Node(job_name, _input, _output)
+        node = Node(job_name, _input, _output)
         self.nodes.append(node)
 
     def add_edge(self, node, next_node, content=None):
@@ -36,7 +36,7 @@ class DAG:
         if end_name not in self.nodes:
             raise ValueError(f"End node '{edge.end.name}' does not exist in this DAG")
 
-        edge = Edge.Edge(node, next_node, contents=[content])
+        edge = Edge(node, next_node, contents=[content])
         next_node.increment_inbound_edeges()
 
         if edge in self.edges:
@@ -159,9 +159,11 @@ class DAG:
         return len(total_jobs) - 1
 
     def dag_print(self):
-        print(f'----DAG Statistics----')
+        omitted_jobs = self.find_total_job_count() - len(self.nodes) if self.find_total_job_count() > 0 else 0
+
+        print(f'\n----DAG Statistics----')
         print(f'Nodes    : {len(self.nodes)}')
-        print(f'Omitted  : {self.find_total_job_count() - len(self.nodes)}')
+        print(f'Omitted  : {omitted_jobs}')
         print(f'Edges    : {len(self.edges)}')
         print(f'Acyclic  : {self.check_cyclic()}')
         print(f'Fidelity : {self.fidelity}/100')

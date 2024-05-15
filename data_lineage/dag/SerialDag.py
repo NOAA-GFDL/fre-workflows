@@ -1,9 +1,4 @@
-import Dag
-from logging import getLogger
-import logging.config
-from Visualize import draw
-from FetchFromFingerprint import main as fp_main
-from data_lineage.verification.Validate import main as validate
+from data_lineage.dag.Dag import DAG
 
 def setup_logger(name):
     cfg = {
@@ -66,12 +61,10 @@ def create_edges(dag, nodes):
                         dag.decrement_fidelity()
     return edge_count
 
-def main():
-    fp = '21bc35b4-f6bf-40c7-9bbb-027dfcd436f0'
-    jobs, run_dir = fp_main(fp)
+def main(jobs, run_dir):
 
     print('----Constructing DAG----')
-    dag = Dag.DAG()
+    dag = DAG()
     dag.set_run_dir(run_dir)
 
     print('Adding nodes...')
@@ -85,10 +78,5 @@ def main():
     print(f'Created {edge_count} edges')
 
     dag.dag_print()
-    validate(dag, run_dir)
-    draw(dag)
 
-    print("Successfully finished running, ending program.")
-
-if __name__ == "__main__":
-    main()
+    return dag

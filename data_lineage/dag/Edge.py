@@ -1,4 +1,4 @@
-import Node
+from data_lineage.dag.Node import Node
 
 
 class Edge:
