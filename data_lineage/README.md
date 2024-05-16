@@ -1,3 +1,11 @@
+# Useful Links
+
+[Summary](https://docs.google.com/document/d/1pB1VXthywjqaz-Kr4dmDMZzZbgrmDAyYeBlIw0VOD7U/edit?usp=sharing)
+
+[Project Outline](https://docs.google.com/document/d/1DzLZVOazFiqG-vPx0pF9hKLh4jnHssCk-xOjEBjBED4/edit?usp=sharing)
+
+[Step-By-Step Run Guide](https://docs.google.com/document/d/1MnFjArk466TciaZ6j8PNHyljHr3cWM_tkmlzWwxj9Bo/edit?usp=sharing)
+
 # Usage Instructions
 
 This tool is still in development. Follow the instructions below to use it effectively.
@@ -59,5 +67,5 @@ Replace the `fp` variable in `postprocessing/data_lineage/dag/test.py/main` with
 ## 6. Run test.py 
 You can now run `test.py` using this interpreter: 
 ```shell
-/home/Cole.Harvey/.conda/envs/coles_py2/bin/python test.py
+/home/Cole.Harvey/.conda/envs/coles_py2/bin/python SerialDag.py
 ```
