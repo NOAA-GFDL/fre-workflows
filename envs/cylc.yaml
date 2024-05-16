@@ -1,7 +1,12 @@
-name: cylc
+name: cylc-task-tools
 channels: 
   - conda-forge
 dependencies:
   - cylc-flow
   - cylc-rose
   - metomi-rose
+  - hsm
+  - fre-nctools
+  - nco
+  - cdo
+  - netcdf-cxx4

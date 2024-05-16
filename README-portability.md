@@ -45,7 +45,7 @@ end
 
 subgraph generic configuration
 s3-->E
-E[activate envs]-->e1[cylc.yaml: \n-cylc dependencies] & e2[task-tools.yaml: \ntools used by workflow]
+E[activate envs]-->e1[cylc.yaml: \n-cylc dependencies]
 s3-->genp[platform = localhost]
 end
 
@@ -55,104 +55,155 @@ ppanp -.->G
 genp -..->G
 ```
 
-# Instructions for portable workflow (as of now)
-1. Install conda
+# Instructions for portable workflow (Non-container use)
+### 1. Install conda
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
 ```
 
-2. Install mamba
+### 2. Install mamba
 ```
 conda install -c conda-forge mamba
 ```
 
-3. If not enough space, move conda directories and packages to another location (collab1 on Niagara)
+### 3. If not enough space, move conda directories and packages to another location 
 ```
-conda config --add envs_dirs /collab1/data/$USER/envs  #for niagara
-conda config --add pkgs_dirs /collab1/data/$USER/pkgs  #for niagara
+conda config --add envs_dirs [location with more space] 
+# EX: /collab1/data/$USER/envs for niagara
+
+conda config --add pkgs_dirs [location with more space] 
+# EX: /collab1/data/$USER/pkgs for niagara
 ```
 
-4. Create and install environments
+### 4. Create and install environment
 
-Environment yamls: cylc and task-tools, where task-tools includes hsm, fre-nctools, nco, cdo, and netcdf-cxx4. To create an environment: 
+- Environment yaml `cylc`: includes cylc-flow, cylc-rose, metomi-rose, hsm, fre-nctools, nco, cdo, and netcdf-cxx4. To create an environment:
 ```
 mamba env create --file cylc.yaml
-mamba env create --file task-tools.yaml
-conda activate cylc                      #activate cylc environment
+conda activate cylc-task-tools                    
 ```
 
-5. Transfer data
+### 5. Transfer data
 
-Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC) 
+- Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC)
 
-6. Canopy PP steps
-a. Edits:
+### 6. Canopy PP steps
 
-	i. Rose-suite.conf
-
-		1. If not on gfdl pp/an, set `site` = `generic`
-		2. Correct PTMPDIR path - create ptmp directory
-		3. DO_REFINEDIAG=False
-		4. DO_PREANALYSIS=False
-
-	ii. opt/rose-suite-experiment configurations
-
-		1. Correct history directory path (wherever data was transferred to)
-		2. Comment out HISTORY_DIR_REFINED
-			a. Comment this out along with DO_REFINEDIAG=False
-				a.1 This means there is no refinediag processing
-		3. Correct PP directory path
-		4. Correct PP_GRID_SPEC directory path (wherever data was tranferred to)
-
-	iii. Macro.py issue (if seen in rose macro --validate step)
-
-		1. Clone Chris Blanton's fork of the rose repo: git clone -b default-validator-change https://github.com/ceblanton/rose.git
-		2. Checkout rose fork: git checkout default-validator-change
-		3. Locate your macro.py in cylc env. installation: 
-			a. Ex.: /collab1/data/$USER/envs/cylc/lib/python3.10/site-packages/metomi/rose/macro.py
-		4. Replace/overwrite that macro.py with the one in Chris' rose repo:
-			a. In directory with Chris' macro.py: cp -f [path/to/your/macro.py] macro.py
-
-	iv. app/regrid-xy/rose-app.conf
-
-		1. Fill in regridding instructions and regridding labels as in README.md
-
-	v. app/remap-pp-components/rose-app.conf
-
-		1. Fill in grid and sources information as in README.md
-
-	vi. bin/install-exp (optional)
-
-		1. --symlink-dirs='run=/collab1/data/$USER' was added to the `cylc install` command
-			a. the `run` path is niagara-specific
-			b. This edit was done due to limited space on niagara
-
-    vii. tmp directory
-
-        1. create tmp directory - set environment variable TMPDIR in steps below
-
-
-b. Steps to run workflow:
+#### ***6a. Configure Edits***
+----------------------------------------------------------------
+i. pp.yaml
 ```
-# make sure conda environment is activated
+1. If not on gfdl pp/an or gaea, set site = "generic" 
+2. Ensure directories, switches and other information in the pp.yaml is correct
+    
+    - history directory (where data files were transferred)
+    - create ptmp and tmp directories 
+    - HISTORY_DIR_REFINED left blank
+    - DO_REFINEDIAG=False
+    - pp dir
+    - pp grid spec (where data files were transferred)
+    - component info for regrid-xy and remap-pp-components
+```    
+ii. Macro.py issue (if seen in rose macro --validate step)
 
-bin/list-exps
-rose macro --validate
-export CYLC_CONF_PATH=/path/to/generic-global-config  #this points to the global.cylc used for for `site=generic`
-                                                      #in generic-global-config folder in the postprocessing template repository (fre2/workflows/postprocessing/generic-global-config)
-export TMPDIR=/path/to/TMPDIR/tmp    #for TMPDIR environment variable for stage-history task
-bin/install-exp [exp]
-cylc play [exp]
 ```
-c. To monitor status:
-See debugging messages:
-``` 
-cylc play --no-detach --debug [exp] 
+1. Clone Chris Blanton's fork of the rose repo:
+    
+    - git clone -b default-validator-change https://github.com/ceblanton/rose.git
+
+2. Checkout rose fork: 
+    
+    - git checkout default-validator-change
+
+3. Locate your macro.py in cylc env. installation: 
+
+    - Ex.: `/collab1/data/$USER/envs/cylc/lib/python3.10/site-packages/metomi/rose/macro.py`
+
+4. Replace/overwrite that macro.py with the one in Chris' rose repo:
+
+    - cp -f [path/to/your/macro.py] [path/to/macro.py/in/Chris/repo]
+    
 ```
 
-Monitor status of each task: 
+5. TO-D0: Add `--symlink-dirs` to `cylc install` in configure scripts (optional)
+
+    - `--symlink-dirs='run=[location with more space]'` can be added to the `cylc install` command
+
+        - niagara-specific example: `--symlink-dirs=run=/collab1/data/$USER'`
+        - edit was done due to limited space on niagara 
+
+#### ***6b. Run workflow:***
+----------------------------------------------------------------
+i. Make sure cylc conda environment is activated
+
+```    
+conda activate cylc-task-tools
 ```
-watch -n 5 cylc workflow-state [exp]  
+
+ii. Point to the global.cylc used for `generic` site 
+
+- In generic-global-config folder in the postprocessing template repository (fre2/workflows/postprocessing/generic-global-config)
+
+```
+export CYLC_CONF_PATH=/path/to/generic-global-config
+```
+
+iii. Create TMPDIR environment variable
+- This is used for the stage-history task
+```
+export TMPDIR=/path/to/TMPDIR/tmp
+```
+
+iv. **Follow FRE-cli instructions on the main README.md**
+
+- ### [PP Repo README.md](https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing#instructions-to-postprocess-fms-history-output-on-ppan-or-gaea)
+
+#### ***6c. To monitor status***
+----------------------------------------------------------------
+- See debugging messages:
+    ``` 
+    cylc play --no-detach --debug [exp] 
+    ```
+
+- Monitor status of each task:
+    ```
+    watch -n 5 cylc workflow-state [exp]
+    ```
+    
+# Instructions for portable workflow (Post-processing container use) (IN DEVELOPMENT - Is not fully updated yet)
+### 1. Pull post-processing container from HPC-ME github
+- https://github.com/NOAA-GFDL/HPC-ME
+
+```
+[docker or podman] pull [image/sif file]
+```
+
+### 2. Create ppp-setup folder
+- Create directories in ppp-setup (transfer files here):
+    - PPGridspec
+    - history
+- Copy runscript.sh from HPC-ME repo in ppp-setup (https://gitlab.gfdl.noaa.gov/fre/HPC-ME/-/tree/main/ppp?ref_type=heads)
+
+### 3. Transfer data
+- Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC)
+
+### 4. Canopy PP steps
+#### ***4a. Configure Edits***
+i. pp.yaml
+```
+1. If not on gfdl pp/an or gaea, set site = "generic" 
+2. Ensure directories, switches and other information in the pp.yaml is correct
+    
+    - history directory (where data files were transferred)
+    - HISTORY_DIR_REFINED left blank
+    - DO_REFINEDIAG=False
+    - pp dir
+    - pp grid spec (where data files were transferred)
+    - component info for regrid-xy and remap-pp-components
+```    
+#### ***4b. Run the container***
+```
+[singularity or apptainer] exec --writable-tmpfs --bind [location/to/ppp-setup/]:/mnt [location/to/sif/file] /mnt/runscript.sh
 ```
