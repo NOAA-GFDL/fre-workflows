@@ -89,14 +89,11 @@ conda activate cylc-task-tools
 
 - Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC)
 
-### 6. Canopy PP steps
-
-#### ***6a. Configure Edits***
-----------------------------------------------------------------
-i. pp.yaml
+### 6. Configure pp workflow and environment
+1. Create/edit pp.yaml
 ```
-1. If not on gfdl pp/an or gaea, set site = "generic" 
-2. Ensure directories, switches and other information in the pp.yaml is correct
+a. If not on gfdl pp/an or gaea, set site = "generic" 
+b. Ensure directories, switches and other information in the pp.yaml is correct
     
     - history directory (where data files were transferred)
     - create ptmp and tmp directories 
@@ -106,43 +103,21 @@ i. pp.yaml
     - pp grid spec (where data files were transferred)
     - component info for regrid-xy and remap-pp-components
 ```    
-ii. Macro.py issue (if seen in rose macro --validate step)
 
-```
-1. Clone Chris Blanton's fork of the rose repo:
-    
-    - git clone -b default-validator-change https://github.com/ceblanton/rose.git
-
-2. Checkout rose fork: 
-    
-    - git checkout default-validator-change
-
-3. Locate your macro.py in cylc env. installation: 
-
-    - Ex.: `/collab1/data/$USER/envs/cylc/lib/python3.10/site-packages/metomi/rose/macro.py`
-
-4. Replace/overwrite that macro.py with the one in Chris' rose repo:
-
-    - cp -f [path/to/your/macro.py] [path/to/macro.py/in/Chris/repo]
-    
-```
-
-5. TO-D0: Add `--symlink-dirs` to `cylc install` in configure scripts (optional)
+3. TO-D0: Add `--symlink-dirs` to `cylc install` in configure scripts (optional)
 
     - `--symlink-dirs='run=[location with more space]'` can be added to the `cylc install` command
 
         - niagara-specific example: `--symlink-dirs=run=/collab1/data/$USER'`
         - edit was done due to limited space on niagara 
 
-#### ***6b. Run workflow:***
-----------------------------------------------------------------
-i. Make sure cylc conda environment is activated
+4. Make sure cylc conda environment is activated
 
 ```    
 conda activate cylc-task-tools
 ```
 
-ii. Point to the global.cylc used for `generic` site 
+5. Point to the global.cylc used for `generic` site 
 
 - In generic-global-config folder in the postprocessing template repository (fre2/workflows/postprocessing/generic-global-config)
 
@@ -150,18 +125,17 @@ ii. Point to the global.cylc used for `generic` site
 export CYLC_CONF_PATH=/path/to/generic-global-config
 ```
 
-iii. Create TMPDIR environment variable
+6. Create TMPDIR environment variable
 - This is used for the stage-history task
 ```
 export TMPDIR=/path/to/TMPDIR/tmp
 ```
 
-iv. **Follow FRE-cli instructions on the main README.md**
+7. Follow FRE-cli instructions on the main README.md
 
 - ### [PP Repo README.md](https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing#instructions-to-postprocess-fms-history-output-on-ppan-or-gaea)
 
-#### ***6c. To monitor status***
-----------------------------------------------------------------
+8. To monitor status
 - See debugging messages:
     ``` 
     cylc play --no-detach --debug [exp] 
