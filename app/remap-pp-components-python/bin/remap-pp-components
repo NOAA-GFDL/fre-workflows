@@ -9,23 +9,6 @@ import sys
 from pathlib import Path
 import metomi.rose.config as mrc
 
-# For my own testing: Set variables to play with -- WILL REMOVE
-#inputDir = Path(os.getcwd()) / "rewrite_inputDir"
-#outputDir = Path(os.getcwd()) / "rewrite_outputDir"
-#begin = "00010101T0000Z" 
-#currentChunk = "P1Y"
-#components = ["atmos_scalar"]
-##components = ["atmos", "atmos_cmip", "ocean"]
-##components = ["land" ,"atmos_scalar"]
-#product = "ts"
-##dirTSWorkaround = ""
-#dirTSWorkaround = "1"
-#ens_mem = "" 
-##ens_mem = "01"
-
-
-##################################
-
 # Parse yaml directly for rose-app info
 # Set variables
 inputDir        = os.getenv('inputDir')
@@ -54,7 +37,6 @@ print("Utilities:")
 COPY_TOOL = os.getenv('COPY_TOOL')
 type(COPY_TOOL)
 
-##############################################################
 ## Purpose: Verify that the input and output directories exists and are directories
 ## outputDir: output directory
 ## inputDir: input directory
@@ -73,7 +55,6 @@ def verify_dirs(inputDir,outputDir):
       print(f"Error: Output directory {outputDir} is not a valid directory")
       sys.exit(1)
 
-##############################################################
 ## Purpose: Create the output directory structure 
 ## outDir: output directory
 ## comp: component that will be post-processed
@@ -100,7 +81,6 @@ def create_dir(outdir,comp,freq,chunk,ens,dirTS):
 
   return(dir)
 
-##############################################################
 ## Purpose: Print Bronx-style frequency given an ISO8601 duration
 ## iso_dura: frequency 
 def freq_to_legacy(iso_dura):
@@ -132,7 +112,7 @@ def freq_to_legacy(iso_dura):
         return '30min'
     else:
         return 'error'
-##############################################################
+
 ## Purpose: Print Bronx-style frequency given an ISO8601 duration
 ## iso_dura: chunk
 def chunk_to_legacy(iso_dura):
@@ -148,7 +128,7 @@ def chunk_to_legacy(iso_dura):
         return 'error'
 
     return brx_freq
-##############################################################
+
 ## Purpose: Create bronx-style symlinks 
 ## freq: frequency
 ## chunk: chunk
@@ -174,7 +154,8 @@ def bronx_style(freq, chunk, ens_member, outDir, component):
     if not os.path.exists(chunk_legacy):
       os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
 
-##############################################################
+  return(dir1)
+
 ## Purpose: Print legacy Bronx-like date template format given a frequency (ISO 8601 duration)
 ## iso_freq: frequency 
 def freq_to_date_format(iso_freq):
@@ -191,7 +172,6 @@ def freq_to_date_format(iso_freq):
         print('ERROR: Unknown Frequency '+iso_freq)
         return
 
-##############################################################
 ## Purpose: Print a date string to a truncated precision
 ##          - Accepts a date and frequency
 ##          - Outputs a date string with suitably reduced precision
@@ -203,9 +183,7 @@ def truncate_date(date, freq):
     format=freq_to_date_format(freq)
 
     #in the shell version, this line simply gets run.
-    #we will simply print this command to screen for now. TO DO (maybe we can work around it?)
     #not clear to me why piping to tr is necessary, doesnt seem to change output at all
-    #print('cylc date --template '+format+' '+date+' | tr -d T')
     #output =subprocess.Popen(["cylc", "date", "--template", format, date,
     #                          "|","tr","-d","T"],
     #                          stdout=subprocess.PIPE)
@@ -228,7 +206,6 @@ def truncate_date(date, freq):
 
     return date
 
-##############################################################
 ## Purpose: Pattern match and search for the correct files in the chunk directory
 ## vars: variables
 ## source: 
@@ -238,11 +215,14 @@ def search_files(inputDir,vars,grid,source,freq,chunk,begin):
   # with glob - files seen as list
   if freq == "P0Y":
     if vars == "all":
-      files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.*.nc")
+      #files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.*.nc")
+      files = glob.glob(f"{source}.*.nc")
       #print(files)
     else:
       for v in vars:
-        files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{v}*.nc")
+        #files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{v}*.nc")
+        files = glob.glob(f"{source}.{v}*.nc")
+        print(f"files: {files}")
   else:
     if product == "ts":
       date = truncate_date(begin, freq)
@@ -255,14 +235,17 @@ def search_files(inputDir,vars,grid,source,freq,chunk,begin):
       sys.exit(2)
 
     if vars == "all":
-      files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}-*.*.nc")
+      #files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}-*.*.nc")
+      files = glob.glob(f"{source}.{date}-*.*.nc")
     else:
       #files = ""
       for v in vars:
-        files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}-*.{v}*.nc")
+        #files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}-*.{v}*.nc")
+        files = glob.glob(f"{source}.{date}-*.{v}*.nc")
 
     if product == "av" and currentChunk == "P1Y":
-      files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}.*.nc")
+      #files = glob.glob(f"{inputDir}/{grid}/{source}/{freq}/{chunk}/{source}.{date}.*.nc")
+      files = glob.glob(f"{source}.{date}.*.nc")
 
   return(files)
 
@@ -304,7 +287,7 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
         vars = vars.split()
       else:
         vars = "all"
-##
+
       #GRID
       if fields.get("grid") == None:
         grid = glob.glob("*")
@@ -321,7 +304,7 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
         else:
           #os.makedirs(grid,exist_ok=True)
           os.chdir(f"{inputDir}/{g}")
-##
+
         ## SOURCES
         if fields.get("sources") == None:
           sources = glob.glob("*")
@@ -338,7 +321,7 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
           # Go into source directory 
           # os.makedirs(s,exist_ok=True)
           os.chdir(f"{inputDir}/{g}/{s}")
-##
+
           #FREQ
           if fields.get("freq") == None:
             freq = glob.glob("*")
@@ -350,7 +333,7 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
           for f in freq:
             #ah3
             os.chdir(f"{inputDir}/{g}/{s}/{f}")
-##
+
             #CHUNK
             if fields.get("chunk") == None:
               chunk = glob.glob("*")
@@ -375,6 +358,9 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
                                ens = ens_mem,
                                dirTS = dirTSWorkaround)
 
+              print(f"dir: {dir}")
+              #ah6
+                
               # Create bronx-style symlinks for TS only
               if dirTSWorkaround:
                 bronx_style(freq = f, 
@@ -383,6 +369,9 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
                             outDir = outputDir,
                             component = comp)
 
+              #print(f"bronx-dir1: {bs}")
+              #ah7
+            
               # Search for files in chunk directory
               os.chdir(f"{inputDir}/{g}/{s}/{f}/{c}")
               files = search_files(inputDir = inputDir,
@@ -392,29 +381,50 @@ def remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkarou
                                    freq = f,
                                    chunk = c,
                                    begin = begin) 
-              print(files)
-              #ah6
+              print(f"files: {files}")
+              #print(f"{inputDir}/{g}/{s}/{f}/{c}")
+              #ah8
 
               if not files:
                 raise Exception(f"\nError: No input files found in {inputDir}/{g}/{s}/{f}/{c}")
               else:
+                #print("here")
+                #ah9
+                os.chdir(outputDir)
+
                 for file in files:
-                  newfile = f"{comp}.{file}"
+                  print(file)
+                  newfile1 = file.split(".",1)[1]
+                  newfile2 = f"{comp}.{newfile1}"
+                  
+                  #print(f"newfile: {newfile}")
+                  #ah10
+
                   # If file exists, remove it (would exist if workflow was run previously)
-                  if os.path.exists(f"{dir}/{newfile}"):
-                    os.remove(f"{dir}/{newfile}")
-              
+                  if os.path.exists(f"{dir}/{newfile2}"):
+                    os.remove(f"{dir}/{newfile2}")
+
+                  #print(f"DIR: {dir}") #check
+                  #ah11     
+
                   # Replace with new file
-                  link = [ "ln", f"{inputDir}/{g}/{s}/{f}/{c}/{file}", f"{dir}/{newfile}" ] 
-                  subprocess.run(link)
+                  link = ["ln", f"{inputDir}/{g}/{s}/{f}/{c}/{file}", f"{outputDir}/{dir}/{newfile2}"]
+                  #print(f"lnfrom: {inputDir}/{g}/{s}/{f}/{c}/{file}")
+                  #print(f"lnto: {outputDir}/{dir}/{newfile2}")
+                  #print(f"link: {link}")
+                  #ah12
+              
+                  run = subprocess.run( link ) 
+                  ret = run.returncode
 
-                  #copy = [ f"{COPY_TOOL}", f"{inputDir}/{g}/{s}/{f}/{c}/{file}", f"{dir}/{newfile}" ] 
-                  #subprocess.run(copy)
+                  if run.returncode != 0:
+                    copy = [ f"{COPY_TOOL}", f"{inputDir}/{g}/{s}/{f}/{c}/{file}", f"{outputDir}/{dir}/{newfile2}" ]
+                    subprocess.run( copy )
 
-                  #os.symlink(f"{os.getcwd()}/{file}",f"{dir}/{newfile}") 
-                  #os.system(f"ln {file} {dir}/{newfile}")
-                  ## OR COPY TOOL
-                  ## os.system(F"{COPY_TOOL} {os.getcwd()}/{file} {dir}/{newfile}")           
+                  #ah13
+
+                  #also works
+                  #os.link(f"{inputDir}/{g}/{s}/{f}/{c}/{file}", f"{outputDir}/{dir}/{newfile2}")
 
   print("Component remapping complete")
 
