@@ -883,7 +883,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
     [[data-catalog]]
         script = """
-        fre catalog build --overwrite -i $ppdir -o $ppdir/catalog
+        fre catalog builder --overwrite $ppdir $ppdir/catalog
         # workaround to replace P1M with monthly
         sed -i.bak -e 's/,P1M,/,monthly,/' $ppdir/catalog.csv
         """
