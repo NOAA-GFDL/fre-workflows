@@ -233,12 +233,9 @@ def regrid_xy( ):
 
 
     # fregrid remap dir check
+    Path(remap_dir).mkdir( exist_ok = True )
     if not Path( remap_dir ).exists():
-        try:
-            Path( remap_dir ).mkdir( )
-        except Exception as exc:
-            raise Exception(f'{remap_dir} could not be created') \
-                from exc
+        raise Exception(f'{remap_dir} could not be created')
 
 
     # grid_spec file management
