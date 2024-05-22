@@ -12,16 +12,10 @@ DATA_DIR  = Path(f"{path}/test-data")
 DATA_FILE_CDL = Path("atmos_scalar.198001-198412.co2mass.cdl")
 # NC file to test remap functionality  
 DATA_FILE_NC = Path("atmos_scalar.198001-198412.co2mass.nc")
+# Output directory
+test_outDir = Path(f"{path}/test-outDir")
 
-
-#test_outDir = Path("/home/Dana.Singh/pp/refactor/REMAP/app/remap-pp-components-python/test_outDir")
-test_outDir = Path(f"{path}/test_outDir")
-os.environ["product"]="ts"
-os.environ["dirTSWorkaround"]="1"
-os.environ["COPY_TOOL"]="cp"
-os.environ["ens_mem"]=""
-#os.environ["ens_mem"]="01"
-
+#If output directory exists, remove and create again
 if os.path.exists(test_outDir):
   shutil.rmtree(test_outDir)
   os.mkdir(test_outDir)
@@ -67,7 +61,7 @@ def test_ncgen_remap_pp_components(capfd):
         out, err = capfd.readouterr()
 
 def test_ncgen_output(capfd): #compout,var,din_check,ncgen_dir_tmp_out, remapped_new_file):
-        global newfileln
+        global remapped_new_file, newfileln
         # Define name of new remapped file 
         remapped_new_file = f'{compout}.{var}.nc'
 
@@ -78,7 +72,7 @@ def test_ncgen_output(capfd): #compout,var,din_check,ncgen_dir_tmp_out, remapped
         # Error checking
         assert sp.returncode == 0
         out, err = capfd.readouterr()
-'''
+
 def test_original_remap_pp_components(capfd):
     """In this test, app checks for success of remapping a file with rose app
     as the valid definitions are being called by the environment.
@@ -88,15 +82,16 @@ def test_original_remap_pp_components(capfd):
 
     global orig_dir_tmp_out
     # Define output location
-    orig_dir_tmp_out = test_outDir / "orig-rose-remap"
+    orig_dir_tmp_in = test_outDir / "orig-rose-remap-input"
+    orig_dir_tmp_out = test_outDir / "orig-rose-remap-output"
 
     #Define/create necessary locations
-    grid_path = orig_dir_tmp_out / "native"
+    grid_path = orig_dir_tmp_in / "native"
     comp_path = grid_path / "atmos_scalar"
     freq_path = comp_path / "P1M"
-    chunk_path = freq_path / "P1Y"
+    chunk_path = freq_path / "P5Y"
 
-    paths = [orig_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path] 
+    paths = [orig_dir_tmp_in, orig_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path] 
 
     for p in paths:
       if os.path.exists(p):
@@ -111,13 +106,16 @@ def test_original_remap_pp_components(capfd):
     # Rose functionality
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{orig_dir_tmp_out}',
-           '-D',  '[env]begin=00010101T0000Z',
+           '-D',  '[env]inputDir='f'{orig_dir_tmp_in}',
            '-D',  '[env]outputDir='f'{orig_dir_tmp_out}',
            '-D',  '[env]currentChunk=P5Y',
            '-D',  '[env]component=atmos_scalar',
-           '-D',  '[atmos_scalar]chunk=P1Y',
-           '-D',  '[atmos_scalar]freq=P1M',
+           '-D',  '[env]components=atmos_scalar',
+           '-D',  '[env]begin=19800101T0000Z',
+           '-D',  '[env]product=ts',
+           '-D',  '[env]dirTSWorkaround=1',
+           '-D',  '[env]ens_mem=',
+           '-D',  '[env]COPY_TOOL=cp',
            '-D',  '[atmos_scalar]grid=native',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script 
@@ -131,7 +129,7 @@ def test_original_remap_pp_components(capfd):
     # Error checking 
     assert sp.returncode == 0
     out, err = capfd.readouterr()
-'''
+
 
 def test_rewrite_remap_pp_components(capfd):
     """In this test app checks for success of remapping a file with rose app using the rewritten remap-pp-components script as the valid definitions are being called by the environment.
@@ -139,15 +137,16 @@ def test_rewrite_remap_pp_components(capfd):
     script = Path(path)
 
     global rewrite_dir_tmp_out
-    rewrite_dir_tmp_out = test_outDir / "rewrite-rose-remap"
+    rewrite_dir_tmp_in = test_outDir / "rewrite-rose-remap-input"
+    rewrite_dir_tmp_out = test_outDir / "rewrite-rose-remap-output"
 
     #Define/make previous locations
-    grid_path = rewrite_dir_tmp_out / "native"
+    grid_path = rewrite_dir_tmp_in / "native"
     comp_path = grid_path / "atmos_scalar"
     freq_path = comp_path / "P1M"
     chunk_path = freq_path / "P5Y"
 
-    paths = [rewrite_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
+    paths = [rewrite_dir_tmp_in, rewrite_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
 
     for p in paths:
       if os.path.exists(p):
@@ -159,16 +158,17 @@ def test_rewrite_remap_pp_components(capfd):
     # Inputdir/test data
     shutil.copyfile(DATA_DIR/DATA_FILE_NC, chunk_path/"atmos_scalar.198001-198412.co2mass.nc")
 
-    # Create a test rose-app configuration ... Do I need this again?
+    # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{rewrite_dir_tmp_out}',
-           '-D',  '[env]begin=00010101T0000Z',
-           #'-D',  '[env]begin=19800101T000Z',
+           '-D',  '[env]inputDir='f'{rewrite_dir_tmp_in}',
            '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
            '-D',  '[env]currentChunk=P5Y',
            '-D',  '[env]components=atmos_scalar',
-           #'-D',  '[atmos_scalar]chunk=P1Y',
-           #'-D',  '[atmos_scalar]freq=P1M',
+           '-D',  '[env]begin=19800101T0000Z',
+           '-D',  '[env]product=ts',
+           '-D',  '[env]dirTSWorkaround=1',
+           '-D',  '[env]ens_mem=',
+           '-D',  '[env]COPY_TOOL=cp',
            '-D',  '[atmos_scalar]grid=native',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
@@ -182,7 +182,7 @@ def test_rewrite_remap_pp_components(capfd):
     # Error checking
     assert sp.returncode == 0
     out, err = capfd.readouterr()
-'''
+
 def test_nccmp_ncgen_origremap(capfd):
     """This test compares the results of ncgen and orig_remap making sure that the two new created remapped files are identical."""
 
@@ -190,9 +190,7 @@ def test_nccmp_ncgen_origremap(capfd):
     freq = "P1M"
     chunk = "P5Y"
 
-    #print( Path(ncgen_dir_tmp_out) / remapped_new_file) 
-    #print( Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc")
-    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
+    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / compout / "ts" / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
 
     sp = subprocess.run(nccmp)    
     assert sp.returncode == 0
@@ -204,7 +202,7 @@ def test_nccmp_ncgen_rewriteremap(capfd):
     freq = "P1M"
     chunk = "P5Y"
 
-    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
+    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / compout / "ts" / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
 
     sp = subprocess.run(nccmp)    
     assert sp.returncode == 0
@@ -216,8 +214,8 @@ def test_nccmp_origremap_rewriteremap(capfd):
     freq = "P1M"
     chunk = "P5Y"
 
-    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / remapped_new_file, Path(orig_dir_tmp_out) / grid / compout / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
+    nccmp = [ "nccmp", "-d", Path(orig_dir_tmp_out) / compout / "ts" / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" , Path(rewrite_dir_tmp_out) / compout / "ts" / freq / chunk / "atmos_scalar.198001-198412.co2mass.nc" ];
 
     sp = subprocess.run(nccmp)    
     assert sp.returncode == 0
-'''
+
