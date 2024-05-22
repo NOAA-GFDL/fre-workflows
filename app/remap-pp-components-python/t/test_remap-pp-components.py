@@ -7,6 +7,7 @@ import shutil
 # Define paths and environment variables
 #Path to test data
 path = os.getcwd()
+
 DATA_DIR  = Path(f"{path}/test-data")
 # CDL file to generate nc file from ncgen
 DATA_FILE_CDL = Path("atmos_scalar.198001-198412.co2mass.cdl")
@@ -24,9 +25,9 @@ else:
 
 
 def test_ncgen_remap_pp_components(capfd):
-        """Following this test check for the creation of required directories and a *.nc file from *.cdl text file
-        using command ncgen -o
-        Test checks for success of remapping a file based on a default outputDRS 
+        """Following this test, check for the creation of required 
+           directories and a *.nc file from *.cdl text file using 
+           command ncgen. Test checks for success of ncgen command.
         """
         global compout, ncgen_dir_tmp_out, var, remapped_new_file, din_check
         ncgen_dir_tmp_out = test_outDir / "ncgen-remap"
@@ -60,7 +61,11 @@ def test_ncgen_remap_pp_components(capfd):
         assert sp.returncode == 0
         out, err = capfd.readouterr()
 
-def test_ncgen_output(capfd): #compout,var,din_check,ncgen_dir_tmp_out, remapped_new_file):
+def test_ncgen_output(capfd):
+        """Check for the creation of required directories and 
+           a *.nc generated from ncgen command in 
+           ncgen_remap_pp_components test.
+        """
         global remapped_new_file, newfileln
         # Define name of new remapped file 
         remapped_new_file = f'{compout}.{var}.nc'
@@ -75,10 +80,12 @@ def test_ncgen_output(capfd): #compout,var,din_check,ncgen_dir_tmp_out, remapped
 
 def test_original_remap_pp_components(capfd):
     """In this test, app checks for success of remapping a file with rose app
-    as the valid definitions are being called by the environment.
+    as the valid definitions are being called by the environment with the original 
+    remap-pp-components script.
     """
-    #FIX THIS
-    script = Path("/home/Dana.Singh/pp/refactor/REMAP/app/remap-pp-components")
+    # Go to original remap script directory
+    os.chdir("../remap-pp-components")
+    script = Path(os.getcwd())
 
     global orig_dir_tmp_out
     # Define output location
@@ -132,7 +139,9 @@ def test_original_remap_pp_components(capfd):
 
 
 def test_rewrite_remap_pp_components(capfd):
-    """In this test app checks for success of remapping a file with rose app using the rewritten remap-pp-components script as the valid definitions are being called by the environment.
+    """In this test app checks for success of remapping a file with rose app 
+       using the rewritten remap-pp-components script as the valid definitions 
+       are being called by the environment.
     """
     script = Path(path)
 
@@ -184,7 +193,9 @@ def test_rewrite_remap_pp_components(capfd):
     out, err = capfd.readouterr()
 
 def test_nccmp_ncgen_origremap(capfd):
-    """This test compares the results of ncgen and orig_remap making sure that the two new created remapped files are identical."""
+    """This test compares the results of ncgen and orig_remap,
+       making sure that the two new created remapped files are identical.
+    """
 
     grid = "native"
     freq = "P1M"
@@ -196,7 +207,9 @@ def test_nccmp_ncgen_origremap(capfd):
     assert sp.returncode == 0
 
 def test_nccmp_ncgen_rewriteremap(capfd):
-    """This test compares the results of ncgen and rewrite_remap making sure that the two new created remapped files are identical."""
+    """This test compares the results of ncgen and rewrite_remap,
+        making sure that the two new created remapped files are identical.
+    """
 
     grid = "native"
     freq = "P1M"
@@ -208,7 +221,9 @@ def test_nccmp_ncgen_rewriteremap(capfd):
     assert sp.returncode == 0
 
 def test_nccmp_origremap_rewriteremap(capfd):
-    """This test compares the results of orig_remap and rewrite_remap making sure that the two new created remapped files are identical."""
+    """This test compares the results of orig_remap and rewrite_remap,
+       making sure that the two new created remapped files are identical.
+    """
 
     grid = "native"
     freq = "P1M"
