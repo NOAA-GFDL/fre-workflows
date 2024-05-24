@@ -87,18 +87,20 @@ def test_original_remap_pp_components(capfd):
     os.chdir("../remap-pp-components")
     script = Path(os.getcwd())
 
-    global orig_dir_tmp_out
-    # Define output location
-    orig_dir_tmp_in = test_outDir / "orig-rose-remap-input"
+    global orig_dir_tmp_out, remapped_new_file
+    # Define input and output locations
+    orig_dir_tmp_in = Path(ncgen_dir_tmp_out) / remapped_new_file 
     orig_dir_tmp_out = test_outDir / "orig-rose-remap-output"
 
+    #print(f"TMPIN: {orig_dir_tmp_in}")
+
     #Define/create necessary locations
-    grid_path = orig_dir_tmp_in / "native"
+    grid_path = orig_dir_tmp_out / "native"
     comp_path = grid_path / "atmos_scalar"
     freq_path = comp_path / "P1M"
     chunk_path = freq_path / "P5Y"
 
-    paths = [orig_dir_tmp_in, orig_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path] 
+    paths = [orig_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path] 
 
     for p in paths:
       if os.path.exists(p):
@@ -108,12 +110,12 @@ def test_original_remap_pp_components(capfd):
         os.makedirs(p, exist_ok=True)  
  
     # Input/test data
-    shutil.copyfile(DATA_DIR/DATA_FILE_NC, chunk_path/"atmos_scalar.198001-198412.co2mass.nc")
+    shutil.copyfile(orig_dir_tmp_in, chunk_path/"atmos_scalar.198001-198412.co2mass.nc")
 
     # Rose functionality
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{orig_dir_tmp_in}',
+           '-D',  '[env]inputDir='f'{orig_dir_tmp_out}',
            '-D',  '[env]outputDir='f'{orig_dir_tmp_out}',
            '-D',  '[env]currentChunk=P5Y',
            '-D',  '[env]component=atmos_scalar',
@@ -146,16 +148,17 @@ def test_rewrite_remap_pp_components(capfd):
     script = Path(path)
 
     global rewrite_dir_tmp_out
-    rewrite_dir_tmp_in = test_outDir / "rewrite-rose-remap-input"
+    #Define input and output locations
+    rewrite_dir_tmp_in = Path(ncgen_dir_tmp_out) / remapped_new_file
     rewrite_dir_tmp_out = test_outDir / "rewrite-rose-remap-output"
 
     #Define/make previous locations
-    grid_path = rewrite_dir_tmp_in / "native"
+    grid_path = rewrite_dir_tmp_out / "native"
     comp_path = grid_path / "atmos_scalar"
     freq_path = comp_path / "P1M"
     chunk_path = freq_path / "P5Y"
 
-    paths = [rewrite_dir_tmp_in, rewrite_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
+    paths = [rewrite_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
 
     for p in paths:
       if os.path.exists(p):
@@ -165,11 +168,11 @@ def test_rewrite_remap_pp_components(capfd):
         os.makedirs(p, exist_ok=True)
 
     # Inputdir/test data
-    shutil.copyfile(DATA_DIR/DATA_FILE_NC, chunk_path/"atmos_scalar.198001-198412.co2mass.nc")
+    shutil.copyfile(rewrite_dir_tmp_in, chunk_path/"atmos_scalar.198001-198412.co2mass.nc")
 
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{rewrite_dir_tmp_in}',
+           '-D',  '[env]inputDir='f'{rewrite_dir_tmp_out}',
            '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
            '-D',  '[env]currentChunk=P5Y',
            '-D',  '[env]components=atmos_scalar',
@@ -233,4 +236,3 @@ def test_nccmp_origremap_rewriteremap(capfd):
 
     sp = subprocess.run(nccmp)    
     assert sp.returncode == 0
-
