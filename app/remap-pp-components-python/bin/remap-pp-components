@@ -204,7 +204,7 @@ def truncate_date(date, freq):
 
 ## Purpose: Pattern match and search for the correct files in the chunk directory
 ## vars: variables
-## grid: 
+## grid: output grid  
 ## source: source history files for post-processed component
 ## begin: date to begin post-processing 
 ## freq: frequency
