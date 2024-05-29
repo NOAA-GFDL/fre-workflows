@@ -37,18 +37,17 @@ _________________________________________________________________________
 Pytest was used for the remap-pp-components testing-suite in the file `t/test_remap-pp-components.py`. This file includes:
 
 - *ncgen_remap_pp_components*: creates a netCdf file from a cdl file using the test data provided 
-- *ncgen_output*: links the output netCdf file to an output location 
-- *original_remap_pp_components*: remaps diagnostics using the original remap-pp-components script (will be removed with the replcaement of its python counterpart)
 - *rewrite_remap_pp_components*: remaps diagnostics using the rewritten remap-pp-components script
+- *nccmp_ncgen_rewriteremap*: compares output from the ncgen test the the remap rewrite script to make sure the netcdf file is the same 
+- *original_remap_pp_components*: remaps diagnostics using the original remap-pp-components script (will be removed with the replacement of its python counterpart)
 - *nccmp_ncgen_origremap*: compares the output from the ncgen test and the original remap script
-- *nccmp_ncgen_rewriteremap*: compares output from the ncgen test the the remap rewrite script
 - *nccmp_origremap_rewriteremap*: compares output from the original remap script and the remap rewrite script
 
 In order to use the test script, `pytest` and `nccmp` are required. 
 
 - `nccmp` is available through `module load fre/canopy` 
 - For pytest, the user can either,
-   1) create a conda environment and install pytest
+   1) Create a conda environment and install pytest
          
       ```
       conda create --name remap-rewrite
@@ -56,7 +55,7 @@ In order to use the test script, `pytest` and `nccmp` are required.
       conda install conda-forge::nccmp
       ```
 
-   2) put pytest in the user's local packages
+   2) Put pytest in the user's local packages
 
       ```
       pip install --user pytest
