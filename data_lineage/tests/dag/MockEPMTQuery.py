@@ -4,7 +4,8 @@ def mock_job_names():
     return ['PP-STARTER',
             'STAGE-HISTORY',
             'rename-split-to-pp',
-            'make-timeavgs',
+            'make-timeavgs_1',
+            'make-timeavgs_2',
             'combine-timeavgs',
             'read-archive-files']
 
@@ -12,7 +13,8 @@ def mock_job_names():
 def mock_input():
     return {
         'rename-split-to-pp': 'history-file1.nc hash1,history-file2.nc hash2,history-file3.nc hash3',
-        'make-timeavgs': 'rename-file1.nc hash4,rename-file2.nc hash5,rename-file3.nc hash6',
+        'make-timeavgs_1': 'rename-file1.nc hash4,rename-file2.nc hash5',
+        'make-timeavgs_2': 'rename-file3.nc hash6',
         'combine-timeavgs': 'timeavg-file1.nc hash7,timeavg-file2.nc hash8,timeavg-file3.nc hash9',
         'read-archive-files': 'archive-file.nc hash14'
     }
@@ -22,7 +24,8 @@ def mock_output():
     return {
         'STAGE-HISTORY': 'history-file1.nc hash11,history-file2.nc hash12,history-file3.nc hash13',
         'rename-split-to-pp': 'rename-file1.nc hash4,rename-file2.nc hash5,rename-file3.nc hash6',
-        'make-timeavgs': 'timeavg-file1.nc hash7,timeavg-file2.nc hash8,timeavg-file3.nc hash9',
+        'make-timeavgs_1': 'timeavg-file1.nc hash7,timeavg-file2.nc hash8',
+        'make-timeavgs_2': 'timeavg-file3.nc hash9',
         'combine-timeavgs': 'archive-file.nc hash14'
     }
 
