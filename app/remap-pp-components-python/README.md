@@ -36,8 +36,11 @@ This command will list the contents of the history tarfile given. Each history f
 _________________________________________________________________________
 Pytest was used for the remap-pp-components testing-suite in the file `t/test_remap-pp-components.py`. This file includes:
 
-- *ncgen_remap_pp_components*: creates a netCdf file from a cdl file using the test data provided 
-- *rewrite_remap_pp_components*: remaps diagnostics using the rewritten remap-pp-components script
+- *ncgen_remap_pp_components*: creates a netCdf file from a cdl file using the test data provided; this file provides the input netcdf file for the remap script test 
+- *rewrite_remap_pp_components*: remaps diagnostics using the remap-pp-components python script
+- *rewrite_remap_with_ens*: remaps diagnostics using the remap-pp-components python script when ensemble members are included
+- *rewrite_remap_product_failure*: tests for failure of the remap script when "ts" or "av" is not given for product
+- *rewrite_remap_beginDate_failure*: tests for failure of the remap script when an incorrect value for "begin" is given
 - *nccmp_ncgen_rewriteremap*: compares output from the ncgen test the the remap rewrite script to make sure the netcdf file is the same 
 - *original_remap_pp_components*: remaps diagnostics using the original remap-pp-components script (will be removed with the replacement of its python counterpart)
 - *nccmp_ncgen_origremap*: compares the output from the ncgen test and the original remap script
