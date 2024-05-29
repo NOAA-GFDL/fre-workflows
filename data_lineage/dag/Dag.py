@@ -22,11 +22,11 @@ class DAG:
 
     def add_node(self, node):
         """
-            Adds an node object that already exists to the DAG.
+        Adds an node object that already exists to the DAG.
 
-            If the node is created in another function, use this to add it to the DAG. Otherwise,
-            use create_node().
-            """
+        If the node is created in another function, use this to add it to the DAG. Otherwise,
+        use create_node().
+        """
         if not isinstance(node, Node):
             raise TypeError(f'{node} must be a Node object. If a node is not created already,'
                             f'use the function create_node() instead.')
