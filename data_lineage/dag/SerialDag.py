@@ -55,7 +55,7 @@ def create_edges(dag, nodes):
                             if output_file not in existing_edge.get_contents():
                                 existing_edge.add_content(output_file)
                         else:
-                            dag.add_edge(node, next_node, output_file)
+                            dag.create_edge(node, next_node, output_file)
                             edge_count += 1
                     if output_file == input_file and output_file_hash != input_file_hash:
                         dag.decrement_fidelity()
@@ -70,7 +70,7 @@ def main(jobs, run_dir):
     print('Adding nodes...')
     nodes = create_nodes(jobs)
     for node_data in nodes:
-        dag.add_node(*node_data)
+        dag.create_node(*node_data)
     print(f'Created {len(nodes)} nodes')
 
     print('Adding edges...')

@@ -63,15 +63,13 @@ def process_graph(config_data):
                         current_exact_jobs.append(exact_job)
 
                         if not dag.find_node(exact_job):
-                            dag.add_node(job_name=exact_job)
+                            dag.create_node(job_name=exact_job)
 
                         if previous_jobs:
                             for previous_exact_job in previous_jobs:
-                                dag.add_edge(dag.find_node((previous_exact_job)), dag.find_node(exact_job))
+                                dag.create_edge(dag.find_node((previous_exact_job)), dag.find_node(exact_job))
 
                 previous_jobs = current_exact_jobs
-
-    dag.dag_print()
 
     return dag
 

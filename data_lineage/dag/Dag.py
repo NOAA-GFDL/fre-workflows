@@ -20,7 +20,31 @@ class DAG:
         return (f'Directed Acyclic Graph with {len(self.nodes)} nodes '
                 f'and {len(self.edges)} edges')
 
-    def add_node(self, job_name, _input = None, _output = None):
+    def add_node(self, node):
+        """
+            Adds an node object that already exists to the DAG.
+
+            If the node is created in another function, use this to add it to the DAG. Otherwise,
+            use create_node().
+            """
+        if not isinstance(node, Node):
+            raise TypeError(f'{node} must be a Node object. If a node is not created already,'
+                            f'use the function create_node() instead.')
+        self.nodes.append(node)
+
+    def add_edge(self, edge):
+        """
+        Adds an edge object that already exists to the DAG.
+
+        If the edge is created in another function, use this to add it to the DAG. Otherwise,
+        use create_edge().
+        """
+        if not isinstance(edge, Edge):
+            raise TypeError(f'{edge} must be an Edge object. If a edge is not created already,'
+                            f'use the function create_edge() instead.')
+        self.edges.append(edge)
+
+    def create_node(self, job_name, _input = None, _output = None):
         """
         Creates a new node and adds it to the DAG.
 
@@ -40,7 +64,7 @@ class DAG:
         node = Node(job_name, _input, _output)
         self.nodes.append(node)
 
-    def add_edge(self, node, next_node, content=None):
+    def create_edge(self, node, next_node, content=None):
         """
         Creates a new edge and adds it to the DAG.
 
