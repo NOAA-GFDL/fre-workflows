@@ -47,8 +47,8 @@ def generate_hash(meta_data):
     bit_array_int_reduced line.
     """
     # Keep size a power of 2
-    size = 2 ** 8
-    hash_count = 200
+    size = 2 ** 14
+    hash_count = 64
 
     # Initialize the bloomfilter
     bf = BloomFilter(size, hash_count)

@@ -47,6 +47,10 @@ def get_job_data(job):
             1. Decompress the gizp-compressed data
             2. Grab absolute path
             3. Parse the decompressed data and append the path to the front
+
+        Eventually, if a db is implemented down the road that stores the job data instead
+        of storing it in the epmt annotations, the string compression/decompression will
+        be obsolete and can be removed since space is no longer an issue
         """
         if io:
             decompressed_data = sc.decompress_bytes(io)

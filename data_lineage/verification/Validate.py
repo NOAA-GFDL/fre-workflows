@@ -173,6 +173,8 @@ def main(serial_dag, run_dir):
     print('\nGenerating DAG from log/config/01-start-01.cylc...')
 
     config_dag = load_dag_from_config(run_dir)
+    config_dag.set_run_dir(run_dir)
+    config_dag.dag_print()
 
     print('\n----Starting Validation----')
     compare_dags(serial_dag, config_dag)
