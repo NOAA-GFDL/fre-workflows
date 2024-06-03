@@ -28,8 +28,12 @@ class DAG:
         use create_node().
         """
         if not isinstance(node, Node):
-            raise TypeError(f'{node} must be a Node object. If a node is not created already,'
-                            f'use the function create_node() instead.')
+            raise TypeError(f'ERROR: arg must be a Node object. If a node is not created already, '
+                            f'use the function create_node() instead')
+
+        if self.find_node(node.get_name()):
+            raise ValueError(f'ERROR: Node "{node.get_name()}" already exists in this DAG')
+
         self.nodes.append(node)
 
     def add_edge(self, edge):
@@ -40,8 +44,20 @@ class DAG:
         use create_edge().
         """
         if not isinstance(edge, Edge):
-            raise TypeError(f'{edge} must be an Edge object. If a edge is not created already,'
-                            f'use the function create_edge() instead.')
+            raise TypeError('ERROR: arg must be an Edge object. If a edge is not created already, '
+                            'use the function create_edge() instead')
+
+        start_node = edge.get_start()
+        end_node = edge.get_end()
+
+        if not self.find_node(start_node.get_name()):
+            raise ValueError(f'ERROR: Start node "{start_node.get_name()}" does not exist in this DAG')
+        if not self.find_node(end_node.get_name()):
+            raise ValueError(f'ERROR: End node "{end_node.get_name()}" does not exist in this DAG')
+
+        if self.find_edge(start_node, end_node):
+            raise ValueError(f'ERROR: "{edge}" already exists in this DAG')
+
         self.edges.append(edge)
 
     def create_node(self, job_name, _input = None, _output = None):
@@ -57,9 +73,8 @@ class DAG:
                 The output file names for the job.
         """
         for existing_node in self.get_nodes():
-            if job_name == existing_node.get_name():
-                raise ValueError(f'ERROR: Node "{node.name}" already '
-                                 f'exists in this DAG')
+            if self.find_node(job_name):
+                raise ValueError(f'ERROR: Node "{job_name}" already exists in this DAG')
 
         node = Node(job_name, _input, _output)
         self.nodes.append(node)
@@ -77,13 +92,11 @@ class DAG:
                 The file that is shared between the nodes. The file is
                 represented as the absolute path.
         """
-        start_name = self.find_node(node.get_name())
-        end_name = self.find_node(next_node.get_name())
 
-        if start_name not in self.nodes:
-            raise ValueError(f'Start node "{edge.start}" does not exist in this DAG')
-        if end_name not in self.nodes:
-            raise ValueError(f'End node "{edge.end.name}" does not exist in this DAG')
+        if node not in self.get_nodes():
+            raise ValueError(f'ERROR: Start node "{node.get_name()}" does not exist in this DAG')
+        if next_node not in self.get_nodes():
+            raise ValueError(f'ERROR: End node "{next_node.get_name()}" does not exist in this DAG')
 
         edge = Edge(node, next_node, contents=[content])
         next_node.increment_inbound_edeges()
@@ -154,7 +167,7 @@ class DAG:
         self.run_dir = directory
         return
 
-    def check_cyclic_helper(self, node, visited, parent):
+    def check_acyclic_helper(self, node, visited, parent):
         """
         Recursive DFS.
         """
@@ -165,7 +178,7 @@ class DAG:
         for neighbor in neighbors:
             neighbor_idx = self.nodes.index(neighbor)
             if not visited[neighbor_idx]:
-                if self.check_cyclic_helper(neighbor, visited, node):
+                if self.check_acyclic_helper(neighbor, visited, node):
                     return True
             elif parent != neighbor and parent is not None:
                 # If the neighbor is visited, and it's not the parent node
@@ -173,18 +186,18 @@ class DAG:
 
         return False
 
-    def check_cyclic(self):
+    def check_acyclic(self):
         """
         Performs Depth-First-Search (DFS) on the DAG.
 
         Returns:
-            True if DFS visits all nodes within the DAG. False otherwise.
+            True if DFS visits all nodes within the dag, which means it is acyclic since DFS terminated naturally. False otherwise.
         """
         visited = [False] * len(self.nodes)
 
         for node in self.nodes:
             if not visited[self.nodes.index(node)]:
-                if self.check_cyclic_helper(node, visited, None):
+                if self.check_acyclic_helper(node, visited, None):
                     return True
         return False
 
@@ -270,6 +283,6 @@ class DAG:
         print(f'Nodes    : {len(self.nodes)}')
         print(f'Omitted  : {omitted_jobs}')
         print(f'Edges    : {len(self.edges)}')
-        print(f'Acyclic  : {self.check_cyclic()}')
+        print(f'Acyclic  : {self.check_acyclic()}')
         print(f'Fidelity : {self.fidelity}/100')
         return
