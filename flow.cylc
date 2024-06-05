@@ -464,6 +464,10 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         execution time limit = PT8H
         script = """
             set -euo pipefail
+
+            export output_file_list=
+            echo "[COLE] created i/o lists"
+
             #Stage the contents of a tarfile to PTMP
             module list
             echo Arguments:
@@ -496,11 +500,34 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                  echo "Error: Cant stage history files in ${file} to PTMP"
                  exit 1
             fi
+
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+
+            outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+
+            for file in $(ls $outputDir); do
+                hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $outputDir/$file)
+                export output_file_list="${output_file_list}$file $hash_val,"
+                echo -e "\n[COLE] added $file to output list with hash_val: $hash_val"
+            done
+
+            echo "[COLE] epmt analysis and annotate"
+            which epmt
+
+            epmt -v -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+            echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
+            if [ -n "$output_file_list" ]; then
+                compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${output_file_list}")
+                echo -e "\n---output---"
+                echo -e "epmt annotate DATA_LINEAGE_OUT = \n    ${output_file_list%*,}"
+                epmt -v -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+            fi
+
             echo "Natural end of the history file staging"
             exit 0
         """

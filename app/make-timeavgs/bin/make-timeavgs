@@ -7,8 +7,8 @@ set -x
 #
 
 echo "[COLE] this is a test"
-echo "module load python..."
-module load python
+# echo "module load python..."
+# module load python
 echo "module load fre-nctools..."
 module load fre-nctools
 export input_file_list=
