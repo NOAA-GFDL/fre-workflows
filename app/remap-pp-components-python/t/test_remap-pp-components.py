@@ -1,147 +1,140 @@
+import os
+import subprocess
+import shutil
 from pathlib import Path
 import pytest
-import subprocess, os
-import shutil
 
-
-# Define paths and environment variables
-#Path to test data
 cwd = os.getcwd()
 
+# Path to test data
 DATA_DIR  = Path(f"{cwd}/test-data")
 # CDL file to generate nc file from ncgen
 DATA_FILE_CDL = Path("atmos_scalar.198001-198412.co2mass.cdl")
-# NC file name to test remap functionality  
+# Create NC file name to test remap functionality
 DATA_FILE_NC = Path("atmos_scalar.198001-198412.co2mass.nc")
-# Output directory
+
+# Define variables
+COMPOUT = "atmos_scalar"
+GRID = "native"
+FREQ = "P1M"
+CHUNK = "P5Y"
+PRODUCT = "ts"
+COPY_TOOL = "cp"
+
+#Define/create necessary locatiions 
 test_outDir = Path(f"{cwd}/test-outDir")
+remap_in = test_outDir / "ncgen-output"
+remap_out = test_outDir / "remap-output"
+
+# Set up input directory (location previously made in flow.cylc workflow)
+ncgen_out = Path(remap_in) / GRID / COMPOUT / FREQ / CHUNK
 
 #If output directory exists, remove and create again
-if os.path.exists(test_outDir):
+if Path(test_outDir).exists():
     shutil.rmtree(test_outDir)
-    os.mkdir(test_outDir)
+    Path(ncgen_out).mkdir(parents=True,exist_ok=True)
+    Path(remap_out).mkdir(parents=True,exist_ok=True)
 else:
-    os.mkdir(test_outDir)
+    Path(ncgen_out).mkdir(parents=True,exist_ok=True)
+    Path(remap_out).mkdir(parents=True,exist_ok=True)
 
-def test_ncgen_remap_pp_components(capfd):
-    """Following this test, check for the creation of required 
-       directories and a *.nc file from *.cdl text file using 
-       command ncgen. Test checks for success of ncgen command.
+def test_create_ncfile_with_ncgen_cdl(capfd):
     """
-    global compout, grid, freq, chunk, ncgen_dir_tmp_out, grid_path, chunk_path 
-    ncgen_dir_tmp_out = test_outDir / "ncgen-remap"
-
-    # Define component
-    compout = "atmos_scalar"
-    grid = "native"
-    freq = "P1M"
-    chunk = "P5Y"
-
-    #Define/create necessary locations (location previously made in flow.cylc workflow)
-    grid_path = ncgen_dir_tmp_out / grid
-    comp_path = grid_path / compout
-    freq_path = comp_path / freq
-    chunk_path = freq_path / chunk
-
-    paths = [ncgen_dir_tmp_out, grid_path, comp_path, freq_path, chunk_path]
-
-    for p in paths:
-        if os.path.exists(p):
-            shutil.rmtree(p)
-            os.makedirs(p, exist_ok=True)
-        else:
-            os.makedirs(p, exist_ok=True)
-       
-    print(f"NCGEN OUTPUT DIRECTORY: {chunk_path}")
+       Check for the creation of required directories 
+       and a *.nc file from *.cdl text file using
+       command ncgen. This file will be used as an input
+       file for the rewrite remap tests. 
+       Test checks for success of ncgen command.
+    """
+    print(f"NCGEN OUTPUT DIRECTORY: {ncgen_out}")
 
     # NCGEN command: ncgen -o [outputfile] [inputfile]
-    ex = [ "ncgen", "-k", "64-bit offset", "-o", Path(chunk_path) / DATA_FILE_NC, DATA_DIR / DATA_FILE_CDL ];
-    print (ex);
+    ex = [ "ncgen", "-k", "64-bit offset",
+           "-o", Path(ncgen_out) / DATA_FILE_NC,
+           DATA_DIR / DATA_FILE_CDL ]
+
+    print (ex)
 
     # Run ncgen command
-    sp = subprocess.run( ex )
- 
-    # Error checking 
-    assert sp.returncode == 0
+    sp = subprocess.run( ex, check = False )
+
+    # Check for 
+    # 1. ncgen command success
+    # 2. nc file creation
+    assert all([sp.returncode == 0, 
+               Path(ncgen_out / DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
 
-def test_rewrite_remap_pp_components(capfd):
-    """In this test app checks for success of remapping a file with rose app 
-       using the rewritten remap-pp-components script as the valid definitions 
+def test_remap_pp_components(capfd):
+    """Checks for success of remapping a file with rose app using 
+       the remap-pp-components script as the valid definitions
        are being called by the environment.
     """
     # script: directory with /bin folder with remap script
     script = Path(cwd)
 
-    global rewrite_dir_tmp_out
-    #Define input and output locations
-    rewrite_dir_tmp_out = test_outDir / "remap-rewrite-output"
-    os.makedirs(rewrite_dir_tmp_out, exist_ok=True)
-
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{ncgen_dir_tmp_out}',
-           '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
+           '-D',  '[env]inputDir='f'{remap_in}',
+           '-D',  '[env]outputDir='f'{remap_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]components=atmos_scalar',
+           '-D',  '[env]components='f'{COMPOUT}',
            '-D',  '[env]begin=19800101T0000Z',
-           '-D',  '[env]product=ts',
+           '-D',  '[env]product='f'{PRODUCT}',
            '-D',  '[env]dirTSWorkaround=1',
            '-D',  '[env]ens_mem=',
-           '-D',  '[env]COPY_TOOL=cp',
-           '-D',  '[atmos_scalar]grid=native',
+           '-D',  '[env]COPY_TOOL='f'{COPY_TOOL}',
+           '-D',  '[atmos_scalar]grid='f'{GRID}',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
          ]
 
     print (ex)
-    
-    # Run the rewritten remap-pp-components script using the rose-app configuration
-    sp = subprocess.run( ex )
 
-    # Error checking
-    assert sp.returncode == 0
+    # Run the rewritten remap-pp-components script using the rose-app configuration
+    sp = subprocess.run( ex, check = False )
+
+    # Check for 
+    # 1. success of remap script
+    # 2. creation of output directory structre, 
+    # 3. link to nc file in output location
+    assert all([sp.returncode == 0,
+                Path(remap_out/COMPOUT/PRODUCT/FREQ/CHUNK).exists(),
+                Path(remap_out/COMPOUT/PRODUCT/FREQ/CHUNK/DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
 
-def test_rewrite_remap_with_ens(capfd):
-    """Checks for success of remap script
-       with ensemble members.
+def test_remap_pp_components_with_ensmem(capfd):
+    """Checks for success of remapping a file with rose app config using 
+       the remap-pp-components script when ens_mem is defined.
     """
     # script: directory with /bin folder with remap script
     script = Path(cwd)
 
-    global rewrite_dir_tmp_out
-    #Define input and output locations
-    rewrite_dir_tmp_out = test_outDir / "remap-rewrite-output-ens"
-    ens_path = grid_path / "ens_01"
-    comp_enspath = ens_path / compout
-    freq_enspath = comp_enspath / freq
-    chunk_enspath = freq_enspath / chunk
+    # Redefine ens input and output directories
+    remap_ens_in = test_outDir / "ncgen-ens-output"
+    ncgen_ens_out = Path(remap_ens_in) / GRID / "ens_01" / COMPOUT / FREQ / CHUNK
+    remap_ens_out = test_outDir / "remap-ens-output"
 
-    paths = [rewrite_dir_tmp_out, ens_path, comp_enspath, freq_enspath, chunk_enspath]
+    # Create ensemble locations
+    #Path(remap_ens_in).mkdir(exist_ok=True)               # remap script starts at parent 
+    Path(ncgen_ens_out).mkdir(parents=True,exist_ok=True) # then dirs are created for remap script to go through
+    Path(remap_ens_out).mkdir(parents=True,exist_ok=True)
 
-    for p in paths:
-        if os.path.exists(p):
-            shutil.rmtree(p)
-            os.makedirs(p, exist_ok=True)
-        else:
-            os.makedirs(p, exist_ok=True)
-
-    # Copy input file from ncgen test in ensemble input directory as well
-    shutil.copyfile(Path(chunk_path) / DATA_FILE_NC, chunk_enspath/DATA_FILE_NC)
+    # Make sure input nc file is also in ens input location
+    shutil.copyfile(Path(ncgen_out) / DATA_FILE_NC, Path(ncgen_ens_out) / DATA_FILE_NC)
 
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{ncgen_dir_tmp_out}',
-           '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
+           '-D',  '[env]inputDir='f'{remap_ens_in}',
+           '-D',  '[env]outputDir='f'{remap_ens_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]components=atmos_scalar',
+           '-D',  '[env]components='f'{COMPOUT}',
            '-D',  '[env]begin=19800101T0000Z',
-           '-D',  '[env]product=ts',
+           '-D',  '[env]product='f'{PRODUCT}',
            '-D',  '[env]dirTSWorkaround=1',
            '-D',  '[env]ens_mem=ens_01',
-           '-D',  '[env]COPY_TOOL=cp',
-           '-D',  '[atmos_scalar]grid=native',
+           '-D',  '[env]COPY_TOOL='f'{COPY_TOOL}',
+           '-D',  '[atmos_scalar]grid='f'{GRID}',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
          ]
@@ -149,36 +142,37 @@ def test_rewrite_remap_with_ens(capfd):
     print (ex)
 
     # Run the rewritten remap-pp-components script using the rose-app configuration
-    sp = subprocess.run( ex )
+    sp = subprocess.run( ex, check = False )
 
-    # Error check
-    assert sp.returncode == 0
+    # Check for  
+    # 1. success of remap script
+    # 2. creation of output directory structre, 
+    # 3. link to nc file in output location
+    assert all([sp.returncode == 0,
+                Path(remap_ens_out/COMPOUT/PRODUCT/"ens_01"/FREQ/CHUNK).exists(),
+                Path(remap_ens_out/COMPOUT/PRODUCT/"ens_01"/FREQ/CHUNK/DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
 
-def test_rewrite_remap_product_failure(capfd):
-    """Checks for failure of the remap script when 
-       ts or av is not given for the product.
+def test_remap_pp_components_product_failure(capfd):
+    """Checks for failure of remapping a file with rose app using 
+       the remap-pp-components script when the product is ill-defined.
+       (not ts or av)
     """
     # script: directory with /bin folder with remap script
     script = Path(cwd)
 
-    global rewrite_dir_tmp_out
-    #Define input and output locations
-    rewrite_dir_tmp_out = test_outDir / "remap-rewrite-output"
-    os.makedirs(rewrite_dir_tmp_out, exist_ok=True)
-
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{ncgen_dir_tmp_out}',
-           '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
+           '-D',  '[env]inputDir='f'{remap_in}',
+           '-D',  '[env]outputDir='f'{remap_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]components=atmos_scalar',
+           '-D',  '[env]components='f'{COMPOUT}',
            '-D',  '[env]begin=19800101T0000Z',
-           '-D',  '[env]product=nottsorav',
+           '-D',  '[env]product=not-ts-or-av',
            '-D',  '[env]dirTSWorkaround=1',
            '-D',  '[env]ens_mem=',
-           '-D',  '[env]COPY_TOOL=cp',
-           '-D',  '[atmos_scalar]grid=native',
+           '-D',  '[env]COPY_TOOL='f'{COPY_TOOL}',
+           '-D',  '[atmos_scalar]grid='f'{GRID}',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
          ]
@@ -186,131 +180,75 @@ def test_rewrite_remap_product_failure(capfd):
     print (ex)
 
     # Run the rewritten remap-pp-components script using the rose-app configuration
-    sp = subprocess.run( ex )
+    sp = subprocess.run( ex, check = False )
 
-    # Failure check 
+    # Check for 
+    # 1. failure of remap script
     assert sp.returncode != 0
     out, err = capfd.readouterr()
 
-def test_rewrite_remap_beginDate_failure(capfd):
-    """Checks for failure of the remap script when
-       an incorrect begin date is given.
+def test_remap_pp_components_beginDate_failure(capfd):
+    """Checks for failure of remapping a file with rose app using 
+       the remap-pp-components script when the begin variable is
+       ill-defined.
     """
     # script: directory with /bin folder with remap script
     script = Path(cwd)
 
-    global rewrite_dir_tmp_out
-    #Define input and output locations
-    rewrite_dir_tmp_out = test_outDir / "remap-rewrite-output"
-    os.makedirs(rewrite_dir_tmp_out, exist_ok=True)
-
     # Create a test rose-app configuration
     ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{ncgen_dir_tmp_out}',
-           '-D',  '[env]outputDir='f'{rewrite_dir_tmp_out}',
+           '-D',  '[env]inputDir='f'{remap_in}',
+           '-D',  '[env]outputDir='f'{remap_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]components=atmos_scalar',
-           '-D',  '[env]begin=0123456789T0000Z',
-           '-D',  '[env]product=ts',
+           '-D',  '[env]components='f'{COMPOUT}',
+           '-D',  '[env]begin=123456789T0000Z',
+           '-D',  '[env]product='f'{PRODUCT}',
            '-D',  '[env]dirTSWorkaround=1',
            '-D',  '[env]ens_mem=',
-           '-D',  '[env]COPY_TOOL=cp',
-           '-D',  '[atmos_scalar]grid=native',
+           '-D',  '[env]COPY_TOOL='f'{COPY_TOOL}',
+           '-D',  '[atmos_scalar]grid='f'{GRID}',
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
          ]
-
+    
     print (ex)
 
     # Run the rewritten remap-pp-components script using the rose-app configuration
-    sp = subprocess.run( ex )
+    sp = subprocess.run( ex, check = False )
 
-    # Failure check
+    # Check for 
+    # 1. failure of remap script
     assert sp.returncode != 0
     out, err = capfd.readouterr()
 
 # Comparison
-def test_nccmp_ncgen_rewriteremap(capfd):
+def test_nccmp_ncgen_remap(capfd):
     """This test compares the results of ncgen and rewrite_remap,
         making sure that the remapped files are identical.
     """
+    nccmp = [ "nccmp", "-d",
+              Path(remap_in) / GRID / COMPOUT / FREQ / CHUNK / DATA_FILE_NC,
+              Path(remap_out) / COMPOUT / PRODUCT / FREQ / CHUNK / DATA_FILE_NC ]
 
-    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) / grid / compout / freq / chunk / DATA_FILE_NC, Path(rewrite_dir_tmp_out) / compout / "ts" / freq / chunk / DATA_FILE_NC ];
-
-    sp = subprocess.run(nccmp)    
-    assert sp.returncode == 0
-
-# Original remap script 
-@pytest.mark.skip(reason='comparison with original remap script')
-def test_original_remap_pp_components(capfd):
-    """In this test, app checks for success of remapping a file with rose app
-    as the valid definitions are being called by the environment with the original
-    remap-pp-components script.
-    """
-    # Go to original remap script directory
-    os.chdir("../remap-pp-components")
-    script = Path(os.getcwd())
-    print(script)
-
-    global orig_dir_tmp_out #, remapped_new_file
-    # Define input and output locations
-    orig_dir_tmp_out = test_outDir / "orig-remap-output"
-
-    os.makedirs(orig_dir_tmp_out, exist_ok=True)
-
-    # Rose functionality
-    # Create a test rose-app configuration
-    ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{ncgen_dir_tmp_out}',
-           '-D',  '[env]outputDir='f'{orig_dir_tmp_out}',
-           '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]component=atmos_scalar',
-           '-D',  '[env]components=atmos_scalar',
-           '-D',  '[env]begin=19800101T0000Z',
-           '-D',  '[env]product=ts',
-           '-D',  '[env]dirTSWorkaround=1',
-           '-D',  '[env]ens_mem=',
-           '-D',  '[env]COPY_TOOL=cp',
-           '-D',  '[atmos_scalar]grid=native',
-           '-D',  '[atmos_scalar]sources=atmos_scalar',
-           '-C',  script
-         ]
-
-    print (ex)
-
-    # Run the remap-pp-components script using the rose-app configuration
-    sp = subprocess.run( ex )
-
-    # Error checking
+    sp = subprocess.run( nccmp, check = False)
     assert sp.returncode == 0
     out, err = capfd.readouterr()
 
-@pytest.mark.skip(reason='comparison with original remap script')
-def test_nccmp_ncgen_origremap(capfd):
-    """This test compares the results of ncgen and orig_remap,
-       making sure that the two new created remapped files are identical.
+# Comparison
+def test_nccmp_ncgen_remap_ens_mem(capfd):
+    """This test compares the results of ncgen and rewrite_remap,
+        making sure that the remapped files are identical.
     """
+    # Redefine ens input and output directories
+    remap_ens_in = test_outDir / "ncgen-ens-output"
+    remap_ens_out = test_outDir / "remap-ens-output"
 
-    grid = "native"
-    freq = "P1M"
-    chunk = "P5Y"
+    nccmp = [ "nccmp", "-d",
+              Path(remap_ens_in) / GRID / "ens_01" / COMPOUT / FREQ / CHUNK / DATA_FILE_NC,
+              Path(remap_ens_out) / COMPOUT / PRODUCT / "ens_01" / FREQ / CHUNK / DATA_FILE_NC ]
 
-    nccmp = [ "nccmp", "-d", Path(ncgen_dir_tmp_out) /  grid / compout / freq / chunk / DATA_FILE_NC, Path(orig_dir_tmp_out) / compout / "ts" / freq / chunk / DATA_FILE_NC ];
-
-    sp = subprocess.run(nccmp)
+    sp = subprocess.run( nccmp, check = False)
     assert sp.returncode == 0
+    out, err = capfd.readouterr()
 
-@pytest.mark.skip(reason='comparison with original remap script')
-def test_nccmp_origremap_rewriteremap(capfd):
-    """This test compares the results of orig_remap and rewrite_remap,
-       making sure that the two new created remapped files are identical.
-    """
 
-    grid = "native"
-    freq = "P1M"
-    chunk = "P5Y"
-
-    nccmp = [ "nccmp", "-d", Path(orig_dir_tmp_out) / compout / "ts" / freq / chunk / DATA_FILE_NC , Path(rewrite_dir_tmp_out) / compout / "ts" / freq / chunk / DATA_FILE_NC ];
-
-    sp = subprocess.run(nccmp)    
-    assert sp.returncode == 0
