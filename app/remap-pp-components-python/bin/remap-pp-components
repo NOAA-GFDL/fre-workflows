@@ -335,7 +335,10 @@ def remap():
                     os.chdir(f"{input_dir}/{g}")
 
                     # Go into source directory
-                    os.chdir(f"{input_dir}/{g}/{s}")
+                    if ens_mem is not None:
+                        os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}")
+                    else: 
+                        os.chdir(f"{input_dir}/{g}/{s}")
 
                     #FREQ
                     if fields.get("freq") is None:
@@ -345,7 +348,10 @@ def remap():
                         freq = freq.split()
 
                     for f in freq:
-                        os.chdir(f"{input_dir}/{g}/{s}/{f}")
+                        if ens_mem is not None:
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
+                        else:
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}")
 
                         #CHUNK
                         if fields.get("chunk") is None:
@@ -357,8 +363,11 @@ def remap():
                         for c in chunk:
                             if c != current_chunk:
                                 continue
-
-                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                           
+                            if ens_mem is not None:
+                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                            else:
+                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
 
                             # Create directory
                             dirs = create_dir(out_dir = output_dir,
@@ -379,7 +388,10 @@ def remap():
                                             comp = comp)
 
                             # Search for files in chunk directory
-                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                            if ens_mem is not None:
+                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                            else:
+                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
                             files = search_files(product = product,
                                                  var = v,
                                                  source = s,
@@ -388,35 +400,51 @@ def remap():
                                                  begin = begin)
 
                             print(f"files found: {files}")
-
+                            
                             if not files:
-                                raise Exception("\nError: No input files found in",
-                                                f"{input_dir}/{g}/{s}/{f}/{c}")
+                                if ens_mem is not None:
+                                    raise Exception("\nError: No input files found in",
+                                                    f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                                else:
+                                    raise Exception("\nError: No input files found in",
+                                                    f"{input_dir}/{g}/{s}/{f}/{c}")
 
                             os.chdir(output_dir)
 
                             for file in files:
                                 newfile1 = file.split(".",1)[1]
                                 newfile2 = f"{comp}.{newfile1}"
-
+                               
                                 # If file exists, remove it
                                 # (would exist if workflow was run previously)
                                 if os.path.exists(f"{dir}/{newfile2}"):
                                     os.remove(f"{dir}/{newfile2}")
 
                                 # Replace with new file
-                                link = ["ln",
-                                         f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                         f"{output_dir}/{dir}/{newfile2}"]
-
+                                if ens_mem is not None:
+                                    link = ["ln",
+                                            f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dirs}/{newfile2}"]
+                                else:
+                                    link = ["ln",
+                                            f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dirs}/{newfile2}"]
+                                
                                 run = subprocess.run( link, check = False )
                                 ret = run.returncode
 
                                 if ret != 0:
-                                    copy = [f"{copy_tool}",
-                                            f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dir}/{newfile2}" ]
-                                    subprocess.run( copy, check = False )
+                                    if ens_mem is not None:
+                                        copy = [f"{copy_tool}",
+                                                f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                                f"{output_dir}/{dir}/{newfile2}" ]
+                                        subprocess.run( copy, check = False )
+                                    else:
+                                        copy = [f"{copy_tool}",
+                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                                f"{output_dir}/{dir}/{newfile2}" ]
+                                        subprocess.run( copy, check = False )
+
 
     print("Component remapping complete")
 
