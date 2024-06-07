@@ -37,8 +37,10 @@ Pytest was used for the remap-pp-components testing-suite in the file `t/test_re
 
 In order to use the test script, `pytest` and `nccmp` are required. These are available through:
 ```
-module load miniforge nccmp conda activate /nbhome/fms/conda/envs/fre-cli
+module load miniforge nccmp 
+conda activate /nbhome/fms/conda/envs/fre-cli
 ```
+
 From the `/app/remap-pp-component-python/` directory, run:
 ``` 
 python -m pytest t/test_remap-pp-components
