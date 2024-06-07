@@ -292,26 +292,26 @@ def remap():
     # Start in input directory)
     os.chdir(input_dir)
 
-    #for comp in config.get():
-     # loop through components to be post processed
-    for comp in components:
-        #if comp not in ('env','command'):
-            #if components is not None and comp not in components:
-            #    continue
+    # loop through components to be post processed
+    # list of components
+    comps = components.split()
+    for comp in comps:
+        comp = comp.strip('""')
         try:
-            #compOut: variable/field per component in rose config
+            #comp_out: component in rose config
             comp_out = config.get([comp])
 
-            #fields: info for each field
+            #fields: info associated with each component
             fields = comp_out.get_value()
-            print(fields)
-            ah1
+
         except AttributeError:
-            print(f'WARNING: component {comp} does not exist in rose config')
+            print(f"WARNING: component {comp} does not exist in rose config")
             continue
 
-        #if fields == {}:
-        #    continue
+        # check for empty dictionary
+        if fields == {}:
+            print(f"WARNING: component {comp} does not have any associated attributes")
+            continue
 
         # Define fields
         if fields.get("variables") is not None:
