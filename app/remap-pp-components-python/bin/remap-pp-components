@@ -21,13 +21,13 @@ def verify_dirs(in_dir,out_dir):
     """
 
     # Verify input directory exists and is a directory
-    if os.path.isdir(Path(in_dir)):
+    if Path(in_dir).is_dir():
         print("Input directory is a valid directory")
     else:
         raise Exception(f"Error: Input directory {in_dir} is not a valid directory")
 
     # Verify output directory exists and is a directory
-    if os.path.isdir(Path(out_dir)):
+    if Path(out_dir).is_dir():
         print("Output directory is a valid directory")
     else:
         raise Exception(f"Error: Output directory {out_dir} is not a valid directory")
@@ -45,7 +45,7 @@ def create_dir(out_dir,comp,freq,chunk,ens,dir_ts):
     """
 
     # Define dir
-    if ens:
+    if ens is not None:
         if dir_ts:
             dirs = f"{comp}/ts/{ens}/{freq}/{chunk}"
         else:
@@ -58,7 +58,7 @@ def create_dir(out_dir,comp,freq,chunk,ens,dir_ts):
 
     # Create dir from outputDir
     os.chdir(out_dir)
-    os.makedirs(dirs,exist_ok=True)
+    Path(dirs).mkdir(parents=True,exist_ok=True)
 
     return dirs
 
@@ -135,17 +135,18 @@ def bronx_style(freq, chunk, ens_member, out_dir, comp):
     if chunk_legacy == "error":
         print(f"Error: Skipping legacy directory for chunk: {chunk}")
     else:
-        if ens_member:
+        if ens_member is not None:
             dir1 = f"{out_dir}/{comp}/ts/{ens_member}"
             os.chdir(f"{out_dir}/{comp}/ts/{ens_member}")
         else:
             dir1 = f"{out_dir}/{comp}/ts"
             os.chdir(f"{out_dir}/{comp}/ts")
 
-        os.makedirs(freq_legacy, exist_ok=True)
+        Path(freq_legacy).mkdir(exist_ok=True)
         os.chdir(freq_legacy)
 
-        if not os.path.exists(chunk_legacy):
+            
+        if not Path(chunk_legacy).exists(): 
             os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
 
     return dir1
@@ -417,7 +418,7 @@ def remap():
                                
                                 # If file exists, remove it
                                 # (would exist if workflow was run previously)
-                                if os.path.exists(f"{dir}/{newfile2}"):
+                                if Path(f"{dir}/{newfile2})").exists(): 
                                     os.remove(f"{dir}/{newfile2}")
 
                                 # Replace with new file
