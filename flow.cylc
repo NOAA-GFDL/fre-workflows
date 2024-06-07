@@ -781,7 +781,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
 
     [[REMAP-PP-COMPONENTS]]
-        script = rose task-run --verbose --app-key remap-pp-components-python
+        script = rose task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
 
