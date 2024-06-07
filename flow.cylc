@@ -956,8 +956,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_REGRID %}
     [[REGRID-XY]]
         pre-script = mkdir -p $outputDir
-        #script = rose task-run --verbose --app-key regrid-xy
-        script = rose task-run --verbose --app-key regrid-xy-original
+        script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
