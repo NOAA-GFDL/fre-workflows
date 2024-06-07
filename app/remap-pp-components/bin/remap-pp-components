@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Description: Remap components that will be 
-             post-processed from one convention, 
-             such a s history files, to an 
+Description: Remap components that will be
+             post-processed from one convention,
+             such a s history files, to an
              updated output directory structure
 
 """
@@ -37,7 +37,7 @@ def create_dir(out_dir,comp,freq,chunk,ens,dir_ts):
     Create the output directory structure
     Params:
         out_dir: output directory
-        comp: component that will be post-processed 
+        comp: component that will be post-processed
         freq: frequency
         chunk: chunk
         ens: ensemble member
@@ -145,8 +145,7 @@ def bronx_style(freq, chunk, ens_member, out_dir, comp):
         Path(freq_legacy).mkdir(exist_ok=True)
         os.chdir(freq_legacy)
 
-            
-        if not Path(chunk_legacy).exists(): 
+        if not Path(chunk_legacy).exists():
             os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
 
     return dir1
@@ -211,7 +210,7 @@ def search_files(product,var,source,freq,current_chunk,begin):
         var: variables
         source: source history files for post-processed component
         begin: date to begin post-processing
-        current_chunk: current chunk to post-process 
+        current_chunk: current chunk to post-process
         freq: frequency
     """
 
@@ -247,7 +246,7 @@ def search_files(product,var,source,freq,current_chunk,begin):
 def remap():
     """
     Remap history files to an updated output directory structure
-    Params: 
+    Params:
         input_dir: input directory
         output_dir: output directory
         begin: date to begin post-processing
@@ -290,162 +289,171 @@ def remap():
     # Verify the input and output directories
     verify_dirs(input_dir, output_dir)
 
+    # Start in input directory)
     os.chdir(input_dir)
 
-    for comp in config.get():
-        if comp not in ('env','command'):
-            if components is not None and comp not in components:
-                continue
-
+    #for comp in config.get():
+     # loop through components to be post processed
+    for comp in components:
+        #if comp not in ('env','command'):
+            #if components is not None and comp not in components:
+            #    continue
+        try:
             #compOut: variable/field per component in rose config
             comp_out = config.get([comp])
 
             #fields: info for each field
             fields = comp_out.get_value()
+            print(fields)
+            ah1
+        except AttributeError:
+            print(f'WARNING: component {comp} does not exist in rose config')
+            continue
 
-            # Define fields
-            if fields.get("variables"):
-                variables = fields.get("variables").get_value()
-                v = variables.split()
+        #if fields == {}:
+        #    continue
+
+        # Define fields
+        if fields.get("variables") is not None:
+            variables = fields.get("variables").get_value()
+            v = variables.split()
+        else:
+            v = "all"
+
+        #GRID
+        if fields.get("grid") is None:
+            grid = glob.glob("*")
+        else:
+            grid = fields.get("grid").get_value()
+            grid = grid.split()
+
+        for g in grid:
+            if ens_mem is not None:
+                newdir = f"{input_dir}/{g}/{ens_mem}"
+                os.chdir(newdir)
             else:
-                v = "all"
+                os.chdir(f"{input_dir}/{g}")
 
-            #GRID
-            if fields.get("grid") is None:
-                grid = glob.glob("*")
+            ## SOURCES
+            if fields.get("sources") is None:
+                sources = glob.glob("*")
             else:
-                grid = fields.get("grid").get_value()
-                grid = grid.split()
+                sources = fields.get("sources").get_value()
+                sources = sources.split()
 
-            for g in grid:
+            for s in sources:
+                # Start in grid directory
+                os.chdir(f"{input_dir}/{g}")
+
+                # Go into source directory
                 if ens_mem is not None:
-                    newdir = f"{input_dir}/{g}/{ens_mem}"
-                    os.chdir(newdir)
+                    os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}")
                 else:
-                    os.chdir(f"{input_dir}/{g}")
+                    os.chdir(f"{input_dir}/{g}/{s}")
 
-                ## SOURCES
-                if fields.get("sources") is None:
-                    sources = glob.glob("*")
+                #FREQ
+                if fields.get("freq") is None:
+                    freq = glob.glob("*")
                 else:
-                    sources = fields.get("sources").get_value()
-                    sources = sources.split()
+                    freq = fields.get("freq").get_value()
+                    freq = freq.split()
 
-                for s in sources:
-                    # Start in grid directory
-                    os.chdir(f"{input_dir}/{g}")
-
-                    # Go into source directory
+                for f in freq:
                     if ens_mem is not None:
-                        os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}")
-                    else: 
-                        os.chdir(f"{input_dir}/{g}/{s}")
-
-                    #FREQ
-                    if fields.get("freq") is None:
-                        freq = glob.glob("*")
+                        os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
                     else:
-                        freq = fields.get("freq").get_value()
-                        freq = freq.split()
+                        os.chdir(f"{input_dir}/{g}/{s}/{f}")
 
-                    for f in freq:
+                    #CHUNK
+                    if fields.get("chunk") is None:
+                        chunk = glob.glob("*")
+                    else:
+                        chunk = fields.get("chunk").get_value()
+                        chunk = chunk.split()
+
+                    for c in chunk:
+                        if c != current_chunk:
+                            continue
                         if ens_mem is not None:
-                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                         else:
-                            os.chdir(f"{input_dir}/{g}/{s}/{f}")
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
 
-                        #CHUNK
-                        if fields.get("chunk") is None:
-                            chunk = glob.glob("*")
+                        # Create directory
+                        dirs = create_dir(out_dir = output_dir,
+                                          comp = comp,
+                                          freq = f,
+                                          chunk = c,
+                                          ens = ens_mem,
+                                          dir_ts = dir_ts_workaround)
+
+                        print(f"directory created: {dirs}")
+
+                        # Create bronx-style symlinks for TS only
+                        if dir_ts_workaround:
+                            bronx_style(freq = f,
+                                        chunk = c,
+                                        ens_member = ens_mem,
+                                        out_dir = output_dir,
+                                        comp = comp)
+
+                        # Search for files in chunk directory
+                        if ens_mem is not None:
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                         else:
-                            chunk = fields.get("chunk").get_value()
-                            chunk = chunk.split()
-
-                        for c in chunk:
-                            if c != current_chunk:
-                                continue
-                           
-                            if ens_mem is not None:
-                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
-                            else:
-                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
-
-                            # Create directory
-                            dirs = create_dir(out_dir = output_dir,
-                                             comp = comp,
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                        files = search_files(product = product,
+                                             var = v,
+                                             source = s,
                                              freq = f,
-                                             chunk = c,
-                                             ens = ens_mem,
-                                             dir_ts = dir_ts_workaround)
+                                             current_chunk = current_chunk,
+                                             begin = begin)
 
-                            print(f"directory created: {dirs}")
+                        print(f"files found: {files}")
 
-                            # Create bronx-style symlinks for TS only
-                            if dir_ts_workaround:
-                                bronx_style(freq = f,
-                                            chunk = c,
-                                            ens_member = ens_mem,
-                                            out_dir = output_dir,
-                                            comp = comp)
-
-                            # Search for files in chunk directory
+                        if not files:
                             if ens_mem is not None:
-                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                                raise Exception("\nError: No input files found in",
+                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                             else:
-                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
-                            files = search_files(product = product,
-                                                 var = v,
-                                                 source = s,
-                                                 freq = f,
-                                                 current_chunk = current_chunk,
-                                                 begin = begin)
+                                raise Exception("\nError: No input files found in",
+                                                f"{input_dir}/{g}/{s}/{f}/{c}")
 
-                            print(f"files found: {files}")
-                            
-                            if not files:
+                        os.chdir(output_dir)
+
+                        for file in files:
+                            newfile1 = file.split(".",1)[1]
+                            newfile2 = f"{comp}.{newfile1}"
+
+                            # If file exists, remove it
+                            # (would exist if workflow was run previously)
+                            if Path(f"{dir}/{newfile2})").exists():
+                                os.remove(f"{dir}/{newfile2}")
+
+                            # Replace with new file
+                            if ens_mem is not None:
+                                link = ["ln",
+                                        f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                        f"{output_dir}/{dirs}/{newfile2}"]
+                            else:
+                                link = ["ln",
+                                        f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                        f"{output_dir}/{dirs}/{newfile2}"]
+
+                            run = subprocess.run( link, check = False )
+                            ret = run.returncode
+
+                            if ret != 0:
                                 if ens_mem is not None:
-                                    raise Exception("\nError: No input files found in",
-                                                    f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
-                                else:
-                                    raise Exception("\nError: No input files found in",
-                                                    f"{input_dir}/{g}/{s}/{f}/{c}")
-
-                            os.chdir(output_dir)
-
-                            for file in files:
-                                newfile1 = file.split(".",1)[1]
-                                newfile2 = f"{comp}.{newfile1}"
-                               
-                                # If file exists, remove it
-                                # (would exist if workflow was run previously)
-                                if Path(f"{dir}/{newfile2})").exists(): 
-                                    os.remove(f"{dir}/{newfile2}")
-
-                                # Replace with new file
-                                if ens_mem is not None:
-                                    link = ["ln",
-                                            f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dirs}/{newfile2}"]
-                                else:
-                                    link = ["ln",
+                                    copy = [f"{copy_tool}",
                                             f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dirs}/{newfile2}"]
-                                
-                                run = subprocess.run( link, check = False )
-                                ret = run.returncode
-
-                                if ret != 0:
-                                    if ens_mem is not None:
-                                        copy = [f"{copy_tool}",
-                                                f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                                f"{output_dir}/{dir}/{newfile2}" ]
-                                        subprocess.run( copy, check = False )
-                                    else:
-                                        copy = [f"{copy_tool}",
-                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
-                                                f"{output_dir}/{dir}/{newfile2}" ]
-                                        subprocess.run( copy, check = False )
-
+                                            f"{output_dir}/{dir}/{newfile2}" ]
+                                    subprocess.run( copy, check = False )
+                                else:
+                                    copy = [f"{copy_tool}",
+                                            f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dir}/{newfile2}" ]
+                                    subprocess.run( copy, check = False )
 
     print("Component remapping complete")
 

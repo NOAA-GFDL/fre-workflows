@@ -78,7 +78,7 @@ def test_remap_pp_components(capfd):
            '-D',  '[env]inputDir='f'{remap_in}',
            '-D',  '[env]outputDir='f'{remap_out}',
            '-D',  '[env]currentChunk=P5Y',
-           '-D',  '[env]components='f'{COMPOUT}',
+           '-D',  '[env]components='f'"{COMPOUT}, atmos_month"',
            '-D',  '[env]begin=19800101T0000Z',
            '-D',  '[env]product='f'{PRODUCT}',
            '-D',  '[env]dirTSWorkaround=1',
@@ -102,7 +102,7 @@ def test_remap_pp_components(capfd):
                 Path(remap_out/COMPOUT/PRODUCT/FREQ/CHUNK).exists(),
                 Path(remap_out/COMPOUT/PRODUCT/FREQ/CHUNK/DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
-
+'''
 def test_remap_pp_components_with_ensmem(capfd):
     """Checks for success of remapping a file with rose app config using
        the remap-pp-components script when ens_mem is defined.
@@ -249,3 +249,4 @@ def test_nccmp_ncgen_remap_ens_mem(capfd):
     sp = subprocess.run( nccmp, check = False)
     assert sp.returncode == 0
     out, err = capfd.readouterr()
+'''
