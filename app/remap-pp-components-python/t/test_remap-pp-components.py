@@ -21,7 +21,7 @@ CHUNK = "P5Y"
 PRODUCT = "ts"
 COPY_TOOL = "cp"
 
-#Define/create necessary locatiions 
+#Define/create necessary locatiions
 test_outDir = Path(f"{cwd}/test-outDir")
 remap_in = test_outDir / "ncgen-output"
 remap_out = test_outDir / "remap-output"
@@ -40,10 +40,10 @@ else:
 
 def test_create_ncfile_with_ncgen_cdl(capfd):
     """
-       Check for the creation of required directories 
+       Check for the creation of required directories
        and a *.nc file from *.cdl text file using
        command ncgen. This file will be used as an input
-       file for the rewrite remap tests. 
+       file for the rewrite remap tests.
        Test checks for success of ncgen command.
     """
     print(f"NCGEN OUTPUT DIRECTORY: {ncgen_out}")
@@ -58,15 +58,15 @@ def test_create_ncfile_with_ncgen_cdl(capfd):
     # Run ncgen command
     sp = subprocess.run( ex, check = False )
 
-    # Check for 
+    # Check for
     # 1. ncgen command success
     # 2. nc file creation
-    assert all([sp.returncode == 0, 
+    assert all([sp.returncode == 0,
                Path(ncgen_out / DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
 
 def test_remap_pp_components(capfd):
-    """Checks for success of remapping a file with rose app using 
+    """Checks for success of remapping a file with rose app using
        the remap-pp-components script as the valid definitions
        are being called by the environment.
     """
@@ -94,9 +94,9 @@ def test_remap_pp_components(capfd):
     # Run the rewritten remap-pp-components script using the rose-app configuration
     sp = subprocess.run( ex, check = False )
 
-    # Check for 
+    # Check for
     # 1. success of remap script
-    # 2. creation of output directory structre, 
+    # 2. creation of output directory structre,
     # 3. link to nc file in output location
     assert all([sp.returncode == 0,
                 Path(remap_out/COMPOUT/PRODUCT/FREQ/CHUNK).exists(),
@@ -104,7 +104,7 @@ def test_remap_pp_components(capfd):
     out, err = capfd.readouterr()
 
 def test_remap_pp_components_with_ensmem(capfd):
-    """Checks for success of remapping a file with rose app config using 
+    """Checks for success of remapping a file with rose app config using
        the remap-pp-components script when ens_mem is defined.
     """
     # script: directory with /bin folder with remap script
@@ -116,8 +116,7 @@ def test_remap_pp_components_with_ensmem(capfd):
     remap_ens_out = test_outDir / "remap-ens-output"
 
     # Create ensemble locations
-    #Path(remap_ens_in).mkdir(exist_ok=True)               # remap script starts at parent 
-    Path(ncgen_ens_out).mkdir(parents=True,exist_ok=True) # then dirs are created for remap script to go through
+    Path(ncgen_ens_out).mkdir(parents=True,exist_ok=True)
     Path(remap_ens_out).mkdir(parents=True,exist_ok=True)
 
     # Make sure input nc file is also in ens input location
@@ -144,9 +143,9 @@ def test_remap_pp_components_with_ensmem(capfd):
     # Run the rewritten remap-pp-components script using the rose-app configuration
     sp = subprocess.run( ex, check = False )
 
-    # Check for  
+    # Check for
     # 1. success of remap script
-    # 2. creation of output directory structre, 
+    # 2. creation of output directory structre,
     # 3. link to nc file in output location
     assert all([sp.returncode == 0,
                 Path(remap_ens_out/COMPOUT/PRODUCT/"ens_01"/FREQ/CHUNK).exists(),
@@ -154,7 +153,7 @@ def test_remap_pp_components_with_ensmem(capfd):
     out, err = capfd.readouterr()
 
 def test_remap_pp_components_product_failure(capfd):
-    """Checks for failure of remapping a file with rose app using 
+    """Checks for failure of remapping a file with rose app using
        the remap-pp-components script when the product is ill-defined.
        (not ts or av)
     """
@@ -182,13 +181,13 @@ def test_remap_pp_components_product_failure(capfd):
     # Run the rewritten remap-pp-components script using the rose-app configuration
     sp = subprocess.run( ex, check = False )
 
-    # Check for 
+    # Check for
     # 1. failure of remap script
     assert sp.returncode != 0
     out, err = capfd.readouterr()
 
-def test_remap_pp_components_beginDate_failure(capfd):
-    """Checks for failure of remapping a file with rose app using 
+def test_remap_pp_components_begin_date_failure(capfd):
+    """Checks for failure of remapping a file with rose app using
        the remap-pp-components script when the begin variable is
        ill-defined.
     """
@@ -210,13 +209,13 @@ def test_remap_pp_components_beginDate_failure(capfd):
            '-D',  '[atmos_scalar]sources=atmos_scalar',
            '-C',  script
          ]
-    
+
     print (ex)
 
     # Run the rewritten remap-pp-components script using the rose-app configuration
     sp = subprocess.run( ex, check = False )
 
-    # Check for 
+    # Check for
     # 1. failure of remap script
     assert sp.returncode != 0
     out, err = capfd.readouterr()
@@ -250,5 +249,3 @@ def test_nccmp_ncgen_remap_ens_mem(capfd):
     sp = subprocess.run( nccmp, check = False)
     assert sp.returncode == 0
     out, err = capfd.readouterr()
-
-
