@@ -1,71 +1,45 @@
 # Remap-pp-components
-The remap-pp-components python script works to remap the diagnostics from one convention (i.e. history files) to another (i.e. PP components). It imports the `metomi`, os, subprocess, glob, and pathlib python modules, accessible through `module load fre/canopy`. 
+The remap-pp-components python script works to restructure/rename the output directory structure from an input directory containing netcdf files. 
 
-The main remap-pp-components function uses 8 arguments that are defined as environment variables in the `flow.cylc` for the remap task:
+The main remap-pp-components function utilizes 8 arguments that are defined as environment variables in the `flow.cylc` for the remap task:
 
-```
-if __name__ == '__main__':
-   remap(inputDir,outputDir,begin,currentChunk,components,product,dirTSWorkaround,ens_mem)
-```
+- `inputDir` (string): input directory where files are found
+- `outputDir` (string): output directory where files are copied to
+- `begin` (string): ISO8601 date format; date to begin post-processing data
+- `currentChunk` (string): current chunk to post-process
+- `components` (string): components to be post-processed
+- `product` (string): variable to define time series or time averaging
+- `dirTSWorkaround` (float): time series workaround variable
+- `ens_mem` (string): the ensemble member number
 
-Where: 
-
-- `inputDir`: input directory where files are found
-- `outputDir`: output directory where files are copied to
-- `begin`: date to begin post-processing
-- `currentChunk`: current chunk to post-process
-- `components`: components to be post-processed
-- `product`: variable to define time series or time averaging
-- `dirTSWorkaround`: time series workaround variable
-- `ens_mem`: the ensemble member number
-
-As of right now, the rewrite utilizes the `rose-app.conf` file in order to extrapolate information about the components to be post-processed. This information includes:
+Currently, the rewrite utilizes the `rose-app.conf` file in order to extrapolate information about the components to be post-processed. This information includes:
 
 - `grid`: refers to a single target grid, such as "native" or "regrid-xy"
 - `sources`: refers to history files that are mapped to, or should be included in, a defined component
-
-The `rose-app.conf` is created via the `configure-yaml` tool in the fre-cli. For more information on where the remap-pp-components rose-app configuration gets its component, one can look to the command:
-
-```
-tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort
-```
-
-This command will list the contents of the history tarfile given. Each history file listed can be included in pp components and components to be remapped.
 
 ### Testing suite
 _________________________________________________________________________
 Pytest was used for the remap-pp-components testing-suite in the file `t/test_remap-pp-components.py`. This file includes:
 
-- *ncgen_remap_pp_components*: creates a netCdf file from a cdl file using the test data provided; this file provides the input netcdf file for the remap script test 
-- *rewrite_remap_pp_components*: remaps diagnostics using the remap-pp-components python script
-- *rewrite_remap_with_ens*: remaps diagnostics using the remap-pp-components python script when ensemble members are included
-- *rewrite_remap_product_failure*: tests for failure of the remap script when "ts" or "av" is not given for product
-- *rewrite_remap_beginDate_failure*: tests for failure of the remap script when an incorrect value for "begin" is given
-- *nccmp_ncgen_rewriteremap*: compares output from the ncgen test the the remap rewrite script to make sure the netcdf file is the same 
-- *original_remap_pp_components*: remaps diagnostics using the original remap-pp-components script (will be removed with the replacement of its python counterpart)
-- *nccmp_ncgen_origremap*: compares the output from the ncgen test and the original remap script
-- *nccmp_origremap_rewriteremap*: compares output from the original remap script and the remap rewrite script
+- *create_ncfile_with_ncgen_cdl*: creates a netCdf file from a cdl file using the test data provided; this file provides the input netcdf file for the remap script test 
 
-In order to use the test script, `pytest` and `nccmp` are required. 
+- *remap_pp_components*: remaps netcdf files to a new output directory structure using the remap-pp-components python script
 
-- `nccmp` is available through `module load fre/canopy` 
-- For pytest, the user can either,
-   1) Create a conda environment and install pytest
-         
-      ```
-      conda create --name remap-rewrite
-      conda activate remap-rewrite
-      conda install conda-forge::nccmp
-      ```
+- *remap_pp_components_with_ensmem*: remaps netcdf files to a new output directory structure when ensemble members are included
 
-   2) Put pytest in the user's local packages
+- *remap_pp_components_product_failure*: tests for failure of the remap script when "ts" or "av" is not given for product
 
-      ```
-      pip install --user pytest
-      export PATH=/home/$USER/.local/bin:$PATH   # make it callable
-      ```
+- *remap_pp_components_beginDate_failure*: tests for failure of the remap script when an incorrect value for "begin" is given
 
+- *nccmp_ncgen_remap*: compares output from the ncgen test and the remap script to make sure the netcdf file is the same 
+
+- *nccmp_ncgen_remap_ens_mem*: compares output from the ncgen test the the remap script including ensemble members, to make sure the netcdf file is the same
+
+In order to use the test script, `pytest` and `nccmp` are required. These are available through:
+```
+module load miniforge nccmp conda activate /nbhome/fms/conda/envs/fre-cli
+```
 From the `/app/remap-pp-component-python/` directory, run:
-   ```
-   python -m pytest t/test_remap-pp-components
-   ```
+``` 
+python -m pytest t/test_remap-pp-components
+```
