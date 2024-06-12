@@ -15,6 +15,8 @@ from pathlib import Path
 import metomi.rose.config as rose_cfg
 from netCDF4 import Dataset
 
+FREGRID_SHARED_FILES='/home/fms/shared_fregrid_remap_files'
+
 # formerly in shared.sh
 def truncate_date(date, freq):
     format=freq_to_date_format(freq)
@@ -370,7 +372,7 @@ def regrid_xy( ):
                 f'{remap_dir}/{input_grid}/{input_realm}/' + \
                 f'{source_nx}-by-{source_ny}/{interp_method}/{remap_file}'
             central_remap_cache_file = \
-                f'/home/fms/shared_remap_files/{input_grid}/' + \
+                f'{FREGRID_SHARED_FILES}/{input_grid}/' + \
                 f'{source_nx}_by_{source_ny}/{remap_file}'
 
             print(f'remap_file               = {remap_file              }' + \
