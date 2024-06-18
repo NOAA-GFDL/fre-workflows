@@ -94,8 +94,11 @@ def handle_chunk(chunk, config_data):
     end = config_data['end']
     duration = end - start + 1
 
+    # Needs to be tweaked, the prerequisite tasks can be any year, but the result tasks
+    # are only run one time throughtout the entire workflow.
     if chunk == 'R1':
-        prefixes = [str(start)]
+        for i in range(duration):
+            prefixes = [str(start + 1)]
 
     elif chunk == 'P1Y':
         for i in range(duration):
