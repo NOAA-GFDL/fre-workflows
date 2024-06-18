@@ -6,10 +6,6 @@ set -x
 # Remap variables from one convention (i.e. history) to another (i.e. PP components)
 #
 
-export input_file_list=
-export output_file_list=
-echo "[COLE] created i/o lists"
-
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
 
 shopt -s extglob
@@ -45,6 +41,14 @@ if [[ ! -d $outputDir ]]; then
     exit 1
 fi
 
+# Setup PYTHONPATH and io lists for the data lineage tool
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
+    export input_file_list=
+    export output_file_list=
+    echo "Set PYTHONPATH and created i/o lists"
+fi
+
 cd $inputDir
 
 # example output structure
@@ -61,19 +65,22 @@ for key in $($config --keys | grep -v command | grep -v env); do
 
     vars=$($config --default=all $key variables)
 
-    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$(pwd)/"
-    echo -e  "\n[COLE] annotated $(pwd)/ to EPMT_DATA_LINEAGE_IN_PATH"
-
-    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$compOut/"
-    echo -e  "\n[COLE] annotated $outputDir/$compOut/ to EPMT_DATA_LINEAGE_OUT_PATH"
+    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$compOut/"
+        echo "[DATA LINEAGE] Annotated $outputDir$compOut/ to EPMT_DATA_LINEAGE_OUT_PATH"
+    fi
 
     for grid in $($config --default=* $key grid); do
         if [[ $ens_mem ]]; then
             newdir=$grid/$ens_mem  #ens_%(ens)02d
-            cole_input_dir=$newdir
+            # To save save, the data_lineage_in/out_dir variables are not enclosed in individual if 
+            # statements. However, the vars are only ever used inside the if statement on line 187.
+            data_lineage_in_dir=$newdir
             pushd $newdir || continue
         else
-            cole_input_dir=$grid
+            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            data_lineage_in_dir=$grid
+            fi
             pushd $grid || continue 
         fi
 
@@ -92,18 +99,18 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     if [[ $ens_mem ]]; then
                         if [[ $dirTSWorkaround ]]; then
                             dir=$outputDir/$compOut/ts/$ens_mem/$freq/$chunk
-                            cole_dir=ts/$ens_mem/$freq/$chunk
+                            data_lineage_out_dir=ts/$ens_mem/$freq/$chunk 
                         else
                             dir=$outputDir/$compOut/$ens_mem/$freq/$chunk
-                            cole_dir=$ens_mem/$freq/$chunk
+                            data_lineage_out_dir=$ens_mem/$freq/$chunk
                         fi
                     else
                         if [[ $dirTSWorkaround ]]; then
                             dir=$outputDir/$compOut/ts/$freq/$chunk
-                            cole_dir=ts/$freq/$chunk
+                            data_lineage_out_dir=ts/$freq/$chunk
                         else
                             dir=$outputDir/$compOut/$freq/$chunk
-                            cole_dir=$freq/$chunk
+                            data_lineage_out_dir=$freq/$chunk
                         fi
                     fi
                     mkdir -p $dir
@@ -168,23 +175,25 @@ for key in $($config --keys | grep -v command | grep -v env); do
                     fi
 
                     for file in $files; do
-                        
-                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $(pwd)/$file)
-                        export input_file_list="${input_file_list}$cole_input_dir/$source/$freq/$chunk/$file $hash_val,"
-                        echo -e "\n[COLE] added $cole_input_dir/$source/$freq/$chunk/$file to input list with hash_val: $hash_val"
-                        
+
                         newfile=$compOut.${file#*.}
                         if [[ -f $dir/$newfile ]]; then
                             rm -f $dir/$newfile
                         fi
                         ln $file $dir/$newfile || $COPY_TOOL $file $dir/$newfile
 
-                        current_loc=$(pwd)
-                        cd $dir
-                            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $dir/$newfile)
-                            export output_file_list="${output_file_list}$cole_dir/$newfile $hash_val,"
-                            echo -e "\n[COLE] added $cole_dir/$newfile to output list with hash_val: $hash_val"
-                        cd $current_loc
+                        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+
+                            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                            -m data_lineage.bloomfilter.HashGen $(pwd)/$file)
+                            export input_file_list="${input_file_list}$data_lineage_in_dir/$source/$freq/$chunk/$file $hash_val,"
+                            echo "[DATA LINEAGE] Added $data_lineage_in_dir/$source/$freq/$chunk/$file to     input list with hash_val: $hash_val"
+
+                            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                            -m data_lineage.bloomfilter.HashGen $dir/$newfile)
+                            export output_file_list="${output_file_list}$data_lineage_out_dir/$newfile $hash_val,"
+                            echo "[DATA LINEAGE] Added $data_lineage_out_dir/$newfile to output list with hash_val: $hash_val"
+                        fi
                     done
 
                     cd ..
@@ -197,22 +206,27 @@ for key in $($config --keys | grep -v command | grep -v env); do
     done
 done
 
-echo "[COLE] epmt analysis and annotate"
-which epmt
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
 
-if [[ -n "$input_file_list" ]]; then
-    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${input_file_list}")
-    echo -e "\n---input---"
-    echo -e "epmt annotate DATA_LINEAGE_IN=\n${input_file_list%*,}"
-    epmt annotate "EPMT_DATA_LINEAGE_IN=$compressed_bytes"
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
 fi
 
-if [[ -n "$output_file_list" ]]; then
-    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${output_file_list}")
-    echo -e "\n---output---"
-    echo -e "epmt annotate DATA_LINEAGE_OUT=\n${output_file_list%*,}"
-    epmt annotate "EPMT_DATA_LINEAGE_OUT=$compressed_bytes"
-fi
 
 echo Natural end of the component remapping
 exit 0

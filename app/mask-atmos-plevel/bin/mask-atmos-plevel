@@ -6,10 +6,6 @@ set -x
 # Mask atmos plevel files below surface pressure
 #
 
-export input_file_list=
-export output_file_list=
-echo "[COLE] created i/o lists"
-
 echo Arguments:
 echo "    input dir: $inputDir"
 echo "    component(s): $component"
@@ -23,6 +19,14 @@ if [[ ! -d $inputDir ]]; then
     exit 1
 fi
 
+# Setup PYTHONPATH and io lists for the data lineage tool
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
+    export input_file_list=
+    export output_file_list=
+    echo "Set PYTHONPATH and created i/o lists"
+fi
+
 cd $inputDir
 
 # needs to be *.$component.*.nc
@@ -30,52 +34,50 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
 
     file="${file#./}"
 
-    current_loc=$(pwd)
-
-    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
-    echo -e  "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_IN_PATH"
-
-    cd $inputDir
-        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
+    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.HashGen $inputDir/$file)
         export input_file_list="${input_file_list}$file $hash_val,"
-        echo -e "\n[COLE] added $file to input list with hash_val: $hash_val"
-    cd $current_loc
+        echo "[DATA LINEAGE] Added $file to input list with hash_val: $hash_val"
+    fi
 
     refine_Atmos_no_redux.py $file -o $file.masked -p $file
     if [[ -f $file.masked ]]; then
         mv -f $file.masked $file
         echo "Updated '$file'"
     fi
-
-    # output files, although named the same as the input files, may have different contents so their
-    # checksums need to be calculated as well
-
-    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$inputDir/"
-    echo -e  "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_OUT_PATH"
-
-    cd $inputDir
-        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/HashGen.py $inputDir/$file)
+    
+    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.HashGen $inputDir/$file)
         export output_file_list="${output_file_list}$file $hash_val,"
-        echo -e "\n[COLE] added $file to output list with hash_val: $hash_val"
-    cd $current_loc
+        echo "[DATA LINEAGE] Added $file to output list with hash_val: $hash_val"
+    fi
 done
 
-echo "[COLE] epmt analysis and annotate"
-which epmt
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
 
-if [[ -n "$input_file_list" ]]; then
-    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${input_file_list}")
-    echo -e "\n---input---"
-    echo -e "epmt annotate DATA_LINEAGE_IN=\n${input_file_list%*,}"
-    epmt annotate "EPMT_DATA_LINEAGE_IN=$compressed_bytes"
-fi
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
 
-if [[ -n "$output_file_list" ]]; then
-    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python /home/Cole.Harvey/postprocessing/data_lineage/bloomfilter/StringCompression.py "${output_file_list}")
-    echo -e "\n---output---"
-    echo -e "epmt annotate DATA_LINEAGE_OUT=\n${output_file_list%*,}"
-    epmt annotate "EPMT_DATA_LINEAGE_OUT=$compressed_bytes"
-fi
+    epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$inputDir/"
+    echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
+fi 
 
 echo Natural end of the atmos plevel masking
 exit 0
