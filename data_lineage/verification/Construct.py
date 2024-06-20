@@ -98,7 +98,7 @@ def handle_chunk(chunk, config_data):
     # are only run one time throughtout the entire workflow.
     if chunk == 'R1':
         for i in range(duration):
-            prefixes = [str(start + 1)]
+            prefixes.append(str(start + i))
 
     elif chunk == 'P1Y':
         for i in range(duration):
