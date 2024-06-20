@@ -8,6 +8,13 @@ set -x
 
 # Link each input file into a canonical directory structure
 function process_files {
+    path="$1" #subdir or regular inputDir based on case
+    if [[ $use_subdirs ]]; then
+        my_path=$(basename $path)/
+    else
+        my_path=
+    fi
+
     for file in $files; do
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
@@ -115,11 +122,37 @@ function process_files {
             fi
         fi
 
+        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+            -m data_lineage.bloomfilter.HashGen $path/$file)
+            export input_file_list="${input_file_list}$file $hash_val,"
+            echo "[DATA LINEAGE] Added $file to input list with hash_val: $hash_val"
+        fi
+
         # If in subdir mode, preserve the subdir
         if [[ $use_subdirs ]]; then
             dir=$outputDir/$subdir/$label/$freq/$chunk
+
+            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+                echo "[DATA LINEAGE] Annotated $inputDir/$my_path to EPMT_DATA_LINEAGE_IN_PATH"
+
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/$label/"
+                echo "[DATA LINEAGE] Annotated $outputDir/$subdir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
+
         else
             dir=$outputDir/$label/$freq/$chunk
+
+            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+                echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$label/"
+                echo "[DATA LINEAGE] Annotated $outputDir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
         fi
 
         mkdir -p $dir
@@ -131,9 +164,23 @@ function process_files {
                     f=${file/tile1/$t}
                     newf=${newfile/tile1/$t}
                     ln $f $dir/$newf
+
+                    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                        -m data_lineage.bloomfilter.HashGen $dir/$newf)
+                        export output_file_list="${output_file_list}$freq/$chunk/$newf $hash_val,"
+                        echo "[DATA LINEAGE] Added $freq/$chunk/$newf to output list with hash_val: $hash_val"
+                    fi
                 done
             else
                 ln $file $dir/$newfile
+                
+                if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                    -m data_lineage.bloomfilter.HashGen $dir/$newfile)
+                    export output_file_list="${output_file_list}$freq/$chunk/$newfile $hash_val,"
+                    echo "[DATA LINEAGE] Added $freq/$chunk/$newfile to output list with hash_val: $hash_val"
+                fi
             fi
         fi
     done
@@ -163,6 +210,14 @@ if [[ ! -d $outputDir ]]; then
     exit 1
 fi
 
+# Setup PYTHONPATH and io lists for the data lineage tool
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
+    export input_file_list=
+    export output_file_list=
+    echo "Set PYTHONPATH and created i/o lists"
+fi
+
 # Assumptions:
 # - Format of the file: DATE1.comp.VAR(.tileX).nc
 # - Variable is a static if it does not have a time axis. Otherwise,
@@ -181,7 +236,13 @@ if [[ $use_subdirs ]]; then
         if [[ $files =~ \* ]]; then
             err No input files
         else
-            process_files
+            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+            echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
+            echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
+            process_files "$inputDir/$subdir"
         fi
         popd
     done
@@ -195,7 +256,31 @@ else
         exit 1
     fi
 
-    process_files
+    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+    echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+    echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+
+    process_files "$inputDir"
+fi
+
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
 fi
 
 echo Natural end of the shard renaming
