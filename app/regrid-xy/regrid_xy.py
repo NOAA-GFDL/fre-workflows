@@ -314,10 +314,12 @@ def regrid_xy( ):
         regrid_vars      = safe_rose_config_get( rose_app_config, component, 'variables')
         output_grid_lon  = safe_rose_config_get( rose_app_config, component, 'outputGridLon')
         output_grid_lat  = safe_rose_config_get( rose_app_config, component, 'outputGridLat')
-        if output_grid_lon is None:
-            output_grid_lon = def_xy_interp(0)
-        if output_grid_lat is None:
-            output_grid_lat = def_xy_interp(1)
+        
+        # if no input args specified, grab the defaul values
+        if any( [ output_grid_lon is None, 
+                  output_grid_lat is None ] ):
+            output_grid_lon = def_xy_interp[0]
+            output_grid_lat = def_xy_interp[1]
 
         print( f'output_grid_type = {output_grid_type }' + \
                f'remap_file       = {remap_file       }' + \
