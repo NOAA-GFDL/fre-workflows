@@ -1,14 +1,9 @@
 [runtime]
     [[root]]
         env-script = """
-            c=$(which cylc)             #defines cylc installation path
-            export PATH=${c%/*}:$PATH   #appends cylc installation path onto path
             # uncomment next line and set to your conda init script location
             # if you see "conda not found" errors
             #source ~/miniconda3/etc/profile.d/conda.sh
-            set +u
-            conda activate task-tools
-            set -u
             eval $(rose task-env)
             env
         """

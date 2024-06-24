@@ -11,7 +11,7 @@ class HeaderChecker(metomi.rose.macro.MacroBase):
         """Return a list of errors, if any."""
 
         #Accepted configurations
-        grids = {'native','regrid-xy/'}
+        grids = {'native','regrid-xy'}
         ignore = {'env','command'}
 
         #Looping over all headers and checking configurations
@@ -20,14 +20,14 @@ class HeaderChecker(metomi.rose.macro.MacroBase):
             if len(keys) == 1 and keys[0] not in ignore:
                
                 grid = config.get_value([keys[0], 'grid'])
-                if grid is None or grid not in grids:
+                if grid is None:
                     if grid is None:
                         self.add_report(keys[0],'grid',grid,"Value required")
-                    else:
-                        self.add_report(keys[0],'grid',grid,"Not set correctly. Accepted values: native,regrid-xy")
                 elif 'regrid-xy/' in grid:
                     if not grid.partition('regrid-xy/')[2] or grid.partition('regrid-xy/')[2].isspace():
                         self.add_report(keys[0],'grid',grid,"Value required ... ex:'regrid-xy/(SOMETHING)'")
+                elif grid not in grids:
+                    self.add_report(keys[0],'grid',grid,"Not set correctly. Accepted values: native,regrid-xy")
 
                 sources = config.get_value([keys[0], 'sources'])
                 if sources is None:

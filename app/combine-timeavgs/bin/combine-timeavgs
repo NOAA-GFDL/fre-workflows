@@ -106,14 +106,13 @@ for freq in $(ls); do
             done
         fi
         cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
-
         
         if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
             input_dir_path=$inputDir/$component/$freq/$currentChunk
             output_dir_path=$outputDir/$subdir
             
             start_time=$(date +%s)
-        
+
             for output_file in "$outputDir/$subdir/$component.$dates."*; do
                 basename=$(basename $output_file)
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
@@ -156,7 +155,7 @@ for freq in $(ls); do
         echo "[DATA LINEAGE] Annotated $input_dir_path/ to EPMT_DATA_LINEAGE_IN_PATH"
         
         epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$output_dir_path/"
-        echo "[DATA LINEAGE] Annotated $output_dir_path/ EPMT_DATA_LINEAGE_OUT_PATH"  
+        echo "[DATA LINEAGE] Annotated $output_dir_path/ EPMT_DATA_LINEAGE_OUT_PATH" 
 
         start_time=$(date +%s)
 
@@ -193,7 +192,6 @@ if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
         echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
     fi
 fi
-
 
 echo Natural end of the timeavg combining
 exit 0

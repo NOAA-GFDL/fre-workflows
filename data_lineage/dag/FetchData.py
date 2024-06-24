@@ -131,7 +131,7 @@ def fetch_jobs(fingerprint):
 
     jobs = eq.get_jobs(
         fmt='dict',
-        tags=f'EPMT_EXP_UUID:{fingerprint}',
+        tags=f'exp_run_uuid:{fingerprint}',
     )
 
     return jobs

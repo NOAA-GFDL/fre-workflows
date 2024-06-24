@@ -101,9 +101,9 @@
     # set this to be very high, 100 cycle points.
     runahead limit = P100
     [[queues]]
-        # limit the entire workflow to 20 active tasks at once
+        # limit the entire workflow to 50 active tasks at once
         [[[default]]]
-            limit = 20
+            limit = 50
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
@@ -640,6 +640,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             basedate = is-this-needed
             gridspec = {{ PP_GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
+            catalog = {{ PP_DIR }}/catalog.json
 {% endif %}
 {% if DO_REFINEDIAG %}
     [[REFINE-DIAG]]
@@ -921,8 +922,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
     [[data-catalog]]
         script = """
-        cd $TMPDIR && git clone https://www.github.com/aradhakrishnanGFDL/CatalogBuilder.git && cd CatalogBuilder
-        ./gen_intake_gfdl.py --overwrite $ppdir $ppdir/catalog
+        fre catalog builder --overwrite $ppdir $ppdir/catalog
+        # workaround to replace P1M with monthly
+        sed -i.bak -e 's/,P1M,/,monthly,/' $ppdir/catalog.csv
         """
         [[[environment]]]
           ppdir = {{PP_DIR}}
@@ -999,7 +1001,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            component = $CYLC_TASK_PARAM_regrid
+            source = $CYLC_TASK_PARAM_regrid
             gridSpec = {{ PP_GRID_SPEC }}
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
@@ -1008,7 +1010,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_regrid_static
+            source = $CYLC_TASK_PARAM_regrid_static
 
     {% endif %}
 {% endif %}
@@ -1043,6 +1045,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
+            # new template vars
+            catalog = {{ PP_DIR }}/catalog.json
     {% if DO_SECONDARY_PP %}
 {{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
 {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}

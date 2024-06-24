@@ -211,7 +211,6 @@ if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
     fi
 fi
 
-
 if [[ -n $did_something ]]; then
     echo Natural end of the timeseries generation
     exit 0

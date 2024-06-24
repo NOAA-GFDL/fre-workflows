@@ -168,14 +168,14 @@ if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
         -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
         epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
         echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
-    fi  
+    fi
 
     if [ -n "$output_file_list" ]; then
         compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
         -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
         epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
         echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-    fi  
+    fi
 fi
 
 echo Natural end of the NetCDF splitting

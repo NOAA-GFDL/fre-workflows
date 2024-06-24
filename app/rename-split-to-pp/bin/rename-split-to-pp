@@ -123,8 +123,13 @@ function process_files {
         fi
 
         if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            if [[ $use_subdirs ]]; then
+                data_lineage_in_path=$inputDir/$subdir
+            else
+                data_lineage_in_path=$inputDir
+            fi
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-            -m data_lineage.bloomfilter.HashGen $path/$file)
+            -m data_lineage.bloomfilter.HashGen $data_lineage_in_path/$file) # Currently hardcoded for only 1 subdir
             export input_file_list="${input_file_list}$file $hash_val,"
             echo "[DATA LINEAGE] Added $file to input list with hash_val: $hash_val"
         fi
@@ -136,7 +141,7 @@ function process_files {
             if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
 
                 epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
-                echo "[DATA LINEAGE] Annotated $inputDir/$my_path to EPMT_DATA_LINEAGE_IN_PATH"
+                echo "[DATA LINEAGE] Annotated $inputDir/$subdir to EPMT_DATA_LINEAGE_IN_PATH"
 
                 epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/$label/"
                 echo "[DATA LINEAGE] Annotated $outputDir/$subdir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
@@ -263,6 +268,24 @@ else
     echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
 
     process_files "$inputDir"
+fi
+
+if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
 fi
 
 if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then

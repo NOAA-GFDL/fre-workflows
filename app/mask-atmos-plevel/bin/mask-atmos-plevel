@@ -29,9 +29,9 @@ fi
 
 cd $inputDir
 
-# needs to be *.$component.*.nc
+# Search for valid netcdf files in inputDir
 for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
-
+    # Remove the './' prefix from file
     file="${file#./}"
 
     if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
@@ -46,7 +46,6 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
         mv -f $file.masked $file
         echo "Updated '$file'"
     fi
-    
     if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
         -m data_lineage.bloomfilter.HashGen $inputDir/$file)
