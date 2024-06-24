@@ -45,7 +45,7 @@ for comp in $(ls); do
         data_lineage_out_dir=$outputDir/$comp
 
         start_time=$(date +%s)
-    
+
         for input_file in *; do 
             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
             -m data_lineage.bloomfilter.HashGen $data_lineage_in_dir/$input_file)
@@ -89,7 +89,6 @@ if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
         echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
     fi
 fi
-
 
 echo Natural end of the static combining
 exit 0
