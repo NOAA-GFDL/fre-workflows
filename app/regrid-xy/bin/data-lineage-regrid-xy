@@ -21,7 +21,7 @@ echo "    output dir: $outputDir"
 echo "    begin: $begin"
 echo "    TMPDIR: $TMPDIR"
 echo "    fregrid mapfile dir: $fregridRemapDir"
-echo "    component(s): $component"
+echo "    source(s): $source"
 echo "    gridSpec: $gridSpec"
 echo "    default xyInterp: $defaultxyInterp"
 echo Utilities:
@@ -60,19 +60,19 @@ mkdir -p $fregridRemapDir
 mkdir -p $TMPDIR/work
 
 # Loop over regridding instruction sets
-# Process the component if any instruction sets match
+# Process the sources if any instruction sets match
 for set in $($config --keys | grep -v command | grep -v env); do
     # xargs is needed to make this pattern match work properly.. yuck
-    if ! [[ " $($config $set sources | xargs) " =~ " $component " ]]; then
+    if ! [[ " $($config $set sources | xargs) " =~ " $source " ]]; then
         continue
     fi
-    echo "Processing instruction '$set' for component '$component'"
+    echo "Processing instruction '$set' for source '$source'"
 
     # Clean out workdir
     cd $TMPDIR/work
     rm -f *
 
-    # Read in these component-specific config variables
+    # Read in these source-specific config variables
     # required items
     inputGrid=$($config $set inputGrid)
     inputRealm=$($config $set inputRealm)
@@ -169,9 +169,9 @@ for set in $($config --keys | grep -v command | grep -v env); do
     cd $inputDir
     date1=$(truncate_date $begin P1D) 
     if [[ $is_tiled ]]; then
-        file=$date1.$component.tile1.nc
+        file=$date1.$source.tile1.nc
     else
-        file=$date1.$component.nc
+        file=$date1.$source.nc
     fi
     if ! ls $file; then
         err "ERROR: Input file '$file' not found"
@@ -188,9 +188,9 @@ for set in $($config --keys | grep -v command | grep -v env); do
     fi
     count=$(echo $vars | wc -w)
     if (( count > 0 )); then
-        echo "NOTE: About to regrid $count variables for component '$component'"
+        echo "NOTE: About to regrid $count variables for source '$source'"
     else
-        err "No input variables found for component '$component'"
+        err "No input variables found for source '$source'"
         exit 1
     fi
 
@@ -203,7 +203,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
 
     if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
 
-        # Cole - iterates over input. if the component a substring in the input file name, skip it.
+        # Cole - iterates over input. if the source a substring in the input file name, skip it.
         #        there are many files inside the inputDir and iterating over all of the unnecessary
         #        files would take very long to calculate the checksum of. 
         start_time=$(date +%s)
@@ -211,7 +211,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
 
         cd $input_dir
             for input_file in $(ls $input_dir); do
-                if [[ ! "$(basename "$input_file")" == *".$component."* ]]; then
+                if [[ ! "$(basename "$input_file")" == *".$source."* ]]; then
                     continue
                 fi
 
