@@ -36,6 +36,7 @@
             --comment=xtmp,epmt,canopy
         [[[environment]]]
             COPY_TOOL=gcp
+            EPMT_DATA_LINEAGE=1
 
     [[PP-STARTER]]
         env-script = """
