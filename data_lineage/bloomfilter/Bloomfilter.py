@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/Cole.Harvey/postprocessing/data_lineage')
+
 import mmh3
 import math
 from data_lineage.bloomfilter.Bitarray import BitArray
