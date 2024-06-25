@@ -1,8 +1,10 @@
 # Usage
 
-This tool is still in development. Follow the Usage Instructions to use it effectively. Due to the limitations of EPMT's annotation size, up to 1 subdirectory is currently supported, and larger workflows may exceed the annotation limit causing some tasks to be unrecorded.
+This tool is still in development. Follow the Usage Instructions to use it effectively. 
 
-To use this tool, include the `EPMT_DATA_LINEAGE=1` flag in the `[[[environment]]]` configurations within the `[[root]]`section.
+To use this tool, include the `EPMT_DATA_LINEAGE=1` flag in the `[[[environment]]]` configurations within the `[[root]]` section.
+
+Due to the limitations of EPMT's annotation size, up to 1 subdirectory is currently supported, and larger workflows may exceed the annotation limit causing some tasks to be unrecorded.
 
 # Useful Links
 
@@ -26,5 +28,5 @@ To use this tool, please use an environment with the following libraries install
 
 If there are any questions, please reach out to my email.
 
-1. If it is before 2026 - harvey.c@northeastern.edu
-2. If it is after 2026 - cah062003@gmail.com
+1. Before 2026 - harvey.c@northeastern.edu
+2. After 2026  - cah062003@gmail.com
