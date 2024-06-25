@@ -24,15 +24,16 @@ class DAG:
         """
         Adds an node object that already exists to the DAG.
 
-        If the node is created in another function, use this to add it to the DAG. Otherwise,
-        use create_node().
+        If the node is created in another function, use this to add it to the DAG.
+        Otherwise, use create_node().
         """
         if not isinstance(node, Node):
-            raise TypeError(f'ERROR: arg must be a Node object. If a node is not created already, '
-                            f'use the function create_node() instead')
+            raise TypeError(f'ERROR: arg must be a Node object. If a node is not '
+                            f'created already, use the function create_node() instead')
 
         if self.find_node(node.get_name()):
-            raise ValueError(f'ERROR: Node "{node.get_name()}" already exists in this DAG')
+            raise ValueError(f'ERROR: Node "{node.get_name()}" already '
+                             f'exists in this DAG')
 
         self.nodes.append(node)
 
@@ -40,20 +41,22 @@ class DAG:
         """
         Adds an edge object that already exists to the DAG.
 
-        If the edge is created in another function, use this to add it to the DAG. Otherwise,
-        use create_edge().
+        If the edge is created in another function, use this to add it to the DAG.
+        Otherwise, use create_edge().
         """
         if not isinstance(edge, Edge):
-            raise TypeError('ERROR: arg must be an Edge object. If a edge is not created already, '
-                            'use the function create_edge() instead')
+            raise TypeError('ERROR: arg must be an Edge object. If a edge is not '
+                            'created already, use the function create_edge() instead')
 
         start_node = edge.get_start()
         end_node = edge.get_end()
 
         if not self.find_node(start_node.get_name()):
-            raise ValueError(f'ERROR: Start node "{start_node.get_name()}" does not exist in this DAG')
+            raise ValueError(f'ERROR: Start node "{start_node.get_name()}" does not '
+                             f'exist in this DAG')
         if not self.find_node(end_node.get_name()):
-            raise ValueError(f'ERROR: End node "{end_node.get_name()}" does not exist in this DAG')
+            raise ValueError(f'ERROR: End node "{end_node.get_name()}" does not exist '
+                             f'in this DAG')
 
         if self.find_edge(start_node, end_node):
             raise ValueError(f'ERROR: "{edge}" already exists in this DAG')
@@ -74,7 +77,8 @@ class DAG:
         """
         for existing_node in self.get_nodes():
             if self.find_node(job_name):
-                raise ValueError(f'ERROR: Node "{job_name}" already exists in this DAG')
+                raise ValueError(f'ERROR: Node "{job_name}" already exists '
+                                 f'in this DAG')
 
         node = Node(job_name, _input, _output)
         self.nodes.append(node)
@@ -94,9 +98,11 @@ class DAG:
         """
 
         if node not in self.get_nodes():
-            raise ValueError(f'ERROR: Start node "{node.get_name()}" does not exist in this DAG')
+            raise ValueError(f'ERROR: Start node "{node.get_name()}" does not '
+                             f'exist in this DAG')
         if next_node not in self.get_nodes():
-            raise ValueError(f'ERROR: End node "{next_node.get_name()}" does not exist in this DAG')
+            raise ValueError(f'ERROR: End node "{next_node.get_name()}" does not '
+                             f'exist in this DAG')
 
         edge = Edge(node, next_node, contents=[content])
         next_node.increment_inbound_edeges()
@@ -130,7 +136,8 @@ class DAG:
 
     def find_neighbors(self, node):
         """
-        Iterates through the list of edges and returns all that have `node` as the start node.
+        Iterates through the list of edges and returns all that have `node`
+        as the start node.
 
         Args:
             node: Node
@@ -191,7 +198,8 @@ class DAG:
         Performs Depth-First-Search (DFS) on the DAG.
 
         Returns:
-            True if DFS visits all nodes within the dag, which means it is acyclic since DFS terminated naturally. False otherwise.
+            True if DFS visits all nodes within the dag, which means it is acyclic
+            since DFS terminated naturally. False otherwise.
         """
         visited = [False] * len(self.nodes)
 
@@ -244,16 +252,17 @@ class DAG:
                 if file in node_file:
                     print(f'{node.name} has {node_file} in its {io_type} list')
 
-    def find_total_job_count(self):
+    def find_total_jobs(self):
         """
         Counts the number of directories in cylc-run/runN/log/job/*/*.
 
-        Uses `ls -ldt <dir>` and counts the number of lines returned from the command.
+        Uses `ls -ldt <dir>` and counts the number of lines returned
+        from the command.
 
         Returns:
-            total_job_num: Int
-                The number of jobs in a workflow excluding any jobs that contain the
-                substrings in jobs_ignore in the function.
+            total_jobs: List
+                The list of jobs in a workflow excluding any jobs that
+                contain the substrings in jobs_ignore in the function.
         """
         if self.run_dir == '':
             raise ValueError('ERROR: run_dir is not present in this DAG.')
@@ -265,19 +274,36 @@ class DAG:
         jobs_split = jobs.stdout.split('\n')
 
         for line in jobs_split:
+            if '/' not in line:
+                continue
+
+            task = line.split('/')[-2]
+            year = line.split('/')[-3].split('0101')[0]
+            job_name = year + '_' + task
+
             # skip jobs that contain these keywords, there should not be any
             # analysis, but just to make sure it should be added.
-            job_ignore = ['clean', 'pp-starter', 'stage-history', 'analysis']
-            if any(keyword in line for keyword in job_ignore):
+            job_ignore = ['clean',
+                          'pp-starter',
+                          'analysis',
+                          'data-catalog']
+            if any(keyword in job_name for keyword in job_ignore):
                 continue
-            total_jobs.append(line)
 
-        # `.` is counted as a dir in the job_dir, subtract one entry from total_jobs
-        total_job_num = len(total_jobs) - 1
-        return total_job_num
+            total_jobs.append(job_name)
+
+            # Check if any jobs in total_jobs do not exist in the DAG that have not
+            # already been ignored on purpose. This could mean they were omitted
+            # due to annotation size, but it is not guaranteed.
+            if not self.find_node(job_name):
+                print(f'WARNING: {job_name} exists in the workflow but was omitted '
+                      f'in the DAG. This could mean the task EPMT annotation size was'
+                      f' too large, or nothing was performed by the task.')
+
+        return total_jobs
 
     def dag_print(self):
-        omitted_jobs = max(self.find_total_job_count() - len(self.nodes), 0)
+        omitted_jobs = max(len(self.find_total_jobs()) - len(self.nodes), 0)
 
         print(f'\n----DAG Statistics----')
         print(f'Nodes    : {len(self.nodes)}')
