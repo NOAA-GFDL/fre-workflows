@@ -1,6 +1,6 @@
 import sys
 from data_lineage.dag.FetchData import main as fetch_main
-from data_lineage.dag.SerialDag import main as generate_serial_dag
+from data_lineage.dag.ioDag import main as generate_io_dag
 from data_lineage.verification.Validate import main as validate
 from data_lineage.dag.Visualize import draw
 
@@ -9,9 +9,9 @@ def main(fingerprint):
     """
     Controls the entire data lineage tool.
         1. Fetches jobs from EPMT
-        2. Creates the serial dag
+        2. Creates the io dag
         3. Verifies with configuration dag
-        4. Draws the serial dag
+        4. Draws the io dag
 
     Args:
         fingerprint: String
@@ -19,17 +19,17 @@ def main(fingerprint):
     """
     jobs, run_dir = fetch_main(fingerprint)
 
-    serial_dag = generate_serial_dag(jobs, run_dir)
+    io_dag = generate_io_dag(jobs, run_dir)
 
-    validate(serial_dag, run_dir)
-    draw(serial_dag)
+    validate(io_dag, run_dir)
+    draw(io_dag)
 
     print("Successfully finished running, ending program.")
 
 if __name__ == "__main__":
     # If not passing in a fingerprint to Run.py, use the provided fingerprint instead.
     if len(sys.argv) == 1:
-        fingerprint = '21bc35b4-f6bf-40c7-9bbb-027dfcd436f0'
+        fingerprint = 'eb6642d6-871b-42c8-98bf-2dcbb0e98525'
     elif len(sys.argv) == 2:
         fingerprint = sys.argv[1]
     else:

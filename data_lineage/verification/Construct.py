@@ -152,7 +152,7 @@ def parse_job(job):
 def generate_exact_jobs(job_name, job_param, config_data, prefixes):
     """
     Create a list of exact jobs with years and corresponding task parameters.
-    Uses the same format that was used when creating nodes for the serial DAG.
+    Uses the same format that was used when creating nodes for the io DAG.
 
     Iterate over the years the job is run or the different parameters the job
     uses, and create a list of these.

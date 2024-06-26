@@ -29,7 +29,7 @@ def check_node_is_present(node, config_dag):
 
     Args:
         node: Node
-            A node from the serial_dag
+            A node from the io_dag
         config_dag: Dag
             Constructed with 01-start-01.cylc
 
@@ -42,15 +42,15 @@ def check_node_is_present(node, config_dag):
             return True
     return False
 
-def check_edge_is_present(node, serial_dag, config_dag):
+def check_edge_is_present(node, io_dag, config_dag):
     """
-    Checks if every outbound edge a node from the serial_dag has exists in
+    Checks if every outbound edge a node from the io_dag has exists in
     the config_dag. Comparison checks if the edge object exists
 
     Args:
         node: Node
-            A node from the serial_dag
-        serial_dag: Dag
+            A node from the io_dag
+        io_dag: Dag
             Constructed with EPMT annotations
         config_dag: Dag
             Constructed with 01-start-01.cylc
@@ -58,9 +58,9 @@ def check_edge_is_present(node, serial_dag, config_dag):
     Returns:
         missing_neighbors: Array
             List of neighboring Nodes that should share an edge according to
-            the serial_dag, but do not exist in the config_dag.
+            the io_dag, but do not exist in the config_dag.
     """
-    neighbors = serial_dag.find_neighbors(node)
+    neighbors = io_dag.find_neighbors(node)
     missing_neighbors = []
 
     for neighbor in neighbors:
@@ -72,40 +72,40 @@ def check_edge_is_present(node, serial_dag, config_dag):
 
     return missing_neighbors
 
-def is_subgraph(serial_dag, config_dag):
+def is_subgraph(io_dag, config_dag):
     """
-    Traverses the serial_dag to determine if it is a subgraph of config_dag. Uses the
+    Traverses the io_dag to determine if it is a subgraph of config_dag. Uses the
     depth-first search algorithm to validate.
 
     Args:
-        serial_dag: Dag
+        io_dag: Dag
             Constructed with EPMT annotations
         config_dag: Dag
             Constructed with 01-start-01.cylc
 
     Returns:
-        Boolean whether serial_dag is a subgraph of config_dag
+        Boolean whether io_dag is a subgraph of config_dag
     """
-    serial_nodes = serial_dag.get_nodes()
+    io_nodes = io_dag.get_nodes()
     config_nodes = config_dag.get_nodes()
     root_nodes = []
 
-    for node in serial_nodes:
+    for node in io_nodes:
         if node.get_inbound_edges() == 0:
             root_nodes.append(node)
 
-    def dfs(serial_node, config_node):
+    def dfs(io_node, config_node):
 
-        if serial_node not in serial_nodes:
-            print(f'ERROR: Serial node {serial_node} not found in the serial DAG.')
+        if io_node not in io_nodes:
+            print(f'ERROR: io node {io_node} not found in the io DAG.')
             return True
         if config_node not in config_nodes:
             print(f'ERROR: Config node {config_node} not found in the config DAG.')
             return False
-        if serial_node.get_name() != config_node.get_name():
+        if io_node.get_name() != config_node.get_name():
             return False
 
-        for neighbor in serial_dag.find_neighbors(serial_node):
+        for neighbor in io_dag.find_neighbors(io_node):
             if not dfs(neighbor, config_node):
                 return False
 
@@ -119,12 +119,12 @@ def is_subgraph(serial_dag, config_dag):
     return True
 
 
-def compare_dags(serial_dag, config_dag):
+def compare_dags(io_dag, config_dag):
     """
-    Calls the three functions to compare serial_dag and config_dag.
+    Calls the three functions to compare io_dag and config_dag.
 
     Args:
-        serial_dag: Dag
+        io_dag: Dag
             Constructed with EPMT annotations
         config_dag: Dag
             Constructed with 01-start-01.cylc
@@ -132,12 +132,12 @@ def compare_dags(serial_dag, config_dag):
     node_errors = False
     edge_errors = False
 
-    for node in serial_dag.get_nodes():
+    for node in io_dag.get_nodes():
         if not check_node_is_present(node, config_dag):
             node_errors = True
             print(f'ERROR: {node.get_name()} not found in config DAG.')
 
-        potential_missing_neighbors = check_edge_is_present(node, serial_dag, config_dag)
+        potential_missing_neighbors = check_edge_is_present(node, io_dag, config_dag)
         if potential_missing_neighbors:
             edge_errors = True
             for neighbor in potential_missing_neighbors:
@@ -150,22 +150,22 @@ def compare_dags(serial_dag, config_dag):
     if not edge_errors:
         print('Edge presence comparison complete, no errors were encountered.')
 
-    if not is_subgraph(serial_dag, config_dag):
-        print("ERROR: There was a problem verifying serial DAG is a subgraph of config DAG.")
+    if not is_subgraph(io_dag, config_dag):
+        print("ERROR: There was a problem verifying io DAG is a subgraph of config DAG.")
     else:
         print('Subgraph comparison complete, no errors were encountered.')
 
 
-def main(serial_dag, run_dir):
+def main(io_dag, run_dir):
     """
-    Verifies serial_dag's legitimacy by comparing it to a DAG constructed from
+    Verifies io_dag's legitimacy by comparing it to a DAG constructed from
     the 01-start-01.cylc configuration file of a cylc-run.
 
-    A serial_dag is valid if there are no breakages in the graph, and it's
+    A io_dag is valid if there are no breakages in the graph, and it's
     structure is reflective of the structure of the configuration DAG.
 
     Args:
-        serial_dag: Dag
+        io_dag: Dag
             Constructed with EPMT annotations
         run_dir: String
             Absolute path of the cylc-run directory
@@ -177,5 +177,5 @@ def main(serial_dag, run_dir):
     config_dag.dag_print()
 
     print('\n----Starting Validation----')
-    compare_dags(serial_dag, config_dag)
+    compare_dags(io_dag, config_dag)
     print('----Finished Validation----\n')
