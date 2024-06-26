@@ -36,7 +36,6 @@
             --comment=xtmp,epmt,canopy
         [[[environment]]]
             COPY_TOOL=gcp
-            EPMT_DATA_LINEAGE=1
 
     [[PP-STARTER]]
         env-script = """
@@ -116,7 +115,7 @@
     [[REMAP-PP-COMPONENTS]]
         pre-script = """
             module load fre-nctools miniforge
-            conda activate /nbhome/fms/conda/envs/fre-cli
+            # conda activate /nbhome/fms/conda/envs/fre-cli
             module load gcp
             mkdir -p $outputDir
         """
@@ -144,8 +143,15 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         pre-script = """
-            module load fre-nctools miniforge
+            module load fre-nctools miniforge nco
+            # https://github.com/conda/conda/issues/3200
+            set +x
+            set +e
+            set +u
             conda activate /nbhome/fms/conda/envs/fre-cli
+            set -x
+            set -e
+            set -u
             mkdir -p $outputDir
         """
 {% endif %}
