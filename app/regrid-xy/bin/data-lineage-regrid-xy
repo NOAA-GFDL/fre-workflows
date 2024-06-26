@@ -42,7 +42,7 @@ if [[ ! -d $outputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -201,7 +201,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
     input_dir=$(pwd)
     pushd $TMPDIR/work
 
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
         # Cole - iterates over input. if the source a substring in the input file name, skip it.
         #        there are many files inside the inputDir and iterating over all of the unnecessary
@@ -251,7 +251,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
         # Copy the regridded output to the output location
         cp $outputFile $outputDir
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
             epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
             echo "[DATA LINEAGE] Annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
             current_loc=$(pwd)
@@ -269,7 +269,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
         # Copy the regridded output to the output location
         cp $outputFile $outputDir/$outputGridType
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
             epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$outputGridType/"
             echo "[DATA LINEAGE] Annotated $outputDir/$outputGridType to EPMT_DATA_LINEAGE_OUT_PATH"
             current_loc=$(pwd)
@@ -286,7 +286,7 @@ for set in $($config --keys | grep -v command | grep -v env); do
     popd
 done
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
     echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"

@@ -499,7 +499,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             fi
 
             # Setup PYTHONPATH and io lists for the data lineage tool
-            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
                 export input_file_list=
                 export output_file_list=
@@ -512,7 +512,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
-            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
 
                 start_time=$(date +%s)

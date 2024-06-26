@@ -25,7 +25,7 @@ if [[ ! -d $outputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -40,7 +40,7 @@ for comp in $(ls); do
     mkdir -p $outputDir/$comp
     cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
 
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
         data_lineage_in_dir=$inputDir/$comp/P0Y/P0Y
         data_lineage_out_dir=$outputDir/$comp
 
@@ -66,7 +66,7 @@ for comp in $(ls); do
     popd
 done
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$data_lineage_in_dir/"
     echo "[DATA LINEAGE] Annotated $data_lineage_in_dir/ to EPMT_DATA_LINEAGE_IN_PATH"

@@ -56,7 +56,7 @@ if [[ ! -d $outputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -107,7 +107,7 @@ for freq in $(ls); do
         fi
         cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
         
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
             input_dir_path=$inputDir/$component/$freq/$currentChunk
             output_dir_path=$outputDir/$subdir
             
@@ -135,7 +135,7 @@ for freq in $(ls); do
             done
         fi
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
             input_dir_path=$inputDir/$component/$freq/$currentChunk
             output_dir_path=$outputDir/$subdir
             output_file=$component.$dates.ann.nc
@@ -150,7 +150,7 @@ for freq in $(ls); do
         exit 2
     fi
 
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
         epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir_path/"
         echo "[DATA LINEAGE] Annotated $input_dir_path/ to EPMT_DATA_LINEAGE_IN_PATH"
         
@@ -175,7 +175,7 @@ for freq in $(ls); do
     popd
 done
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     # Annotate to EPMT
     if [ -n "$input_file_list" ]; then

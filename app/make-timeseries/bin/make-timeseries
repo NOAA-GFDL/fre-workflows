@@ -79,7 +79,7 @@ function process_timeseries {
                     newfile=$component.$d1-$d2.$var.tile$tile.nc
                     tiled_files=$(echo ${files[@]} | sed -e s/tile1/tile$tile/g)
                     
-                    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+                    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                         for input_file in $tiled_files; do
                             hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                             -m data_lineage.bloomfilter.HashGen $inputDir/$data_lineage_in_dir/$input_file)
@@ -91,7 +91,7 @@ function process_timeseries {
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
                 done
             else
-                if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+                if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                     for input_file in ${files[@]}; do
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                         -m data_lineage.bloomfilter.HashGen $inputDir/$data_lineage_in_dir/$input_file)
@@ -103,7 +103,7 @@ function process_timeseries {
                 cdo --history -O mergetime ${files[@]} $newdir/$newfile
             fi
 
-            if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                 hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                 -m data_lineage.bloomfilter.HashGen $newdir/$newfile)
                 export output_file_list="${output_file_list}$data_lineage_out_dir/$newfile $hash_val,"
@@ -154,7 +154,7 @@ if [[ ! -d $outputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -187,7 +187,7 @@ else
 fi
 
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
     echo -e "\n[COLE] annotated $inputDir to EPMT_DATA_LINEAGE_IN_PATH"

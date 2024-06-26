@@ -17,7 +17,7 @@ type cylc
 type generate-time-averages
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -80,7 +80,7 @@ for dir in ${dirs[@]}; do
         # and include only one year if a one-year interval
         basename=$(basename $file)
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
             
             input_dir_path=$(dirname $file)
 
@@ -131,7 +131,7 @@ for dir in ${dirs[@]}; do
             exit $?
         fi
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
             epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$output_dir/"
             echo "[DATA LINEAGE] Annotated $output_dir/ to EPMT_DATA_LINEAGE_OUT_PATH"
@@ -146,7 +146,7 @@ for dir in ${dirs[@]}; do
 	
 done
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     # Annotate to EPMT
     if [ -n "$input_file_list" ]; then

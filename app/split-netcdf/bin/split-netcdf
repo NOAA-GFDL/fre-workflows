@@ -33,7 +33,7 @@ if [[ ! -d $outputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -67,7 +67,7 @@ if [[ $use_subdirs ]]; then
                 cdo --history splitname $file $outputDir/$subdir/$(echo $file | sed 's/nc$//')
         done
 
-        if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
             epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
             echo "[DATA LINEAGE] Annotated $inputDir/$subdir/ to EPMT_DATA_LINEAGE_IN_PATH"
@@ -120,7 +120,7 @@ else
         cdo --history splitname $file $outputDir/$(echo $file | sed 's/nc$//')
     done
 
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
         epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
         echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
 
@@ -160,7 +160,7 @@ else
 
 fi
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
     # Annotate to EPMT
     if [ -n "$input_file_list" ]; then

@@ -20,7 +20,7 @@ if [[ ! -d $inputDir ]]; then
 fi
 
 # Setup PYTHONPATH and io lists for the data lineage tool
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
     export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
     export input_file_list=
     export output_file_list=
@@ -34,7 +34,7 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
     # Remove the './' prefix from file
     file="${file#./}"
 
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
         -m data_lineage.bloomfilter.HashGen $inputDir/$file)
         export input_file_list="${input_file_list}$file $hash_val,"
@@ -46,7 +46,7 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
         mv -f $file.masked $file
         echo "Updated '$file'"
     fi
-    if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
         -m data_lineage.bloomfilter.HashGen $inputDir/$file)
         export output_file_list="${output_file_list}$file $hash_val,"
@@ -54,7 +54,7 @@ for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$compone
     fi
 done
 
-if [[ "$EPMT_DATA_LINEAGE" -eq 1 ]]; then
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
 
     epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
     echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
