@@ -274,7 +274,10 @@ def remap():
     print("    current chunk: "+current_chunk)
     print("    components: "+components)
     print("    product: "+product)
-    print("    dirTSWorkaround: "+dir_ts_workaround)
+    if dir_ts_workaround is not None:
+        print("    dirTSWorkaround: "+dir_ts_workaround)
+    else:
+        print("    dirTSWorkaround: None")
     if ens_mem is not None:
         print("    ens_mem: "+ens_mem)
     else:
