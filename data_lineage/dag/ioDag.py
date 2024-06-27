@@ -1,32 +1,5 @@
 from data_lineage.dag.Dag import DAG
 
-def setup_logger(name):
-    cfg = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'loggers': {
-            name: {
-                'level': 'INFO',
-                'handlers': ['default']
-            }
-        },
-        'handlers': {
-            'default': {
-                'level': 'INFO',
-                'formatter': 'info',
-                'class': 'logging.StreamHandler',
-                'stream': 'ext://sys.stdout',
-            }
-        },
-        'formatters': {
-            'info': {
-                'format': '%(asctime)s-%(levelname)s-%(name)s::%(module)s|%(lineno)s:: %(message)s'
-            },
-        },
-    }
-    logging.config.dictConfig(cfg)
-
-
 def create_nodes(jobs):
     nodes = []
     for job_name, job_info in jobs.items():
