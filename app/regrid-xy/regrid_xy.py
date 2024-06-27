@@ -245,9 +245,10 @@ def regrid_xy( ):
     os.chdir(work_dir)
     if '.tar' in grid_spec:
         untar_sp = \
-            subprocess.run( ['tar', '-xvf', grid_spec], check = False )
+            subprocess.run( ['tar', '-xvf', grid_spec], check = False , capture_output = True)
         if untar_sp.returncode != 0:
-            raise Exception(f'untarring of grid_spec={grid_spec} file did not succeed')
+            raise Exception(
+                f'untarring of {grid_spec} file failed, ret_code={untar_sp.returncode}, stderr={untar_sp.stderr}')
         if Path( 'mosaic.nc' ).exists():
             grid_spec_file='mosaic.nc'
         elif Path( 'grid_spec.nc' ).exists():
