@@ -36,6 +36,8 @@
             --comment=xtmp,epmt,canopy
         [[[environment]]]
             COPY_TOOL=gcp
+            # Uncomment to collect data for the data lineage tool
+            # EPMT_DATA_LINEAGE=1
 
     [[PP-STARTER]]
         env-script = """
@@ -49,7 +51,7 @@
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:canopy;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load gcp hsm/test
+        pre-script = module load gcp/2.3 hsm/test
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -115,7 +117,14 @@
     [[REMAP-PP-COMPONENTS]]
         pre-script = """
             module load fre-nctools miniforge
+            # https://github.com/conda/conda/issues/3200
+            set +x
+            set +e
+            set +u
             conda activate /nbhome/fms/conda/envs/fre-cli
+            set -x
+            set -e
+            set -u
             module load gcp
             mkdir -p $outputDir
         """
@@ -143,8 +152,15 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         pre-script = """
-            module load fre-nctools miniforge
+            module load fre-nctools miniforge nco
+            # https://github.com/conda/conda/issues/3200
+            set +x
+            set +e
+            set +u
             conda activate /nbhome/fms/conda/envs/fre-cli
+            set -x
+            set -e
+            set -u
             mkdir -p $outputDir
         """
 {% endif %}
@@ -245,3 +261,4 @@
 [[analysis-ray_example]]
     [[[directives]]]
     --partition=analysis
+
