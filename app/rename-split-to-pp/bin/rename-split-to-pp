@@ -241,11 +241,13 @@ if [[ $use_subdirs ]]; then
         if [[ $files =~ \* ]]; then
             err No input files
         else
-            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
-            echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+                echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
 
-            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
-            echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
+                echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
 
             process_files "$inputDir/$subdir"
         fi
@@ -261,11 +263,13 @@ else
         exit 1
     fi
 
-    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
-    echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+        echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
 
-    epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
-    echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+        echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+    fi
 
     process_files "$inputDir"
 fi
