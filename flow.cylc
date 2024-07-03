@@ -466,7 +466,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             set -euo pipefail
 
             #Stage the contents of a tarfile to PTMP
-            module list
             echo Arguments:
             echo "    history dir: $historyDir"
             echo "    ptmp dir: $ptmpDir"
