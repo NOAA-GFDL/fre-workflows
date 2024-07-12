@@ -181,12 +181,7 @@ def truncate_date(date, freq):
     """
 
     form = freq_to_date_format(freq)
-    print(f"truncatedateformat: {format}")
-    #in the shell version, this line simply gets run.
-    #not clear to me why piping to tr is necessary, doesnt seem to change output at all
-    #output =subprocess.Popen(["cylc", "date", "--template", format, date,
-    #                          "|","tr","-d","T"],
-    #                          stdout=subprocess.PIPE)
+    print(f"truncatedateformat: {form}")
     output = subprocess.Popen(["cylc", "cycle-point", "--template", form, date],
                               stdout=subprocess.PIPE)
 
@@ -349,10 +344,16 @@ def remap():
                 os.chdir(f"{input_dir}/{g}")
 
                 # Go into source directory
+                # The source directory may not exist as expected, if the source
+                # is timeaveraged and not annual or monthly.
                 if ens_mem is not None:
-                    os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}")
+                    source_dir = os.path.join(input_dir, g, ens_mem, s)
                 else:
-                    os.chdir(f"{input_dir}/{g}/{s}")
+                    source_dir = os.path.join(input_dir, g, s)
+                if not os.path.exists(source_dir) and product == "av":
+                    print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
+                    continue
+                os.chdir(f"{input_dir}/{g}/{s}")
 
                 #FREQ
                 if fields.get("freq") is None:
@@ -412,7 +413,7 @@ def remap():
                                              current_chunk = current_chunk,
                                              begin = begin)
 
-                        print(f"files found: {files}")
+                        print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
 
                         if not files:
                             if ens_mem is not None:
@@ -430,8 +431,9 @@ def remap():
 
                             # If file exists, remove it
                             # (would exist if workflow was run previously)
-                            if Path(f"{dir}/{newfile2})").exists():
-                                os.remove(f"{dir}/{newfile2}")
+                            output_file = os.path.join(output_dir, dirs, newfile2)
+                            if os.path.exists(output_file):
+                                os.remove(output_file)
 
                             # Replace with new file
                             if ens_mem is not None:
