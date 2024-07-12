@@ -319,11 +319,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_S
     {% endif %}
 {% endif %}
 
-{# If MDTF is requested, then run it after all pp components have finished #}
-{% if DO_MDTF %}
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
-{% endif %}
-
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
 """
 
@@ -1055,13 +1050,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
 {{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
     {% endif %}
-{% endif %}
-
-{% if DO_MDTF %}
-    [[mdtf]]
-        pre-script = mkdir -p $MDTF_TMPDIR
-        [[[environment]]]
-            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 {% endif %}
 
     [[CLEAN]]

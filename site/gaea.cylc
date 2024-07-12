@@ -107,13 +107,6 @@
     [[CLEAN]]
         pre-script = "set -x"
 		
-{% if DO_MDTF %}
-    [[mdtf]]
-        pre-script = mkdir -p $MDTF_TMPDIR
-        [[[environment]]]
-            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
-{% endif %}
-
 {% if DO_STATICS %}
     [[combine-statics]]
         pre-script = module load cdo && mkdir -p $outputDir

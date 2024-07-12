@@ -166,19 +166,6 @@
         """
         pre-script = "set -x"
 		
-
-{% if DO_MDTF %}
-    [[mdtf]]
-        env-script = """
-            {{ EPMT_PREAMBLE }}
-            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:canopy;exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:mdtf;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
-            {{ EPMT_POSTAMBLE }}
-        """
-        pre-script = mkdir -p $MDTF_TMPDIR
-        [[[environment]]]
-            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
-{% endif %}
-
 {% if DO_STATICS %}
     [[combine-statics]]
         env-script = """
