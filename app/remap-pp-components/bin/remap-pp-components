@@ -353,7 +353,7 @@ def remap():
                 if not os.path.exists(source_dir) and product == "av":
                     print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
                     continue
-                os.chdir(f"{input_dir}/{g}/{s}")
+                os.chdir(source_dir)
 
                 #FREQ
                 if fields.get("freq") is None:
