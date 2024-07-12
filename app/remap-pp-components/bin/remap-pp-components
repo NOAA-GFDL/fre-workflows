@@ -452,12 +452,12 @@ def remap():
                                 if ens_mem is not None:
                                     copy = [f"{copy_tool}",
                                             f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dir}/{newfile2}" ]
+                                            f"{output_dir}/{dirs}/{newfile2}" ]
                                     subprocess.run( copy, check = False )
                                 else:
                                     copy = [f"{copy_tool}",
                                             f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dir}/{newfile2}" ]
+                                            f"{output_dir}/{dirs}/{newfile2}" ]
                                     subprocess.run( copy, check = False )
 
     print("Component remapping complete")
