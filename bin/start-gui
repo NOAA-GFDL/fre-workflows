@@ -1,8 +1,3 @@
 #!/bin/bash
 
-if [[ $(hostname) != an107 && $(hostname) != an201 ]]; then
-    echo Must be on jhan/an107
-    exit 1
-fi
-
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
