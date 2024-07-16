@@ -244,7 +244,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
             if not analysis_only and item_product == "ts":
                 graph += f"            => data-catalog\n"
             if analysis_only:
-                graph += f"            ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+                graph += f"            data-catalog => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             else:
                 graph += f"            => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             graph += f"        \"\"\"\n"
@@ -333,7 +333,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # and assume the pp data is already there.
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
         if analysis_only:
-            graph += f"            ANALYSIS-{chunk}?\n"
+            graph += f"            data-catalog => ANALYSIS-{chunk}?\n"
         else:
             if item_product == "av":
                 graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
