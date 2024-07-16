@@ -241,7 +241,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
                         graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
-            if item_product == "ts":
+            if not analysis_only and item_product == "ts":
                 graph += f"            => data-catalog\n"
             if analysis_only:
                 graph += f"            ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
@@ -340,6 +340,13 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog => ANALYSIS-{chunk}?\n"
         graph += f"        \"\"\"\n"
+
+        # add task to build the analysis script env
+        graph += f"""
+        R1 = \"\"\"
+            build-analysis-{item} => analysis-{item}
+        \"\"\"
+        """
 
     return(defs, graph)
 
@@ -483,13 +490,20 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
                     graph += f"            & REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
             i -= 1
             d -= chunk
-        if item_product == "ts":
+        if not analysis_only and item_product == "ts":
             graph += f"            => data-catalog\n"
         if analysis_only:
-            graph += f"            ANALYSIS-{item_start_str}_{item_end_str}\n"
+            graph += f"            data-catalog => ANALYSIS-{item_start_str}_{item_end_str}\n"
         else:
             graph += f"            => ANALYSIS-{item_start_str}_{item_end_str}\n"
         graph += f"        \"\"\"\n"
+
+        # add task to build the analysis script env
+        graph += f"""
+        R1 = \"\"\"
+            build-analysis-{item} => analysis-{item}
+        \"\"\"
+        """
 
     return(defs, graph)
 
