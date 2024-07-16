@@ -173,6 +173,13 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         # to be called "analysis-{item}"
         defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
 
+        # add task to build the analysis script env
+        graph += f"""
+        R1 = \"\"\"
+            build-analysis-{item} => analysis-{item}
+        \"\"\"
+        """
+
         # to make the task run, we will create a task family for
         # each chunk/interval, starting from the beginning of pp data
         # then we create an analysis script task for each of these task families
@@ -360,6 +367,8 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
             staticfile = {pp_dir}/{comps[0]}/{comps[0]}.static.nc
             scriptLabel = {item}
             datachunk = {chunk.years}
+    [[build-analysis-{item}]]
+        inherit = BUILD-ANALYSIS
         """
 
     return(string)
@@ -427,6 +436,12 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
+        """
+
+        # build the environment
+        defs += f"""
+    [[build-analysis-{item}]]
+        inherit = BUILD-ANALYSIS
         """
 
         # set time-varying stuff
