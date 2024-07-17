@@ -194,6 +194,11 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{item}
             """
 
+            # add the publish task definition for each ending time
+            defs += f"""
+    [[publish-analysis-{item}-{date_str}]]
+            """
+
             # add the task definition family for each ending time
             defs += f"""
     [[ANALYSIS-CUMULATIVE-{date_str}]]
@@ -247,6 +252,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
                 graph += f"            data-catalog => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             else:
                 graph += f"            => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
+            graph += f"             analysis-{item}-{date_str} => publish-analysis-{item}-{date_str}\n"
             graph += f"        \"\"\"\n"
             date += chunk
 
