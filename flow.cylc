@@ -1026,7 +1026,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         """
         script = """
             python3 -m venv $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/$CYLC_TASK_NAME
-            source $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/$CYLC_TASK_NAME/bin/activate.sh
+            source $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/$CYLC_TASK_NAME/bin/activate
             pip install --upgrade pip
             cd $CYLC_TASK_WORK_DIR
             git clone https://github.com/NOAA-GFDL/analysis-scripts.git
