@@ -1,0 +1,466 @@
+#!/usr/bin/env python
+"""
+Description: Remap components that will be
+             post-processed from one convention,
+             such a s history files, to an
+             updated output directory structure
+
+"""
+import os
+import subprocess
+import glob
+from pathlib import Path
+import metomi.rose.config as mrc
+
+def verify_dirs(in_dir,out_dir):
+    """
+    Verify that the input and output directories exists and are directories
+    Params:
+        output_dir: output directory
+        input_dir: input directory
+    """
+
+    # Verify input directory exists and is a directory
+    if Path(in_dir).is_dir():
+        print("Input directory is a valid directory")
+    else:
+        raise Exception(f"Error: Input directory {in_dir} is not a valid directory")
+
+    # Verify output directory exists and is a directory
+    if Path(out_dir).is_dir():
+        print("Output directory is a valid directory")
+    else:
+        raise Exception(f"Error: Output directory {out_dir} is not a valid directory")
+
+def create_dir(out_dir,comp,freq,chunk,ens,dir_ts):
+    """
+    Create the output directory structure
+    Params:
+        out_dir: output directory
+        comp: component that will be post-processed
+        freq: frequency
+        chunk: chunk
+        ens: ensemble member
+        dir_ts: directory time series workaround
+    """
+
+    # Define dir
+    if ens is not None:
+        if dir_ts:
+            dirs = f"{comp}/ts/{ens}/{freq}/{chunk}"
+        else:
+            dirs = f"{comp}/{ens}/{freq}/{chunk}"
+    else:
+        if dir_ts:
+            dirs = f"{comp}/ts/{freq}/{chunk}"
+        else:
+            dirs = f"{comp}/{freq}/{chunk}"
+
+    # Create dir from outputDir
+    os.chdir(out_dir)
+    Path(dirs).mkdir(parents=True,exist_ok=True)
+
+    return dirs
+
+def freq_to_legacy(iso_dura):
+    """
+    Print Bronx-style frequency given an ISO8601 duration
+    Params:
+        iso_dura: frequency
+    """
+
+    if iso_dura=='P1Y':
+        freq_legacy = 'annual'
+    elif iso_dura=='P1M':
+        freq_legacy = 'monthly'
+    elif iso_dura=='P3M':
+        freq_legacy = 'seasonal'
+    elif iso_dura=='P1D':
+        freq_legacy = 'daily'
+    elif iso_dura=='PT120H':
+        freq_legacy = '120hr'
+    elif iso_dura=='PT12H':
+        freq_legacy = '12hr'
+    elif iso_dura=='PT8H':
+        freq_legacy = '8hr'
+    elif iso_dura=='PT6H':
+        freq_legacy = '6hr'
+    elif iso_dura=='PT4H':
+        freq_legacy = '4hr'
+    elif iso_dura=='PT3H':
+        freq_legacy = '3hr'
+    elif iso_dura=='PT2H':
+        freq_legacy = '2hr'
+    elif iso_dura=='PT1H':
+        freq_legacy = 'hourly'
+    elif iso_dura=='PT30M':
+        freq_legacy = '30min'
+    else:
+        freq_legacy = 'error'
+
+    return freq_legacy
+
+def chunk_to_legacy(iso_dura):
+    """
+    Print Bronx-style frequency given an ISO8601 duration
+    Params:
+        iso_dura: chunk
+    """
+
+    if iso_dura[0]=='P':
+        if iso_dura[-1:]=='M':
+            brx_freq=iso_dura[1]+'mo'
+        elif iso_dura[-1:]=='Y':
+            brx_freq=iso_dura[1]+'yr'
+        else:
+            brx_freq = 'error'
+    else:
+        brx_freq = 'error'
+
+    return brx_freq
+
+def bronx_style(freq, chunk, ens_member, out_dir, comp):
+    """
+    Create bronx-style symlinks
+    Params:
+        freq: frequency
+        chunk: chunk
+        ens_member: ensemble member
+        out_dir: output directory
+        comp: component
+    """
+
+    freq_legacy = freq_to_legacy(freq)
+    chunk_legacy = chunk_to_legacy(chunk)
+    if chunk_legacy == "error":
+        print(f"Error: Skipping legacy directory for chunk: {chunk}")
+    else:
+        if ens_member is not None:
+            dir1 = f"{out_dir}/{comp}/ts/{ens_member}"
+            os.chdir(f"{out_dir}/{comp}/ts/{ens_member}")
+        else:
+            dir1 = f"{out_dir}/{comp}/ts"
+            os.chdir(f"{out_dir}/{comp}/ts")
+
+        Path(freq_legacy).mkdir(exist_ok=True)
+        os.chdir(freq_legacy)
+
+        if not Path(chunk_legacy).exists():
+            os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
+
+    return dir1
+
+def freq_to_date_format(iso_freq):
+    """
+    Print legacy Bronx-like date template format given a frequency (ISO 8601 duration)
+    Params:
+        iso_freq: frequency
+    """
+
+    if iso_freq=='P1Y':
+        return 'CCYY'
+    elif iso_freq=='P1M':
+        return 'CCYYMM'
+    elif iso_freq=='P1D':
+        return 'CCYYMMDD'
+    elif (iso_freq[:2]=='PT') and (iso_freq[-1:]=='H'):
+        return 'CCYYMMDDThh'
+    else:
+        return f'ERROR: Unknown Frequency {iso_freq}'
+
+def truncate_date(date, freq):
+    """
+    Print a date string to a truncated precision.
+        - Accepts a date and frequency
+        - Outputs a date string with suitably reduced precision
+        - Test cases: '19790101T0000Z P1D', '19800101T0000Z P1M', '19790101T0000Z PT0.5H'
+        - Output using cylc (shared.sh calls in job logs): '19790101', '198001', '1979010100'
+    Params:
+        date: date to begin post-processing
+        freq: frequency
+    """
+
+    form = freq_to_date_format(freq)
+    print(f"truncatedateformat: {form}")
+    output = subprocess.Popen(["cylc", "cycle-point", "--template", form, date],
+                              stdout=subprocess.PIPE)
+
+    bytedate = output.communicate()[0]
+    date=str(bytedate.decode())
+    print(f"truncatedate: {date}")
+
+    #remove trailing newline
+    date=date[:(len(date)-1)]
+
+    #check for and remove 'T' if present
+    if not date.isnumeric():
+        date=date[:8]+date[-2:]
+
+    return date
+
+def search_files(product,var,source,freq,current_chunk,begin):
+    """
+    Pattern match and search for the correct files in the chunk directory
+    Params:
+        var: variables
+        source: source history files for post-processed component
+        begin: date to begin post-processing
+        current_chunk: current chunk to post-process
+        freq: frequency
+    """
+
+    # with glob - files seen as list
+    if freq == "P0Y":
+        if var == "all":
+            files = glob.glob(f"{source}.*.nc")
+        else:
+            for v in var:
+                files = glob.glob(f"{source}.{v}*.nc")
+    else:
+        if product == "ts":
+            date = truncate_date(begin, freq)
+            print(f"date: {date}")
+        elif product == "av":
+            date = truncate_date(begin, "P1Y")
+        else:
+            raise Exception("Product not set to ts or av.")
+
+        if var == "all":
+            files = glob.glob(f"{source}.{date}-*.*.nc")
+        else:
+            for v in var:
+                print(f"var: {v}")
+                files = glob.glob(f"{source}.{date}-*.{v}*.nc")
+
+        if product == "av" and current_chunk == "P1Y":
+            files = glob.glob(f"{source}.{date}.*.nc")
+
+    return files
+
+##################################### MAIN FUNCTION #####################################
+def remap():
+    """
+    Remap history files to an updated output directory structure
+    Params:
+        input_dir: input directory
+        output_dir: output directory
+        begin: date to begin post-processing
+        current_chunk: current chunk to post-process
+        components: components that will be post-processed
+        product: variable to define time series or time averaging
+        dir_ts_workaround: time series workaround
+        ens_mem: ensemble member number
+    """
+
+    # Set variables
+    input_dir         = os.getenv('inputDir')
+    output_dir        = os.getenv('outputDir')
+    begin             = os.getenv('begin')
+    current_chunk     = os.getenv('currentChunk')
+    components        = os.getenv('components')
+    product           = os.getenv('product')
+    dir_ts_workaround = os.getenv('dirTSWorkaround')
+    ens_mem           = os.getenv('ens_mem')
+
+    print("Arguments:")
+    print("    input dir: "+input_dir)
+    print("    output dir: "+output_dir)
+    print("    begin: "+begin)
+    print("    current chunk: "+current_chunk)
+    print("    components: "+components)
+    print("    product: "+product)
+    if dir_ts_workaround is not None:
+        print("    dirTSWorkaround: "+dir_ts_workaround)
+    else:
+        print("    dirTSWorkaround: None")
+    if ens_mem is not None:
+        print("    ens_mem: "+ens_mem)
+    else:
+        print("    ens_mem: None")
+    copy_tool = os.getenv('COPY_TOOL')
+
+    # Read rose config files (for now)
+    config_dir = os.getcwd()
+    print(f"rose configuration directory: {config_dir}")
+    config = mrc.load(f"{config_dir}/rose-app-run.conf")
+
+    # Verify the input and output directories
+    verify_dirs(input_dir, output_dir)
+
+    # Start in input directory)
+    os.chdir(input_dir)
+
+    # loop through components to be post processed
+    # list of components
+    comps = components.split()
+    for comp in comps:
+        comp = comp.strip('""')
+        try:
+            #comp_out: component in rose config
+            comp_out = config.get([comp])
+
+            #fields: info associated with each component
+            fields = comp_out.get_value()
+
+        except AttributeError:
+            print(f"WARNING: component {comp} does not exist in rose config")
+            continue
+
+        # check for empty dictionary
+        if fields == {}:
+            print(f"WARNING: component {comp} does not have any associated attributes")
+            continue
+
+        # Define fields
+        if fields.get("variables") is not None:
+            variables = fields.get("variables").get_value()
+            v = variables.split()
+        else:
+            v = "all"
+
+        #GRID
+        if fields.get("grid") is None:
+            grid = glob.glob("*")
+        else:
+            grid = fields.get("grid").get_value()
+            grid = grid.split()
+
+        for g in grid:
+            if ens_mem is not None:
+                newdir = f"{input_dir}/{g}/{ens_mem}"
+                os.chdir(newdir)
+            else:
+                os.chdir(f"{input_dir}/{g}")
+
+            ## SOURCES
+            if fields.get("sources") is None:
+                sources = glob.glob("*")
+            else:
+                sources = fields.get("sources").get_value()
+                sources = sources.split()
+
+            for s in sources:
+                # Start in grid directory
+                os.chdir(f"{input_dir}/{g}")
+
+                # Go into source directory
+                # The source directory may not exist as expected, if the source
+                # is timeaveraged and not annual or monthly.
+                if ens_mem is not None:
+                    source_dir = os.path.join(input_dir, g, ens_mem, s)
+                else:
+                    source_dir = os.path.join(input_dir, g, s)
+                if not os.path.exists(source_dir) and product == "av":
+                    print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
+                    continue
+                os.chdir(source_dir)
+
+                #FREQ
+                if fields.get("freq") is None:
+                    freq = glob.glob("*")
+                else:
+                    freq = fields.get("freq").get_value()
+                    freq = freq.split()
+
+                for f in freq:
+                    if ens_mem is not None:
+                        os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
+                    else:
+                        os.chdir(f"{input_dir}/{g}/{s}/{f}")
+
+                    #CHUNK
+                    if fields.get("chunk") is None:
+                        chunk = glob.glob("*")
+                    else:
+                        chunk = fields.get("chunk").get_value()
+                        chunk = chunk.split()
+
+                    for c in chunk:
+                        if c != current_chunk:
+                            continue
+                        if ens_mem is not None:
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                        else:
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+
+                        # Create directory
+                        dirs = create_dir(out_dir = output_dir,
+                                          comp = comp,
+                                          freq = f,
+                                          chunk = c,
+                                          ens = ens_mem,
+                                          dir_ts = dir_ts_workaround)
+
+                        print(f"directory created: {dirs}")
+
+                        # Create bronx-style symlinks for TS only
+                        if dir_ts_workaround:
+                            bronx_style(freq = f,
+                                        chunk = c,
+                                        ens_member = ens_mem,
+                                        out_dir = output_dir,
+                                        comp = comp)
+
+                        # Search for files in chunk directory
+                        if ens_mem is not None:
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                        else:
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                        files = search_files(product = product,
+                                             var = v,
+                                             source = s,
+                                             freq = f,
+                                             current_chunk = current_chunk,
+                                             begin = begin)
+
+                        print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
+
+                        if not files:
+                            if ens_mem is not None:
+                                raise Exception("\nError: No input files found in",
+                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                            else:
+                                raise Exception("\nError: No input files found in",
+                                                f"{input_dir}/{g}/{s}/{f}/{c}")
+
+                        os.chdir(output_dir)
+
+                        for file in files:
+                            newfile1 = file.split(".",1)[1]
+                            newfile2 = f"{comp}.{newfile1}"
+
+                            # If file exists, remove it
+                            # (would exist if workflow was run previously)
+                            output_file = os.path.join(output_dir, dirs, newfile2)
+                            if os.path.exists(output_file):
+                                os.remove(output_file)
+
+                            # Replace with new file
+                            if ens_mem is not None:
+                                link = ["ln",
+                                        f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                        f"{output_dir}/{dirs}/{newfile2}"]
+                            else:
+                                link = ["ln",
+                                        f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                        f"{output_dir}/{dirs}/{newfile2}"]
+
+                            run = subprocess.run( link, check = False )
+                            ret = run.returncode
+
+                            if ret != 0:
+                                if ens_mem is not None:
+                                    copy = [f"{copy_tool}",
+                                            f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dirs}/{newfile2}" ]
+                                    subprocess.run( copy, check = False )
+                                else:
+                                    copy = [f"{copy_tool}",
+                                            f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dirs}/{newfile2}" ]
+                                    subprocess.run( copy, check = False )
+
+    print("Component remapping complete")
+
+if __name__ == '__main__':
+    remap()

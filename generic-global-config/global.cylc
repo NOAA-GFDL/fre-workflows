@@ -1,0 +1,4 @@
+[platforms]
+    [[localhost]]
+        job runner = background
+        cylc path = $(dirname $(which cylc))

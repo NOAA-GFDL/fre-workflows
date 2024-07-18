@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# reports differences between a user's global.cylc 
+# against an installation's global.cylc.
+# mostly for aiding debugging
+
+USER_CYLC_CFG=$HOME/.cylc/flow/global.cylc
+test -f $USER_CYLC_CFG
+USER_CYLC_CFG_EXISTS=$?
+
+if [ $USER_CYLC_CFG_EXISTS = "0" ];
+then
+	echo "user global.cylc config found."
+else
+	echo "user global cylc config NOT found."
+	echo "cannot compare to default global cylc config."
+	echo "exit."
+	exit
+fi
+
+
+WHICH_CYLC=$(which cylc)
+DEF_CYLC_CFG=${WHICH_CYLC%/bin*}/flow/global.cylc
+test -f $DEF_CYLC_CFG
+DEF_CYLC_CFG_EXISTS=$?
+
+if [ $DEF_CYLC_CFG_EXISTS = "0" ];
+then
+	echo "default global.cylc config found."
+else
+	echo "default global cylc config NOT found."
+	echo "cannot compare to user global cylc config."
+	echo "exit."
+	exit 
+fi
+
+echo "checking for differences..."	
+NUMDIFF_LINES=$(diff $USER_CYLC_CFG $DEF_CYLC_CFG | wc -l)
+if [ $NUMDIFF_LINES = "0" ];
+then
+	echo "no differences found between"
+	echo "USER_CYLC_CFG=$USER_CYLC_CFG"
+	echo "and"
+	echo "DEF_CYLC_CFG=$DEF_CYLC_CFG"
+else
+	echo "differences found. they are..."
+	diff $USER_CYLC_CFG $DEF_CYLC_CFG
+fi
+
+
+	
