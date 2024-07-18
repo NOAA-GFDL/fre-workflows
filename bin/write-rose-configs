@@ -1,0 +1,122 @@
+#!/app/conda/miniconda/envs/cylc/bin/python
+# write-rose-configs
+# This script accepts an in-house, so-far-undocumented, extended
+# CMOR table format, and writes the Rose app configurations for
+# regrid-xy and remap-pp-components.
+import argparse
+import json
+import metomi.rose.config as rose
+
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('input_files', type=str, nargs='+')
+args = parser.parse_args()
+
+def check_consistency(one, two):
+    """If two is set, then two.value must be equal to one"""
+    if two:
+        if one == two.value:
+            pass
+        else:
+            raise Exception("Consistency violation:", one, two)
+
+def process_file (input_file):
+    """Append to regrid-xy and remap-pp-component config files"""
+
+    # Load input file
+    print("Reading", input_file)
+    f = open(input_file)
+    input_json = json.load(f)
+    #print(input_json)
+
+    # Load regrid config
+    regrid_file = 'app/regrid-xy/rose-app.conf'
+    config_node = rose.load(regrid_file)
+
+    # Write info to regrid config if regridding is requested
+    # If component already exists in remap config, then append to sources
+    # and verify grid, realm, lat, lon, type, interp-method are the same if set
+    comp = input_json['Header']['table_id']
+    try:
+        xyInterp = input_json['Header']['xyInterp']
+    except:
+        xyInterp = None
+    if xyInterp:
+        check_consistency(input_json['Header']['inputGrid'], config_node.get([comp, 'inputGrid']))
+        config_node.set([comp, 'inputGrid'], input_json['Header']['inputGrid'])
+        check_consistency(input_json['Header']['realm'], config_node.get([comp, 'inputRealm']))
+        config_node.set([comp, 'inputRealm'], input_json['Header']['realm'])
+        try:
+            old_sources_list = config_node.get([comp, 'sources']).value
+            sources = set(old_sources_list.split(" "))
+        except:
+            sources = set()
+        for hf in input_json['Header']['history_files']:
+            sources.add(hf)
+        config_node.set([comp, 'sources'], " ".join(list(sources)))
+        if xyInterp == "default":
+            check_consistency("default", config_node.get([comp, 'outputGridType']))
+            config_node.set([comp, 'outputGridType'], "default")
+        else:
+            lat_lon = input_json['Header']['xyInterp'].split(',')
+            check_consistency(lat_lon[0], config_node.get([comp, 'outputGridLat']))
+            config_node.set([comp, 'outputGridLat'], lat_lon[0])
+            check_consistency(lat_lon[1], config_node.get([comp, 'outputGridLon']))
+            config_node.set([comp, 'outputGridLon'], lat_lon[1])
+            check_consistency(lat_lon[0] + '_' + lat_lon[1], config_node.get([comp, 'outputGridType']))
+            config_node.set([comp, 'outputGridType'], lat_lon[0] + '_' + lat_lon[1])
+        try:
+            interp_method = input_json['Header']['interpMethod']
+        except:
+            interp_method = None
+        if interp_method:
+            check_consistency(interp_method, config_node.get([comp, 'interpMethod']))
+            config_node.set([comp, 'interpMethod'], interp_method)
+    #print(config_node)
+
+    # Save regrid config
+    f = open(regrid_file, 'w')
+    rose.dump(config_node, f)
+    print("Wrote", regrid_file)
+
+    # Load remap config
+    remap_file = 'app/remap-pp-components/rose-app.conf'
+    config_node = rose.load(remap_file)
+
+    # Write info to remap config
+    # If component already exists in remap config, then append to source
+    # and verify grid is the same
+    try:
+        old_grid = config_node.get([comp, 'grid']).value
+    except:
+        old_grid = None
+    try:
+        old_sources_list = config_node.get([comp, 'source']).value
+        sources = set(old_sources_list.split(" "))
+    except:
+        sources = set()
+
+    if xyInterp:
+        if xyInterp == "default":
+            new_grid = 'regrid-xy/' + 'default'
+        else:
+            new_grid = 'regrid-xy/' + lat_lon[0] + '_' + lat_lon[1]
+    else:
+        new_grid = 'native'
+
+    if old_grid and old_grid != new_grid:
+        raise Exception("Component must have only one grid:", comp, old_grid, new_grid)
+
+    for hf in input_json['Header']['history_files']:
+        sources.add(hf)
+
+    config_node.set([comp, 'grid'], new_grid)
+    config_node.set([comp, 'source'], " ".join(list(sources)))
+
+    # Save remap config
+    f = open(remap_file, 'w')
+    rose.dump(config_node, f)
+    print("Wrote", remap_file)
+
+for input_file in args.input_files:
+    process_file(input_file)

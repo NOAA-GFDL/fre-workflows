@@ -1,0 +1,55 @@
+netcdf atmos_tracer.000601-000612.average_DT {
+dimensions:
+	time = UNLIMITED ; // (12 currently)
+	bnds = 2 ;
+variables:
+	double average_DT(time) ;
+		average_DT:long_name = "Length of average period" ;
+		average_DT:units = "days" ;
+		average_DT:missing_value = 1.e+20 ;
+		average_DT:_FillValue = 1.e+20 ;
+	double time(time) ;
+		time:long_name = "time" ;
+		time:units = "days since 0001-01-01 00:00:00" ;
+		time:axis = "T" ;
+		time:calendar_type = "NOLEAP" ;
+		time:calendar = "noleap" ;
+		time:bounds = "time_bnds" ;
+	double time_bnds(time, bnds) ;
+		time_bnds:long_name = "time axis boundaries" ;
+		time_bnds:units = "days since 0001-01-01 00:00:00" ;
+		time_bnds:missing_value = 1.e+20 ;
+		time_bnds:_FillValue = 1.e+20 ;
+
+// global attributes:
+		:filename = "00060101.atmos_tracer.tile1.nc" ;
+		:title = "ESM4_piClim-NTCF" ;
+		:associated_files = "area: 00060101.grid_spec.nc" ;
+		:grid_type = "regular" ;
+		:grid_tile = "N/A" ;
+		:code_release_version = "19.1" ;
+		:git_hash = "5a324f5f5c98dbb620b25cd98a6add9da8861ee5" ;
+		:creationtime = "Mon Jun  6 22:31:30 2022" ;
+		:hostname = "pp026" ;
+		:history = "fregrid --standard_dimension --input_mosaic C96_mosaic.nc --input_dir /xtmp/Luis.Sal-bey/ptmp/archive/oar.gfdl.bgrp-account/CMIP6/ESM4/AerChemMIP/ESM4_piClim-NTCF/gfdl.ncrc4-intel16-prod-openmp/history/00060101.nc --input_file 00060101.atmos_tracer --associated_file_dir /xtmp/Luis.Sal-bey/ptmp/archive/oar.gfdl.bgrp-account/CMIP6/ESM4/AerChemMIP/ESM4_piClim-NTCF/gfdl.ncrc4-intel16-prod-openmp/history/00060101.nc --remap_file fregrid_remap_file_288_by_180.nc --nlon 288 --nlat 180 --scalar_field (**please see the field list in this file**) --output_file 00060101.atmos_tracer.nc" ;
+data:
+
+ average_DT = 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ;
+
+ time = 1840.5, 1870, 1899.5, 1930, 1960.5, 1991, 2021.5, 2052.5, 2083, 
+    2113.5, 2144, 2174.5 ;
+
+ time_bnds =
+  1825, 1856,
+  1856, 1884,
+  1884, 1915,
+  1915, 1945,
+  1945, 1976,
+  1976, 2006,
+  2006, 2037,
+  2037, 2068,
+  2068, 2098,
+  2098, 2129,
+  2129, 2159,
+  2159, 2190 ;
+}

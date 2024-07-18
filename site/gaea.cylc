@@ -1,0 +1,120 @@
+[scheduling]
+    [[queues]]
+        # limit the entire workflow to 4 active tasks at once as these are background login node processes
+        [[[default]]]
+            limit = 4
+
+[runtime]
+    [[root]]
+        init-script = """
+            module list
+        """
+        script = rose task-run --verbose
+        {# retries don't make sense yet while testing as they will just delay the failures #}
+        {# execution retry delays = PT1M, PT5M, PT10M                                      #}
+        # Set default time limit to 4 hours
+        execution time limit = PT4H
+        platform = localhost
+        [[[events]]]
+            mail events = startup shutdown aborted timeout stalled inactivity
+            submission timeout = P1D
+        [[[directives]]]
+            --comment=canopy
+        [[[environment]]]
+            COPY_TOOL=gcp
+
+    [[STAGE-HISTORY]]
+        pre-script = module load gcp hsm/test
+
+{% if DO_REFINEDIAG or DO_PREANALYSIS %}
+    [[PRE-ANALYSIS]]
+        pre-script = """
+            env
+            set -x
+            module load gcp
+            module load fre/canopy
+            mkdir -p $work $tempCache $refineDiagDir
+            cd $work/$hsmdate
+            ls
+        """
+{% endif %}
+
+{% if DO_REFINEDIAG %}
+    [[REFINE-DIAG]]
+        post-script = """
+            cd $refineDiagDir
+            if ls *nc; then
+                refinedCount=$(ls -1 *nc | wc -l)
+            else
+                refinedCount=0
+            fi
+            if [[ $refinedCount > 0 ]]; then
+                for file in $(ls -1 *nc); do
+                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                done
+            else
+                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
+                exit 1
+            fi
+            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
+                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+                mv -f * $TMPDIR/modify_refineDiag
+                mv -f $TMPDIR/modify_refineDiag/* .
+                rm -rf $TMPDIR/modify_refineDiag
+            fi
+        """
+{% endif %}
+
+    [[SPLIT-NETCDF]]
+        pre-script = module load cdo nco && mkdir -p $outputDir
+
+    [[RENAME-SPLIT-TO-PP]]
+        pre-script = module load cray-hdf5 cray-netcdf cdo && mkdir -p $outputDir
+
+    [[REMAP-PP-COMPONENTS]]
+        pre-script = module load cdo gcp && mkdir -p $outputDir
+
+    [[data-catalog]]
+        pre-script = module load fre/canopy 
+
+    [[MAKE-TIMESERIES]]
+        pre-script = module load cdo && mkdir -p $outputDir
+
+    [[MAKE-TIMEAVGS]]
+        pre-script = module load fre/canopy && mkdir -p $outputDir
+
+    [[COMBINE-TIMEAVGS]]
+        pre-script = module load cdo nco && mkdir -p $outputDir
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = """
+            module use -a /usw/conda/modulefiles
+            module load fre-nctools/2023.01.02 nco miniforge
+            conda activate /ncrc/home2/fms/conda/envs/fre-cli
+            mkdir -p $outputDir
+        """
+        [[[environment]]]
+            TMPDIR = $CYLC_TASK_WORK_DIR
+{% endif %}
+
+    [[MASK-ATMOS-PLEVEL]]
+        pre-script = module load python
+
+    [[CLEAN]]
+        pre-script = "set -x"
+		
+{% if DO_MDTF %}
+    [[mdtf]]
+        pre-script = mkdir -p $MDTF_TMPDIR
+        [[[environment]]]
+            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
+{% endif %}
+
+{% if DO_STATICS %}
+    [[combine-statics]]
+        pre-script = module load cdo && mkdir -p $outputDir
+{% endif %}

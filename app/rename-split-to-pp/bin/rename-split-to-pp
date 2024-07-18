@@ -1,0 +1,315 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+#
+# Create per-variable timeseries from shards
+#
+
+# Link each input file into a canonical directory structure
+function process_files {
+    path="$1" #subdir or regular inputDir based on case
+    if [[ $use_subdirs ]]; then
+        my_path=$(basename $path)/
+    else
+        my_path=
+    fi
+
+    for file in $files; do
+        # tiled or non-tiled
+        if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
+            date=$(echo $file | cut -d. -f1)
+            label=$(echo $file | cut -d. -f2)
+            tile=$(echo $file | cut -d. -f3)
+            var=$(echo $file | cut -d. -f4)
+        else
+            date=$(echo $file | cut -d. -f1)
+            label=$(echo $file | cut -d. -f2)
+            var=$(echo $file | cut -d. -f3)
+            tile=""
+        fi
+        #echo DEBUG: file=$file, date=$date, label=$label, var=$var, tile=$tile
+
+        # Skip the average_DT|T1|T1 vars
+        # not sure if they are a problem for they aren't wanted anyway
+        if [[ $var =~ average_.. ]]; then
+            continue
+        fi
+
+        # For now, skip files that can't be opened with cdo
+        # almost certainly we don't want them anyhow
+        if ! cdo sinfo $file > /dev/null 2>&1; then
+            err WARNING: Skipping file that CDO cannot open: $file
+            continue
+        fi
+
+        timesteps=$(cdo ntime $file 2> /dev/null)
+        # statics and files with one timestamp aren't handled well
+        # cdo ntime reports 1 for statics, so need to use another call to distingush
+        if (( $timesteps == 1 )); then
+            # statics
+            if (( $(cdo ndate $file 2> /dev/null) == 0 )); then
+                freq=P0Y
+            else
+                # possibly no good way to do this other than time_bnds
+                if ! ncdump -v time_bnds $file; then
+                    err WARNING: Skipping file that has one timestep but no time_bnds for frequency detection
+                    continue
+                else
+                    d1=$(ncdump -t -v time_bnds $file | tail -n 2 | head -n 1 | cut -d, -f1 | sed 's/[";]//g' | sed 's/^ *//' | sed 's/ *$//' | tr ' ' T)
+                    d2=$(ncdump -t -v time_bnds $file | tail -n 2 | head -n 1 | cut -d, -f2 | sed 's/[";]//g' | sed 's/^ *//' | sed 's/ *$//' | tr ' ' T)
+                    # we do not expect days here (due to -t in ncdump above) but sometimes we get it anyway
+                    # it will be days in this case
+                    if [[ $d1 =~ ^[0-9\.]+$ ]]; then
+                        read freq format < <(get_freq_and_format_from_two_days $d1 $d2)
+                    else
+                        read freq format < <(get_freq_and_format_from_two_dates $d1 $d2)
+                    fi
+                    if [[ $freq == "error" ]]; then
+                        continue
+                    fi
+                fi
+            fi
+
+        # estimate frequency from the first two timesteps
+        else
+            cdo_dates_stdout=$(cdo showtimestamp $file 2> /dev/null)
+            d1=$(echo $cdo_dates_stdout | awk '{ print $1 }')
+            d2=$(echo $cdo_dates_stdout | awk '{ print $2 }')
+            if [[ $d1 == "0000-00-00T00:00:00" ]]; then
+                err WARNING: Skipping file with t=0 timestamp of zeros: $file
+                continue
+            fi
+            read freq format < <(get_freq_and_format_from_two_dates $d1 $d2)
+            if [[ $freq == "error" ]]; then
+                continue
+            fi
+        fi
+
+        # calculate date2 from # timesteps, date1, and frequency
+        date1=$(isodatetime $date)
+        date2=$(isodatetime --max=$timesteps R$timesteps/$date1/$freq | tail -n 1 )
+
+        # chunksize is the duration of the file
+        chunk=$(isodatetime $date1 $(isodatetime $date2 --offset=$freq))
+        # if the duration is a 365 or 366 days, count it as a year
+        if [[ $chunk =~ ^P([0-9]+)D$ ]]; then
+            if (( ${BASH_REMATCH[1]} > 27 )) && (( ${BASH_REMATCH[1]} < 32 )); then
+                echo "NOTE: Promoting $chunk to P1M"
+                chunk=P1M
+            else
+                years_int=$(perl -e "print int(${BASH_REMATCH[1]} / 365)")
+                years_frac=$(perl -e "print ${BASH_REMATCH[1]} / 365 - $years_int")
+                if [[ $(echo "$years_frac < 0.003" | bc) == 1 ]]; then
+                    echo "NOTE: promoting $chunk to P${years_int}Y"
+                    chunk=P${years_int}Y
+                fi
+            fi
+        fi
+
+        # copy the file to its new name
+        if [[ $freq == P0Y ]]; then
+            if [[ -n $tile ]]; then
+                newfile=$label.$var.$tile.nc
+            else
+                newfile=$label.$var.nc
+            fi
+        else
+            if [[ -n $tile ]]; then
+                newfile=$label.$(isodatetime --print-format=$format $date1 | tr -d T)-$(isodatetime --print-format=$format $date2 | tr -d T).$var.$tile.nc
+            else
+                newfile=$label.$(isodatetime --print-format=$format $date1 | tr -d T)-$(isodatetime --print-format=$format $date2 | tr -d T).$var.nc
+            fi
+        fi
+
+        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+            if [[ $use_subdirs ]]; then
+                data_lineage_in_path=$inputDir/$subdir
+            else
+                data_lineage_in_path=$inputDir
+            fi
+            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+            -m data_lineage.bloomfilter.HashGen $data_lineage_in_path/$file) # Currently hardcoded for only 1 subdir
+            export input_file_list="${input_file_list}$file $hash_val,"
+            echo "[DATA LINEAGE] Added $file to input list with hash_val: $hash_val"
+        fi
+
+        # If in subdir mode, preserve the subdir
+        if [[ $use_subdirs ]]; then
+            dir=$outputDir/$subdir/$label/$freq/$chunk
+
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+                echo "[DATA LINEAGE] Annotated $inputDir/$subdir to EPMT_DATA_LINEAGE_IN_PATH"
+
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/$label/"
+                echo "[DATA LINEAGE] Annotated $outputDir/$subdir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
+
+        else
+            dir=$outputDir/$label/$freq/$chunk
+
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+                echo "[DATA LINEAGE] Annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$label/"
+                echo "[DATA LINEAGE] Annotated $outputDir/$label/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
+        fi
+
+        mkdir -p $dir
+        if [[ -f $dir/$newfile ]]; then
+            err Output location $dir/$newfile already exists, not overwriting
+        else
+            if [[ -n $tile ]]; then
+                for t in tile1 tile2 tile3 tile4 tile5 tile6; do
+                    f=${file/tile1/$t}
+                    newf=${newfile/tile1/$t}
+                    ln $f $dir/$newf
+
+                    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+                        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                        -m data_lineage.bloomfilter.HashGen $dir/$newf)
+                        export output_file_list="${output_file_list}$freq/$chunk/$newf $hash_val,"
+                        echo "[DATA LINEAGE] Added $freq/$chunk/$newf to output list with hash_val: $hash_val"
+                    fi
+                done
+            else
+                ln $file $dir/$newfile
+                
+                if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+                    -m data_lineage.bloomfilter.HashGen $dir/$newfile)
+                    export output_file_list="${output_file_list}$freq/$chunk/$newfile $hash_val,"
+                    echo "[DATA LINEAGE] Added $freq/$chunk/$newfile to output list with hash_val: $hash_val"
+                fi
+            fi
+        fi
+    done
+}
+
+source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
+
+echo Arguments:
+echo "    input dir: $inputDir"
+echo "    output dir: $outputDir"
+echo "    component: $component"
+echo "    use subdirs: ${use_subdirs:=}"
+echo Utilities:
+type cdo
+type ncdump
+type isodatetime
+
+# Verify input directory exists and is a directory
+if [[ ! -d $inputDir ]]; then
+    err "Error: Input directory '${inputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+# Verify output directory exists and is a directory
+if [[ ! -d $outputDir ]]; then
+    err "Error: Output directory '${outputDir}' does not exist or isn't a directory"
+    exit 1
+fi
+
+# Setup PYTHONPATH and io lists for the data lineage tool
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
+    export input_file_list=
+    export output_file_list=
+    echo "Set PYTHONPATH and created i/o lists"
+fi
+
+# Assumptions:
+# - Format of the file: DATE1.comp.VAR(.tileX).nc
+# - Variable is a static if it does not have a time axis. Otherwise,
+# - Date1 is taken from the filename
+# - If only one time in file, pass for now. Otherwise,
+# - Frequency is estimated from the difference between the first two timesteps
+# - Date2 is estimated by multiplying the frequency and the number of timesteps
+cd $inputDir
+shopt -s extglob
+
+# Find and process the input files
+if [[ $use_subdirs ]]; then
+    for subdir in $(ls); do
+        pushd $subdir
+        files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
+        if [[ $files =~ \* ]]; then
+            err No input files
+        else
+            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+                epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/$subdir/"
+                echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+                epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/$subdir/"
+                echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+            fi
+
+            process_files "$inputDir/$subdir"
+        fi
+        popd
+    done
+else
+    # target only the tile1 files for efficiency, at the cost of assuming there are 6
+    files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
+
+    # Exit if no input files are found
+    if [[ $files =~ \* ]]; then
+        err ERROR: No input files found
+        exit 1
+    fi
+
+    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+        epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$inputDir/"
+        echo -e  "\n[COLE] annotated $inputDir/ to EPMT_DATA_LINEAGE_IN_PATH"
+
+        epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
+        echo -e  "\n[COLE] annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
+    fi
+
+    process_files "$inputDir"
+fi
+
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
+fi
+
+if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
+
+    # Annotate to EPMT
+    if [ -n "$input_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
+    fi
+
+    if [ -n "$output_file_list" ]; then
+        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
+        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
+        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
+        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
+    fi
+fi
+
+echo Natural end of the shard renaming
+exit 0
+
