@@ -1,1 +1,0 @@
-ls opt/rose* | sed 's/rose-suite-//' | sed 's/.conf//' | sed 's/opt\///'
