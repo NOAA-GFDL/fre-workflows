@@ -1,9 +1,13 @@
+<!-- 
+based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df76e537222a3c78405b5749fe59306e6d2bd/README.md
+-->
+
 # Instructions to postprocess FMS history output on PP/AN
 
 1. Clone postprocessing template repository
 
 ```
-git clone --recursive https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing.git
+git clone https://github.com/NOAA-GFDL/fre-workflows.git
 cd postprocessing
 ```
 - [+ Do not clone to a temporary directory - the directory in question needs to be available for slum to read from all nodes, and local /vftmp is not. /home, /work, and /xtmp are. +]
@@ -15,19 +19,19 @@ module load cylc
 ```
 
 3. Create new configuration from empty template, where EXPNAME is the name of your new configuration/experiment
-
+this step should be updated i think
 ```
 cp opt/TEMPLATE.conf opt/rose-suite-EXPNAME.conf
 ```
 
 4. Add required configuration items, led by schema prompting
-
+while we're still slightly dependent on rose
 ```
 rose macro --validate
 ```
 
 5. Add configuration items to rose-suite.conf or opt/rose-suite-EXPNAME.conf.
-
+this step should be updated i think
 ```
 vi rose-suite.conf              # Configuration for all experiments
 vi opt/rose-suite-EXPNAME.conf  # Configuration for EXPNAME; can override default settings
