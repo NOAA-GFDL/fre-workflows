@@ -1,4 +1,6 @@
-# Instructions to postprocess FMS history output on PP/AN or gaea
+note these instructions will be/are from https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp
+
+# Instructions to postprocess FMS history output on PP/AN or gaea with fre-cli
 
 1. Checkout postprocessing workflow template
 This will clone the postprocessing repository into `/home/$USER/cylc-src/EXPNAME__PLATFORM__TARGET`.
