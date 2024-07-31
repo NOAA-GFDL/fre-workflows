@@ -4,7 +4,7 @@ based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df
 This repository holds code for defining tasks, applications, tools, workflows, and other aspects of the FRE2 postprocessing
 ecosystem. 
 
-
+# UNDER CONSTRUCTION
 
 <!-- ______________________________________________________________________________________________________________________ -->
 # Instructions to postprocess FMS history files on GFDL's PP/AN
@@ -217,7 +217,7 @@ If on PP/AN, cylc launches a daemon on the `workflow1` server, via `ssh`, trigge
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-## 11. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
+## 9. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.
 
@@ -235,7 +235,7 @@ Then, navigate to one of the two links printed to screen in your web browser
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-## 12. UPDATEME Inspect workflow progress with a terminal CLI
+## 10. UPDATEME Inspect workflow progress with a terminal CLI
 Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`.
 
 - `cylc scan` Lists running workflows
