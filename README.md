@@ -60,7 +60,7 @@ The Rose configuation file format is described [here](https://metomi.github.io/r
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 4. Create history file manifest (optional but highly recommended)
+## 4. Create history file manifest (optional but highly recommended)
 For more complete validation of workflow settings, we create a manifest for our history file archives with
 ```
 tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-manifest
