@@ -2,48 +2,30 @@
 based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df76e537222a3c78405b5749fe59306e6d2bd/README.md
 -->
 
-
 # Instructions to postprocess FMS history files on GFDL's PP/AN
+These instructions are targeted at workflow developers. If you are a user simply looking to run a specific workflow, see 
+(`fre-cli`)[https://github.com/NOAA-GFDL/fre-cli]
 
 ### 1. Clone `fre-workflows` repository
 ```
 git clone https://github.com/NOAA-GFDL/fre-workflows.git
 cd fre-workflows
 ```
-**Do not clone to a temporary directory** - the directory in question needs to be available for slurm to read from all nodes, 
-and local `/vftmp` is not. `/home`, `/work`, and `/xtmp` are.
+**Do not clone to a temporary directory** - the directory must be readable by slurm from all nodes. Directories on local 
+`\vftmp` are not, while those on `/home`, `/work`, and `/xtmp` are.
 
 
-### 2. Load Cylc, the backend workflow engine used by Canopy
+### 2. Load Cylc, the backend workflow engine used by FRE2
 ```
 module load cylc
 ```
 [`cylc`](https://cylc.github.io/cylc-doc/stable/html/) lets us parse workflow template files (`*.cylc`) and their 
-configurations into modular, interdependent batch jobs. Tools used by those jobs (e.g. `fre-nctools` or `xarray`) should be 
-loaded by those jobs as part of their requirements and do not need to be loaded at this time unless desired.
+configurations into modular, interdependent batch jobs. Tools used by those jobs (e.g. `fre-nctools` or `xarray`) should 
+be loaded by those jobs as part of their requirements and do not need to be loaded at this time unless desired.
 
 
-### 3. UPDATEME Create new configuration from empty template, where EXPNAME is the name of your new configuration/experiment
-this step should be updated i think
-```
-cp opt/TEMPLATE.conf opt/rose-suite-EXPNAME.conf
-```
-
-
-### 4. UPDATEMEAdd required configuration items, led by schema prompting
-while we're still slightly dependent on rose
-```
-rose macro --validate
-```
-
-
-### 5. UPDATEME Add configuration items to rose-suite.conf or opt/rose-suite-EXPNAME.conf.
-```
-vi rose-suite.conf              # Configuration for all experiments
-vi opt/rose-suite-EXPNAME.conf  # Configuration for EXPNAME; can override default settings
-```
-Continue to add/uncomment required configuration items, until there are no schema violations.
-Use double-quotes in the values!
+### 3. Configure your workflow using available fields
+With your favorite text editor, open up `rose-suite.conf` and set variables to desired values. 
 
 Key values include:
 - `HISTORY_DIR` directory path to your raw model output
@@ -58,6 +40,24 @@ Other currently required values include:
 - `FRE_ANALYSIS_HOME` For locating shared analysis scripts. (Should not be required unless `DO_ANALYSIS`, however)
 - `PP_GRID_SPEC` filepath to FMS grid definition tarfile
 - `SITE` set to "ppan" to submit jobs to PP/AN cluster
+
+
+### 4. Validate your workflow configuration
+When you are ready, you can have rose validate your configuration to catch common problems:
+```
+rose macro --validate
+```
+If there are any errors, try to address them. Common errors include non-existent directories and time intervals that
+do not follow ISO8601 specifications. Iterate between editing your configuration and validating with rose until
+all complaints are addressed. 
+
+
+
+
+
+
+
+
 
 
 ### 6. UPDATEME Configure your postprocessing components
