@@ -2,41 +2,46 @@
 based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df76e537222a3c78405b5749fe59306e6d2bd/README.md
 -->
 
-# Instructions to postprocess FMS history output on PP/AN
 
-1. Clone postprocessing template repository
+# Instructions to postprocess FMS history files on GFDL's PP/AN
 
+### 1. Clone `fre-workflows` repository
 ```
 git clone https://github.com/NOAA-GFDL/fre-workflows.git
-cd postprocessing
+cd fre-workflows
 ```
-- [+ Do not clone to a temporary directory - the directory in question needs to be available for slum to read from all nodes, and local /vftmp is not. /home, /work, and /xtmp are. +]
+**Do not clone to a temporary directory** - the directory in question needs to be available for slurm to read from all nodes, 
+and local /vftmp is not. /home, /work, and /xtmp are.**
 
-2. Load Cylc, the backend workflow engine used by Canopy
 
+### 2. Load Cylc, the backend workflow engine used by Canopy
 ```
 module load cylc
 ```
+`cylc` lets us parse workflow template files (`*.cylc`) and their configurations into modular, interdependent batch jobs. Tools
+used by those jobs (e.g. `fre-nctools` or `xarray`) should be loaded by those jobs as part of their requirements and do not 
+need to be loaded at this time unless desired by the user.
 
-3. Create new configuration from empty template, where EXPNAME is the name of your new configuration/experiment
+
+### 3. UPDATEME Create new configuration from empty template, where EXPNAME is the name of your new configuration/experiment
 this step should be updated i think
 ```
 cp opt/TEMPLATE.conf opt/rose-suite-EXPNAME.conf
 ```
 
-4. Add required configuration items, led by schema prompting
+
+### 4. UPDATEMEAdd required configuration items, led by schema prompting
 while we're still slightly dependent on rose
 ```
 rose macro --validate
 ```
 
-5. Add configuration items to rose-suite.conf or opt/rose-suite-EXPNAME.conf.
-this step should be updated i think
+
+### 5. UPDATEME Add configuration items to rose-suite.conf or opt/rose-suite-EXPNAME.conf.
 ```
 vi rose-suite.conf              # Configuration for all experiments
 vi opt/rose-suite-EXPNAME.conf  # Configuration for EXPNAME; can override default settings
 ```
-
 Continue to add/uncomment required configuration items, until there are no schema violations.
 Use double-quotes in the values!
 
@@ -54,7 +59,8 @@ Other currently required values include:
 - PP_GRID_SPEC: filepath to FMS grid definition tarfile
 - SITE: set to "ppan" to submit jobs to PP/AN cluster
 
-6. Configure your postprocessing components
+
+### 6. UPDATEME Configure your postprocessing components
 
 A postprocessed component, originally defined in FRE Bronx and used in Canopy, is a user-defined label that has two main qualities:
 - a single target horizontal grid: i.e. native atmosphere; native ocean; or regridded spherical (lat/lon)
@@ -175,10 +181,9 @@ Explanation / discussion:
 - OutputGridType is the grid label referenced in the `app/remap-pp-components/rose-app.conf` file.
 - If OutputGridType is "default", then the DEFAULT_XY_INTERP setting is used. Otherwise, OutputGridLat and OutputGridLon identify the target grid.
 
-7. Optionally, report on history files that may be missing
 
+### 7. UPDATEME Optionally, report on history files that may be missing
 Generate a "history manifest" file by listing the contents of a history tarfile to a file called 'history-manifest'.
-
 ```
 tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-manifest
 ```
@@ -189,41 +194,36 @@ Probably, you should remove components that specify non-existent history files, 
 or trust that the missing history files will be created by a refineDiag script.
 
 
-8. Validate the configuration
-
+### 8. UPDATEME Validate the configuration
 `rose macro --validate` should report no errors.
 
 Then, validate the Cylc configuration:
-
 `bin/validate-exp EXPNAME`
 
 Please complain (to a Canopy developer) or take a note if if the Cylc validation fails but the Rose validation passes,
 as this may expose some internal problems or quoting issues.
 
-9. Install the workflow
 
+### 9. UPDATEME Install the workflow
 ```
 bin/install-exp EXPNAME
 ```
-
 This installs the workflow run directory in `~/cylc-run/<exp-name>/runN`, where N is an incrementing number (like FRE --unique). The various `cylc` commands act on the most recent `runN` by default.
 
-10. Run the workflow
 
+### 10. UPDATEME Run the workflow
 ```
 cylc play EXPNAME
 ```
-
 The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the login banner).
 
-11. Inspect workflow progress
 
+### 11. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.
 
 Cylc has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that can expose workflow
 and task information. The text-based GUI can be launched via:
-
 ```
 cylc tui EXPNAME
 ```
@@ -235,6 +235,8 @@ cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 
 Then, navigate to one of the two links printed to screen in your web browser
 
+
+### 12. UPDATEME Inspect workflow progress with a terminal CLI
 Various other cylc commands are useful for inspecting a running workflow. Try "cylc help".
 
 - cylc scan: Lists running workflows
