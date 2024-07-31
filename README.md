@@ -14,7 +14,7 @@ These instructions are targeted at workflow developers. If you are a user simply
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 1. Clone `fre-workflows` repository
+## 1. Clone `fre-workflows` repository
 ```
 git clone https://github.com/NOAA-GFDL/fre-workflows.git
 cd fre-workflows
@@ -25,7 +25,7 @@ cd fre-workflows
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 2. Load Cylc, the backend workflow engine used by FRE2
+## 2. Load Cylc, the backend workflow engine used by FRE2
 ```
 module load cylc
 ```
@@ -35,9 +35,8 @@ be loaded by those jobs as part of their requirements and do not need to be load
 
 
 
-
 <!-- ______________________________________________________________________________________________________________________ -->
-### 3. Fill in rose-suite configuration fields
+## 3. Fill in rose-suite configuration fields
 With your favorite text editor, open up `rose-suite.conf` and set variables to desired values. These values will be passed to
 task definitions within `flow.cylc` and taken as configuration settings to instruct task execution.
 
@@ -56,7 +55,9 @@ Key values include:
 It is common to not know exactly what to set `PP_COMPONENTS` to when configuring a new workflow from scratch. Later
 steps in this guide can help inform how to adjust these settings.
 
-The Rose configuation file format is described (here)[https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html]
+The Rose configuation file format is described [here](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
+
+
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ### 4. Create history file manifest (optional but highly recommended)
@@ -71,7 +72,7 @@ helpful for validating settings on a component-by-component basis in the next st
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 5. Define your desired postprocessing components for `remap-pp-components`
+## 5. Define your desired postprocessing components for `remap-pp-components`
 Users define their own postprocessing components for their workflow, which represent a group of source files (listed in your 
 `history-manifest`) to be post-processed together. This grouping is typically united by a common gridding, which may be the 
 current "native" gridding of the source files, or a desired target gridding to achieve via regridding.
@@ -98,8 +99,6 @@ grid=regrid-xy/2deg
 sources=land_static
 grid=regrid-xy/default
 freq=P0Y
-
-
 ```
 
 Above, we've defined the `atmos` component as being a set of two source files, `atmos_month` and `atmos_daily`. The `grid`
@@ -120,7 +119,7 @@ good list that passes validation would be `PP_COMPONENTS=atmos atmos_scalar land
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 6. Provide more specifics for `regrid-xy`
+## 6. Provide more specifics for `regrid-xy`
 Add more-specific regridding instructions to `app/regrid-xy/rose-app.conf`:
 ```
 [atmos]
@@ -146,40 +145,31 @@ sources=land_month_cmip
 Note that the `atmos_scalar` component does not have an entry here, as we requested a `native` regridding for source files in
 that component. 
 
-
+Full documentation on the available input configuration fields is available in the [`app/regrid-xy` directory](https://github.com/NOAA-GFDL/fre-workflows/tree/update.README/app/regrid-xy)
+, but some things worth noting bove
 - The `inputGrid` attribute should be `cubedsphere` or `tripolar`.
-- The `inputRealm` attribute is used for identifying the land or atmos grid mosaic file: should be `atmos`, `land`, or `ocean`.
+- The `inputRealm` attribute is used for identifying the `land`, `atmos`, or `ocean` grid mosaic file.
 - The `interpMethod` should be `conserve_order1`, `conserve_order2`, or `bilinear`.
 - `OutputGridType` is the grid label referenced in the `app/remap-pp-components/rose-app.conf` file.
-- If `OutputGridType` is `default`, then the `DEFAULT_XY_INTERP` setting is used. Otherwise, `OutputGridLat` and `OutputGridLon` identify the target grid.
-
-
-<!-- ______________________________________________________________________________________________________________________ -->
-### 7. UPDATEME Optionally, report on history files that may be missing
-Generate a "history manifest" file by listing the contents of a history tarfile to a file called 'history-manifest'.
-```
-tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-manifest
-```
-
-If `history-manifest` exists, `rose macro --validate` will report on history files referenced but not present.
-
-Probably, you should remove components that specify non-existent history files, reconfigure the component definition,
-or trust that the missing history files will be created by a refineDiag script.
+- if `OutputGridType` `default`, then `DEFAULT_XY_INTERP` from `rose-suite.conf` is used.
+- `OutputGridLat` and `OutputGridLon` identify the target grid if `OutputGridType` is not specified
 
 
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 4. Validate your workflow configuration
+## 7. Validate your workflow configuration
 When you are ready, you can have rose validate your configuration to catch common problems:
 ```
 rose macro --validate
 ```
-If there are any errors, try to address them. Common errors include non-existent directories and time intervals that
-do not follow ISO8601 specifications. Iterate between editing your configuration and validating with rose until
-all complaints are addressed. 
+Common errors include non-existent directories and time intervals that do not follow ISO8601 specifications. One can wait until
+this step to bother validating, or it can be a back/forth iteration between editing and validating until all complaints are 
+addressed. If `history-manifest` exists, `rose macro --validate` will report on source files referenced by components that are
+not present in the history tar file archives.
 
-
+If a component specifies a non-existent source file, reconfigure the component definition or omit the component from 
+post-processing all together. It's also OK to remove the source file specified within that component, but
 
 
 
@@ -190,29 +180,25 @@ all complaints are addressed.
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 8. UPDATEME Validate/Install/Run the configured workflow templates with `cylc`
-Validate the workflow configuation with `cylc validate .`
+## 8. UPDATEME Validate/Install/Run the configured workflow templates with `cylc`
+Validate the workflow with 
+```
+cylc validate .
+```
 
-Please complain (to a Canopy developer) or take a note if if the Cylc validation fails but the Rose validation passes,
-as this may expose some internal problems or quoting issues.
-
-
-
-<!-- ______________________________________________________________________________________________________________________ -->
-### 9. UPDATEME Install the workflow
+If the Cylc validation fails but the Rose validation passes, please raise an issue on this repository, as it is better to 
+catch configuration issues at the `rose macro validate` step. One then installs the workflow with:
 ```
 cylc install .
 ```
-This installs the workflow run directory in `~/cylc-run/<exp-name>/runN`, where `N` is an incrementing number (like `FRE --unique`). 
-The various `cylc` commands act on the most recent `runN` by default.
 
-
-<!-- ______________________________________________________________________________________________________________________ -->
-### 10. UPDATEME Run the workflow
+This creates a workflow run directory in `~/cylc-run/<exp-name>/runN`, where `N` is an integer incremented with each call to 
+`install`. Various `cylc` commands act on the most recent `runN` by default if a run is not specified. After successful 
+installation, the workflow is launched with:
 ```
 cylc play .
 ```
-The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the login banner).
+If on PP/AN, cylc launches a daemon on the `workflow1` server, via `ssh`, triggering the login banner to be printed.
 
 
 
@@ -231,7 +217,7 @@ The workflow runs a daemon on the `workflow1` server (via `ssh`, so you see the 
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 11. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
+## 11. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.
 
@@ -249,7 +235,7 @@ Then, navigate to one of the two links printed to screen in your web browser
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-### 12. UPDATEME Inspect workflow progress with a terminal CLI
+## 12. UPDATEME Inspect workflow progress with a terminal CLI
 Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`.
 
 - `cylc scan` Lists running workflows
@@ -263,9 +249,3 @@ Various other `cylc` commands are useful for inspecting a running workflow. Try 
 
 
 
-
-If `history-manifest` exists, `rose macro --validate` will check for source files referenced within `PP_COMPONENTS` but
-not present in the history files. 
-
-It's recommended to remove components that specify non-existent history files, reconfigure the component definition,
-or trust that the missing history files will be created by a refineDiag script.
