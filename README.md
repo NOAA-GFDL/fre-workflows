@@ -43,19 +43,19 @@ task definitions within `flow.cylc` and taken as configuration settings to instr
 Key values include:
 - `SITE` set to "ppan" to submit jobs to PP/AN cluster
 - `HISTORY_DIR` directory path to your raw model output
-- `HISTORY_SEGMENT` duration of each history segment (ISO8601)
-- `PP_CHUNK_A` duration of your desired timeseries (and timeaverages, optionally)
-- `PP_START` start of the desired postprocssing (ISO8601)
-- `PP_STOP` end of the desired postprocessing (ISO8601)
-- `PP_COMPONENTS` space-separated list of user-defined components
-- `PP_GRID_SPEC` filepath to FMS grid definition tarfile
-- `DEFAULT_XY_INTERP` e.g. `"288,180"`, default target resolution for regridded data.
+- `HISTORY_SEGMENT` amount of time covered by a single history file (ISO8601 datetime)
+- `PP_CHUNK_A` amount of time covered by a single postprocessed file (ISO8601 datetime)
+- `PP_START` start of the desired postprocessing (ISO8601 datetime)
+- `PP_STOP` end of the desired postprocessing (ISO8601 datetime)
+- `PP_COMPONENTS` space-separated list of user-defined components, discussed in more detail below
+- `PP_GRID_SPEC` path to FMS grid definition tarfile
+- `PP_DEFAULT_XYINTERP` default target resolution for regridding, if the resolution is not specified elsewhere
 - `FRE_ANALYSIS_HOME` For locating shared analysis scripts (only define if `DO_ANALYSIS=True`)
 
 It is common to not know exactly what to set `PP_COMPONENTS` to when configuring a new workflow from scratch. Later
 steps in this guide can help inform how to adjust these settings.
 
-The Rose configuation file format is described [here](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
+The Rose configuation file format is described in full [elsewhere](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
 
 
 
@@ -67,19 +67,22 @@ tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-
 ```
 
 The `history-manifest` contains a list of source files contained within the targeted history files. This can be 
-helpful for validating settings on a component-by-component basis in the next step.
+helpful for validating settings on a component-by-component basis in the next step(s).
 
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 5. Define your desired postprocessing components for `remap-pp-components`
-Users define their own postprocessing components for their workflow, which represent a group of source files (listed in your 
-`history-manifest`) to be post-processed together. This grouping is typically united by a common gridding, which may be the 
-current "native" gridding of the source files, or a desired target gridding to achieve via regridding.
+Users define their own postprocessing components for their workflow, which represent a group of source files to be postprocessed 
+together. This grouping is typically united by a common gridding, which may be the current "native" gridding of the source files, 
+or a desired target gridding to achieve via regridding. If `history-manifest` was created, it will be used to check that the
+source files specified in the components are actually present in the history files. 
 
-User-defined components are configured within `app/remap-pp-components/rose-app.conf`. A possible set of components for example,
-could be:
+User-defined components are configured within `app/remap-pp-components/rose-app.conf`. An example set of components could be:
 ```
+[command]
+default=remap-pp-components
+
 [atmos]
 sources=atmos_month
         atmos_daily
@@ -101,7 +104,7 @@ grid=regrid-xy/default
 freq=P0Y
 ```
 
-Above, we've defined the `atmos` component as being a set of two source files, `atmos_month` and `atmos_daily`. The `grid`
+Here we've defined the `atmos` component as being a set of two source files, `atmos_month` and `atmos_daily`. The `grid`
 field shows we wish to have these two source files regridded to the default resolution specified in `rose-suite.conf`. By
 contrast, the `atmos_scalar` component specifies a `native` grid, indicating that `atmos_scalar` and `atmos_global_cmip` 
 source files will not be regridded when processing them for the `atmos_scalar` component. 
@@ -110,7 +113,7 @@ Note- it is not uncommon for a specific component to be named after a source fil
 but it does not imply anything special about the relationship between the source file and the component.
 
 The `land.static` component defined above gets interpreted as part of the `land` component, as any text after a `.` is 
-ignored in component names. Here, we want `land` to contain `land_month`, `land_daily`, and `land_static`, and we want all 
+ignored in component names. Thus, the `land` component contains `land_month`, `land_daily`, and `land_static`, and we want 
 all of them to be regridded to a 2-degree resolution gridding. The `freq=P0Y` field implies that `land_static` as a source 
 file is time-independent, and will only be processed if `DO_STATICS=True` in `rose-suite.conf`.
 
@@ -120,8 +123,16 @@ good list that passes validation would be `PP_COMPONENTS=atmos atmos_scalar land
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 6. Provide more specifics for `regrid-xy`
-Add more-specific regridding instructions to `app/regrid-xy/rose-app.conf`:
+Any component specified in `app/remap-pp-components/rose-app.conf` requesting regridding requires a corresponding entry in 
+`app/regrid-xy/rose-app.conf`, providing further information. A full set of options one can specify in this configuration 
+can be found in `app/regrid-xy/README.md`. 
+
+Following up on our example in the previous step, we would not have an extry in `app/regrid-xy/rose-app.conf` for 
+`atmos_scalar`, but we will for `atmos` and `land` components:
 ```
+[command]
+default=regrid-xy
+
 [atmos]
 inputGrid=cubedsphere
 inputRealm=atmos
@@ -141,17 +152,14 @@ sources=land_month_cmip
         land_daily_cmip
         land_static
 ```
-
 Note that the `atmos_scalar` component does not have an entry here, as we requested a `native` regridding for source files in
-that component. 
-
-Full documentation on the available input configuration fields is available in the [`app/regrid-xy` directory](https://github.com/NOAA-GFDL/fre-workflows/tree/update.README/app/regrid-xy)
-, but some things worth noting bove
-- The `inputGrid` attribute should be `cubedsphere` or `tripolar`.
-- The `inputRealm` attribute is used for identifying the `land`, `atmos`, or `ocean` grid mosaic file.
+that component. Full documentation on the available input configuration fields is available in the 
+[`app/regrid-xy` directory](https://github.com/NOAA-GFDL/fre-workflows/tree/update.README/app/regrid-xy), but some things worth 
+noting above:
+- `inputGrid` can be `cubedsphere` or `tripolar`.
+- `inputRealm` attribute is used for identifying the `land`, `atmos`, or `ocean` grid mosaic file.
 - The `interpMethod` should be `conserve_order1`, `conserve_order2`, or `bilinear`.
 - `OutputGridType` is the grid label referenced in the `app/remap-pp-components/rose-app.conf` file.
-- if `OutputGridType` `default`, then `DEFAULT_XY_INTERP` from `rose-suite.conf` is used.
 - `OutputGridLat` and `OutputGridLon` identify the target grid if `OutputGridType` is not specified
 
 
@@ -159,18 +167,19 @@ Full documentation on the available input configuration fields is available in t
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 7. Validate your workflow configuration
-When you are ready, you can have rose validate your configuration to catch common problems:
+Rose can validate the configuration by checking the field values against a list of rules defined by the devlopers of this 
+repository. It's crucial to note that while this list of rules is determined by the requirements of th 
+
+One can wait until this step in this guide, or validate as they
+go along at any point in the previous instructions
 ```
 rose macro --validate
 ```
-Common errors include non-existent directories and time intervals that do not follow ISO8601 specifications. One can wait until
-this step to bother validating, or it can be a back/forth iteration between editing and validating until all complaints are 
-addressed. If `history-manifest` exists, `rose macro --validate` will report on source files referenced by components that are
-not present in the history tar file archives.
-
-If a component specifies a non-existent source file, reconfigure the component definition or omit the component from 
-post-processing all together. It's also OK to remove the source file specified within that component, but
-
+Common errors include non-existent directories and time intervals that are not ISO8601 datetimes. It is recommended to address
+any/all complaints. If `history-manifest` exists, `rose macro --validate` will report on source files referenced by components 
+that are not present in the history tar file archives. Whether a missing file is a show-stopper or a toothless complaint is
+at the complete discretion of the user. If a source file is missing, consider reconfiguring the component definition(s), remove
+the source file from the component, or simply removing the component altogether.
 
 
 
@@ -180,36 +189,27 @@ post-processing all together. It's also OK to remove the source file specified w
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-## 8. UPDATEME Validate/Install/Run the configured workflow templates with `cylc`
-Validate the workflow with 
+## 8. Validate/Install/Run the configured workflow templates with `cylc`
+Validate the workflow with `cylc` by entering: 
 ```
 cylc validate .
 ```
-
 If the Cylc validation fails but the Rose validation passes, please raise an issue on this repository, as it is better to 
-catch configuration issues at the `rose macro validate` step. One then installs the workflow with:
+catch configuration issues at the `rose macro validate` step, and the validation rules can be updated to match the task
+definition requirements. 
+
+We install the workflow with:
 ```
 cylc install .
 ```
+This creates a workflow directory in `~/cylc-run`. 
 
-This creates a workflow run directory in `~/cylc-run/<exp-name>/runN`, where `N` is an integer incremented with each call to 
-`install`. Various `cylc` commands act on the most recent `runN` by default if a run is not specified. After successful 
-installation, the workflow is launched with:
+After successful installation, the workflow is launched with:
 ```
 cylc play .
 ```
-If on PP/AN, cylc launches a daemon on the `workflow1` server, via `ssh`, triggering the login banner to be printed.
-
-
-
-
-
-
-
-
-
-
-
+If on PP/AN, cylc launches a scheduler daemon on the `workflow1` server, via `ssh`, triggering the login banner to be printed. 
+This daemon submits and runs jobs based on the task dependencies defined in `flow.cylc`. 
 
 
 
