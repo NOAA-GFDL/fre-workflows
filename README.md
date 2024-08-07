@@ -45,6 +45,7 @@ Key values include:
 - `HISTORY_DIR` directory path to your raw model output
 - `HISTORY_SEGMENT` amount of time covered by a single history file (ISO8601 datetime)
 - `PP_CHUNK_A` amount of time covered by a single postprocessed file (ISO8601 datetime)
+- `PP_CHUNK_B` secondary chunk size for postprocessed files, if desired (ISO8601 datetime)
 - `PP_START` start of the desired postprocessing (ISO8601 datetime)
 - `PP_STOP` end of the desired postprocessing (ISO8601 datetime)
 - `PP_COMPONENTS` space-separated list of user-defined components, discussed in more detail below
@@ -53,9 +54,50 @@ Key values include:
 - `FRE_ANALYSIS_HOME` For locating shared analysis scripts (only define if `DO_ANALYSIS=True`)
 
 It is common to not know exactly what to set `PP_COMPONENTS` to when configuring a new workflow from scratch. Later
-steps in this guide can help inform how to adjust these settings.
+steps in this guide can help inform how to adjust these settings. The Rose configuation file format is described in full 
+[elsewhere](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
 
-The Rose configuation file format is described in full [elsewhere](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
+If one is looking to hit the ground running at GFDL's PP/AN, copy/paste the code block here into your `rose-suite.conf`:
+```
+SITE="ppan"
+EXPERIMENT='FOO'
+PLATFORM='BAR'
+TARGET='BAZ'
+
+DO_STATICS=True
+DO_TIMEAVGS=True
+DO_ATMOS_PLEVEL_MASKING=True
+DO_MDTF=False
+
+DO_REFINEDIAG=False
+REFINEDIAG_SCRIPTS="\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_atmos_cmip6.csh"
+
+DO_PREANALYSIS=False
+PREANALYSIS_SCRIPT="\$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/refineDiag_data_stager_globalAve.csh"
+
+DO_ANALYSIS=False
+DO_ANALYSIS_ONLY=False
+FRE_ANALYSIS_HOME="/home/fms/local/opt/fre-analysis/test"
+ANALYSIS_DIR='/nbhome/YOUR.USERNAME/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1'
+
+CLEAN_WORK=True
+
+PTMP_DIR='/xtmp/$USER/ptmp'
+
+HISTORY_DIR='/archive/Niki.Zadeh/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/history'
+HISTORY_DIR='/archive/Ian.Laflotte/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/history'
+HISTORY_SEGMENT='P1Y'
+
+PP_DIR='/archive/YOUR.USERNAME/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/pp'
+PP_CHUNK_A='P2Y'
+PP_COMPONENTS='atmos atmos_scalar land land_static'
+PP_START="00010101"
+PP_STOP="00040101"
+PP_DEFAULT_XYINTERP="360,180"
+PP_GRID_SPEC='/work/Niki.Zadeh/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar'
+PP_GRID_SPEC='/work/Ian.Laflotte/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar'
+
+```
 
 
 
@@ -85,40 +127,37 @@ default=remap-pp-components
 
 [atmos]
 sources=atmos_month
-        atmos_daily
 grid=regrid-xy/default
 
 [atmos_scalar]
-sources=atmos_scalar
-        atmos_global_cmip
+sources=atmos_scalar atmos_global_cmip
 grid=native
 
 [land]
 sources=land_month_cmip
-        land_daily_cmip
-grid=regrid-xy/2deg
+grid=regrid-xy/288_180.conserve_order1
 
-[land.static]
+[land_static]
 sources=land_static
-grid=regrid-xy/default
+grid=regrid-xy/288_180.conserve_order1
 freq=P0Y
 ```
 
-Here we've defined the `atmos` component as being a set of two source files, `atmos_month` and `atmos_daily`. The `grid`
-field shows we wish to have these two source files regridded to the default resolution specified in `rose-suite.conf`. By
-contrast, the `atmos_scalar` component specifies a `native` grid, indicating that `atmos_scalar` and `atmos_global_cmip` 
+Here we've defined the `atmos` component as being a set of one source file, `atmos_month`. The `grid` field shows we wish to 
+have these two source files regridded to the default resolution specified in `rose-suite.conf`. By contrast, the `atmos_scalar` 
+component contains two source files, and specifies a `native` grid. This indicates that `atmos_scalar` and `atmos_global_cmip` 
 source files will not be regridded when processing them for the `atmos_scalar` component. 
 
-Note- it is not uncommon for a specific component to be named after a source file contained in it's `sources` field, 
-but it does not imply anything special about the relationship between the source file and the component.
+Note- it is not uncommon for a specific component to be named after a source file contained in it's `sources` field, but it 
+does not imply anything special about the relationship between the source file and the component.
 
-The `land.static` component defined above gets interpreted as part of the `land` component, as any text after a `.` is 
-ignored in component names. Thus, the `land` component contains `land_month`, `land_daily`, and `land_static`, and we want 
-all of them to be regridded to a 2-degree resolution gridding. The `freq=P0Y` field implies that `land_static` as a source 
-file is time-independent, and will only be processed if `DO_STATICS=True` in `rose-suite.conf`.
+The third component is `land`, and will be regridded to a resolution corresponding to a 180x288 lat/lon grid, using an
+interpolation scheme which is conservative to a first-order approximation. The last is the `land_static` component, and will 
+be similarly handled to `land`. Since `land_static` is time-independent, it will require `freq=P0Y`, as the name is not used 
+to determine if a component involves static data. Statics will only be processed if `DO_STATICS=True` in `rose-suite.conf`.
 
 The setting for `PP_COMPONENTS` should reflect information in `app/remap-pp-components/rose-app.conf`. From our example, a
-good list that passes validation would be `PP_COMPONENTS=atmos atmos_scalar land`. 
+good list that passes validation would be `PP_COMPONENTS=atmos atmos_scalar land land_static`. 
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
@@ -128,7 +167,7 @@ Any component specified in `app/remap-pp-components/rose-app.conf` requesting re
 can be found in `app/regrid-xy/README.md`. 
 
 Following up on our example in the previous step, we would not have an extry in `app/regrid-xy/rose-app.conf` for 
-`atmos_scalar`, but we will for `atmos` and `land` components:
+`atmos_scalar`, but we will for `atmos`, `land` and `land_static` components:
 ```
 [command]
 default=regrid-xy
@@ -137,20 +176,28 @@ default=regrid-xy
 inputGrid=cubedsphere
 inputRealm=atmos
 interpMethod=conserve_order2
+outputGridLat=180
+outputGridLon=288
 outputGridType=default
 sources=atmos_month
-        atmos_daily
 
 [land]
 inputGrid=cubedsphere
 inputRealm=land
 interpMethod=conserve_order1
-outputGridLon=144
-outputGridLat=90
-outputGridType=2deg
+outputGridLat=180
+outputGridLon=288
+outputGridType=288_180.conserve_order1
 sources=land_month_cmip
-        land_daily_cmip
-        land_static
+
+[land_static]
+inputGrid=cubedsphere
+inputRealm=land
+interpMethod=conserve_order1
+outputGridLat=180
+outputGridLon=288
+outputGridType=288_180.conserve_order1
+sources=land_static
 ```
 Note that the `atmos_scalar` component does not have an entry here, as we requested a `native` regridding for source files in
 that component. Full documentation on the available input configuration fields is available in the 
@@ -170,16 +217,15 @@ noting above:
 Rose can validate the configuration by checking the field values against a list of rules defined by the devlopers of this 
 repository. It's crucial to note that while this list of rules is determined by the requirements of th 
 
-One can wait until this step in this guide, or validate as they
-go along at any point in the previous instructions
+One can wait until this step in this guide, or validate as they go along at any point in the previous instructions
 ```
 rose macro --validate
 ```
 Common errors include non-existent directories and time intervals that are not ISO8601 datetimes. It is recommended to address
 any/all complaints. If `history-manifest` exists, `rose macro --validate` will report on source files referenced by components 
 that are not present in the history tar file archives. Whether a missing file is a show-stopper or a toothless complaint is
-at the complete discretion of the user. If a source file is missing, consider reconfiguring the component definition(s), remove
-the source file from the component, or simply removing the component altogether.
+at the discretion of the user. If a source file is missing, consider reconfiguring the component definition(s), remove the 
+source file from the component, or simply removing the component altogether.
 
 
 
@@ -195,8 +241,8 @@ Validate the workflow with `cylc` by entering:
 cylc validate .
 ```
 If the Cylc validation fails but the Rose validation passes, please raise an issue on this repository, as it is better to 
-catch configuration issues at the `rose macro validate` step, and the validation rules can be updated to match the task
-definition requirements. 
+catch configuration issues at the `rose macro --validate` step, and the validation rules can be updated to match the task
+definition requirements.
 
 We install the workflow with:
 ```
@@ -206,9 +252,9 @@ This creates a workflow directory in `~/cylc-run`.
 
 After successful installation, the workflow is launched with:
 ```
-cylc play .
+cylc play fre-workflows/run1
 ```
-If on PP/AN, cylc launches a scheduler daemon on the `workflow1` server, via `ssh`, triggering the login banner to be printed. 
+If on PP/AN, cylc launches a scheduler daemon on a `workflow1` server, via `ssh`, triggering the login banner to be printed. 
 This daemon submits and runs jobs based on the task dependencies defined in `flow.cylc`. 
 
 
@@ -224,25 +270,29 @@ it will shutdown in error after a period of time.
 `cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that can expose workflow
 and task information. The text-based GUI can be launched via:
 ```
-cylc tui EXPNAME
+cylc tui fre-workflows/run1
 ```
 
 The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
 ```
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 ```
-Then, navigate to one of the two links printed to screen in your web browser
-
+Then, navigate to one of the two links printed to screen in your web browser. If one just wants a quick look at the state of
+their workflow, the user-interfaces can be completely avoided by using the `workflow-state` command, two examples of which are:
+```
+cylc workflow-state -v fre-workflows/run1                # show all jobs
+cylc workflow-state -v fre-workflows/run1 | grep failed  # show only failed ones
+```
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 10. UPDATEME Inspect workflow progress with a terminal CLI
-Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`.
+Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`, and `cylc <command> --help` for
+more information on how to use these tools to your advantage!
 
 - `cylc scan` Lists running workflows
-- `cylc workflow-state EXPNAME` Lists all task states
-- `cylc cat-log EXPNAME` Show the scheduler log
-- `cylc list EXPNAME` Lists all tasks
-- `cylc report-timings EXPNAME`
+- `cylc cat-log fre-workflows/run1` Show the scheduler log
+- `cylc list` Lists all tasks
+- `cylc report-timings`
 
 
 
