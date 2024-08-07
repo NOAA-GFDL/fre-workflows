@@ -57,7 +57,8 @@ It is common to not know exactly what to set `PP_COMPONENTS` to when configuring
 steps in this guide can help inform how to adjust these settings. The Rose configuation file format is described in full 
 [elsewhere](https://metomi.github.io/rose/doc/html/api/configuration/rose-configuration-format.html)
 
-If one is looking to hit the ground running at GFDL's PP/AN, copy/paste the code block here into your `rose-suite.conf`:
+If one is looking to hit the ground running at GFDL's PP/AN, copy/paste the code block here into your `rose-suite.conf`, replacing
+`YOUR.USERNAME` with your own where applicable:
 ```
 SITE="ppan"
 EXPERIMENT='FOO'
@@ -84,7 +85,6 @@ CLEAN_WORK=True
 
 PTMP_DIR='/xtmp/$USER/ptmp'
 
-HISTORY_DIR='/archive/Niki.Zadeh/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/history'
 HISTORY_DIR='/archive/Ian.Laflotte/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/history'
 HISTORY_SEGMENT='P1Y'
 
@@ -92,11 +92,9 @@ PP_DIR='/archive/YOUR.USERNAME/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/g
 PP_CHUNK_A='P2Y'
 PP_COMPONENTS='atmos atmos_scalar land land_static'
 PP_START="00010101"
-PP_STOP="00040101"
+PP_STOP="00020101"
 PP_DEFAULT_XYINTERP="360,180"
-PP_GRID_SPEC='/work/Niki.Zadeh/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar'
 PP_GRID_SPEC='/work/Ian.Laflotte/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar'
-
 ```
 
 
