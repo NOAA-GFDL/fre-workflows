@@ -4,7 +4,6 @@ based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df
 This repository holds code for defining tasks, applications, tools, workflows, and other aspects of the FRE2 postprocessing
 ecosystem. 
 
-# UNDER CONSTRUCTION
 
 <!-- ______________________________________________________________________________________________________________________ -->
 # Instructions to postprocess FMS history files on GFDL's PP/AN
@@ -26,13 +25,15 @@ cd fre-workflows
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 2. Load Cylc, the backend workflow engine used by FRE2
-```
-module load cylc
-```
 [`cylc`](https://cylc.github.io/cylc-doc/stable/html/) lets us parse workflow template files (`*.cylc`) and their 
 configurations into modular, interdependent batch jobs. Tools used by those jobs (e.g. `fre-nctools` or `xarray`) should 
 be loaded by those jobs as part of their requirements and do not need to be loaded at this time unless desired.
 
+To run this repository's code, we need `cylc` accessible and somewhere in out `PATH` environment variable. One way is to activate
+a conda environment with `cylc-flow`, `cylc-rose`, and `metomi-rose` installed. At GFDL's PP/AN, it is sufficient to do
+```
+module load cylc
+```
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
@@ -261,7 +262,7 @@ This daemon submits and runs jobs based on the task dependencies defined in `flo
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-## 9. UPDATEME Inspect workflow progress with an interface (GUI or TUI)
+## 9. Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.
 
@@ -282,8 +283,10 @@ cylc workflow-state -v fre-workflows/run1                # show all jobs
 cylc workflow-state -v fre-workflows/run1 | grep failed  # show only failed ones
 ```
 
+
+
 <!-- ______________________________________________________________________________________________________________________ -->
-## 10. UPDATEME Inspect workflow progress with a terminal CLI
+## 10. Inspect workflow progress with a terminal CLI
 Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`, and `cylc <command> --help` for
 more information on how to use these tools to your advantage!
 
