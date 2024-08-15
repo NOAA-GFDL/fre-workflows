@@ -449,7 +449,7 @@ def remap():
                             ret = run.returncode
 
                             if ret != 0:
-                                if ens_mem is not None:
+                                if ens_mem is None:
                                     copy = [f"{copy_tool}",
                                             f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
                                             f"{output_dir}/{dirs}/{newfile2}" ]
