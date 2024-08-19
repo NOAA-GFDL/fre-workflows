@@ -1,3 +1,0 @@
-#!/bin/bash
-
-cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
