@@ -197,6 +197,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
             # add the publish task definition for each ending time
             defs += f"""
     [[publish-analysis-{item}-{date_str}]]
+        inherit = PUBLISH-ANALYSIS
             """
 
             # add the task definition family for each ending time
@@ -231,6 +232,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         date = pp_start + chunk - oneyear
         while date <= pp_stop:
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+            graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
             if not analysis_only:
                 if item_product == "av":
                     graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
@@ -310,6 +312,12 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         inherit = ANALYSIS-{chunk}
         """
 
+        # and create the publish task definition
+        defs += f"""
+    [[publish-analysis-{item}]]
+        inherit = PUBLISH-ANALYSIS
+        """
+
         # create the task family for all every-interval analysis scripts
         defs += f"""
     [[ANALYSIS-{chunk}]]
@@ -338,6 +346,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # If "analysis only" option is set, then do not use the prerequisite dependencies
         # and assume the pp data is already there.
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
+        graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
         if analysis_only:
             graph += f"            data-catalog => ANALYSIS-{chunk}?\n"
         else:
@@ -345,6 +354,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
                 graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog => ANALYSIS-{chunk}?\n"
+        graph += f"        analysis-{item} => publish-analysis-{item}\n"
         graph += f"        \"\"\"\n"
 
         # add task to build the analysis script env
@@ -457,6 +467,12 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         inherit = BUILD-ANALYSIS
         """
 
+        # publish scripting
+        defs += f"""
+    [[publish-analysis-{item}]]
+        inherit = PUBLISH-ANALYSIS
+        """
+
         # set time-varying stuff
         defs += f"""
     [[ANALYSIS-{item_start_str}_{item_end_str}]]
@@ -481,6 +497,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+        graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
         if not analysis_only:
             if item_product == "av":
                 graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
@@ -502,6 +519,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             graph += f"            data-catalog => ANALYSIS-{item_start_str}_{item_end_str}\n"
         else:
             graph += f"            => ANALYSIS-{item_start_str}_{item_end_str}\n"
+        graph += f"        analysis-{item} => publish-analysis-{item}\n"
         graph += f"        \"\"\"\n"
 
         # add task to build the analysis script env
