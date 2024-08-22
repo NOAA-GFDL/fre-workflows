@@ -1020,6 +1020,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
 
 {% if DO_ANALYSIS %}
+    [[PUBLISH-ANALYSIS]]
+        [[[environment]]]
+            dora_url = dora.gfdl.noaa.gov
     [[BUILD-ANALYSIS]]
         pre-script = """
             module load python/3.11
