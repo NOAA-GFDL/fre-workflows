@@ -176,7 +176,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         # add task to build the analysis script env
         graph += f"""
         R1 = \"\"\"
-            build-analysis-{item} => analysis-{item}
+            build-analysis-{item}
         \"\"\"
         """
 
@@ -360,7 +360,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # add task to build the analysis script env
         graph += f"""
         R1 = \"\"\"
-            build-analysis-{item} => analysis-{item}
+            build-analysis-{item}
         \"\"\"
         """
 
@@ -525,7 +525,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # add task to build the analysis script env
         graph += f"""
         R1 = \"\"\"
-            build-analysis-{item} => analysis-{item}
+            build-analysis-{item}
         \"\"\"
         """
 
