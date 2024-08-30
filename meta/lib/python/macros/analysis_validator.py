@@ -102,7 +102,7 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                else: 
                   #in file/    
                   analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
-                  ascript = analysis_file_suffix+ascript
+                  ascript = analysis_file_suffix + os.path.basename(ascript)
             if os.access(ascript, os.R_OK):
                   pass
             else:
