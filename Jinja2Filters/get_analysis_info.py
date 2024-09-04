@@ -132,7 +132,11 @@ def get_item_info(node, keys, pp_components, ana_start=None, ana_stop=None, prin
     else:
         item_cumulative = False
 
-    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product)
+    # get the optional install and publish scripts
+    item_install_script = node.get_value(keys=[item, 'install'])
+    item_publish_script = node.get_value(keys=[item, 'publish'])
+
+    return(item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product, item_install_script, item_publish_script)
 
 def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, analysis_only=False, print_stderr=False):
     """Return the task definitions and task graph for all cumulative-mode analysis scripts.
@@ -155,7 +159,7 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         # scripts that use pp components that are not being used are skipped
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product, item_install, item_publish = item_info
         else:
             continue
 
@@ -171,12 +175,13 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
 
         # form a base task definition for the analysis script
         # to be called "analysis-{item}"
-        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product, item_install, item_publish)
 
-        # add task to build the analysis script env
-        graph += f"""
+        # add task to install the analysis script env
+        if item_install:
+            graph += f"""
         R1 = \"\"\"
-            build-analysis-{item}
+            install-analysis-{item}
         \"\"\"
         """
 
@@ -195,10 +200,11 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
             """
 
             # add the publish task definition for each ending time
-            defs += f"""
+            if item_publish:
+                defs += f"""
     [[publish-analysis-{item}-{date_str}]]
-        inherit = PUBLISH-ANALYSIS
-            """
+        inherit = publish-analysis-{item}
+                """
 
             # add the task definition family for each ending time
             defs += f"""
@@ -232,7 +238,8 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
         date = pp_start + chunk - oneyear
         while date <= pp_stop:
             graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
-            graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
+            if item_install:
+                graph += f"            install-analysis-{item}[^] => analysis-{item}\n"
             if not analysis_only:
                 if item_product == "av":
                     graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
@@ -254,7 +261,8 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
                 graph += f"            data-catalog => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
             else:
                 graph += f"            => ANALYSIS-CUMULATIVE-{metomi.isodatetime.dumpers.TimePointDumper().strftime(date, '%Y')}\n"
-            graph += f"             analysis-{item}-{date_str} => publish-analysis-{item}-{date_str}\n"
+            if item_publish:
+                graph += f"             analysis-{item}-{date_str} => publish-analysis-{item}-{date_str}\n"
             graph += f"        \"\"\"\n"
             date += chunk
 
@@ -285,7 +293,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # if the analysis script uses a component not present, then item_info will be empty
         item_info = get_item_info(node, keys, pp_components)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product, item_install, item_publish = item_info
         else:
             continue
 
@@ -301,7 +309,7 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
 
         # form a base task definition for the analysis script
         # to be called "analysis-{item}"
-        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product, item_install, item_publish)
 
         # to make the task run, we will create a corresponding task graph below
         # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
@@ -310,12 +318,6 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{chunk}
-        """
-
-        # and create the publish task definition
-        defs += f"""
-    [[publish-analysis-{item}]]
-        inherit = PUBLISH-ANALYSIS
         """
 
         # create the task family for all every-interval analysis scripts
@@ -346,7 +348,8 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
         # If "analysis only" option is set, then do not use the prerequisite dependencies
         # and assume the pp data is already there.
         graph += f"        +{chunk - oneyear}/{chunk} = \"\"\"\n"
-        graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
+        if item_install:
+            graph += f"            install-analysis-{item}[^] => analysis-{item}\n"
         if analysis_only:
             graph += f"            data-catalog => ANALYSIS-{chunk}?\n"
         else:
@@ -354,19 +357,21 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
                 graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
             else:
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog => ANALYSIS-{chunk}?\n"
-        graph += f"        analysis-{item} => publish-analysis-{item}\n"
+        if item_publish:
+            graph += f"        analysis-{item} => publish-analysis-{item}\n"
         graph += f"        \"\"\"\n"
 
-        # add task to build the analysis script env
-        graph += f"""
+        # add task to install the analysis script env
+        if item_install:
+            graph += f"""
         R1 = \"\"\"
-            build-analysis-{item}
+            install-analysis-{item}
         \"\"\"
         """
 
     return(defs, graph)
 
-def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, script_extras, product):
+def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, script_extras, product, install, publish):
     """Form the task definition string"""
 
     bronx_freq = convert_iso_duration_to_bronx_freq(freq)
@@ -390,8 +395,29 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
             staticfile = {pp_dir}/{comps[0]}/{comps[0]}.static.nc
             scriptLabel = {item}
             datachunk = {chunk.years}
-    [[build-analysis-{item}]]
+        """
+    if install:
+        # If absolute path is specified, use it
+        print("DEBUG:", install)
+        if os.path.isabs(install):
+            install_fullpath = install
+        # If relative path is specified and it exists, assume it's in app/analysis/file and refer to the cylc-run location
+        elif os.path.exists(install):
+            install_fullpath = os.path.join('$CYLC_RUN_DIR', 'app', 'analysis', 'file', os.path.basename(install))
+        # Otherwise, just use it, but it probably won't work. (Validation should catch this)
+        else:
+            install_fullpath = install
+        string += f"""
+    [[install-analysis-{item}]]
         inherit = BUILD-ANALYSIS
+        script = chmod +x {install} && {install}
+        """
+
+    if publish:
+        string += f"""
+    [[publish-analysis-{item}]]
+        inherit = PUBLISH-ANALYSIS
+        script = {publish}
         """
 
     return(string)
@@ -418,7 +444,7 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # retrieve information about the script
         item_info = get_item_info(node, keys, pp_components, ana_start, ana_stop, print_stderr)
         if item_info:
-            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product = item_info
+            item, item_comps, item_script_file, item_script_extras, item_freq, item_start, item_end, item_cumulative, item_product, item_install, item_publish = item_info
         else:
             continue
 
@@ -453,24 +479,12 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             sys.stderr.write(f"ANALYSIS: {item}: Will run once for time period {item_start_str} to {item_end_str} (chunks {d1_str} to {d2_str})\n")
 
         # set the task definitions that don't depend on time
-        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product)
+        defs += form_task_definition_string(item_freq, chunk, pp_dir, item_comps, item, item_script_file, item_script_extras, item_product, item_install, item_publish)
 
         # set the task definition above to inherit from the task family below
         defs += f"""
     [[analysis-{item}]]
         inherit = ANALYSIS-{item_start_str}_{item_end_str}
-        """
-
-        # build the environment
-        defs += f"""
-    [[build-analysis-{item}]]
-        inherit = BUILD-ANALYSIS
-        """
-
-        # publish scripting
-        defs += f"""
-    [[publish-analysis-{item}]]
-        inherit = PUBLISH-ANALYSIS
         """
 
         # set time-varying stuff
@@ -497,7 +511,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
         # set the graph definitions
         oneyear = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
         graph += f"        R1/{metomi.isodatetime.dumpers.TimePointDumper().strftime(d2, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
-        graph += f"            build-analysis-{item}[^] => analysis-{item}\n"
+        if item_install:
+            graph += f"            install-analysis-{item}[^] => analysis-{item}\n"
         if not analysis_only:
             if item_product == "av":
                 graph += f"            COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
@@ -519,13 +534,15 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             graph += f"            data-catalog => ANALYSIS-{item_start_str}_{item_end_str}\n"
         else:
             graph += f"            => ANALYSIS-{item_start_str}_{item_end_str}\n"
-        graph += f"        analysis-{item} => publish-analysis-{item}\n"
+        if item_publish:
+            graph += f"        analysis-{item} => publish-analysis-{item}\n"
         graph += f"        \"\"\"\n"
 
-        # add task to build the analysis script env
-        graph += f"""
+        # add task to install the analysis script env
+        if item_install:
+            graph += f"""
         R1 = \"\"\"
-            build-analysis-{item}
+            install-analysis-{item}
         \"\"\"
         """
 
