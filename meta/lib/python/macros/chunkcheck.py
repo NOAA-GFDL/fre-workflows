@@ -23,9 +23,9 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
 
     def is_multiple_of(self, big_chunk, small_chunk):
         '''Takes in chunk value e.g P1Y and the chunk reference value from HISTORY_SEGMENT, returns True or False based on the validation to check if the former is a multiple of the latter'''
-        big_chunk_days = big_chunk.get_days_and_seconds()[0]
-        small_chunk_days = small_chunk.get_days_and_seconds()[0]
-        if big_chunk_days % small_chunk_days == 0:
+	big_chunk_months = big_chunk.years*12 + big_chunk.months
+        small_chunk_months = small_chunk.years*12 + small_chunk.months
+        if big_chunk_months % small_chunk_months == 0:
             return True
         else:
             return False
