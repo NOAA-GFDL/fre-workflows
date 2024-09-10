@@ -78,7 +78,7 @@ class ChunkChecker(metomi.rose.macro.MacroBase):
         # if chunk_b is set, check chunk_a and chunk_b consistency
         pp_chunk_b = config.get_value(['template variables', 'PP_CHUNK_B'])
         if pp_chunk_b:
-            pp_chunk_b = pp_chunk_b.strip('\"') 
+            pp_chunk_b = pp_chunk_b.strip('\"\'') 
             pp_chunk_b_duration = None
             try:
                 pp_chunk_b_duration = parse.DurationParser().parse(pp_chunk_b)
