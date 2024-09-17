@@ -39,9 +39,9 @@
 {% endif %}
 
 [meta]
-    title = "Postprocessing"
+    title = "Ensemble postprocessing"
     description = """
-    Postprocess FMS history files
+    Postprocess FMS ensemble history files
     """
     URL = https://github.com/NOAA-GFDL/fre-workflows.git
 
@@ -87,6 +87,11 @@
     {# Standard Jinja2 triggers are also available (e.g. "replace") #}
     component = {{ PP_COMPONENTS | replace(' ', ', ') }}
 
+    {# Set the ensemble parameter expansions to be ens_NN #}
+    ens = 1..2
+    [[templates]]
+        ens = _ens%(ens)02d
+
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
@@ -104,17 +109,6 @@
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
     [[graph]]
-{% if DO_ANALYSIS_ONLY %}
-    {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-    {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-    {% endif %}
-{% else %}
         #
         # Recurrence interval: every history-file segment
         #
@@ -152,16 +146,16 @@ stage-history => PRE-ANALYSIS
 {# (into a standard shards directory set by ISO8601 frequencies ).                       #}
 {# Each history file needed for native grid processing is similar, except skipping the regridding.         #}
 {% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+STAGE-HISTORY:succeed-all => rename-history-files => regrid-xy<regrid><ens> => split-netcdf-regrid<regrid><ens> => rename-split-to-pp-regrid<regrid><ens>
     {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid> => regrid-xy<regrid>
+STAGE-HISTORY:succeed-all => rename-history-files => mask-atmos-plevel<regrid><ens> => regrid-xy<regrid><ens>
     {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all => split-netcdf-native<native> => rename-split-to-pp-native<native>
+STAGE-HISTORY:succeed-all => rename-history-files => split-netcdf-native<native><ens> => rename-split-to-pp-native<native><ens>
     {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<native>
+STAGE-HISTORY:succeed-all => rename-history-files => mask-atmos-plevel<native><ens> => split-netcdf-native<native><ens>
     {% endif %}
 {% endif %}
 
@@ -169,10 +163,10 @@ STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<na
 {# Regridding and splitting native history files should not start until the history-refined output is available.   #}
 {% if HISTORY_DIR_REFINED is defined %}
     {% if DO_REGRID %}
-stage-history-refined => regrid-xy<regrid>
+stage-history-refined => rename-history-files => regrid-xy<regrid><ens>
     {% endif %}
     {% if DO_NATIVE %}
-stage-history-refined => split-netcdf-native<native>
+stage-history-refined => rename-history-files => split-netcdf-native<native><ens>
     {% endif %}
 {% endif %}
 
@@ -181,13 +175,13 @@ stage-history-refined => split-netcdf-native<native>
 {# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
 {% if CLEAN_WORK %}
     {% if DO_REGRID %}
-regrid-xy<regrid>                 => clean-history-native
-split-netcdf-regrid<regrid>       => clean-history-regrid-xy
-rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
+regrid-xy<regrid><ens>                 => clean-history-native
+split-netcdf-regrid<regrid><ens>       => clean-history-regrid-xy
+rename-split-to-pp-regrid<regrid><ens> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
-split-netcdf-native<native>       => clean-history-native
-rename-split-to-pp-native<native> => clean-split-native
+split-netcdf-native<native><ens>       => clean-history-native
+rename-split-to-pp-native<native><ens> => clean-split-native
     {% endif %}
 {% endif %}
 """
@@ -201,18 +195,18 @@ rename-split-to-pp-native<native> => clean-split-native
 pp-starter => STAGE-HISTORY
 {% if DO_STATICS %}
     {% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
+STAGE-HISTORY:succeed-all => rename-history-files => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
     {% endif %}
     {% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+STAGE-HISTORY:succeed-all => rename-history-files => split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
     {% endif %}
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
     {% if DO_NATIVE and DO_REGRID %}
-rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+rename-split-to-pp-regrid<regrid_static><ens> & rename-split-to-pp-native<native_static><ens> => remap-pp-components-static<ens> => combine-statics<ens>
     {% elif DO_NATIVE %}
-rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+rename-split-to-pp-native<native_static><ens> => remap-pp-components-static<ens> => combine-statics<ens>
     {% elif DO_REGRID %}
-rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
+rename-split-to-pp-regrid<regrid_static><ens> => remap-pp-components-static<ens> => combine-statics<ens>
     {% endif %}
 {% endif %}
 
@@ -220,10 +214,10 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% if HISTORY_DIR_REFINED is defined %}
     {% if DO_STATICS %}
         {% if DO_REGRID %}
-stage-history-refined => regrid-xy<regrid_static>
+stage-history-refined => regrid-xy<regrid_static><ens>
         {% endif %}
         {% if DO_NATIVE %}
-stage-history-refined => split-netcdf-native<native_static>
+stage-history-refined => split-netcdf-native<native_static><ens>
         {% endif %}
     {% endif %}
 {% endif %}
@@ -231,16 +225,16 @@ stage-history-refined => split-netcdf-native<native_static>
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
 {% if CLEAN_WORK and DO_STATICS %}
     {% if DO_REGRID %}
-regrid-xy<regrid_static> => clean-history-native
-split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
-rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
+regrid-xy<regrid_static><ens> => clean-history-native
+split-netcdf-regrid<regrid_static><ens> => clean-history-regrid-xy
+rename-split-to-pp-regrid<regrid_static><ens> => clean-split-regrid-xy
     {% endif %}
     {% if DO_NATIVE %}
-split-netcdf-native<native_static> => clean-history-native
-rename-split-to-pp-native<native_static> => clean-split-native
+split-netcdf-native<native_static><ens> => clean-history-native
+rename-split-to-pp-native<native_static><ens> => clean-split-native
     {% endif %}
-remap-pp-components-static => clean-shards-static
-combine-statics => clean-pp-statics
+remap-pp-components-static<ens> => clean-shards-static
+combine-statics<ens> => clean-pp-statics
 {% endif %}
 """
 
@@ -254,28 +248,28 @@ combine-statics => clean-pp-statics
 {# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding. #}
 {# This Jinja for loop expands to do this.                                                                #}
 {% if DO_REGRID %}
-rename-split-to-pp-regrid<regrid>
+rename-split-to-pp-regrid<regrid><ens>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
-& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
+& rename-split-to-pp-regrid<regrid><ens>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
     {% if HISTORY_SEGMENT != PP_CHUNK_A %}
-=> make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
+=> make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid><ens>
     {% endif %}
     {% if DO_TIMEAVGS %}
-=> make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid>
+=> make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid><ens>
     {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
-rename-split-to-pp-native<native>
+rename-split-to-pp-native<native><ens>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
-& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
+& rename-split-to-pp-native<native><ens>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
     {% endfor %}
     {% if HISTORY_SEGMENT != PP_CHUNK_A %}
-=> make-timeseries-native-{{ PP_CHUNK_A }}<native>
+=> make-timeseries-native-{{ PP_CHUNK_A }}<native><ens>
     {% endif %}
     {% if DO_TIMEAVGS %}
-=> make-timeavgs-native-{{ PP_CHUNK_A }}<native>
+=> make-timeavgs-native-{{ PP_CHUNK_A }}<native><ens>
     {% endif %}
 {% endif %}
 
@@ -294,7 +288,7 @@ rename-split-to-pp-native<native>
 {% endif %}
 
 {% if DO_TIMEAVGS %}
-remap-pp-components-av-{{ PP_CHUNK_A }}<component> => combine-timeavgs-{{ PP_CHUNK_A }}<component>
+remap-pp-components-av-{{ PP_CHUNK_A }}<component><ens> => combine-timeavgs-{{ PP_CHUNK_A }}<component><ens>
     {% if CLEAN_WORK %}
 COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_A }}
     {% endif %}
@@ -320,107 +314,6 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
 """
-
-#
-# Recurrence interval: every CHUNK-B
-#
-{# If only one pp chunk is used, then skip the CHUNK-B processing. #}
-{% if DO_SECONDARY_PP %}
-        {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
-        +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
-
-{# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
-    {% if DO_REGRID %}
-        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-rename-split-to-pp-regrid<regrid>
-        {% else %}
-make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
-        {% endif %}
-        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
-        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-& rename-split-to-pp-regrid<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% else %}
-& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% endif %}
-        {% endfor %}
-=> make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
-        {% if DO_TIMEAVGS %}
-=> make-timeavgs-regrid-{{ PP_CHUNK_B }}<regrid>
-        {% endif %}
-    {% endif %}
-
-    {% if DO_NATIVE %}
-        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-rename-split-to-pp-native<native>
-        {% else %}
-make-timeseries-native-{{ PP_CHUNK_A }}<native>
-        {% endif %}
-        {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
-        {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-& rename-split-to-pp-native<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% else %}
-& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
-        {% endif %}
-        {% endfor %}
-=> make-timeseries-native-{{ PP_CHUNK_B }}<native>
-        {% if DO_TIMEAVGS %}
-=> make-timeavgs-native-{{ PP_CHUNK_B }}<native>
-        {% endif %}
-    {% endif %}
-
-    {% if DO_TIMEAVGS %}
-remap-pp-components-av-{{ PP_CHUNK_B }}<component> => combine-timeavgs-{{ PP_CHUNK_B }}<component>
-        {% if CLEAN_WORK %}
-COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_B }}
-        {% endif %}
-    {% endif %}
-
-{# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
-{# Throw validation exception if PP_CHUNK_B is not in rose-app.conf                                          #}
-    {% if DO_REGRID %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
-        {% if DO_TIMEAVGS %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av') }}
-        {% endif %}
-    {% endif %}
-
-    {% if DO_NATIVE %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
-        {% if DO_TIMEAVGS %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av') }}
-        {% endif %}
-    {% endif %}
-
-# CHUNK-B work dir cleaning: remove CHUNK-A and CHUNK-B shards after saving the CHUNK-B products
-    {% if CLEAN_WORK %}
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
-        {% if DO_TIMEAVGS %}
-REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_B }}
-        {% endif %}
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% if DO_TIMEAVGS %}
-REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
-        {% endif %}
-    {% endif %}
-"""
-{% endif %}
-
-#
-# Recurrence intervals for analysis tasks
-#
-    {% if DO_ANALYSIS %}
-        {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-        {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-        {% endif %}
-    {% endif %}
-
-{% endif %}
 
 [runtime]
     [[pp-starter]]
