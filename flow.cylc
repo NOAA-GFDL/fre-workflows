@@ -461,15 +461,15 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     {% if DO_NATIVE %}
     [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native/ens_%(ens)02d
             component = $CYLC_TASK_PARAM_native
     {% endif %}
     {% if DO_REGRID %}
     [[MAKE-TIMEAVGS-REGRID]]
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy/ens_%(ens)02d
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
     {% endif %}
@@ -630,8 +630,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native/ens_%(ens)02d
             component = $CYLC_TASK_PARAM_native
 {% endif %}
 
@@ -639,8 +639,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy/ens_%(ens)02d
             use_subdirs = 1
             component = $CYLC_TASK_PARAM_regrid
 {% endif %}
@@ -676,8 +676,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[RENAME-SPLIT-TO-PP-NATIVE]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/ens_%(ens)02d
             component = $CYLC_TASK_PARAM_native
 {% endif %}
 
@@ -685,8 +685,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[RENAME-SPLIT-TO-PP-REGRID]]
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/ens_%(ens)02d
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
 {% endif %}
@@ -725,6 +725,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
             outputDir = {{ PP_DIR }}
             product = ts
             dirTSWorkaround = 1
+            ens_mem = ens_%(ens)02d
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
@@ -891,8 +892,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key regrid-xy
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy/ens_%(ens)02d
             begin = $CYLC_TASK_CYCLE_POINT
             fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             source = $CYLC_TASK_PARAM_regrid
