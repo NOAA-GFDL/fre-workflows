@@ -146,16 +146,16 @@ stage-history => PRE-ANALYSIS
 {# (into a standard shards directory set by ISO8601 frequencies ).                       #}
 {# Each history file needed for native grid processing is similar, except skipping the regridding.         #}
 {% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => rename-history-files => regrid-xy<regrid><ens> => split-netcdf-regrid<regrid><ens> => rename-split-to-pp-regrid<regrid><ens>
+STAGE-HISTORY:succeed-all => regrid-xy<regrid><ens> => split-netcdf-regrid<regrid><ens> => rename-split-to-pp-regrid<regrid><ens>
     {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => rename-history-files => mask-atmos-plevel<regrid><ens> => regrid-xy<regrid><ens>
+STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid><ens> => regrid-xy<regrid><ens>
     {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all => rename-history-files => split-netcdf-native<native><ens> => rename-split-to-pp-native<native><ens>
+STAGE-HISTORY:succeed-all => split-netcdf-native<native><ens> => rename-split-to-pp-native<native><ens>
     {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => rename-history-files => mask-atmos-plevel<native><ens> => split-netcdf-native<native><ens>
+STAGE-HISTORY:succeed-all => mask-atmos-plevel<native><ens> => split-netcdf-native<native><ens>
     {% endif %}
 {% endif %}
 
@@ -163,10 +163,10 @@ STAGE-HISTORY:succeed-all => rename-history-files => mask-atmos-plevel<native><e
 {# Regridding and splitting native history files should not start until the history-refined output is available.   #}
 {% if HISTORY_DIR_REFINED is defined %}
     {% if DO_REGRID %}
-stage-history-refined => rename-history-files => regrid-xy<regrid><ens>
+stage-history-refined => regrid-xy<regrid><ens>
     {% endif %}
     {% if DO_NATIVE %}
-stage-history-refined => rename-history-files => split-netcdf-native<native><ens>
+stage-history-refined => split-netcdf-native<native><ens>
     {% endif %}
 {% endif %}
 
@@ -195,10 +195,10 @@ rename-split-to-pp-native<native><ens> => clean-split-native
 pp-starter => STAGE-HISTORY
 {% if DO_STATICS %}
     {% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => rename-history-files => regrid-xy<regrid_static><ens> => split-netcdf-regrid<regrid_static><ens> => rename-split-to-pp-regrid<regrid_static><ens>
+STAGE-HISTORY:succeed-all => regrid-xy<regrid_static><ens> => split-netcdf-regrid<regrid_static><ens> => rename-split-to-pp-regrid<regrid_static><ens>
     {% endif %}
     {% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all => rename-history-files => split-netcdf-native<native_static><ens> => rename-split-to-pp-native<native_static><ens>
+STAGE-HISTORY:succeed-all => split-netcdf-native<native_static><ens> => rename-split-to-pp-native<native_static><ens>
     {% endif %}
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
     {% if DO_NATIVE and DO_REGRID %}
@@ -316,11 +316,6 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
 """
 
 [runtime]
-    [[rename-history-files]]
-        script = """
-            echo Time to do some renaming
-        """
-        [[[environment]]]
     [[pp-starter]]
         inherit = PP-STARTER
         # NOTE! script must appear *before* [[[enviroment]]] or else
@@ -397,10 +392,19 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
             fi
 
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
-            mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
-                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+            cycle=$(cylc cycle-point --template CCYYMMDD)
+            cd $ptmpDir/$historyDir/$cycle.nc
+            for file in *; do
+                if [[ $file =~ ens_[0-9][0-9] ]]; then
+                    ens=$(echo $file | grep -o 'ens_[0-9][0-9]')
+                    newfile=$(echo $file | sed 's/\.ens_[0-9][0-9]//')
+                    echo Linking $file to $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/$ens
+                    mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/$ens
+                    ln -sf $ptmpDir/$historyDir/$cycle.nc/$file $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/$ens/$newfile
+                else
+                    echo Skipping non-ensemble $file
+                fi
+            done
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
@@ -602,7 +606,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[MASK-ATMOS-PLEVEL]]
         script = rose task-run --verbose --app-key mask-atmos-plevel
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native/ens_%(ens)02d
 {% if DO_NATIVE %}
     [[mask-atmos-plevel<native><ens>]]
         inherit = MASK-ATMOS-PLEVEL, <native>
