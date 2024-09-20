@@ -677,7 +677,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native/ens_%(ens)02d
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ens_%(ens)02d/ts/native
             component = $CYLC_TASK_PARAM_native
 {% endif %}
 
@@ -686,7 +686,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
         inherit = RENAME-SPLIT-TO-PP
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy/ens_%(ens)02d
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/ens_%(ens)02d
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ens_%(ens)02d/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
 {% endif %}
@@ -721,11 +721,10 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
-            outputDir = {{ PP_DIR }}
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ens_%(ens)02d/ts
+            outputDir = {{ PP_DIR }}/ens_%(ens)02d
             product = ts
             dirTSWorkaround = 1
-            ens_mem = ens_%(ens)02d
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
