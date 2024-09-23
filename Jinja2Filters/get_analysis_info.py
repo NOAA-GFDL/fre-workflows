@@ -184,6 +184,11 @@ def get_cumulative_info(node, pp_components, pp_dir, chunk, pp_start, pp_stop, a
             install-analysis-{item}
         \"\"\"
         """
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run install script\n")
+
+        if item_publish and print_stderr:
+            sys.stderr.write(f"ANALYSIS: {item}: Will run publish script\n")
 
         # to make the task run, we will create a task family for
         # each chunk/interval, starting from the beginning of pp data
@@ -359,6 +364,8 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
                 graph += f"            REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog => ANALYSIS-{chunk}?\n"
         if item_publish:
             graph += f"        analysis-{item} => publish-analysis-{item}\n"
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run publish script\n")
         graph += f"        \"\"\"\n"
 
         # add task to install the analysis script env
@@ -368,6 +375,8 @@ def get_per_interval_info(node, pp_components, pp_dir, chunk, analysis_only=Fals
             install-analysis-{item}
         \"\"\"
         """
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run install script\n")
 
     return(defs, graph)
 
@@ -398,7 +407,6 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
         """
     if install:
         # If absolute path is specified, use it
-        print("DEBUG:", install)
         if os.path.isabs(install):
             install_fullpath = install
         # If relative path is specified and it exists, assume it's in app/analysis/file and refer to the cylc-run location
@@ -536,6 +544,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             graph += f"            => ANALYSIS-{item_start_str}_{item_end_str}\n"
         if item_publish:
             graph += f"        analysis-{item} => publish-analysis-{item}\n"
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run publish script\n")
         graph += f"        \"\"\"\n"
 
         # add task to install the analysis script env
@@ -545,6 +555,8 @@ def get_defined_interval_info(node, pp_components, pp_dir, chunk, pp_start, pp_s
             install-analysis-{item}
         \"\"\"
         """
+            if print_stderr:
+                sys.stderr.write(f"ANALYSIS: {item}: Will run install script\n")
 
     return(defs, graph)
 
