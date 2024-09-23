@@ -410,15 +410,15 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
         if os.path.isabs(install):
             install_fullpath = install
         # If relative path is specified and it exists, assume it's in app/analysis/file and refer to the cylc-run location
-        elif os.path.exists(install):
-            install_fullpath = os.path.join('$CYLC_RUN_DIR', 'app', 'analysis', 'file', os.path.basename(install))
+        elif os.path.exists(os.path.join('app', 'analysis', 'file', install)):
+            install_fullpath = os.path.join('$CYLC_WORKFLOW_RUN_DIR', 'app', 'analysis', 'file', os.path.basename(install))
         # Otherwise, just use it, but it probably won't work. (Validation should catch this)
         else:
             install_fullpath = install
         string += f"""
     [[install-analysis-{item}]]
         inherit = BUILD-ANALYSIS
-        script = chmod +x {install} && {install}
+        script = chmod +x {install_fullpath} && {install_fullpath}
         """
 
     if publish:
