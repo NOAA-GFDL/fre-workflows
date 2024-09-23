@@ -1191,9 +1191,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% include 'site/' ~ SITE ~ '.cylc' %}
 
 {# this is required for portability should probably only include #}
-{# inherit = <some_task_param> if SITE = ppan. #}
+{# inherit = <some_task_param> if SITE = ppan_test #}
 {# but empty task-family inheritence is inconsequential for now. #}
-{% if SITE != 'ppan' %}
+{% if SITE != 'ppan_test' %}
     {% if DO_REGRID %}
     [[<regrid>]]
         {% if DO_STATICS %}

@@ -379,9 +379,9 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
 
     # ts and av distinction
     if product == "ts":
-        in_data_dir = f"{pp_dir}/{comps[0]}/ts/{bronx_freq}/{bronx_chunk}"
+        in_data_dir = os.path.join(pp_dir,comps[0],"ts",bronx_freq,bronx_chunk,"")
     else:
-        in_data_dir = f"{pp_dir}/{comps[0]}/av/{bronx_freq}_{bronx_chunk}"
+        in_data_dir = os.path.join(pp_dir,comps[0],"av",bronx_freq,bronx_chunk,"")
 
     string = f"""
     [[analysis-{item}]]
