@@ -15,8 +15,6 @@ from pathlib import Path
 import metomi.rose.config as rose_cfg
 from netCDF4 import Dataset
 
-FREGRID_SHARED_FILES='/home/fms/shared_fregrid_remap_files'
-
 # formerly in shared.sh
 def truncate_date(date, freq):
     format=freq_to_date_format(freq)
@@ -164,9 +162,7 @@ def regrid_xy( ):
     '''
 
     ## rose config load check
-    config_name = os.getcwd()
-    config_name += '/rose-app-run.conf'
-    #config_name += '/rose-app.conf'
+    config_name = Path.cwd().joinpath('rose-app-run.conf')
     print(f'config_name = {config_name}')
     try:
         rose_app_config = rose_cfg.load(config_name)
@@ -176,24 +172,19 @@ def regrid_xy( ):
 
 
     # mandatory arguments- code exits if any of these are not present
-    input_dir     = os.getenv( 'inputDir'        )
-    output_dir    = os.getenv( 'outputDir'       )
+    input_dir     = Path(os.getenv( 'inputDir'        ))
+    output_dir    = Path(os.getenv( 'outputDir'       ))
     begin         = os.getenv( 'begin'           )
-    tmp_dir       = os.getenv( 'TMPDIR'          )
-    remap_dir     = os.getenv( 'fregridRemapDir' )
+    tmp_dir       = Path(os.getenv( 'TMPDIR'          ))
+    remap_dir     = Path(os.getenv( 'fregridRemapDir' ))
     source        = os.getenv( 'source'          )
-    grid_spec     = os.getenv( 'gridSpec'        )
+    grid_spec     = Path(os.getenv( 'gridSpec'        ))
     def_xy_interp = os.getenv( 'defaultxyInterp' )
     if None in [ input_dir , output_dir    ,
                  begin     , tmp_dir       ,
                  remap_dir , source        ,
                  grid_spec , def_xy_interp  ]:
         raise Exception(f'a mandatory input argument is not present in {config_name})')
-    #    if any( [ input_dir is None, output_dir    is None,
-    #              begin     is None, tmp_dir       is None,
-    #              remap_dir is None, source        is None,
-    #              grid_spec is None, def_xy_interp is None ] ):
-    #        raise Exception(f'a mandatory input argument is not present in {config_name}')
 
     def_xy_interp    = def_xy_interp.split(',')
     def_xy_interp[0] = def_xy_interp[0].replace('"', '')
@@ -213,39 +204,39 @@ def regrid_xy( ):
             f'default xy interpolation has invalid format: \n def_xy_interp = {def_xy_interp}')
 
     # input dir must exist
-    if not Path( input_dir ).exists():
+    if not input_dir.exists():
         raise Exception(f'input_dir={input_dir} \n does not exist')
 
     # tmp_dir check
-    if not Path( tmp_dir ).exists():
+    if not tmp_dir.exists():
         raise Exception(f'tmp_dir={tmp_dir} \n does not exist.')
 
     # output dir check
-    Path( output_dir ).mkdir( parents = True, exist_ok = True )
-    if not Path( output_dir ).exists() :
+    output_dir.mkdir( parents = True, exist_ok = True )
+    if not output_dir.exists() :
         raise Exception('the following does not exist and/or could not be created:' +
                         f'output_dir=\n{output_dir}')
 
     # work/ dir check
-    work_dir = tmp_dir + 'work/'
-    Path( work_dir ).mkdir( exist_ok = True )
-    if not Path( work_dir ).exists():
+    work_dir = tmp_dir.joinpath('work')
+    work_dir.mkdir( exist_ok = True )
+    if not work_dir.exists():
         raise Exception('the following does not exist and/or could not be created:' +
                         f'work_dir=\n{work_dir}')
 
 
     # fregrid remap dir check
-    Path(remap_dir).mkdir( exist_ok = True )
-    if not Path( remap_dir ).exists():
+    remap_dir.mkdir( exist_ok = True )
+    if not remap_dir.exists():
         raise Exception(f'{remap_dir} could not be created')
 
 
     # grid_spec file management
-    starting_dir = os.getcwd()
+    starting_dir = Path.cwd()
     os.chdir(work_dir)
     if '.tar' in grid_spec:
         untar_sp = \
-            subprocess.run( ['tar', '-xvf', grid_spec], check = False , capture_output = True)
+            subprocess.run( ['tar', '-xvf', grid_spec], check = True , capture_output = True)
         if untar_sp.returncode != 0:
             raise Exception(
                 f'untarring of {grid_spec} file failed, ret_code={untar_sp.returncode}, stderr={untar_sp.stderr}')
@@ -257,7 +248,7 @@ def regrid_xy( ):
             raise Exception(f'grid_spec_file cannot be determined from grid_spec={grid_spec}')
     else:
         try:
-            grid_spec_file=grid_spec.split('/').pop()
+            grid_spec_file = grid_spec.name()
             shutil.copy(grid_spec, grid_spec_file )
         except Exception as exc:
             raise Exception(f'grid_spec={grid_spec} could not be copied.') \
@@ -299,10 +290,9 @@ def regrid_xy( ):
 
         #target input variable resolution
         is_tiled = 'cubedsphere' in input_grid
-        target_file  = input_dir
-        target_file += f"/{truncate_date(begin,'P1D')}.{source}.tile1.nc" \
+        target_file  = input_dir.joinpath(truncate_date(begin, 'P1D') + f".{source}.tile1.nc")
             if is_tiled \
-            else  f"/{truncate_date(begin,'P1D')}.{source}.nc"
+            else  input_dir.joinpath(truncate_date(begin,'P1D') + f".{source}.nc")
         if not Path( target_file ).exists():
             raise Exception(f'regrid_xy target does not exist. \ntarget_file={target_file}')
         print(f'target_file={target_file}') #DELETE
@@ -310,7 +300,7 @@ def regrid_xy( ):
 
         # optional per-component inputs
         output_grid_type = safe_rose_config_get( rose_app_config, component, 'outputGridType')
-        remap_file       = safe_rose_config_get( rose_app_config, component, 'fregridRemapFile')
+        remap_file       = Path(safe_rose_config_get( rose_app_config, component, 'fregridRemapFile'))
         more_options     = safe_rose_config_get( rose_app_config, component, 'fregridMoreOptions')
         regrid_vars      = safe_rose_config_get( rose_app_config, component, 'variables')
         output_grid_lon  = safe_rose_config_get( rose_app_config, component, 'outputGridLon')
@@ -359,7 +349,7 @@ def regrid_xy( ):
         if remap_file is not None:
             try:
                 shutil.copy( remap_file,
-                             remap_file.split('/').pop() )
+                             remap_file.name() )
             except Exception as exc:
                 raise Exception('remap_file={remap_file} could not be copied to local dir') \
                     from exc
@@ -372,24 +362,16 @@ def regrid_xy( ):
                                 else \
                                    f'fregrid_remap_file_{def_xy_interp(0)}_by_{def_xy_interp(1)}.nc'
             remap_cache_file = \
-                f'{remap_dir}/{input_grid}/{input_realm}/' + \
-                f'{source_nx}-by-{source_ny}/{interp_method}/{remap_file}'
-            central_remap_cache_file = \
-                f'{FREGRID_SHARED_FILES}/{input_grid}/' + \
-                f'{source_nx}_by_{source_ny}/{remap_file}'
+                remap_dir.joinpath(input_grid, input_realm}, \
+                f'{source_nx}-by-{source_ny}, interp_method, remap_file')
 
             print(f'remap_file               = {remap_file              }' + \
-                  f'remap_cache_file         = {remap_cache_file        }' + \
-                  f'central_remap_cache_file = {central_remap_cache_file}' )
+                  f'remap_cache_file         = {remap_cache_file        }')
 
             if Path( remap_cache_file ).exists():
                 print(f'NOTE: using cached remap file {remap_cache_file}')
                 shutil.copy(remap_cache_file,
-                            remap_cache_file.split('/').pop())
-            elif Path( central_remap_cache_file ).exists():
-                print(f'NOTE: using centrally cached remap file {remap_cache_file}')
-                shutil.copy(central_remap_cache_file,
-                            central_remap_cache_file.split('/').pop())
+                            remap_cache_file.name())
 
 
 
@@ -410,13 +392,13 @@ def regrid_xy( ):
         input_file = target_file.replace('.tile1.nc','') \
                              if '.tile1' in target_file \
                              else target_file
-        input_file=input_file.split('/').pop()
+        input_file=input_file.name()
 
         # create output file argument...
         output_file = target_file.replace('.tile1','') \
                       if 'tile1' in target_file \
                       else target_file
-        output_file = output_file.split('/').pop()
+        output_file = output_file.name()
 
         fregrid_command = [
             'fregrid',
@@ -436,7 +418,7 @@ def regrid_xy( ):
             fregrid_command.append(f'{more_options}')
 
         print(f"\n\nabout to run the following command: \n{' '.join(fregrid_command)}\n")
-        fregrid_proc = subprocess.run( fregrid_command, check = False )#i hate it
+        fregrid_proc = subprocess.run( fregrid_command, check = True )
         fregrid_rc =fregrid_proc.returncode
         print(f'fregrid_result.returncode()={fregrid_rc}')
 
@@ -444,9 +426,9 @@ def regrid_xy( ):
         # output wrangling
 
         # copy the remap file to the cache location
-        if not Path( remap_cache_file ).exists():
-            remap_cache_file_dir='/'.join(remap_cache_file.split('/')[0:-1])
-            Path( remap_cache_file_dir ).mkdir( parents = True , exist_ok = True)
+        if not remap_cache_file.exists():
+            remap_cache_file_dir=remap_cache_file.parent()
+            remap_cache_file_dir.mkdir( parents = True , exist_ok = True)
             print(f'copying \nremap_file={remap_file} to')
             print(f'remap_cache_file_dir={remap_cache_file_dir}')
             shutil.copy(remap_file, remap_cache_file_dir)
@@ -454,7 +436,7 @@ def regrid_xy( ):
         # more output wrangling
         final_output_dir = output_dir \
             if output_grid_type is None \
-            else output_dir + '/' + output_grid_type
+            else output_dir.joinpath(output_grid_type)
         Path( final_output_dir ).mkdir( exist_ok = True)
 
         print(f'TRYING TO COPY {output_file} TO {final_output_dir}')
