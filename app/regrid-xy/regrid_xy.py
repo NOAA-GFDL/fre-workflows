@@ -165,7 +165,7 @@ def regrid_xy( ):
     config_name = Path.cwd().joinpath('rose-app-run.conf')
     print(f'config_name = {config_name}')
     try:
-        rose_app_config = rose_cfg.load(config_name)
+        rose_app_config = rose_cfg.load(str(config_name))
     except Exception as exc:
         raise Exception(f'config_name = {config_name} not found.') \
             from exc
@@ -234,7 +234,7 @@ def regrid_xy( ):
     # grid_spec file management
     starting_dir = Path.cwd()
     os.chdir(work_dir)
-    if '.tar' in grid_spec:
+    if '.tar' in str(grid_spec):
         untar_sp = \
             subprocess.run( ['tar', '-xvf', grid_spec], check = True , capture_output = True)
         if untar_sp.returncode != 0:
@@ -290,7 +290,7 @@ def regrid_xy( ):
 
         #target input variable resolution
         is_tiled = 'cubedsphere' in input_grid
-        target_file  = input_dir.joinpath(truncate_date(begin, 'P1D') + f".{source}.tile1.nc")
+        target_file  = input_dir.joinpath(truncate_date(begin, 'P1D') + f".{source}.tile1.nc") \
             if is_tiled \
             else  input_dir.joinpath(truncate_date(begin,'P1D') + f".{source}.nc")
         if not Path( target_file ).exists():
@@ -300,7 +300,7 @@ def regrid_xy( ):
 
         # optional per-component inputs
         output_grid_type = safe_rose_config_get( rose_app_config, component, 'outputGridType')
-        remap_file       = Path(safe_rose_config_get( rose_app_config, component, 'fregridRemapFile'))
+        remap_file       = safe_rose_config_get( rose_app_config, component, 'fregridRemapFile')
         more_options     = safe_rose_config_get( rose_app_config, component, 'fregridMoreOptions')
         regrid_vars      = safe_rose_config_get( rose_app_config, component, 'variables')
         output_grid_lon  = safe_rose_config_get( rose_app_config, component, 'outputGridLon')
@@ -362,8 +362,8 @@ def regrid_xy( ):
                                 else \
                                    f'fregrid_remap_file_{def_xy_interp(0)}_by_{def_xy_interp(1)}.nc'
             remap_cache_file = \
-                remap_dir.joinpath(input_grid, input_realm}, \
-                f'{source_nx}-by-{source_ny}, interp_method, remap_file')
+                remap_dir.joinpath(input_grid, input_realm, \
+                f'{source_nx}-by-{source_ny}', interp_method, remap_file)
 
             print(f'remap_file               = {remap_file              }' + \
                   f'remap_cache_file         = {remap_cache_file        }')
@@ -371,7 +371,7 @@ def regrid_xy( ):
             if Path( remap_cache_file ).exists():
                 print(f'NOTE: using cached remap file {remap_cache_file}')
                 shutil.copy(remap_cache_file,
-                            remap_cache_file.name())
+                            remap_cache_file.name)
 
 
 
@@ -389,16 +389,14 @@ def regrid_xy( ):
 
 
         # massage input file argument to fregrid.
-        input_file = target_file.replace('.tile1.nc','') \
-                             if '.tile1' in target_file \
+        input_file = Path(str(target_file).replace('.tile1.nc','')) \
+                             if '.tile1' in str(target_file) \
                              else target_file
-        input_file=input_file.name()
 
         # create output file argument...
-        output_file = target_file.replace('.tile1','') \
-                      if 'tile1' in target_file \
+        output_file = Path(str(target_file).replace('.tile1','')) \
+                      if 'tile1' in str(target_file) \
                       else target_file
-        output_file = output_file.name()
 
         fregrid_command = [
             'fregrid',
@@ -406,14 +404,14 @@ def regrid_xy( ):
             '--standard_dimension',
             '--input_mosaic', f'{input_mosaic}',
             '--input_dir', f'{input_dir}',
-            '--input_file', f'{input_file}',
+            '--input_file', input_file.name,
             '--associated_file_dir', f'{input_dir}',
             '--interp_method', f'{interp_method}',
             '--remap_file', f'{remap_file}',
             '--nlon', f'{str(output_grid_lon)}',
             '--nlat', f'{str(output_grid_lat)}',
             '--scalar_field', f'{regrid_vars_str}',
-            '--output_file', f'{output_file}']
+            '--output_file', output_file.name]
         if more_options is not None:
             fregrid_command.append(f'{more_options}')
 
@@ -427,7 +425,7 @@ def regrid_xy( ):
 
         # copy the remap file to the cache location
         if not remap_cache_file.exists():
-            remap_cache_file_dir=remap_cache_file.parent()
+            remap_cache_file_dir=remap_cache_file.parent
             remap_cache_file_dir.mkdir( parents = True , exist_ok = True)
             print(f'copying \nremap_file={remap_file} to')
             print(f'remap_cache_file_dir={remap_cache_file_dir}')
@@ -440,7 +438,7 @@ def regrid_xy( ):
         Path( final_output_dir ).mkdir( exist_ok = True)
 
         print(f'TRYING TO COPY {output_file} TO {final_output_dir}')
-        shutil.copy(output_file, final_output_dir)
+        shutil.copy(output_file.name, final_output_dir)
 
         continue # end of comp loop, exit or next one.
 
