@@ -56,6 +56,11 @@
     install = app/*, bin/*, etc/*, lib/*
     UTC mode = True
 
+    # When the stall timeout is reached, a stalled workflow will exit
+    # and remove the /xtmp working directory.
+    [[events]]
+        stall timeout = P1W
+
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
 {# so custom Jinja triggers are used to form the lists. Cylc and custom Jinja triggers have these rules:       #}
