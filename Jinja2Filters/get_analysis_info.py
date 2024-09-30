@@ -422,10 +422,19 @@ def form_task_definition_string(freq, chunk, pp_dir, comps, item, script_file, s
         """
 
     if publish:
+        # If absolute path is specified, use it
+        if os.path.isabs(publish):
+            publish_fullpath = publish
+        # If relative path is specified and it exists, assume it's in app/analysis/file and refer to the cylc-run location
+        elif os.path.exists(os.path.join('app', 'analysis', 'file', publish)):
+            publish_fullpath = os.path.join('$CYLC_WORKFLOW_RUN_DIR', 'app', 'analysis', 'file', os.path.basename(publish))
+        # Otherwise, just use it, but it probably won't work. (Validation should catch this)
+        else:
+            publish_fullpath = publish
         string += f"""
     [[publish-analysis-{item}]]
         inherit = PUBLISH-ANALYSIS
-        script = {publish}
+        script = chmod +x {publish_fullpath} && {publish_fullpath}
         """
 
     return(string)
