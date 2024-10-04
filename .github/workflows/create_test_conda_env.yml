@@ -26,9 +26,9 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-	  - name: Run unittest in fre-workflows environment
-		run: |
-		  # try to make sure the right things are in GITHUB_PATH
-		  echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
-		  cylc lint -v
-		  cd data_lineage && python -m unittest discover -s test
+      - name: Run unittest in fre-workflows environment
+        run: |
+          # try to make sure the right things are in GITHUB_PATH
+          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+          cylc lint -v
+          cd data_lineage && python -m unittest discover -s test; cd -
