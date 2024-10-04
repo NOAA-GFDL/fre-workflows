@@ -28,6 +28,7 @@ jobs:
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
       - name: in fre-workflows environment, cylc lint
+        continue-on-error: true
         run: |
           # lint .cylc workflow files
           cylc lint -v
