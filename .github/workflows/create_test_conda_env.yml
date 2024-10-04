@@ -44,7 +44,7 @@ jobs:
 
           # pytest unittests for regrid-xy
           cd app/regrid-xy && \
-             pytest -v -v -rx ./t || \
+             pytest -v -v -rx --cov=regrid_xy ./t || \
              echo "pytest unittests for regrid-xy failed"; \
              pylint -v || \
              echo "pylint threw non-zero exit code."; \
@@ -52,7 +52,7 @@ jobs:
 
           # pytest unittests for make-timeseries
           cd app/make-timeseries && \
-             pytest -v -v -rx ./test || \
+             pytest -v -v -rx --cov=bin/make-timeseries ./test || \
              echo "pytest for make-timeseries failed"; \
              pylint -v || \
              echo "pylint threw non-zero exit code."; \
@@ -60,7 +60,7 @@ jobs:
 
           # pytest unittests for remap-pp-components
           cd app/remap-pp-components && \
-             pytest -v -v -rx ./t/ || \
+             pytest -v -v -rx --cov=bin/remap-pp-components ./t/ || \
              echo "pytest for remap-pp-components failed"; \
              pylint -v || \
              echo "pylint threw non-zero exit code."; \
