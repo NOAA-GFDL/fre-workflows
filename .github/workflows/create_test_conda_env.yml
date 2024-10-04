@@ -31,4 +31,4 @@ jobs:
           # try to make sure the right things are in GITHUB_PATH
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
           cylc lint -v || echo "cylc lint threw non-zero exit code"
-          cd data_lineage && python -m unittest discover -s test; cd -
+          cd data_lineage && python -m unittest discover -s test -v; cd -
