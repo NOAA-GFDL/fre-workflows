@@ -4,47 +4,68 @@ on: [push]
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '>=3.9'
+	runs-on: ubuntu-latest
+	steps:
+	  - uses: actions/checkout@v4
+	  - name: Set up Python
+		uses: actions/setup-python@v5
+		with:
+		  python-version: '>=3.9'
 
-      - name: Add conda to system path
-        run: |
-          # $CONDA is an env var pointing to root of miniconda dir
-          echo $CONDA/bin >> $GITHUB_PATH
+	  - name: Add conda to system path
+		run: |
+		  # $CONDA is an env var pointing to root of miniconda dir
+		  echo $CONDA/bin >> $GITHUB_PATH
 
-      - name: Create fre-workflows environment
-        run: |
-          # create environment containing all dependencies
-          # the env cannot be explicitly activated in github CI/CD
-          conda env create -f environment.yml --name fre-workflows
+	  - name: Create fre-workflows environment
+		run: |
+		  # create environment containing all dependencies
+		  # the env cannot be explicitly activated in github CI/CD
+		  conda env create -f environment.yml --name fre-workflows
 
-          # add conda env's executables to github's PATH equiv.
-          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+		  # add conda env's executables to github's PATH equiv.
+		  echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: Run unittest in fre-workflows environment
-        run: |
-          # try to make sure the right things are in GITHUB_PATH
-          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+	  - name: Run unittest in fre-workflows environment
+		run: |
+		  # try to make sure the right things are in GITHUB_PATH
+		  echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-          # lint .cylc workflow files
-          cylc lint -v || echo "cylc lint threw non-zero exit code"
+		  # lint .cylc workflow files
+		  cylc lint -v || echo "cylc lint threw non-zero exit code"
 
-          # unittests for data_lineage
-          cd data_lineage && python -m unittest discover -s test -v || echo "data_lineage unittest failed."; cd -;
+		  # unittests for data_lineage
+		  cd data_lineage && \
+			 python -m unittest discover -s test -v || \
+			 echo "data_lineage unittest failed."; \
+			 pylint -v || \
+			 echo "pylint threw non-zero exit code."; \
+			 cd -;
 
-          # pytest unittests for regrid-xy
-          cd app/regrid-xy && pytest -v -v -rx ./t || echo "pytest unittests for regrid-xy failed"; cd -;
-        
-          # pytest unittests for make-timeseries
-          cd app/make-timeseries && pytest -v -v -rx ./test || echo "pytest for make-timeseries failed"; cd -;
-        
-          # pytest unittests for remap-pp-components
-          cd app/remap-pp-components && pytest -v -v -rx ./t/ || echo "pytest for remap-pp-components failed"; cd -;
-        
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests || echo "pytest unittests for root directory failed :-(";
+		  # pytest unittests for regrid-xy
+		  cd app/regrid-xy && \
+			 pytest -v -v -rx ./t || \
+			 echo "pytest unittests for regrid-xy failed"; \
+			 pylint -v || \
+			 echo "pylint threw non-zero exit code."; \
+			 cd -;
+
+		  # pytest unittests for make-timeseries
+			 cd app/make-timeseries && \
+			 pytest -v -v -rx ./test || \
+			 echo "pytest for make-timeseries failed"; \
+			 pylint -v || \
+			 echo "pylint threw non-zero exit code."; \
+			 cd -;
+
+		  # pytest unittests for remap-pp-components
+		  cd app/remap-pp-components && \
+			 pytest -v -v -rx ./t/ || \
+			 echo "pytest for remap-pp-components failed"; \
+			 pylint -v || \
+			 echo "pylint threw non-zero exit code."; \
+			 cd -;
+
+		  # pytest unittests for other things in this repository
+		  pytest -v -v -rx ./tests || \
+			 echo "pytest unittests for root directory failed :-(";
