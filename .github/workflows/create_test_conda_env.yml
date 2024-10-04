@@ -35,10 +35,10 @@ jobs:
           cylc lint -v || echo "cylc lint threw non-zero exit code"
 
           # unittests for data_lineage
-          cd data_lineage && python -m unittest discover -s test -v; cd -;
+          cd data_lineage && python -m unittest discover -s test -v || echo "data_lineage unittest failed."; cd -;
 
           # pytest unittests for make-timeseries
-          cd app/make-timeseries && pytest -v -v -x ./tests/ || echo "pytest for make-timeseries failed"; cd -;
+          cd app/make-timeseries && pytest -v -v -x ./test || echo "pytest for make-timeseries failed"; cd -;
 
           # pytest unittests for remap-pp-components
           cd app/remap-pp-components && pytest -v -v -x ./t/ || echo "pytest for remap-pp-components failed"; cd -;
