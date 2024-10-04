@@ -10,6 +10,7 @@ dependencies:
   - pyyaml
   - pylint
   - jsonschema
+  - noaa-gfdl::fre-nctools
   - conda-forge::cylc-flow>=8.2.0
   - conda-forge::cylc-rose
   - conda-forge::metomi-rose
