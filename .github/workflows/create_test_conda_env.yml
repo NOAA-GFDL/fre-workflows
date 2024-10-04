@@ -1,0 +1,34 @@
+name: create_test_conda_env
+
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '>=3.9'
+
+      - name: Add conda to system path
+        run: |
+          # $CONDA is an env var pointing to root of miniconda dir
+          echo $CONDA/bin >> $GITHUB_PATH
+
+      - name: Create fre-workflows environment
+        run: |
+          # create environment containing all dependencies
+          # the env cannot be explicitly activated in github CI/CD
+          conda env create -f environment.yml --name fre-workflows
+
+          # add conda env's executables to github's PATH equiv.
+          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+
+	  - name: Run unittest in fre-workflows environment
+		run: |
+		  # try to make sure the right things are in GITHUB_PATH
+		  echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+		  cylc lint -v
+		  cd data_lineage && python -m unittest discover -s test
