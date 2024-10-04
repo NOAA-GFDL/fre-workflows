@@ -51,7 +51,7 @@ jobs:
 			 cd -;
 
 		  # pytest unittests for make-timeseries
-			 cd app/make-timeseries && \
+		  cd app/make-timeseries && \
 			 pytest -v -v -rx ./test || \
 			 echo "pytest for make-timeseries failed"; \
 			 pylint -v || \
