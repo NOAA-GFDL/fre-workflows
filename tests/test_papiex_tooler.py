@@ -1,29 +1,32 @@
 ''' tests for PP/AN specific ops-tooling of job scripts for PAPIEX'''
+from subprocess import Popen, PIPE, DEVNULL
+from pathlib import Path
+import filecmp as fc
+import difflib as dl
 import pytest
 
 def test_import():
     ''' check that tool_ops_w_papiex functions can be imported '''
     from  lib.python.tool_ops_w_papiex import test_import
-    assert(test_import() == 0)
+    assert test_import() == 0
 
 def test_import_papiex_ops():
     ''' check that op list data can be imported '''
     import lib.python.papiex_ops as po
-    assert ( all( [ po.op_list is not None,
-                       len(po.op_list) > 0  ] ) )
+    assert all( [ po.op_list is not None,
+                     len(po.op_list) > 0  ] ) 
 
 def test_simple_failing_command():
     ''' check that setting/unsetting PAPIEX_TAGS around an op
     will not touch the exit status of that op '''
-    from pathlib import Path
-    control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/simple_failing_command.bash'
+    control_script_targ = str(Path.cwd()) + \
+        '/tests/test_files_papiex_tooler/simple_failing_command.bash'
     assert Path(control_script_targ).exists() #quick check
 
     # import subprocess and run "control" process for later comparison
-    from subprocess import Popen, PIPE, DEVNULL
-    control_proc=None
+    control_proc = None
     try:
-        control_proc=Popen( args=['/bin/bash' ,control_script_targ],
+        control_proc = Popen( args=['/bin/bash' ,control_script_targ],
                          bufsize=0,
                          executable=None,
                          stdin=DEVNULL, stdout=PIPE, stderr=PIPE,
@@ -33,13 +36,14 @@ def test_simple_failing_command():
         assert False
 
     # grab control output
-    control_out, control_err= None,None
-    control_ret_code=None
+    control_out, control_err = None, None
+    control_ret_code = None
     try:
         control_out, control_err = (
             f.decode() for f in control_proc.communicate(DEVNULL) )
         control_ret_code = control_proc.wait()
-        print(f'control_out, control_err, control_ret_code = \n {control_out}, \n {control_err}, \n {control_ret_code}')
+        print(f'control_out, control_err, control_ret_code = ' + \
+              '\n {control_out}, \n {control_err}, \n {control_ret_code}')
         assert all( [ control_out is not None,
                       control_err is not None,
                       control_ret_code is not None ] )        
@@ -94,20 +98,17 @@ def test_check_simple_failing_command_for_diff():
     prev test, which could in theory succeed if tool_ops_w_papiex copies 
     the script but without adding tooling.'''
     
-    from pathlib import Path
     control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/simple_failing_command.bash'
     script_targ=control_script_targ+'.tags'
     assert Path(control_script_targ).exists() #quick check
     assert Path(script_targ).exists() #quick check
 
     # check quickly that they are different in some manner.
-    import filecmp as fc
     is_different=not fc.cmp( control_script_targ, script_targ,
                              shallow=False)
     print(f'different? {is_different}\n\n')
 
     # now we will explicitly check for those differencves
-    import difflib as dl
     the_infile = open(control_script_targ)
     infile_contents=the_infile.readlines()
     the_infile.close()
@@ -135,8 +136,8 @@ def test_check_simple_failing_command_for_diff():
     
 
 def test_rose_task_run_for_diff():    
-    from pathlib import Path
-    control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
+    control_script_targ = str(Path.cwd()) + \
+        '/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
 
 
     # if we're testing over and over and '.notags' version exists,
@@ -159,13 +160,11 @@ def test_rose_task_run_for_diff():
     assert Path(script_targ).exists() #quick check
 
     # check quickly that they are different in some manner.
-    import filecmp as fc
     is_different=not fc.cmp( control_script_targ, script_targ,
                              shallow=False)
     print(f'different? {is_different}\n\n')
 
     # now we will explicitly check for those differences
-    import difflib as dl
     the_infile = open(control_script_targ)
     infile_contents=the_infile.readlines()
     the_infile.close()
@@ -197,7 +196,6 @@ def test_rose_task_run_for_diff():
 
 
 def test_pp_starter_for_no_diff():    
-    from pathlib import Path
     control_script_targ=str(Path.cwd())+'/tests/test_files_papiex_tooler/test_pp-starter'
 
     # if we're testing over and over and '.notags' version exists,
@@ -220,13 +218,11 @@ def test_pp_starter_for_no_diff():
     assert Path(script_targ).exists() #quick check
 
     # check quickly that they are different in some manner.
-    import filecmp as fc
     is_different=not fc.cmp( control_script_targ, script_targ,
                              shallow=False)
     print(f'different? {is_different}\n\n')
 
     # now we will explicitly check for those differences
-    import difflib as dl
     the_infile = open(control_script_targ)
     infile_contents=the_infile.readlines()
     the_infile.close()
