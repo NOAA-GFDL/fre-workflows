@@ -5,7 +5,6 @@ on: [push]
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -34,47 +33,42 @@ jobs:
           cylc lint -v
 
       - name: in fre-workflows environment, data_lineage unittest and pylint
+        continue-on-error: true
         run: |
           # unittests for data_lineage
           cd data_lineage && \
-             python -m unittest discover -s test -v || \
-             echo "data_lineage unittest failed."; \
-             pylint -v || \
-             echo "pylint threw non-zero exit code."; \
-             cd -;
+             python -m unittest discover -s test -v ; \
+             pylint -v ; \
+             cd - ;
 
       - name: in fre-workflows environment, regrid-xy pytest and pylint
+        continue-on-error: true
         run: |
           # pytest unittests for regrid-xy
           cd app/regrid-xy && \
-             pytest -v -v -rx --cov=regrid_xy ./t || \
-             echo "pytest unittests for regrid-xy failed"; \
-             pylint -v || \
-             echo "pylint threw non-zero exit code."; \
-             cd -;
+             pytest -v -v -rx --cov=regrid_xy ./t ; \
+             pylint -v ; \
+             cd - ;
 
       - name: in fre-workflows environment, make-timeseries pytest and pylint
+        continue-on-error: true
         run: |
           # pytest unittests for make-timeseries
           cd app/make-timeseries && \
-             pytest -v -v -rx --cov=bin/make-timeseries ./test || \
-             echo "pytest for make-timeseries failed"; \
-             pylint -v || \
-             echo "pylint threw non-zero exit code."; \
-             cd -;
+             pytest -v -v -rx --cov=bin/make-timeseries ./test ; \
+             pylint -v ; \
+             cd - ;
 
       - name: in fre-workflows environment, remap-pp-components pytest and pylint
+        continue-on-error: true
         run: |
           # pytest unittests for remap-pp-components
           cd app/remap-pp-components && \
-             pytest -v -v -rx --cov=bin/remap-pp-components ./t/ || \
-             echo "pytest for remap-pp-components failed"; \
-             pylint -v || \
-             echo "pylint threw non-zero exit code."; \
-             cd -;
+             pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
+             cd - ;
 
       - name: in fre-workflows environment, root directory pytest
+        continue-on-error: true
         run: |
           # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests || \
-             echo "pytest unittests for root directory failed :-(";
+          pytest -v -v -rx ./tests
