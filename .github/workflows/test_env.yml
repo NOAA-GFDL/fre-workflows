@@ -23,8 +23,10 @@ jobs:
           # the env cannot be explicitly activated in github CI/CD
           echo "MY LOCATION"
           pwd
-          echo "MY LOCATION"          
-          conda env create -f environment.yml --name fre-workflows
+          echo "MY LOCATION"  
+          docker --help
+          podman --help
+          conda create --name fre-workflows-env
 
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
