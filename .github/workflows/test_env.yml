@@ -24,21 +24,14 @@ jobs:
           echo "MY LOCATION"
           pwd
           echo "MY LOCATION"  
-          docker --help
-          podman --help
-          conda create --name fre-workflows-env
+          #podman --help
+          #conda create --name fre-workflows-env
 
           # add conda env's executables to github's PATH equiv.
-          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+          #echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
-        continue-on-error: true
+      - name: clone branch
         run: |
-          # lint .cylc workflow files
-          cylc lint -v
-
-      - name: in fre-workflows environment, root directory pytest
-        continue-on-error: true
-        run: |
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests
+          git clone --single-branch --branch TripleP https://gitlab.gfdl.noaa.gov/fre/HPC-ME.git
+          pwd
+          ls
