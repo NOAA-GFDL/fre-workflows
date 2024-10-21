@@ -24,6 +24,7 @@ jobs:
           echo "MY LOCATION"
           pwd
           echo "MY LOCATION"  
+          ls
           #podman --help
           #conda create --name fre-workflows-env
 
@@ -32,6 +33,5 @@ jobs:
 
       - name: clone branch
         run: |
-          git clone --single-branch --branch TripleP https://gitlab.gfdl.noaa.gov/fre/HPC-ME.git
+          #git clone --single-branch --branch TripleP https://gitlab.gfdl.noaa.gov/fre/HPC-ME.git
           pwd
-          ls
