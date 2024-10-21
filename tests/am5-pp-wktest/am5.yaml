@@ -1,0 +1,46 @@
+# reusable variables
+fre_properties:
+  - &AM5_VERSION        "am5f7b12r1"
+  - &FRE_STEM           !join [am5/, *AM5_VERSION]
+
+  # amip - 3 years of processing for the test case
+  - &EXP_AMIP_START     "19800101T0000Z"
+  - &EXP_AMIP_END       "19820101T0000Z"
+
+  - &PP_AMIP_CHUNK96    "P1Y"
+  - &PP_AMIP_CHUNK384   "P1Y"
+  - &PP_XYINTERP96      "180,288"
+  - &PP_XYINTERP384     "720,1152"
+
+  # grids
+  - &GRID_SPEC96         "/archive/oar.gfdl.am5/model_gen5/inputs/c96_grid/c96_OM4_025_grid_No_mg_drag_v20160808.tar"
+
+shared:
+  # directories shared across tools
+  # in the ci context, all dirs need to be created before this is invoked
+  # that looks like history_dir and ptmp_dir right now
+  directories: &shared_directories
+    history_dir: /archive/am5/am5/am5f7c1r0/c96L65_am5f7c1r0_amip/gfdl.ncrc5-deploy-prod-openmp/history
+    pp_dir:       !join [/archive/$USER/, *FRE_STEM, /, *name, /, *platform, -, *target, /, pp]
+    analysis_dir: !join [/nbhome/$USER/, *FRE_STEM, /, *name]
+    ptmp_dir:     "/xtmp/$USER/ptmp"
+
+  # shared pp settings
+  # for ci, suspect that site is NOT ppan
+  postprocess: 
+    settings: &shared_settings
+      history_segment:    "P1Y"
+      site:               "ppan"
+    switches: &shared_switches
+      do_statics:         True
+      do_timeavgs:        True
+      clean_work:         True
+      do_refinediag:      False
+      do_atmos_plevel_masking: True
+      do_preanalysis:     False
+      do_analysis:        False
+
+experiments:
+  - name: "am5.example3"
+    pp:
+      - "yaml_include/pp.c96_amip.yaml"

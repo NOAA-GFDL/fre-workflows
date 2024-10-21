@@ -1,0 +1,61 @@
+#!/bin/bash
+#test for fre-workflows
+
+module load conda
+conda create -n workflowCiTest
+conda config --append channels noaa-gfdl conda config --append channels conda-forge
+conda install noaa-gfdl::fre-cli 
+#The bit above here is where the container might be useful
+#https://github.com/NOAA-GFDL/fre-cli/blob/a3c95cd67f2f17d5b4d4fbac7195fb562b1ebb72/docs/setup.rst#L4
+#16 gb ram, 14 gb ssd for a linux machine
+
+old_hist_location=/archive/am5/am5/am5f7c1r0/c96L65_am5f7c1r0_amip/gfdl.ncrc5-deploy-prod-openmp/history
+new_hist_location=$TMPDIR//archive/am5/am5/am5f7c1r0/c96L65_am5f7c1r0_amip/gfdl.ncrc5-deploy-prod-openmp/history
+
+old_gridspec="/archive/oar.gfdl.am5/model_gen5/inputs/c96_grid/c96_OM4_025_grid_No_mg_drag_v20160808.tar"
+new_gridspec="/data/1/users/oar.gfdl.fre_test/c96_OM4_025_grid_No_mg_drag_v20160808.tar"
+#gridspec also needs to be copied
+
+#We need to download 3 files of about 32 Gb from data1/users/oar.gfdl.fre_test
+datafiles= (19800101.nc.tar 19810101.nc.tar 19820101.nc.tar)
+dataurl="https://data.gfdl.noaa.gov/1/users/oar.gfdl.fre_test/"
+for df in $datafiles; do
+	curl -k ${dataurl}/${df} -o ${new_hist_location}/${df}
+end
+#correction: copying over only the files in /work/cew/fre_test_files/plausible_test_case
+#which have a monthly resolution 
+#mostly for space reasons; if we're working with the free github runners, 
+#we have 14 gb on disk and 16 gb ram
+#these files may need to be cut down further by removing vars we aren't 
+#interested in, but this is probably ok to start
+#but note that they need to be re-tarred before copying over to the fre 
+#test data portal
+#Note that the workflows example (am5-pp-wktest/am5.yaml) has edits that
+#reflect a smaller scope - fewer grids processed
+
+#also this might be a good time to bring out the cloud allocation for bigger jobs
+
+#also - get some kind of profiling on the fre pp command;
+#good to estimate how much memory is going to scale from this
+
+#3 classes of dir need to be created:
+#Ci input - history dir structure path, tarfile dir structure path
+#ci intermediate - ptmp (defined twice), analysis_dir
+#ci output - pp_dir
+
+
+#Taken from https://github.com/NOAA-GFDL/fre-examples/blob/main/am5-pp/
+#I am not 100% sure on these names, I am going off of directory structure
+experiment="c96L65_am5f7c1r0_amip"
+platform="gfdl.ncrc5-deploy"
+target="prod-openmp"
+yaml="am5-pp-ppest/am5.yaml"
+branch="main"
+#running in a ci context branch needs to be fre-workflows github.ref - the thing that
+#triggered this action. otherwise, you aren't testing the thing that 
+#triggered the action.
+#fre-cli, on the other hand, should be main or latest stable release.
+#we aren't testing fre-cli.
+
+fre pp wrapper -e $experiment -p $platform -t $target -y $yaml -b $branch
+

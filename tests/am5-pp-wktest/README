@@ -1,0 +1,13 @@
+This is from the fre-cli/pp/test location
+
+AM5 atmos and atmos_scalar, 4 years (and 2-year pp chunk). with analysis
+
+module load fre/canopy
+
+fre pp checkout -e am5.example3 -p p -t t
+fre pp configure-yaml -e am5.example3 -p p -t t -y am5.yaml
+fre pp validate -e am5.example3 -p p -t t
+fre pp install -e am5.example3 -p p -t t
+fre pp run -e am5.example3 -p p -t t
+
+cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser

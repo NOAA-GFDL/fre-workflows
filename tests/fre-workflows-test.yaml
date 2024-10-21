@@ -1,0 +1,19 @@
+yaml
+name: fre-workflows hello-world
+on:
+	push:
+		branches:
+		  - main
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
+      
+jobs:
+  sample_job:
+    name: Hello World
+    runs-on: linux
