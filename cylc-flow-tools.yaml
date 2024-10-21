@@ -1,0 +1,16 @@
+name: cylc-flow-tools
+channels: 
+  - conda-forge
+  - NOAA-GFDL
+dependencies:
+  - hsm
+  - fre-nctools
+  - nco
+  - cdo
+  - metomi-rose
+  - rsync
+  - make
+  - vim
+  - fre-cli ==2024.01
+#  - hdf5
+  - fre-python-tools 
