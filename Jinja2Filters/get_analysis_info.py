@@ -28,6 +28,8 @@ def str_to_bool(value):
     Raises:
         ValueError if the string cannot be interpreted.
     """
+    if isinstance(value, bool):
+        return value
     if value.lower().startswith("t") or value.lower().startswith("y"):
         return True
     if value.lower().startswith("f") or value.lower().startswith("n"):
@@ -48,16 +50,16 @@ class AnalysisScript(object):
             experiment_stopping_date: Stopping date for the experiment.
         """
         self.name = name
-        self.skip = config["workflow"]["switch"] == "off":
-        if self.skip:
+        self.switch = config["workflow"]["switch"]
+        if self.switch == False:
             return
 
         # Skip this analysis script if the components are not requested.
-        self.components = [x.strip() for x in config["workflow"]["components"].split()]
+        self.components = [x.strip() for x in config["workflow"]["components"]]
         for component in self.components:
             if component not in experiment_components:
                 logger.info(f"analysis: {name}: Skipping as it requests {component} that are not available in {experiment_components}.")
-                self.skip == True
+                self.switch = False
                 return
 
         self.experiment_date_range = [
@@ -66,9 +68,9 @@ class AnalysisScript(object):
         ]
 
         # Parse out the rest of the script configuration.
-        self.data_frequency = config["required"]["frequency"]
+        self.data_frequency = config["required"]["data_frequency"]
         self.product = config["workflow"]["product"]
-        self.command = config["workflow"]["run"].split()
+        self.command = config["workflow"]["script"].split()
         for i, value in enumerate(self.command):
             self.command[i] = value.replace("$ANALYSIS_START", self.experiment_date_range[0])
 
@@ -83,19 +85,22 @@ class AnalysisScript(object):
             self.date_range[0] = self.experiment_date_range[0]
         if self.date_range[1] == "$ANALYSIS_STOP":
             self.date_range[1] = self.experiment_date_range[1]
-        self.script_frequency = config["workflow"]["script_frequency"]
+        self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
 
-    def graph(self, chunk):
+    def graph(self, chunk, analysis_only):
         """Generate the cylc task graph string for the analysis script.
 
         Args:
             chunk: Post-processing chunk size for the experiment.
+            analysis_only: Boolean; can we assume pp files are already there?
 
         Returns:
             String cylc task graph for the analysis.
         """
-        if self.skip:
+        if self.switch == False:
             return ""
+
+        graph = ""
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
@@ -114,7 +119,7 @@ class AnalysisScript(object):
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and self.cumulative:
             # Case 2: run the analysis every chunk, but depend on all previous chunks too.
-            date = self.experiment_date_range[0] + chunk - oneyear  # Last year of first chunk.
+            date = self.experiment_date_range[0] + chunk - one_year  # Last year of first chunk.
             while date <= self.experiment_date_range[1]:
                 graph += f"R1/{time_dumper.strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
                 if not analysis_only:
@@ -170,8 +175,10 @@ class AnalysisScript(object):
 
     def definition(self, chunk, pp_dir):
         """Form the task definition string."""
-        if self.skip:
+        if self.switch == False:
             return ""
+
+        definitions = ""
 
         cmip_to_bronx = {"mon": "monthly",}
         frequency = cmip_to_bronx[self.data_frequency]
@@ -182,12 +189,20 @@ class AnalysisScript(object):
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / frequency / bronx_chunk
         else:
             in_data_dir = Path(pp_dir) / self.compoents[0] / self.product / f"{frequency}_{bronx_chunk}"
+        
+        # the first word of command will be the script, but there could be more command-line args
+        if len(self.command) > 1:
+            script = self.command.pop(0)
+            script_args = ' '.join(self.command)
+        else:
+            script = self.command.pop(0)
+            script_args = ""
 
         string = f"""
             [[analysis-{self.name}]]
                 script = '''
-                    chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{self.script_path}.$yr1-$yr2
-                    $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{self.script_path}.$yr1-$yr2 {" ".join(self.script_args)}
+                    chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
+                    $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
                 '''
                 [[[environment]]]
                     in_data_dir = {in_data_dir}
@@ -213,7 +228,7 @@ class AnalysisScript(object):
                 [[ANALYSIS-{chunk}]]
                     inherit = ANALYSIS
                     [[[environment]]]
-                        yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - oneyear})
+                        yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
                         datachunk = {chunk.years}
             """
 
@@ -237,7 +252,7 @@ class AnalysisScript(object):
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
-            date = self.experiment_date_range[0] + chunk - oneyear
+            date = self.experiment_date_range[0] + chunk - one_year
             while date <= self.experiment_datea_range[1]:
                 date_str = time_dumper.strftime(date, '%Y')
 
@@ -271,7 +286,7 @@ class AnalysisScript(object):
                                 in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
                 date += chunk
-             return definitions
+            return definitions
 
         if self.script_frequency == "R1" and not self.cumulative:
             # Locate the nearest enclosing chunks.
@@ -322,14 +337,13 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop)
-        if script_info.skip:
+        if script_info.switch == False:
             logger.info("must skip analysis {script_name}.")
             continue
         yield script_info
 
 
-def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop,
-                     chunk, pp_dir)
+def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop, chunk, pp_dir):
     """Return the task definitions for all user-defined analysis scripts.
 
     Args:
@@ -349,7 +363,7 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
     return definitions
 
 
-def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, chunk)
+def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, chunk, analysis_only):
     """Return the task graphs for all user-defined analysis scripts.
 
     Args:
@@ -358,17 +372,18 @@ def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, 
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
         chunk: ISO8601 duration used by the workflow.
+        analysis_only: Optional boolean to not depend on remap tasks (assume pp files already exist)
 
     Returns:
         String containing the task graphs.
     """
     graph = ""
     for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, chunk):
-        graph += script_info.graph(chunk)
+        graph += script_info.graph(chunk, analysis_only)
     return graph
 
 
-def yaml_get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
+def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
                            experiment_start, experiment_stop, chunk, analysis_only=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
@@ -397,8 +412,8 @@ def yaml_get_analysis_info(experiment_yaml, info_type, experiment_components, pp
         yaml_ = safe_load(file_)
         if info_type == "task-graph":
             return task_graph(yaml_, experiment_components, experiment_start,
-                              experiment_stop, chunk)
-        elif info_type == "task-definition":
-            return task_definition(yaml_, experiment_components, experiment_start,
+                              experiment_stop, chunk, analysis_only)
+        elif info_type == "task-definitions":
+            return task_definitions(yaml_, experiment_components, experiment_start,
                                    experiment_stop, chunk, pp_dir)
         raise ValueError(f"Invalid information type: {info_type}.")
