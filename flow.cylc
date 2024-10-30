@@ -1056,13 +1056,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             # new template vars
             catalog = {{ PP_DIR }}/catalog.json
     {% if DO_SECONDARY_PP %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
     {% else %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
+{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
     {% endif %}
 {% endif %}
 
