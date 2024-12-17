@@ -40,6 +40,9 @@
     {% set ANALYSIS_STOP = PP_STOP %}
 {% endif %}
 
+{# The combined yaml is the definitive configuration source #}
+{% set YAML = EXPERIMENT + '.yaml' %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -115,13 +118,13 @@
     [[graph]]
 {% if DO_ANALYSIS_ONLY %}
     {% if DO_SECONDARY_PP %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
     {% else %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% endif %}
 {% else %}
         #
@@ -419,13 +422,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 #
     {% if DO_ANALYSIS %}
         {% if DO_SECONDARY_PP %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
         {% else %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
         {% endif %}
     {% endif %}
 
@@ -1056,13 +1059,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             # new template vars
             catalog = {{ PP_DIR }}/catalog.json
     {% if DO_SECONDARY_PP %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
     {% else %}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
-{{ 'am5.example1.yaml' | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
     {% endif %}
 {% endif %}
 
