@@ -64,6 +64,7 @@ class AnalysisScript(object):
                 self.switch = False
                 return
 
+        # Parse the pp date range
         self.experiment_date_range = [
             time_dumper.strftime(experiment_starting_date, "%Y"),
             time_dumper.strftime(experiment_stopping_date, "%Y"),
@@ -78,6 +79,7 @@ class AnalysisScript(object):
         self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
 
         # Parse the new analysis config items
+        self.is_legacy = False
         self.data_frequency = config["required"]["data_frequency"]
         self.date_range = [
             time_dumper.strftime(time_parser.parse(config["required"]["date_range"][0]), "%Y"),
@@ -126,10 +128,18 @@ class AnalysisScript(object):
                 graph += f"ANALYSIS-{chunk}?\n"
             else:
                 if self.product == "av":
-                    graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
+                    graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all"
                 else:
-                    graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => ANALYSIS-{chunk}?\n"
+                    graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog"
+                graph += f"=> ANALYSIS-{chunk}?\n"
+                if not self.is_legacy:
+                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
             graph += f"\"\"\"\n"
+            graph += f"""
+R1 = \"\"\"
+    install-analysis-{self.name}
+\"\"\"
+            """
             return graph
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -260,6 +270,19 @@ class AnalysisScript(object):
                     [[analysis-{self.name}]]
                         [[[environment]]]
                             in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
+                """
+
+            # create the install script
+            if not self.is_legacy:
+                definitions += f"""
+                [[install-analysis-{self.name}]]
+                    inherit = BUILD-ANALYSIS
+                    script = \"\"\"
+fre analysis install \
+    --url               $ANALYSIS_URL \
+    --name              freanalysis_{self.name}
+    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
+                    \"\"\"
                 """
 
             return definitions
