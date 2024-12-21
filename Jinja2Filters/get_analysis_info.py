@@ -66,9 +66,13 @@ class AnalysisScript(object):
 
         # Parse the pp date range
         self.experiment_date_range = [
-            time_dumper.strftime(experiment_starting_date, "%Y"),
-            time_dumper.strftime(experiment_stopping_date, "%Y"),
+            experiment_starting_date,
+            experiment_stopping_date
         ]
+        #self.experiment_date_range_str = [
+        #    time_dumper.strftime(experiment_starting_date, "%Y"),
+        #    time_dumper.strftime(experiment_stopping_date, "%Y"),
+        #]
 
         # Parse the rest of the 'workflow' config items
         self.product = config["workflow"]["product"]
@@ -81,9 +85,13 @@ class AnalysisScript(object):
         # Parse the new analysis config items
         self.is_legacy = False
         self.data_frequency = config["required"]["data_frequency"]
+        #self.date_range_str = [
+        #    time_dumper.strftime(time_parser.parse(config["required"]["date_range"][0]), "%Y"),
+        #    time_dumper.strftime(time_parser.parse(config["required"]["date_range"][1]), "%Y")
+        #]
         self.date_range = [
-            time_dumper.strftime(time_parser.parse(config["required"]["date_range"][0]), "%Y"),
-            time_dumper.strftime(time_parser.parse(config["required"]["date_range"][1]), "%Y")
+            time_parser.parse(config["required"]["date_range"][0]),
+            time_parser.parse(config["required"]["date_range"][1])
         ]
 
         # Parse the legacy analysis config items
@@ -111,6 +119,12 @@ class AnalysisScript(object):
         if self.switch == False:
             return ""
 
+        install_analysis_str = f"""
+R1 = \"\"\"
+    install-analysis-{self.name}
+\"\"\"
+        """
+
         graph = ""
 
         #print(f"DEBUG: script frequency = {self.script_frequency}")
@@ -120,7 +134,7 @@ class AnalysisScript(object):
         #print(f"DEBUG: analysis date is a {type(self.date_range[0])}")
         #print(f"DEBUG: exp date is a {type(self.experiment_date_range[0])}")
 
-        if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
+        if self.script_frequency == chunk and self.date_range == self.experiment_date_range\
            and not self.cumulative:
             # Case 1: run the analysis every chunk.
             graph += f"{self.script_frequency} = \"\"\"\n"
@@ -135,11 +149,7 @@ class AnalysisScript(object):
                 if not self.is_legacy:
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
             graph += f"\"\"\"\n"
-            graph += f"""
-R1 = \"\"\"
-    install-analysis-{self.name}
-\"\"\"
-            """
+            graph += install_analysis_str
             return graph
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -152,14 +162,14 @@ R1 = \"\"\"
                     if self.product == "av":
                         graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
                     else:
-                        graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
+                        graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog\n"
 
                 # Looping backwards through all previous chunks.
                 d = date
                 i = -1
                 while d > self.experiment_date_range[0] + chunk:
                     if not analysis_only:
-                        if item_product == "av":
+                        if self.product == "av":
                             graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
                         else:
                             graph += f"& REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
@@ -170,8 +180,11 @@ R1 = \"\"\"
                     graph += f"ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
                 else:
                     graph += f"=> ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
+
+                graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(date, '%Y')}\n"
                 graph += f"        \"\"\"\n"
                 date += chunk
+            graph += install_analysis_str
             return graph
 
         if self.script_frequency == "R1" and not self.cumulative:
@@ -189,7 +202,7 @@ R1 = \"\"\"
             i = -1
             while d > self.date_range[0]:
                 if not analysis_only:
-                    if item_product == "av":
+                    if self.product == "av":
                         graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
                     else:
                         graph += f"& REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
@@ -226,7 +239,7 @@ R1 = \"\"\"
         script = "SCRIPT"
         script_args = "ARGS"
 
-        string = f"""
+        analysis_str = f"""
             [[analysis-{self.name}]]
                 script = '''
                     chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
@@ -240,6 +253,17 @@ R1 = \"\"\"
                     datachunk = {chunk.years}
         """
 
+        install_str = f"""
+            [[install-analysis-{self.name}]]
+                inherit = BUILD-ANALYSIS
+                script = '''
+fre analysis install \
+    --url               $ANALYSIS_URL \
+    --name              freanalysis_{self.name}
+    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
+                '''
+        """
+
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
             # to make the task run, we will create a corresponding task graph below
@@ -250,6 +274,7 @@ R1 = \"\"\"
                 [[analysis-{self.name}]]
                     inherit = ANALYSIS-{chunk}
             """
+            definitions += analysis_str
 
             # create the task family for all every-interval analysis scripts
             definitions += f"""
@@ -274,16 +299,7 @@ R1 = \"\"\"
 
             # create the install script
             if not self.is_legacy:
-                definitions += f"""
-                [[install-analysis-{self.name}]]
-                    inherit = BUILD-ANALYSIS
-                    script = \"\"\"
-fre analysis install \
-    --url               $ANALYSIS_URL \
-    --name              freanalysis_{self.name}
-    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
-                    \"\"\"
-                """
+                definitions += install_str
 
             return definitions
 
@@ -294,7 +310,7 @@ fre analysis install \
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
             date = self.experiment_date_range[0] + chunk - one_year
-            while date <= self.experiment_datea_range[1]:
+            while date <= self.experiment_date_range[1]:
                 date_str = time_dumper.strftime(date, '%Y')
 
                 # Add the task definition for each ending time.
@@ -302,6 +318,8 @@ fre analysis install \
                     [[analysis-{self.name}-{date_str}]]
                         inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
                 """
+
+                definitions += analysis_str
 
                 # Add the task definition family for each ending time.
                 year1 = time_dumper.strftime(self.experiment_date_range[0], "%Y")
@@ -315,7 +333,7 @@ fre analysis install \
                 """
 
                 # Add the time average in_data_file
-                if item_product == "av":
+                if self.product == "av":
                     years = ",".join([f"{x:04d}" for x in range(year1, year2 + 1)])
                     if item_freq == "P1M":
                         times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
@@ -327,6 +345,11 @@ fre analysis install \
                                 in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
                 date += chunk
+
+            # create the install script
+            if not self.is_legacy:
+                definitions += install_str
+
             return definitions
 
         if self.script_frequency == "R1" and not self.cumulative:
