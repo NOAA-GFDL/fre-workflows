@@ -50,11 +50,13 @@ class AnalysisScript(object):
             experiment_stopping_date: Stopping date for the experiment.
         """
         self.name = name
+
+        # Skip if configuration wants to skip it
         self.switch = config["workflow"]["switch"]
         if self.switch == False:
             return
 
-        # Skip this analysis script if the components are not requested.
+        # Skip if the components are not available
         self.components = [x.strip() for x in config["workflow"]["components"]]
         for component in self.components:
             if component not in experiment_components:
@@ -67,25 +69,32 @@ class AnalysisScript(object):
             time_dumper.strftime(experiment_stopping_date, "%Y"),
         ]
 
-        # Parse out the rest of the script configuration.
-        self.data_frequency = config["required"]["data_frequency"]
+        # Parse the rest of the 'workflow' config items
         self.product = config["workflow"]["product"]
-        self.command = config["workflow"]["script"].split()
-        for i, value in enumerate(self.command):
-            self.command[i] = value.replace("$ANALYSIS_START", self.experiment_date_range[0])
-
         if "cumulative" in config["workflow"]:
             self.cumulative = str_to_bool(config["workflow"]["cumulative"])
         else:
             self.cumulative = False
+        self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
+
+        # Parse the new analysis config items
+        self.data_frequency = config["required"]["data_frequency"]
+        self.date_range = [
+            time_dumper.strftime(time_parser.parse(config["required"]["date_range"][0]), "%Y"),
+            time_dumper.strftime(time_parser.parse(config["required"]["date_range"][1]), "%Y")
+        ]
+
+        # Parse the legacy analysis config items
+        #self.command = config["workflow"]["script"].split()
+        #for i, value in enumerate(self.command):
+        #    self.command[i] = value.replace("$ANALYSIS_START", self.experiment_date_range[0])
+
 
         # Get the date range for the analysis script.
-        self.date_range = config["required"]["date_range"]
-        if self.date_range[0] == "$ANALYSIS_START":
-            self.date_range[0] = self.experiment_date_range[0]
-        if self.date_range[1] == "$ANALYSIS_STOP":
-            self.date_range[1] = self.experiment_date_range[1]
-        self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
+        #if self.date_range[0] == "$ANALYSIS_START":
+        #    self.date_range[0] = self.experiment_date_range[0]
+        #if self.date_range[1] == "$ANALYSIS_STOP":
+        #    self.date_range[1] = self.experiment_date_range[1]
 
     def graph(self, chunk, analysis_only):
         """Generate the cylc task graph string for the analysis script.
@@ -101,6 +110,13 @@ class AnalysisScript(object):
             return ""
 
         graph = ""
+
+        #print(f"DEBUG: script frequency = {self.script_frequency}")
+        #print(f"DEBUG: chunk = {chunk}")
+        #print(f"DEBUG: analysis date range = {self.date_range}")
+        #print(f"DEBUG: exp date range = {self.experiment_date_range}")
+        #print(f"DEBUG: analysis date is a {type(self.date_range[0])}")
+        #print(f"DEBUG: exp date is a {type(self.experiment_date_range[0])}")
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
@@ -191,12 +207,14 @@ class AnalysisScript(object):
             in_data_dir = Path(pp_dir) / self.compoents[0] / self.product / f"{frequency}_{bronx_chunk}"
         
         # the first word of command will be the script, but there could be more command-line args
-        if len(self.command) > 1:
-            script = self.command.pop(0)
-            script_args = ' '.join(self.command)
-        else:
-            script = self.command.pop(0)
-            script_args = ""
+        #if len(self.command) > 1:
+        #    script = self.command.pop(0)
+        #    script_args = ' '.join(self.command)
+        #else:
+        #    script = self.command.pop(0)
+        #    script_args = ""
+        script = "SCRIPT"
+        script_args = "ARGS"
 
         string = f"""
             [[analysis-{self.name}]]
