@@ -61,6 +61,7 @@ class AnalysisScript(object):
         for component in self.components:
             if component not in experiment_components:
                 logger.info(f"analysis: {name}: Skipping as it requests {component} that are not available in {experiment_components}.")
+                print(f"analysis: {name}: Skipping as it requests {component} that are not available in {experiment_components}.")
                 self.switch = False
                 return
 
@@ -80,7 +81,10 @@ class AnalysisScript(object):
             self.cumulative = str_to_bool(config["workflow"]["cumulative"])
         else:
             self.cumulative = False
-        self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
+        if config["workflow"]["script_frequency"] == "R1":
+            self.script_frequency = "R1"
+        else:
+            self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
 
         # Parse the new analysis config items
         self.is_legacy = False
@@ -167,7 +171,7 @@ R1 = \"\"\"
                 # Looping backwards through all previous chunks.
                 d = date
                 i = -1
-                while d > self.experiment_date_range[0] + chunk:
+                while d > self.experiment_date_range[0]:
                     if not analysis_only:
                         if self.product == "av":
                             graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
@@ -187,7 +191,7 @@ R1 = \"\"\"
             graph += install_analysis_str
             return graph
 
-        if self.script_frequency == "R1" and not self.cumulative:
+        if self.script_frequency == "R1":
             # Case 3: run the analysis once over a custom date range (can match experiment).
             date = self.date_range[1]
             graph += f"R1/{time_dumper.strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
@@ -208,7 +212,10 @@ R1 = \"\"\"
                         graph += f"& REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
+            graph += f"=> data-catalog => ANALYSIS-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
+            graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
             graph += f"        \"\"\"\n"
+            graph += install_analysis_str
             return graph
         raise NotImplementedError("Non-supported analysis script configuration.")
 
@@ -362,22 +369,23 @@ fre analysis install \
                 d2 -= chunk
             d1_str = time_dumper.strftime(d1, '%Y')
             d2_str = time_dumper.strftime(d2, '%Y')
-            if print_stderr:
-                logger.info(f"ANALYSIS: {self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})\n")
+            logger.info(f"ANALYSIS: {self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})\n")
+            date1_str = time_dumper.strftime(self.date_range[0], '%Y')
+            date2_str = time_dumper.strftime(self.date_range[1], '%Y')
 
             # Set the task definition above to inherit from the task family below
             definitions += f"""
                 [[analysis-{self.name}]]
-                    inherit = ANALYSIS-{self.date_range[0]}_{self.date_range[1]}
+                    inherit = ANALYSIS-{date1_str}_{date2_str}
             """
 
             # Set time-varying stuff
             definitions += f"""
-                [[ANALYSIS-{self.date_range[0]}_{self.date_range[1]}]]
+                [[ANALYSIS-{date1_str}_{date2_str}]]
                     inherit = ANALYSIS
                     [[[environment]]]
-                        yr1 = {self.date_range[0]}
-                        yr2 = {self.date_range[1]}
+                        yr1 = {date1_str}
+                        yr2 = {date2_str}
             """
 
             # now set the in_data_file for av's
