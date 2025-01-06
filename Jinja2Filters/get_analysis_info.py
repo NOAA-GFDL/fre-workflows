@@ -143,15 +143,15 @@ R1 = \"\"\"
             # Case 1: run the analysis every chunk.
             graph += f"{self.script_frequency} = \"\"\"\n"
             if analysis_only:
-                graph += f"ANALYSIS-{chunk}?\n"
+                graph += f"data-catalog => ANALYSIS-{chunk}?\n"
             else:
                 if self.product == "av":
                     graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all"
                 else:
                     graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog"
                 graph += f"=> ANALYSIS-{chunk}?\n"
-                if not self.is_legacy:
-                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
+            if not self.is_legacy:
+                graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
             graph += f"\"\"\"\n"
             graph += install_analysis_str
             return graph
@@ -166,7 +166,7 @@ R1 = \"\"\"
                     if self.product == "av":
                         graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
                     else:
-                        graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all => data-catalog\n"
+                        graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
 
                 # Looping backwards through all previous chunks.
                 d = date
@@ -181,9 +181,9 @@ R1 = \"\"\"
                     d -= chunk
 
                 if analysis_only:
-                    graph += f"ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
+                    graph += f"data-catalog => ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
                 else:
-                    graph += f"=> ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
+                    graph += f"=> data-catalog => ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
 
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(date, '%Y')}\n"
                 graph += f"        \"\"\"\n"
@@ -212,7 +212,9 @@ R1 = \"\"\"
                         graph += f"& REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
                 i -= 1
                 d -= chunk
-            graph += f"=> data-catalog => ANALYSIS-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
+            if not analysis_only:
+                graph += "=>\n"
+            graph += f"data-catalog => ANALYSIS-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}\n"
             graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
             graph += f"        \"\"\"\n"
             graph += install_analysis_str
@@ -375,7 +377,7 @@ fre analysis install \
 
             # Set the task definition above to inherit from the task family below
             definitions += f"""
-                [[analysis-{self.name}]]
+                [[analysis-{self.name}-{date1_str}_{date2_str}]]
                     inherit = ANALYSIS-{date1_str}_{date2_str}
             """
 
@@ -400,6 +402,10 @@ fre analysis install \
                         [[[environment]]]
                             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
+
+            if not self.is_legacy:
+                definitions += install_str
+
             return definitions
         raise NotImplementedError("Non-supported analysis script configuration.")
 
