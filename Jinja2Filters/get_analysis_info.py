@@ -87,12 +87,13 @@ class AnalysisScript(object):
             self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
 
         # Parse the new analysis config items
-        self.is_legacy = False
+        if 'legacy' in config:
+            self.is_legacy = True
+            self.legacy_script = config["legacy"]["script"]
+        else:
+            self.is_legacy = False
+
         self.data_frequency = config["required"]["data_frequency"]
-        #self.date_range_str = [
-        #    time_dumper.strftime(time_parser.parse(config["required"]["date_range"][0]), "%Y"),
-        #    time_dumper.strftime(time_parser.parse(config["required"]["date_range"][1]), "%Y")
-        #]
         self.date_range = [
             time_parser.parse(config["required"]["date_range"][0]),
             time_parser.parse(config["required"]["date_range"][1])
@@ -135,8 +136,6 @@ R1 = \"\"\"
         #print(f"DEBUG: chunk = {chunk}")
         #print(f"DEBUG: analysis date range = {self.date_range}")
         #print(f"DEBUG: exp date range = {self.experiment_date_range}")
-        #print(f"DEBUG: analysis date is a {type(self.date_range[0])}")
-        #print(f"DEBUG: exp date is a {type(self.experiment_date_range[0])}")
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range\
            and not self.cumulative:
@@ -153,7 +152,8 @@ R1 = \"\"\"
             if not self.is_legacy:
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
             graph += f"\"\"\"\n"
-            graph += install_analysis_str
+            if not self.is_legacy:
+                graph += install_analysis_str
             return graph
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -183,12 +183,17 @@ R1 = \"\"\"
                 if analysis_only:
                     graph += f"data-catalog => ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
                 else:
-                    graph += f"=> data-catalog => ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
+                    if self.product == "ts":
+                        graph += f"=> data-catalog => ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
+                    else:
+                        graph += f"=> ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
 
-                graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(date, '%Y')}\n"
+                if not self.is_legacy:
+                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(date, '%Y')}\n"
                 graph += f"        \"\"\"\n"
                 date += chunk
-            graph += install_analysis_str
+            if not self.is_legacy:
+                graph += install_analysis_str
             return graph
 
         if self.script_frequency == "R1":
@@ -204,7 +209,7 @@ R1 = \"\"\"
             # Looping backwards through all previous chunks.
             d = date - chunk
             i = -1
-            while d > self.date_range[0]:
+            while d >= self.date_range[0]:
                 if not analysis_only:
                     if self.product == "av":
                         graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
@@ -214,11 +219,16 @@ R1 = \"\"\"
                 d -= chunk
             if not analysis_only:
                 graph += "=>\n"
-            graph += f"data-catalog => ANALYSIS-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}\n"
-            graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
+            if self.product == "ts":
+                graph += "data-catalog =>\n"
+            graph += f"ANALYSIS-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}\n"
+            if not self.is_legacy:
+                graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(self.date_range[0], '%Y')}_{time_dumper.strftime(self.date_range[1], '%Y')}"
             graph += f"        \"\"\"\n"
-            graph += install_analysis_str
+            if not self.is_legacy:
+                graph += install_analysis_str
             return graph
+
         raise NotImplementedError("Non-supported analysis script configuration.")
 
     def definition(self, chunk, pp_dir):
@@ -236,7 +246,7 @@ R1 = \"\"\"
         if self.product == "ts":
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / frequency / bronx_chunk
         else:
-            in_data_dir = Path(pp_dir) / self.compoents[0] / self.product / f"{frequency}_{bronx_chunk}"
+            in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
         
         # the first word of command will be the script, but there could be more command-line args
         #if len(self.command) > 1:
@@ -296,7 +306,7 @@ fre analysis install \
 
             # For time averages, set the in_data_file variable
             if self.product == "av":
-                if self.data_frequency == "P1M":
+                if self.data_frequency == "mon":
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
                     times = 'ann'
@@ -331,8 +341,8 @@ fre analysis install \
                 definitions += analysis_str
 
                 # Add the task definition family for each ending time.
-                year1 = time_dumper.strftime(self.experiment_date_range[0], "%Y")
-                year2 = time_dumper.strftime(date, "%Y")
+                year1 = int(time_dumper.strftime(self.experiment_date_range[0], "%Y"))
+                year2 = int(time_dumper.strftime(date, "%Y"))
                 definitions += f"""
                     [[ANALYSIS-CUMULATIVE-{date_str}]]
                         inherit = ANALYSIS
@@ -344,7 +354,7 @@ fre analysis install \
                 # Add the time average in_data_file
                 if self.product == "av":
                     years = ",".join([f"{x:04d}" for x in range(year1, year2 + 1)])
-                    if item_freq == "P1M":
+                    if self.data_frequency == "mon":
                         times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                     else:
                         times = 'ann'
@@ -392,8 +402,8 @@ fre analysis install \
 
             # now set the in_data_file for av's
             if self.product == "av":
-                years = ",".join([f"{x:04d}" for x in range(self.date_range[0], self.date_range[1] + 1)])
-                if self.data_frequency == "P1M":
+                years = ",".join([f"{x:04d}" for x in range(int(date1_str), int(date2_str) + 1)])
+                if self.data_frequency == "mon":
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
                     times = 'ann'
