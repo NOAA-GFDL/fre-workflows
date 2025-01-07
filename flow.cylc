@@ -119,11 +119,7 @@
 {% if DO_ANALYSIS_ONLY %}
     {% if DO_SECONDARY_PP %}
 {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
     {% else %}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
 {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
     {% endif %}
 {% else %}
@@ -423,11 +419,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     {% if DO_ANALYSIS %}
         {% if DO_SECONDARY_PP %}
 {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
         {% else %}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
 {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
         {% endif %}
     {% endif %}
@@ -1060,11 +1052,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             catalog = {{ PP_DIR }}/catalog.json
     {% if DO_SECONDARY_PP %}
 {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
-{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
-{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
     {% else %}
-{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
-{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
 {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, False ) }}
     {% endif %}
 {% endif %}
