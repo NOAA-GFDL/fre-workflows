@@ -278,7 +278,7 @@ R1 = \"\"\"
                 script = '''
 fre analysis install \
     --url               $ANALYSIS_URL \
-    --name              freanalysis_{self.name}
+    --name              freanalysis_{self.name} \
     --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
                 '''
         """
