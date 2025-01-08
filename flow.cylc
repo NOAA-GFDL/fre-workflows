@@ -1030,6 +1030,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         pre-script = """
             module load fre/{{ FRE_VERSION }}
         """
+        # sometimes fails for unknown reason. retry twice
+        execution retry delays = 2*PT1M
         [[[environment]]]
             ANALYSIS_URL = https://github.com/NOAA-GFDL/analysis-scripts.git
     [[ANALYSIS]]
