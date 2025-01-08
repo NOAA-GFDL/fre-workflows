@@ -90,6 +90,7 @@ class AnalysisScript(object):
         if 'legacy' in config:
             self.is_legacy = True
             self.legacy_script = config["legacy"]["script"]
+            print("DEBUG:", self.legacy_script)
         else:
             self.is_legacy = False
 
@@ -258,18 +259,66 @@ R1 = \"\"\"
         script = "SCRIPT"
         script_args = "ARGS"
 
-        analysis_str = f"""
+        legacy_analysis_str = f"""
             [[analysis-{self.name}]]
-                script = '''
-                    chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
-                    $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
-                '''
+#                script = '''
+# First, sed-replace the template vars and create a runnable analysis script from the template.
+# actually, just sed-replace the undercase environment variables
+# need posix mode to output variables in a simple list (not json)
+set -o posix
+        """
+
+        # quoting madness!
+        legacy_analysis_str += '''
+vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z])
+        '''
+
+        if self.is_legacy:
+            legacy_analysis_str += f"""
+# WORKDIR is the exception to include
+vars="$vars WORKDIR"
+
+# create the sed script
+for var in $vars; do
+    eval var2=\$$var
+    if [[ -n $var2 ]]; then
+        echo "s|set $var\s*$|set $var = $var2|" >> sed-script
+        echo "s|^\s*$var=\s*$|$var='$var2'|"    >> sed-script
+    fi
+done
+echo "s|\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|" >> sed-script
+
+# write the filled-in script
+script_unexpanded={self.legacy_script}
+scriptOut=$outputDir/$(basename $script).$yr1-$yr2
+sed -f sed-script $script > $scriptOut'
+echo "Saved script '$scriptOut'"
+ls -l $scriptOut
+rm sed-script
+
+# Then, run the script
+chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
+$CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
+                 '''
                 [[[environment]]]
                     in_data_dir = {in_data_dir}
                     freq = {frequency}
                     staticfile = {pp_dir}/{self.components[0]}/{self.components[0]}.static.nc
                     scriptLabel = {self.name}
                     datachunk = {chunk.years}
+            """
+
+        new_analysis_str = f"""
+            [[analysis-{self.name}]]
+                script = '''
+fre analysis run \
+    --name              {self.name} \
+    --catalog           $catalog \
+    --output-directory  $out_dir/{self.name} \
+    --output-yaml       $out_dir/{self.name}/output.yaml \
+    --experiment-yaml   $experiment_yaml \
+    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
+                '''
         """
 
         install_str = f"""
@@ -293,7 +342,11 @@ fre analysis install \
                 [[analysis-{self.name}]]
                     inherit = ANALYSIS-{chunk}
             """
-            definitions += analysis_str
+
+            if self.is_legacy:
+                definitions += old_analysis_str
+            else:
+                definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
             definitions += f"""
@@ -338,7 +391,10 @@ fre analysis install \
                         inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
                 """
 
-                definitions += analysis_str
+                if self.is_legacy:
+                    definitions += old_analysis_str
+                else:
+                    definitions += new_analysis_str
 
                 # Add the task definition family for each ending time.
                 year1 = int(time_dumper.strftime(self.experiment_date_range[0], "%Y"))
