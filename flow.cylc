@@ -1037,11 +1037,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[ANALYSIS]]
         # Increase time limit for analysis jobs to 24 hours
         execution time limit = PT24H
-        pre-script = """
-            env
-            mkdir -p $outputDir $out_dir
-            rose task-run --verbose --app-key analysis
-        """
         [[[environment]]]
             # internally-used vars
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
@@ -1051,12 +1046,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
-            fremodule = fre/test
+            fremodule = fre/{{ FRE_VERSION }}
             WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
             # new template vars
             catalog = {{ PP_DIR }}/catalog.json
+            experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ EXPERIMENT }}.yaml
     {% if DO_SECONDARY_PP %}
 {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_B, False ) }}
     {% else %}
