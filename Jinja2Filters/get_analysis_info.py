@@ -90,7 +90,6 @@ class AnalysisScript(object):
         if 'legacy' in config:
             self.is_legacy = True
             self.legacy_script = config["legacy"]["script"]
-            print("DEBUG:", self.legacy_script)
         else:
             self.is_legacy = False
 
@@ -260,8 +259,8 @@ R1 = \"\"\"
         script_args = "ARGS"
 
         legacy_analysis_str = f"""
-            [[analysis-{self.name}]]
-#                script = '''
+    [[analysis-{self.name}]]
+        script = '''
 # First, sed-replace the template vars and create a runnable analysis script from the template.
 # actually, just sed-replace the undercase environment variables
 # need posix mode to output variables in a simple list (not json)
@@ -300,17 +299,17 @@ rm sed-script
 chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
 $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
                  '''
-                [[[environment]]]
-                    in_data_dir = {in_data_dir}
-                    freq = {frequency}
-                    staticfile = {pp_dir}/{self.components[0]}/{self.components[0]}.static.nc
-                    scriptLabel = {self.name}
-                    datachunk = {chunk.years}
+        [[[environment]]]
+            in_data_dir = {in_data_dir}
+            freq = {frequency}
+            staticfile = {pp_dir}/{self.components[0]}/{self.components[0]}.static.nc
+            scriptLabel = {self.name}
+            datachunk = {chunk.years}
             """
 
         new_analysis_str = f"""
-            [[analysis-{self.name}]]
-                script = '''
+    [[analysis-{self.name}]]
+        script = '''
 fre analysis run \
     --name              {self.name} \
     --catalog           $catalog \
@@ -322,9 +321,9 @@ fre analysis run \
         """
 
         install_str = f"""
-            [[install-analysis-{self.name}]]
-                inherit = BUILD-ANALYSIS
-                script = '''
+    [[install-analysis-{self.name}]]
+        inherit = BUILD-ANALYSIS
+        script = '''
 fre analysis install \
     --url               $ANALYSIS_URL \
     --name              freanalysis_{self.name} \
@@ -338,23 +337,18 @@ fre analysis install \
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
-            definitions += f"""
-                [[analysis-{self.name}]]
-                    inherit = ANALYSIS-{chunk}
-            """
-
             if self.is_legacy:
-                definitions += old_analysis_str
+                definitions += legacy_analysis_str
             else:
                 definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
             definitions += f"""
-                [[ANALYSIS-{chunk}]]
-                    inherit = ANALYSIS
-                    [[[environment]]]
-                        yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
-                        datachunk = {chunk.years}
+    [[ANALYSIS-{chunk}]]
+        inherit = ANALYSIS
+    [[[environment]]]
+        yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
+        datachunk = {chunk.years}
             """
 
             # For time averages, set the in_data_file variable
@@ -364,10 +358,10 @@ fre analysis install \
                 else:
                     times = 'ann'
                 definitions += f"""
-                    [[analysis-{self.name}]]
-                        [[[environment]]]
-                            in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
-                """
+    [[analysis-{self.name}]]
+    [[[environment]]]
+        in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
+            """
 
             # create the install script
             if not self.is_legacy:
@@ -387,12 +381,12 @@ fre analysis install \
 
                 # Add the task definition for each ending time.
                 definitions += f"""
-                    [[analysis-{self.name}-{date_str}]]
-                        inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
+    [[analysis-{self.name}-{date_str}]]
+        inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
                 """
 
                 if self.is_legacy:
-                    definitions += old_analysis_str
+                    definitions += legacy_analysis_str
                 else:
                     definitions += new_analysis_str
 
@@ -415,9 +409,9 @@ fre analysis install \
                     else:
                         times = 'ann'
                     definitions += f"""
-                        [[analysis-{self.name}-{date_str}]]
-                            [[[environment]]]
-                                in_data_file = {self.components[0]}.{years}.{times}.nc
+    [[analysis-{self.name}-{date_str}]]
+    [[[environment]]]
+        in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
                 date += chunk
 
@@ -443,8 +437,8 @@ fre analysis install \
 
             # Set the task definition above to inherit from the task family below
             definitions += f"""
-                [[analysis-{self.name}-{date1_str}_{date2_str}]]
-                    inherit = ANALYSIS-{date1_str}_{date2_str}
+    [[analysis-{self.name}-{date1_str}_{date2_str}]]
+        inherit = ANALYSIS-{date1_str}_{date2_str}
             """
 
             # Set time-varying stuff
@@ -464,7 +458,7 @@ fre analysis install \
                 else:
                     times = 'ann'
                 definitions += f"""
-                    [[analysis-{self.name}]]
+    [[analysis-{self.name}]]
                         [[[environment]]]
                             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
