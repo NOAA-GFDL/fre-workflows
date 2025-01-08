@@ -1,5 +1,8 @@
 #!jinja2
 
+{# fre version should be programatically set, not hard-coded. #}
+{% set FRE_VERSION = 2025.01 %}
+
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
 {# Jinja code with two braces is printed.                            #}
@@ -1025,8 +1028,10 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             dora_url = dora.gfdl.noaa.gov
     [[BUILD-ANALYSIS]]
         pre-script = """
-            module load python/3.11
+            module load fre/{{ FRE_VERSION }}
         """
+        [[[environment]]]
+            ANALYSIS_URL = https://github.com/NOAA-GFDL/analysis-scripts.git
     [[ANALYSIS]]
         # Increase time limit for analysis jobs to 24 hours
         execution time limit = PT24H
