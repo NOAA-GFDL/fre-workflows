@@ -19,7 +19,7 @@
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
         [[[directives]]]
-            --comment=canopy
+            --comment=fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
 
@@ -32,7 +32,7 @@
             env
             set -x
             module load gcp
-            module load fre/canopy
+            module load fre/{{ FRE_VERSION }}
             mkdir -p $work $tempCache $refineDiagDir
             cd $work/$hsmdate
             ls
@@ -78,13 +78,13 @@
         pre-script = module load cdo gcp && mkdir -p $outputDir
 
     [[data-catalog]]
-        pre-script = module load fre/canopy 
+        pre-script = module load fre/{{ FRE_VERSION }}
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
 
     [[MAKE-TIMEAVGS]]
-        pre-script = module load fre/canopy && mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[COMBINE-TIMEAVGS]]
         pre-script = module load cdo nco && mkdir -p $outputDir

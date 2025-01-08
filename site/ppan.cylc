@@ -18,7 +18,7 @@
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
         [[[directives]]]
-            --comment=xtmp,canopy
+            --comment=xtmp,fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
 
@@ -31,7 +31,7 @@
             env
             set -x
             module load gcp
-            module load fre/canopy
+            module load fre/{{ FRE_VERSION }}
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -87,7 +87,7 @@
         """
 
     [[data-catalog]]
-        pre-script = module load fre/canopy 
+        pre-script = module load fre/{{ FRE_VERSION }} 
         
         [[[directives]]]
             --partition=analysis
