@@ -18,5 +18,45 @@
             submission timeout = P1D
         [[[environment]]]
             COPY_TOOL=cp
+
+#    [[SPLIT-NETCDF]]
+#        pre-script = mkdir -p $outputDir
+#
+#    [[RENAME-SPLIT-TO-PP]]
+#        pre-script = mkdir -p $outputDir
+
     [[REMAP-PP-COMPONENTS]]
         pre-script = mkdir -p $outputDir
+
+    [[MAKE-TIMESERIES]]
+        pre-script = mkdir -p $outputDir
+
+#{% if DO_TIMEAVGS %}
+
+    [[MAKE-TIMEAVGS]]
+        pre-script = mkdir -p $outputDir
+
+    [[COMBINE-TIMEAVGS]]
+        pre-script = mkdir -p $outputDir
+
+#{% endif %}
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = mkdir -p $outputDir
+{% endif %}
+
+{% if DO_MDTF %}
+    [[mdtf]]
+        pre-script = mkdir -p $MDTF_TMPDIR
+        [[[environment]]]
+            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
+{% endif %}
+
+{% if DO_STATICS %}
+    [[combine-statics]]
+        pre-script = mkdir -p $outputDir
+{% endif %}
+
+    [[CLEAN]]
+        pre-script = "set -x"
