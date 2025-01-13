@@ -1,6 +1,4 @@
 {% set EPMT_PREAMBLE %}
-            eval $(rose task-env)
-            env
             export PAPIEX_OLD_OUTPUT=$PAPIEX_OUTPUT
             export PAPIEX_OLD_OPTIONS=$PAPIEX_OPTIONS
             unset PAPIEX_OUTPUT PAPIEX_OPTIONS LD_PRELOAD
@@ -23,7 +21,6 @@
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
         # Set default time limit to 4 hours
