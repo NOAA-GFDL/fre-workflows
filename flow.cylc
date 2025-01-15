@@ -1035,6 +1035,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             ANALYSIS_URL = https://github.com/NOAA-GFDL/analysis-scripts.git
     [[ANALYSIS]]
+        pre-script = """
+            module load fre/{{ FRE_VERSION }}
+        """
         # Increase time limit for analysis jobs to 24 hours
         execution time limit = PT24H
         [[[environment]]]
