@@ -311,7 +311,7 @@ $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
     [[analysis-{self.name}]]
         script = '''
 fre analysis run \
-    --name              {self.name} \
+    --name              freanalysis_{self.name} \
     --catalog           $catalog \
     --output-directory  $out_dir/{self.name} \
     --output-yaml       $out_dir/{self.name}/output.yaml \
@@ -346,9 +346,15 @@ fre analysis install \
             definitions += f"""
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
-    [[[environment]]]
-        yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
-        datachunk = {chunk.years}
+        [[[environment]]]
+            yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
+            datachunk = {chunk.years}
+                """
+
+            # inherit from the task family
+            definitions += f"""
+    [[analysis-{self.name}]]
+        inherit = ANALYSIS-{chunk}
             """
 
             # For time averages, set the in_data_file variable
@@ -359,9 +365,9 @@ fre analysis install \
                     times = 'ann'
                 definitions += f"""
     [[analysis-{self.name}]]
-    [[[environment]]]
-        in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
-            """
+        [[[environment]]]
+            in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
+                """
 
             # create the install script
             if not self.is_legacy:
@@ -438,7 +444,7 @@ fre analysis install \
             # Set the task definition above to inherit from the task family below
             definitions += f"""
     [[analysis-{self.name}-{date1_str}_{date2_str}]]
-        inherit = ANALYSIS-{date1_str}_{date2_str}
+        inherit = ANALYSIS-{date1_str}_{date2_str}, analysis-{self.name}
             """
 
             # Set time-varying stuff
@@ -463,8 +469,11 @@ fre analysis install \
                             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
 
-            if not self.is_legacy:
+            if self.is_legacy:
+                definitions += legacy_analysis_str
+            else:
                 definitions += install_str
+                definitions += new_analysis_str
 
             return definitions
         raise NotImplementedError("Non-supported analysis script configuration.")
