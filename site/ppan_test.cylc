@@ -156,7 +156,7 @@
 {% endif %}
 
     [[MASK-ATMOS-PLEVEL]]
-        pre-script = module load python/3.9
+        pre-script = module load python/3.10
 
     [[CLEAN]]
         env-script = """
