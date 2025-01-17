@@ -24,7 +24,7 @@
             COPY_TOOL=gcp
 
     [[STAGE-HISTORY]]
-        pre-script = module load gcp hsm/test
+        pre-script = module load gcp hsm/1.3.0
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -94,7 +94,7 @@
         pre-script = """
             module use -a /usw/conda/modulefiles
             module load fre-nctools/2023.01.02 nco miniforge
-            conda activate /ncrc/home2/fms/conda/envs/fre-cli
+            conda activate /ncrc/home2/fms/conda/envs/fre-2025.01
             mkdir -p $outputDir
         """
         [[[environment]]]
