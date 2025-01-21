@@ -89,7 +89,14 @@ class AnalysisScript(object):
         # Parse the new analysis config items
         if 'legacy' in config:
             self.is_legacy = True
-            self.legacy_script = config["legacy"]["script"]
+            # the first word of command will be the script, but there could be more command-line args
+            stuff = config["legacy"]["script"].split()
+            if len(stuff) > 1:
+                self.legacy_script = stuff.pop(0)
+                self.legacy_script_args = ' '.join(stuff)
+            else:
+                self.legacy_script = stuff.pop(0)
+                self.legacy_script_args = ""
         else:
             self.is_legacy = False
 
@@ -98,18 +105,6 @@ class AnalysisScript(object):
             time_parser.parse(config["required"]["date_range"][0]),
             time_parser.parse(config["required"]["date_range"][1])
         ]
-
-        # Parse the legacy analysis config items
-        #self.command = config["workflow"]["script"].split()
-        #for i, value in enumerate(self.command):
-        #    self.command[i] = value.replace("$ANALYSIS_START", self.experiment_date_range[0])
-
-
-        # Get the date range for the analysis script.
-        #if self.date_range[0] == "$ANALYSIS_START":
-        #    self.date_range[0] = self.experiment_date_range[0]
-        #if self.date_range[1] == "$ANALYSIS_STOP":
-        #    self.date_range[1] = self.experiment_date_range[1]
 
     def graph(self, chunk, analysis_only):
         """Generate the cylc task graph string for the analysis script.
@@ -248,15 +243,6 @@ R1 = \"\"\"
         else:
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
         
-        # the first word of command will be the script, but there could be more command-line args
-        #if len(self.command) > 1:
-        #    script = self.command.pop(0)
-        #    script_args = ' '.join(self.command)
-        #else:
-        #    script = self.command.pop(0)
-        #    script_args = ""
-        script = "SCRIPT"
-        script_args = "ARGS"
 
         legacy_analysis_str = f"""
     [[analysis-{self.name}]]
@@ -273,6 +259,7 @@ vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z])
         '''
 
         if self.is_legacy:
+            script_basename = Path(self.legacy_script).name
             legacy_analysis_str += f"""
 # WORKDIR is the exception to include
 vars="$vars WORKDIR"
@@ -288,17 +275,17 @@ done
 echo "s|\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|" >> sed-script
 
 # write the filled-in script
-script_unexpanded={self.legacy_script}
-scriptOut=$outputDir/$(basename $script).$yr1-$yr2
-sed -f sed-script $script > $scriptOut'
+scriptOut=$outputDir/{script_basename}.$yr1-$yr2
+mkdir -p $outputDir
+sed -f sed-script {self.legacy_script} > $scriptOut
 echo "Saved script '$scriptOut'"
 ls -l $scriptOut
 rm sed-script
 
 # Then, run the script
-chmod +x $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2
-$CYLC_WORKFLOW_SHARE_DIR/analysis-scripts/{script}.$yr1-$yr2 {script_args}
-                 '''
+chmod +x $scriptOut
+$scriptOut {self.legacy_script_args}
+        '''
         [[[environment]]]
             in_data_dir = {in_data_dir}
             freq = {frequency}
@@ -316,8 +303,8 @@ fre analysis run \
     --output-directory  $out_dir/{self.name} \
     --output-yaml       $out_dir/{self.name}/output.yaml \
     --experiment-yaml   $experiment_yaml \
-    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
-                '''
+    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
+        '''
         """
 
         install_str = f"""
@@ -327,8 +314,8 @@ fre analysis run \
 fre analysis install \
     --url               $ANALYSIS_URL \
     --name              freanalysis_{self.name} \
-    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs
-                '''
+    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
+        '''
         """
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -417,7 +404,7 @@ fre analysis install \
                     definitions += f"""
     [[analysis-{self.name}-{date_str}]]
     [[[environment]]]
-        in_data_file = {self.components[0]}.{years}.{times}.nc
+        in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
                     """
                 date += chunk
 
