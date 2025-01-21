@@ -25,8 +25,8 @@
         pre-script = """
             env
             set -x
-            module load gcp
             module load fre/{{ FRE_VERSION }}
+            module load gcp
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -84,9 +84,6 @@
     [[data-catalog]]
         pre-script = module load fre/{{ FRE_VERSION }} 
         
-        [[[directives]]]
-            --partition=analysis
-
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
 
@@ -118,8 +115,13 @@
         pre-script = module load cdo && mkdir -p $outputDir
 {% endif %}
 
-# workaround to run Ray's analysis example on the analysis partition as it uses his /net2
-[[analysis-ray_example]]
-    [[[directives]]]
-    --partition=analysis
+    [[ANALYSIS]]
+        pre-script = """
+            module load fre/{{ FRE_VERSION }}
+            module load gcp
+        """
 
+    [[BUILD-ANALYSIS]]
+        pre-script = """
+            module load fre/{{ FRE_VERSION }}
+        """

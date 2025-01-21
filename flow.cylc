@@ -1027,24 +1027,18 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         [[[environment]]]
             dora_url = dora.gfdl.noaa.gov
     [[BUILD-ANALYSIS]]
-        pre-script = """
-            module load fre/{{ FRE_VERSION }}
-        """
-        # sometimes fails for unknown reason. retry twice
-        execution retry delays = 2*PT1M
         [[[environment]]]
             ANALYSIS_URL = https://github.com/NOAA-GFDL/analysis-scripts.git
     [[ANALYSIS]]
-        pre-script = """
-            module load fre/{{ FRE_VERSION }}
-        """
         # Increase time limit for analysis jobs to 24 hours
         execution time limit = PT24H
         [[[environment]]]
             # internally-used vars
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/legacy-analysis-scripts
+            # accepted FRE environment variables
             FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
+            FRE_ANALYSIS_ARCHIVE = /archive/fms/fre-analysis/test
             # fre-analysis template vars
             yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
