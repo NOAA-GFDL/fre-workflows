@@ -8,7 +8,6 @@
 {# branch, the ppan site file should be specified. The ppan site comprises of gfdl specific tools. Other available #}
 {# sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.          #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
-{% set SITE = SITE %}
 
 {# Calculate the number of history segments per a-chunk #}
 {% set HIST_SEGMENTS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / HISTORY_SEGMENT | duration_as('s')) | int %}
@@ -19,7 +18,6 @@
 {% set MOS_PER_HIST_SEGMENT = (HISTORY_SEGMENT | duration_as('s') / SECS_PER_365CAL_MONTH) | int %}
 {# months_per_chunk_a #}
 {% set MOS_PER_CHUNK_A = (PP_CHUNK_A | duration_as('s') / SECS_PER_365CAL_MONTH) | int %}
-
 
 {# Calculate the number of a-chunks per b-chunk (if desired) #}
 {% set DO_SECONDARY_PP = False %}
@@ -41,11 +39,11 @@
 {% endif %}
 
 [meta]
-    title = "Postprocessing Example 1"
+    title = "Postprocessing"
     description = """
-    Postprocessing example that includes Bronx-like functionality,
+    Postprocess FMS history files
     """
-    URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
+    URL = https://github.com/NOAA-GFDL/fre-workflows.git
 
 [scheduler]
     {# Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos. #}
@@ -88,8 +86,6 @@
 
     {# Standard Jinja2 triggers are also available (e.g. "replace") #}
     component = {{ PP_COMPONENTS | replace(' ', ', ') }}
-
-
 
 [scheduling]
     initial cycle point = {{ PP_START }}
@@ -196,7 +192,6 @@ rename-split-to-pp-native<native> => clean-split-native
 {% endif %}
 """
 
-
         #
         # Recurrence interval R1: run only once. useful for statics.
         #
@@ -248,7 +243,6 @@ remap-pp-components-static => clean-shards-static
 combine-statics => clean-pp-statics
 {% endif %}
 """
-
 
         #
         # Recurrence interval: every CHUNK-A
@@ -326,7 +320,6 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
 
 REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
 """
-
 
 #
 # Recurrence interval: every CHUNK-B
@@ -1187,8 +1180,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             done
         """
 {% endif %}
-
-
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
