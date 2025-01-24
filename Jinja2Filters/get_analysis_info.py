@@ -350,10 +350,14 @@ fre analysis install \
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
                     times = 'ann'
+                if chunk == one_year:
+                    years = '$yr1'
+                else:
+                    years = '$yr1-$yr2'
                 definitions += f"""
     [[analysis-{self.name}]]
         [[[environment]]]
-            in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
+            in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
 
             # create the install script
@@ -384,8 +388,8 @@ fre analysis install \
                     definitions += new_analysis_str
 
                 # Add the task definition family for each ending time.
-                year1 = int(time_dumper.strftime(self.experiment_date_range[0], "%Y"))
-                year2 = int(time_dumper.strftime(date, "%Y"))
+                year1 = time_dumper.strftime(self.experiment_date_range[0], "%Y")
+                year2 = time_dumper.strftime(date, "%Y")
                 definitions += f"""
                     [[ANALYSIS-CUMULATIVE-{date_str}]]
                         inherit = ANALYSIS
@@ -396,15 +400,33 @@ fre analysis install \
 
                 # Add the time average in_data_file
                 if self.product == "av":
-                    years = ",".join([f"{x:04d}" for x in range(year1, year2 + 1)])
                     if self.data_frequency == "mon":
                         times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                     else:
                         times = 'ann'
+                    if year1 == year2:
+                        years = year1
+                    else:
+                        # loop thru and determine the timeaverage filenames
+                        years = ""
+                        #dd = date
+                        #while dd > self.experiment_date_range[0]:
+                        dd = self.experiment_date_range[0]
+                        while dd <= date:
+                            y1 = f"{int(time_dumper.strftime(dd, '%Y')):04d}"
+                            y2 = f"{int(time_dumper.strftime(dd + chunk - one_year, '%Y')):04d}"
+                            if len(years) > 0:
+                                years += ','
+                            if y1 == y2:
+                                years += f"{y1}"
+                            else:
+                                years += f"{y1}-{y2}"
+                            dd += chunk
+                    years = "{" + str(years) + "}"
                     definitions += f"""
     [[analysis-{self.name}-{date_str}]]
-    [[[environment]]]
-        in_data_file = {self.components[0]}.$yr1-$yr2.{times}.nc
+        [[[environment]]]
+            in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
                 date += chunk
 
@@ -445,15 +467,18 @@ fre analysis install \
 
             # now set the in_data_file for av's
             if self.product == "av":
-                years = ",".join([f"{x:04d}" for x in range(int(date1_str), int(date2_str) + 1)])
                 if self.data_frequency == "mon":
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
                     times = 'ann'
+                if date1_str == date2_str:
+                    years = date1_str
+                else:
+                    years = f"{date1_str}-{date2_str}"
                 definitions += f"""
     [[analysis-{self.name}]]
-                        [[[environment]]]
-                            in_data_file = {self.components[0]}.{years}.{times}.nc
+        [[[environment]]]
+            in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
 
             if self.is_legacy:
