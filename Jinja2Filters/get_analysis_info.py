@@ -275,7 +275,11 @@ done
 echo "s|\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|" >> sed-script
 
 # write the filled-in script
-scriptOut=$outputDir/{script_basename}.$yr1-$yr2
+if [[ $yr1 == $yr2 ]]; then
+    scriptOut=$outputDir/{script_basename}.$yr1
+else
+    scriptOut=$outputDir/{script_basename}.$yr1-$yr2
+fi
 mkdir -p $outputDir
 sed -f sed-script {self.legacy_script} > $scriptOut
 echo "Saved script '$scriptOut'"
@@ -409,8 +413,6 @@ fre analysis install \
                     else:
                         # loop thru and determine the timeaverage filenames
                         years = ""
-                        #dd = date
-                        #while dd > self.experiment_date_range[0]:
                         dd = self.experiment_date_range[0]
                         while dd <= date:
                             y1 = f"{int(time_dumper.strftime(dd, '%Y')):04d}"
@@ -474,7 +476,20 @@ fre analysis install \
                 if date1_str == date2_str:
                     years = date1_str
                 else:
-                    years = f"{date1_str}-{date2_str}"
+                    # loop thru and determine the timeaverage filenames
+                    years = ""
+                    dd = d1
+                    while dd <= d2:
+                        y1 = f"{int(time_dumper.strftime(dd, '%Y')):04d}"
+                        y2 = f"{int(time_dumper.strftime(dd + chunk - one_year, '%Y')):04d}"
+                        if len(years) > 0:
+                            years += ','
+                        if y1 == y2:
+                            years += f"{y1}"
+                        else:
+                            years += f"{y1}-{y2}"
+                        dd += chunk
+                years = "{" + str(years) + "}"
                 definitions += f"""
     [[analysis-{self.name}]]
         [[[environment]]]
