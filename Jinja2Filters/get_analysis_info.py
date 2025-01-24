@@ -224,7 +224,7 @@ R1 = \"\"\"
                 graph += install_analysis_str
             return graph
 
-        raise NotImplementedError("Non-supported analysis script configuration.")
+        raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}.")
 
     def definition(self, chunk, pp_dir):
         """Form the task definition string."""
@@ -328,6 +328,7 @@ fre analysis install \
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
+            logger.info(f"ANALYSIS: {self.name}: Will run every chunk {chunk}")
             if self.is_legacy:
                 definitions += legacy_analysis_str
             else:
@@ -376,6 +377,7 @@ fre analysis install \
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
+            logger.info(f"ANALYSIS: {self.name}: Will run each chunk {chunk} from beginning {self.experiment_date_range[0]}")
             date = self.experiment_date_range[0] + chunk - one_year
             while date <= self.experiment_date_range[1]:
                 date_str = time_dumper.strftime(date, '%Y')
@@ -438,7 +440,7 @@ fre analysis install \
 
             return definitions
 
-        if self.script_frequency == "R1" and not self.cumulative:
+        if self.script_frequency == "R1":
             # Locate the nearest enclosing chunks.
             d1 = self.experiment_date_range[0]
             while d1 <= self.date_range[0] - chunk:
@@ -448,6 +450,11 @@ fre analysis install \
                 d2 -= chunk
             d1_str = time_dumper.strftime(d1, '%Y')
             d2_str = time_dumper.strftime(d2, '%Y')
+            if self.product == 'av' and not self.cumulative:
+                if chunk.years == int(time_dumper.strftime(d2, '%Y')) - int(time_dumper.strftime(d1, '%Y')) + 1:
+                    pass
+                else:
+                    raise NotImplementedError(f"ERROR: Non-supported analysis script configuration: {self.name}: run-once (R1), timeaverages, and non-accumulative is inconsistent, unless duration '{chunk}' represents {self.date_range[0]} through {self.date_range[1]} inclusive.")
             logger.info(f"ANALYSIS: {self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})\n")
             date1_str = time_dumper.strftime(self.date_range[0], '%Y')
             date2_str = time_dumper.strftime(self.date_range[1], '%Y')
@@ -503,7 +510,7 @@ fre analysis install \
                 definitions += new_analysis_str
 
             return definitions
-        raise NotImplementedError("Non-supported analysis script configuration.")
+        raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
 
 def task_generator(yaml_, experiment_components, experiment_start, experiment_stop, chunk):
