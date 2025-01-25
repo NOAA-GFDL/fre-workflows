@@ -60,10 +60,7 @@ class AnalysisScript(object):
         self.components = [x.strip() for x in config["workflow"]["components"]]
         for component in self.components:
             if component not in experiment_components:
-                logger.info(f"analysis: {name}: Skipping as it requests {component} that are not available in {experiment_components}.")
-                print(f"analysis: {name}: Skipping as it requests {component} that are not available in {experiment_components}.")
-                self.switch = False
-                return
+                raise ValueError(f"ERROR: Analysis script '{self.name}' requests postprocessing component '{component}' but is not one of these available components: {experiment_components}. Please add the component or turn the analysis script off.")
 
         # Parse the pp date range
         self.experiment_date_range = [
@@ -224,7 +221,7 @@ R1 = \"\"\"
                 graph += install_analysis_str
             return graph
 
-        raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}.")
+        raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
     def definition(self, chunk, pp_dir):
         """Form the task definition string."""
@@ -233,7 +230,13 @@ R1 = \"\"\"
 
         definitions = ""
 
-        cmip_to_bronx = {"mon": "monthly",}
+        cmip_to_bronx = {
+            "yr": "annual",
+            "mon": "monthly",
+            "day": "daily",
+            "3hr": "3hr",
+            "6hr": "6hr",
+        }
         frequency = cmip_to_bronx[self.data_frequency]
         bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
 
