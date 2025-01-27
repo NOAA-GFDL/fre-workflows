@@ -294,7 +294,8 @@ chmod +x $scriptOut
 $scriptOut {self.legacy_script_args}
         '''
         [[[environment]]]
-            in_data_dir = {in_data_dir}
+            # some analysis scripts expect a trailing slash
+            in_data_dir = {in_data_dir}/
             freq = {frequency}
             staticfile = {pp_dir}/{self.components[0]}/{self.components[0]}.static.nc
             scriptLabel = {self.name}
