@@ -344,6 +344,8 @@ fre analysis install \
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
+            databegyr = $yr1
+            dataendyr = $yr2
             datachunk = {chunk.years}
                 """
 
@@ -406,6 +408,8 @@ fre analysis install \
                         [[[environment]]]
                             yr1 = {year1}
                             yr2 = {year2}
+                            databegyr = $yr1
+                            dataendyr = $yr2
                 """
 
                 # Add the time average in_data_file
@@ -476,6 +480,8 @@ fre analysis install \
                     [[[environment]]]
                         yr1 = {date1_str}
                         yr2 = {date2_str}
+                        databegyr = $yr1
+                        dataendyr = $yr2
             """
 
             # now set the in_data_file for av's
