@@ -67,10 +67,6 @@ class AnalysisScript(object):
             experiment_starting_date,
             experiment_stopping_date
         ]
-        #self.experiment_date_range_str = [
-        #    time_dumper.strftime(experiment_starting_date, "%Y"),
-        #    time_dumper.strftime(experiment_stopping_date, "%Y"),
-        #]
 
         # Parse the rest of the 'workflow' config items
         self.product = config["workflow"]["product"]
@@ -103,11 +99,54 @@ class AnalysisScript(object):
             time_parser.parse(config["required"]["date_range"][1])
         ]
 
+    def choose_pp_chunk(self, chunk1, chunk2):
+        """Choose the most suitable postprocessing chunk size.
+
+        Args:
+            chunk1: Post-processing chunk size for the experiment.
+            chunk2: Second pp chunk if available.
+
+        Returns:
+            Most suitable chunk (pp subdirectory) for the script
+        """
+        analysis_years = int(time_dumper.strftime(self.date_range[1], '%Y')) - int(time_dumper.strftime(self.date_range[0], '%Y')) + 1
+        if self.script_frequency == "R1":
+            if self.product == 'av':
+                if self.cumulative:
+                    if chunk2 is not None:
+                        return(chunk2)
+                    else:
+                        return(chunk1)
+                else:
+                    if chunk2.years == analysis_years:
+                        return(chunk2)
+                    if chunk1.years == analysis_years:
+                        return(chunk1)
+                    else:
+                        raise NotImplementedError(f"ERROR: Non-supported analysis script configuration: {self.name}: run-once (R1), timeaverages, and non-accumulative is inconsistent, unless duration ('{chunk1}' or '{chunk2}') represents {self.date_range[0]} through {self.date_range[1]} inclusive.")
+            else:
+                return(chunk1)
+
+        if self.product == "ts":
+            if chunk1 == self.script_frequency:
+                return(chunk1)
+            elif chunk2 == self.script_frequency:
+                return(chunk2)
+            else:
+                raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}: script frequency '{self.script_frequency}' matches neither of pp chunks, {chunk1} and {chunk2}")
+        elif self.product == "av":
+            if chunk2 == self.script_frequency:
+                return(chunk2)
+            elif chunk1 == self.script_frequency:
+                return(chunk1)
+            else:
+                raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}: script frequency '{self.script_frequency}' matches neither of pp chunks, {chunk1} and {chunk2}")
+
     def graph(self, chunk, analysis_only):
         """Generate the cylc task graph string for the analysis script.
 
         Args:
-            chunk: Post-processing chunk size for the experiment.
+            chunk: Post-processing chunk size for this analysis script
             analysis_only: Boolean; can we assume pp files are already there?
 
         Returns:
@@ -129,9 +168,8 @@ R1 = \"\"\"
         #print(f"DEBUG: analysis date range = {self.date_range}")
         #print(f"DEBUG: exp date range = {self.experiment_date_range}")
 
-        if self.script_frequency == chunk and self.date_range == self.experiment_date_range\
+        if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
-            # Case 1: run the analysis every chunk.
             graph += f"{self.script_frequency} = \"\"\"\n"
             if analysis_only:
                 graph += f"data-catalog => ANALYSIS-{chunk}?\n"
@@ -150,7 +188,6 @@ R1 = \"\"\"
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and self.cumulative:
-            # Case 2: run the analysis every chunk, but depend on all previous chunks too.
             date = self.experiment_date_range[0] + chunk - one_year  # Last year of first chunk.
             while date <= self.experiment_date_range[1]:
                 graph += f"R1/{time_dumper.strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
@@ -189,7 +226,7 @@ R1 = \"\"\"
             return graph
 
         if self.script_frequency == "R1":
-            # Case 3: run the analysis once over a custom date range (can match experiment).
+            # Run the analysis once over a custom date range (can match experiment).
             date = self.date_range[1]
             graph += f"R1/{time_dumper.strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
@@ -523,7 +560,7 @@ fre analysis install \
         raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
 
-def task_generator(yaml_, experiment_components, experiment_start, experiment_stop, chunk):
+def task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
     for script_name, script_params in yaml_["analysis"].items():
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
@@ -534,7 +571,7 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
         yield script_info
 
 
-def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop, chunk, pp_dir):
+def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop, chunk1, chunk2, pp_dir):
     """Return the task definitions for all user-defined analysis scripts.
 
     Args:
@@ -542,19 +579,21 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
         experiment_components: List of string experiment component names.
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
-        chunk: ISO8601 duration used by the workflow.
-        pp_dir: 
+        chunk1: ISO8601 duration used by the workflow.
+        chunk2: If used, second pp chunk used by the workflow.
+        pp_dir: postproceessing directory
 
     Returns:
         String containing the task defintions.
     """
     definitions = ""
-    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, chunk):
+    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
+        chunk = script_info.choose_pp_chunk(chunk1, chunk2)
         definitions += script_info.definition(chunk, pp_dir)
     return definitions
 
 
-def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, chunk, analysis_only):
+def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, chunk1, chunk2, analysis_only):
     """Return the task graphs for all user-defined analysis scripts.
 
     Args:
@@ -562,20 +601,22 @@ def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, 
         experiment_components: List of string experiment component names.
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
-        chunk: ISO8601 duration used by the workflow.
+        chunk1: ISO8601 duration used by the workflow.
+        chunk2: If used, second pp chunk used by the workflow.
         analysis_only: Optional boolean to not depend on remap tasks (assume pp files already exist)
 
     Returns:
         String containing the task graphs.
     """
     graph = ""
-    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, chunk):
+    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
+        chunk = script_info.choose_pp_chunk(chunk1, chunk2)
         graph += script_info.graph(chunk, analysis_only)
     return graph
 
 
 def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
-                           experiment_start, experiment_stop, chunk, analysis_only=False):
+                           experiment_start, experiment_stop, chunk1, chunk2=None, analysis_only=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
     Args:
@@ -588,13 +629,16 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
                                         Not used for every-interval scripts.
                                         For cumulative scripts, use for yr1
         pp_stop_str (str):              last cycle point to process
-        chunk (str): chunk to use for task graphs at least
+        chunk1 (str): Smaller chunk size
+        chunk2 (str): Larger chunk size (optional)
         analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
     """
     # Convert strings to date objects.
     experiment_start = time_parser.parse(experiment_start)
     experiment_stop = time_parser.parse(experiment_stop)
-    chunk = duration_parser.parse(chunk)
+    chunk1 = duration_parser.parse(chunk1)
+    if chunk2 is not None:
+        chunk2 = duration_parser.parse(chunk2)
 
     # split the pp_components into a list
     experiment_components = experiment_components.split()
@@ -603,8 +647,8 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
         yaml_ = safe_load(file_)
         if info_type == "task-graph":
             return task_graph(yaml_, experiment_components, experiment_start,
-                              experiment_stop, chunk, analysis_only)
+                              experiment_stop, chunk1, chunk2, analysis_only)
         elif info_type == "task-definitions":
             return task_definitions(yaml_, experiment_components, experiment_start,
-                                   experiment_stop, chunk, pp_dir)
+                                   experiment_stop, chunk1, chunk2, pp_dir)
         raise ValueError(f"Invalid information type: {info_type}.")
