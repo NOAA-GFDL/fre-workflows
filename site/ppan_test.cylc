@@ -48,7 +48,7 @@
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load gcp/2.3 hsm/test
+        pre-script = module load gcp/2.3 hsm/1.3.0
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -115,7 +115,7 @@
         pre-script = """
             module load fre-nctools miniforge
             set +u
-            conda activate /nbhome/fms/conda/envs/fre-cli
+            conda activate /nbhome/fms/conda/envs/fre-2025.01
             set -u
             module load gcp
             mkdir -p $outputDir
@@ -146,14 +146,14 @@
         pre-script = """
             module load fre-nctools miniforge
             set +u
-            conda activate /nbhome/fms/conda/envs/fre-cli
+            conda activate /nbhome/fms/conda/envs/fre-2025.01
             set -u
             mkdir -p $outputDir
         """
 {% endif %}
 
     [[MASK-ATMOS-PLEVEL]]
-        pre-script = module load python/3.9
+        pre-script = module load python/3.10
 
     [[CLEAN]]
         env-script = """
