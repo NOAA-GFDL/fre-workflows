@@ -350,6 +350,8 @@ fre analysis run \
     --experiment-yaml   $experiment_yaml \
     --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
         '''
+        # retry 10 times (due to mysterious intake-esm issue)
+        execution retry delays = 10*PT1M
         """
 
         install_str = f"""
