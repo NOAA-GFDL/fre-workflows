@@ -4,10 +4,7 @@
             # uncomment next line and set to your conda init script location
             # if you see "conda not found" errors
             #source ~/miniconda3/etc/profile.d/conda.sh
-            eval $(rose task-env)
-            env
         """
-        script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
         # Set default time limit to 4 hours

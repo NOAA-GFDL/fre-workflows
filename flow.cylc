@@ -1,5 +1,8 @@
 #!jinja2
 
+{# fre version should be programatically set, not hard-coded. #}
+{% set FRE_VERSION = 2025.01 %}
+
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
 {# Jinja code with two braces is printed.                            #}
@@ -40,6 +43,9 @@
     {% set ANALYSIS_STOP = PP_STOP %}
 {% endif %}
 
+{# The combined yaml is the definitive configuration source #}
+{% set YAML = EXPERIMENT + '.yaml' %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -55,6 +61,11 @@
     {# Configure the directories and files to be included in the remote file installation #}
     install = app/*, bin/*, etc/*, lib/*
     UTC mode = True
+
+    # When the stall timeout is reached, a stalled workflow will exit
+    # and remove the /xtmp working directory.
+    [[events]]
+        stall timeout = P1W
 
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
@@ -110,13 +121,9 @@
     [[graph]]
 {% if DO_ANALYSIS_ONLY %}
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
     {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, None, DO_ANALYSIS_ONLY) }}
     {% endif %}
 {% else %}
         #
@@ -319,12 +326,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}:succeed-all => clean-shards-{{ HISTORY_S
     {% endif %}
 {% endif %}
 
-{# If MDTF is requested, then run it after all pp components have finished #}
-{% if DO_MDTF %}
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => mdtf
-{% endif %}
-
-REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog?
+REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 """
 
 
@@ -409,6 +411,8 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_A }}
         {% endif %}
     {% endif %}
+
+    REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}:succeed-all => data-catalog
 """
 {% endif %}
 
@@ -417,13 +421,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 #
     {% if DO_ANALYSIS %}
         {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, PP_CHUNK_B, DO_ANALYSIS_ONLY) }}
         {% else %}
-{{ 'per-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'cumulative-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
-{{ 'defined-interval-task-graph' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, DO_ANALYSIS_ONLY) }}
+{{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, None, DO_ANALYSIS_ONLY) }}
         {% endif %}
     {% endif %}
 
@@ -925,8 +925,11 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         # workaround to replace P1M with monthly
         sed -i.bak -e 's/,P1M,/,monthly,/' $ppdir/catalog.csv
         """
+        # when many data catalog jobs run simultaneously, they can fail
+        # this is not a good solution here
+        execution retry delays = PT5M, PT10M, PT15M
         [[[environment]]]
-          ppdir = {{PP_DIR}}
+          ppdir = {{ PP_DIR }}
 
 
     [[MAKE-TIMESERIES]]
@@ -1023,45 +1026,38 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% endif %}
 
 {% if DO_ANALYSIS %}
+    [[PUBLISH-ANALYSIS]]
+        [[[environment]]]
+            dora_url = dora.gfdl.noaa.gov
+    [[BUILD-ANALYSIS]]
+        [[[environment]]]
+            ANALYSIS_URL = https://github.com/NOAA-GFDL/analysis-scripts.git
     [[ANALYSIS]]
         # Increase time limit for analysis jobs to 24 hours
         execution time limit = PT24H
-        pre-script = """
-            env
-            mkdir -p $outputDir $out_dir
-            rose task-run --verbose --app-key analysis
-        """
         [[[environment]]]
             # internally-used vars
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/analysis-scripts
-            FRE_ANALYSIS_HOME = {{ FRE_ANALYSIS_HOME }}
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/legacy-analysis-scripts
+            # accepted FRE environment variables
+            FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
+            FRE_ANALYSIS_ARCHIVE = /archive/fms/fre-analysis/test
             # fre-analysis template vars
             yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
-            fremodule = fre/test
+            fremodule = fre/{{ FRE_VERSION }}
             WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
             # new template vars
             catalog = {{ PP_DIR }}/catalog.json
+            experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ EXPERIMENT }}.yaml
     {% if DO_SECONDARY_PP %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_B, False, DO_ANALYSIS) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, PP_CHUNK_B, False ) }}
     {% else %}
-{{ 'per-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'cumulative-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
-{{ 'defined-interval-task-definitions' | get_analysis_info(PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, ANALYSIS_START, ANALYSIS_STOP, PP_CHUNK_A, False, DO_ANALYSIS) }}
+{{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNK_A, None, False ) }}
     {% endif %}
-{% endif %}
-
-{% if DO_MDTF %}
-    [[mdtf]]
-        pre-script = mkdir -p $MDTF_TMPDIR
-        [[[environment]]]
-            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 {% endif %}
 
     [[CLEAN]]

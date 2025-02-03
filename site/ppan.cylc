@@ -4,11 +4,6 @@
             module load ppan_environment
             module list
         """
-        env-script = """
-            eval $(rose task-env)
-            env
-        """
-        script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
         # Set default time limit to 4 hours
@@ -18,7 +13,7 @@
             mail events = startup shutdown aborted timeout stalled inactivity
             submission timeout = P1D
         [[[directives]]]
-            --comment=xtmp,canopy
+            --comment=xtmp,fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
 
@@ -30,8 +25,8 @@
         pre-script = """
             env
             set -x
+            module load fre/{{ FRE_VERSION }}
             module load gcp
-            module load fre/canopy
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -87,11 +82,8 @@
         """
 
     [[data-catalog]]
-        pre-script = module load fre/canopy 
+        pre-script = module load fre/{{ FRE_VERSION }} 
         
-        [[[directives]]]
-            --partition=analysis
-
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo && mkdir -p $outputDir
 
@@ -118,21 +110,18 @@
     [[CLEAN]]
         pre-script = "set -x"
 		
-
-{% if DO_MDTF %}
-    [[mdtf]]
-        pre-script = mkdir -p $MDTF_TMPDIR
-        [[[environment]]]
-            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
-{% endif %}
-
 {% if DO_STATICS %}
     [[combine-statics]]
         pre-script = module load cdo && mkdir -p $outputDir
 {% endif %}
 
-# workaround to run Ray's analysis example on the analysis partition as it uses his /net2
-[[analysis-ray_example]]
-    [[[directives]]]
-    --partition=analysis
+    [[ANALYSIS]]
+        pre-script = """
+            module load fre/{{ FRE_VERSION }}
+            module load gcp
+        """
 
+    [[BUILD-ANALYSIS]]
+        pre-script = """
+            module load fre/{{ FRE_VERSION }}
+        """
