@@ -261,7 +261,7 @@ combine-statics => clean-pp-statics
         # Recurrence interval: every CHUNK-A
         #
         {# Run the tasks to process CHUNK-A every CHUNK-A, starting after PP_CHUNK_A #}
-        +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
+        +{{ PP_CHUNK_A | subtract_durations('P1Y') }}/{{ PP_CHUNK_A }} = """
 
 {# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |                   #}
 {# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding. #}
@@ -336,7 +336,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
 {% if DO_SECONDARY_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
-        +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
+        +{{ PP_CHUNK_B | subtract_durations('P1Y') }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
     {% if DO_REGRID %}

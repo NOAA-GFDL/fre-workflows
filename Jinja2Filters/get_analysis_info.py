@@ -170,7 +170,7 @@ R1 = \"\"\"
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
-            graph += f"{self.script_frequency} = \"\"\"\n"
+            graph += f"+{chunk - one_year}/{self.script_frequency} = \"\"\"\n"
             if analysis_only:
                 graph += f"data-catalog => ANALYSIS-{chunk}?\n"
             else:
