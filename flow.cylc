@@ -108,13 +108,15 @@
     # max number of active cycle points (default 5)
     # this should be something sensible assuming tasks with required outputs
     # (i.e. not marked as "ok to fail") such as analysis scripts.
-    # But until the analysis scripts can be marked optional then let's
-    # set this to be very high, 100 cycle points.
-    runahead limit = P100
+    # But until the analysis scripts can be marked optional then a workaround
+    # is to set this to be very high, ~100 cycle points.
+    # However, the cost of keeping many cycle points active at once are starting
+    # stage-history tasks first, possibly filling /xtmp before the clean tasks run.
+    runahead limit = P20
     [[queues]]
-        # limit the entire workflow to 50 active tasks at once
+        # limit the entire workflow to 100 active tasks at once
         [[[default]]]
-            limit = 50
+            limit = 100
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
