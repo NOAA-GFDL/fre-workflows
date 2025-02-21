@@ -170,7 +170,7 @@ R1 = \"\"\"
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
-            graph += f"{self.script_frequency} = \"\"\"\n"
+            graph += f"+{chunk - one_year}/{self.script_frequency} = \"\"\"\n"
             if analysis_only:
                 graph += f"data-catalog => ANALYSIS-{chunk}?\n"
             else:
@@ -200,7 +200,7 @@ R1 = \"\"\"
                 # Looping backwards through all previous chunks.
                 d = date
                 i = -1
-                while d > self.experiment_date_range[0]:
+                while d > self.experiment_date_range[0] + chunk - one_year:
                     if not analysis_only:
                         if self.product == "av":
                             graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"

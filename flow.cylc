@@ -108,13 +108,15 @@
     # max number of active cycle points (default 5)
     # this should be something sensible assuming tasks with required outputs
     # (i.e. not marked as "ok to fail") such as analysis scripts.
-    # But until the analysis scripts can be marked optional then let's
-    # set this to be very high, 100 cycle points.
-    runahead limit = P100
+    # But until the analysis scripts can be marked optional then a workaround
+    # is to set this to be very high, ~100 cycle points.
+    # However, the cost of keeping many cycle points active at once are starting
+    # stage-history tasks first, possibly filling /xtmp before the clean tasks run.
+    runahead limit = P20
     [[queues]]
-        # limit the entire workflow to 50 active tasks at once
+        # limit the entire workflow to 100 active tasks at once
         [[[default]]]
-            limit = 50
+            limit = 100
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
@@ -261,7 +263,7 @@ combine-statics => clean-pp-statics
         # Recurrence interval: every CHUNK-A
         #
         {# Run the tasks to process CHUNK-A every CHUNK-A, starting after PP_CHUNK_A #}
-        +{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_A }} = """
+        +{{ PP_CHUNK_A | subtract_durations('P1Y') }}/{{ PP_CHUNK_A }} = """
 
 {# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |                   #}
 {# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding. #}
@@ -336,7 +338,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
 {% if DO_SECONDARY_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
-        +{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }}/{{ PP_CHUNK_B }} = """
+        +{{ PP_CHUNK_B | subtract_durations('P1Y') }}/{{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
     {% if DO_REGRID %}
