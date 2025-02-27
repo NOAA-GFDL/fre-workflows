@@ -4,10 +4,7 @@
             # uncomment next line and set to your conda init script location
             # if you see "conda not found" errors
             #source ~/miniconda3/etc/profile.d/conda.sh
-            eval $(rose task-env)
-            env
         """
-        script = rose task-run --verbose
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
         # Set default time limit to 4 hours
@@ -18,5 +15,45 @@
             submission timeout = P1D
         [[[environment]]]
             COPY_TOOL=cp
+
+#    [[SPLIT-NETCDF]]
+#        pre-script = mkdir -p $outputDir
+#
+#    [[RENAME-SPLIT-TO-PP]]
+#        pre-script = mkdir -p $outputDir
+
     [[REMAP-PP-COMPONENTS]]
         pre-script = mkdir -p $outputDir
+
+    [[MAKE-TIMESERIES]]
+        pre-script = mkdir -p $outputDir
+
+#{% if DO_TIMEAVGS %}
+
+    [[MAKE-TIMEAVGS]]
+        pre-script = mkdir -p $outputDir
+
+    [[COMBINE-TIMEAVGS]]
+        pre-script = mkdir -p $outputDir
+
+#{% endif %}
+
+{% if DO_REGRID %}
+    [[REGRID-XY]]
+        pre-script = mkdir -p $outputDir
+{% endif %}
+
+{% if DO_MDTF %}
+    [[mdtf]]
+        pre-script = mkdir -p $MDTF_TMPDIR
+        [[[environment]]]
+            MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
+{% endif %}
+
+{% if DO_STATICS %}
+    [[combine-statics]]
+        pre-script = mkdir -p $outputDir
+{% endif %}
+
+    [[CLEAN]]
+        pre-script = "set -x"
