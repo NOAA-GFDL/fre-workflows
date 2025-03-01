@@ -63,6 +63,16 @@ if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     echo "Set PYTHONPATH and created i/o lists"
 fi
 
+# Convert currentChunk in ISO to Bronx
+if [[ $currentChunk =~ ^P([0-9]+)Y$ ]]; then
+    currentChunkBronx=${BASH_REMATCH[1]}yr
+elif [[ $currentChunk =~ ^P([0-9]+)M$ ]]; then
+    currentChunkBronx=${BASH_REMATCH[1]}mon
+else
+   echo "ERROR: Could not convert ISO chunk '$currentChunk'"
+   exit 2
+fi
+
 # Exit early, with appearence of success, if the component directory does not exist
 # This means the make-timeavgs task did not work, which almost certainly means that
 # the source files are not monthly or annual, which are the only currently supported
@@ -74,7 +84,7 @@ fi
 cd $inputDir/$component
 
 for freq in $(ls); do
-    pushd $freq/$currentChunk
+    pushd $freq/$currentChunkBronx
 
     # workaround to target YYYY files if chunkSize is P1Y
     if [[ $currentChunk == P1Y ]]; then
@@ -89,7 +99,7 @@ for freq in $(ls); do
     fi
 
     # create output dir
-    subdir=$(form_av_dirs $freq $currentChunk)
+    subdir=$(form_av_dirs $freq $currentChunkBronx)
     mkdir -p $outputDir/$subdir
 
 
@@ -108,7 +118,7 @@ for freq in $(ls); do
         cdo -O splitmon $component.$dates.nc $outputDir/$subdir/$component.$dates.
         
         if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-            input_dir_path=$inputDir/$component/$freq/$currentChunk
+            input_dir_path=$inputDir/$component/$freq/$currentChunkBronx
             output_dir_path=$outputDir/$subdir
             
             start_time=$(date +%s)
@@ -136,7 +146,7 @@ for freq in $(ls); do
         fi
 
         if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-            input_dir_path=$inputDir/$component/$freq/$currentChunk
+            input_dir_path=$inputDir/$component/$freq/$currentChunkBronx
             output_dir_path=$outputDir/$subdir
             output_file=$component.$dates.ann.nc
 
