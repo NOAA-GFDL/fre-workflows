@@ -22,7 +22,8 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, experiment
     node = metomi.rose.config.load(path_to_conf)
 
     # Path to yaml configuration
-    path_to_yamlconfig = os.path.dirname(os.path.abspath(__file__)) + f'/../{experiment}.yaml'
+    exp_dir = Path(__file__).resolve().parents[1]
+    path_to_yamlconfig = os.path.join(exp_dir, f'{experiment}.yaml')
     # Load and read yaml configuration 
     with open(path_to_yamlconfig,'r') as ymlfile:
         yml_info = yaml.safe_load(ymlfile)
