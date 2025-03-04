@@ -88,7 +88,7 @@
 {% endif %}
 
 {% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS, EXPERIMENT) %}
-{% set NATIVE_STATIC  =  "native" | , form_task_parameters('static', PP_COMPONENTS, EXPERIMENT) %}
+{% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS, EXPERIMENT) %}
 {% set DO_NATIVE = NATIVE|length %}
 {% if DO_NATIVE %}
     native = {{ NATIVE }}
