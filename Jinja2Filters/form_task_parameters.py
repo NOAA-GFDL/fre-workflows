@@ -40,9 +40,8 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         logger.debug(f"Is {comp} in {pp_components}?")
         if comp in pp_components: 
             logger.debug('Yes')
-            pass
         else:
-            loger.debug('No')
+            logger.debug('No')
             continue
 
         # skip if grid type is not desired
