@@ -326,8 +326,7 @@ def remap():
                 if fields.get("freq") is None:
                     freq = glob.glob("*")
                 else:
-                    freq = fields.get("freq").get_value()
-                    freq = freq.split()
+                    freq = ast.literal_eval(fields.get("sources").get_value())
 
                 for f in freq:
                     if ens_mem is not None:
@@ -339,8 +338,7 @@ def remap():
                     if fields.get("chunk") is None:
                         chunk = glob.glob("*")
                     else:
-                        chunk = fields.get("chunk").get_value()
-                        chunk = chunk.split()
+                        chunk = ast.literal_eval(fields.get("chunk").get_value())
 
                     for c in chunk:
                         if c != current_chunk:
@@ -357,14 +355,14 @@ def remap():
                             dirs = create_dir(out_dir = output_dir,
                                               comp = comp,
                                               freq = freq_to_legacy(f),
-                                              chunk = chunk_to_legacy(chunk),
+                                              chunk = chunk_to_legacy(c),
                                               ens = ens_mem,
                                               dir_ts = dir_ts_workaround)
                         else:
                             dirs = create_dir(out_dir = output_dir,
                                               comp = comp,
                                               freq = f,
-                                              chunk = chunk,
+                                              chunk = c,
                                               ens = ens_mem,
                                               dir_ts = dir_ts_workaround)
 
