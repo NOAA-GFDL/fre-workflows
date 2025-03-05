@@ -1,8 +1,10 @@
 import re
 import os
 import metomi.rose.config
+from pathlib import Path
+import yaml
 
-def form_task_parameters(grid_type, temporal_type, pp_components_str):
+def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
     """Form the task parameter list based on the grid type, the temporal type,
     and the desired pp component(s)
 
@@ -11,10 +13,21 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str):
         temporal_type (str): One of: temporal or static
         pp_component (str): all, or a space-separated list
 """
+    # Turn space separated pp_somponents into list
     pp_components = pp_components_str.split()
     #print("DEBUG: desired pp components:", pp_components)
+
+    # Path to remap rose-app.conf
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
+
+    # Path to yaml configuration
+    exp_dir = Path(__file__).resolve().parents[1]
+    path_to_yamlconfig = os.path.join(exp_dir, yamlfile)
+    # Load and read yaml configuration 
+    with open(path_to_yamlconfig,'r') as yml:
+        yml_info = yaml.safe_load(yml)
+
     results = []
     regex_pp_comp = re.compile('^\w+')
     for keys, sub_node in node.walk():
