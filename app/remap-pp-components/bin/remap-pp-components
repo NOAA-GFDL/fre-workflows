@@ -11,6 +11,7 @@ import subprocess
 import glob
 from pathlib import Path
 import metomi.rose.config as mrc
+import ast
 
 def verify_dirs(in_dir,out_dir):
     """
@@ -96,7 +97,7 @@ def freq_to_legacy(iso_dura):
     elif iso_dura=='PT30M':
         freq_legacy = '30min'
     else:
-        freq_legacy = 'error'
+        raise ValueError("Could not convert ISO duration '{iso_dura}'")
 
     return freq_legacy
 
@@ -118,37 +119,6 @@ def chunk_to_legacy(iso_dura):
         brx_freq = 'error'
 
     return brx_freq
-
-def bronx_style(freq, chunk, ens_member, out_dir, comp):
-    """
-    Create bronx-style symlinks
-    Params:
-        freq: frequency
-        chunk: chunk
-        ens_member: ensemble member
-        out_dir: output directory
-        comp: component
-    """
-
-    freq_legacy = freq_to_legacy(freq)
-    chunk_legacy = chunk_to_legacy(chunk)
-    if chunk_legacy == "error":
-        print(f"Error: Skipping legacy directory for chunk: {chunk}")
-    else:
-        if ens_member is not None:
-            dir1 = f"{out_dir}/{comp}/ts/{ens_member}"
-            os.chdir(f"{out_dir}/{comp}/ts/{ens_member}")
-        else:
-            dir1 = f"{out_dir}/{comp}/ts"
-            os.chdir(f"{out_dir}/{comp}/ts")
-
-        Path(freq_legacy).mkdir(exist_ok=True)
-        os.chdir(freq_legacy)
-
-        if not Path(chunk_legacy).exists():
-            os.symlink(f"{dir1}/{freq}/{chunk}", chunk_legacy)
-
-    return dir1
 
 def freq_to_date_format(iso_freq):
     """
@@ -333,11 +303,8 @@ def remap():
                 os.chdir(f"{input_dir}/{g}")
 
             ## SOURCES
-            if fields.get("sources") is None:
-                sources = glob.glob("*")
-            else:
-                sources = fields.get("sources").get_value()
-                sources = sources.split()
+            # convert ascii array to array
+            sources = ast.literal_eval(fields.get("sources").get_value())
 
             for s in sources:
                 # Start in grid directory
@@ -359,8 +326,7 @@ def remap():
                 if fields.get("freq") is None:
                     freq = glob.glob("*")
                 else:
-                    freq = fields.get("freq").get_value()
-                    freq = freq.split()
+                    freq = ast.literal_eval(fields.get("sources").get_value())
 
                 for f in freq:
                     if ens_mem is not None:
@@ -372,8 +338,7 @@ def remap():
                     if fields.get("chunk") is None:
                         chunk = glob.glob("*")
                     else:
-                        chunk = fields.get("chunk").get_value()
-                        chunk = chunk.split()
+                        chunk = ast.literal_eval(fields.get("chunk").get_value())
 
                     for c in chunk:
                         if c != current_chunk:
@@ -384,22 +349,24 @@ def remap():
                             os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
 
                         # Create directory
-                        dirs = create_dir(out_dir = output_dir,
-                                          comp = comp,
-                                          freq = f,
-                                          chunk = c,
-                                          ens = ens_mem,
-                                          dir_ts = dir_ts_workaround)
+                        # ts output is written to final location, av is not.
+                        # so convert the ts only to bronx-style
+                        if product == "ts":
+                            dirs = create_dir(out_dir = output_dir,
+                                              comp = comp,
+                                              freq = freq_to_legacy(f),
+                                              chunk = chunk_to_legacy(c),
+                                              ens = ens_mem,
+                                              dir_ts = dir_ts_workaround)
+                        else:
+                            dirs = create_dir(out_dir = output_dir,
+                                              comp = comp,
+                                              freq = f,
+                                              chunk = c,
+                                              ens = ens_mem,
+                                              dir_ts = dir_ts_workaround)
 
                         print(f"directory created: {dirs}")
-
-                        # Create bronx-style symlinks for TS only
-                        if dir_ts_workaround:
-                            bronx_style(freq = f,
-                                        chunk = c,
-                                        ens_member = ens_mem,
-                                        out_dir = output_dir,
-                                        comp = comp)
 
                         # Search for files in chunk directory
                         if ens_mem is not None:

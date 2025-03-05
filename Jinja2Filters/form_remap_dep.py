@@ -1,6 +1,7 @@
 import re
 import os
 import metomi.rose.config
+import ast
 """! form_remap_dep parses the remap_pp_components rose-app.conf and uses input from rose-suite.conf in the form of
 env variables and returns the pp component and source name dependencies for remap_pp_components task execution. For 
 instance, for an atmos PP component that requires the regridded atmos_month and regridded atmos_daily history 
@@ -107,7 +108,7 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
                #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
                continue
 
-        results = node.get_value(keys=[item, 'sources']).split()
+        results = ast.literal_eval(node.get_value(keys=[item, 'sources']))
         remap_comp = comp
         answer = sorted(list(set(results)))
         if remap_comp is not None:
