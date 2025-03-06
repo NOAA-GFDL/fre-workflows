@@ -80,21 +80,27 @@
 {% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
 {% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
 {% set DO_REGRID = REGRID|length %}
+{% set DO_REGRID_STATIC = REGRID_STATIC|length %}
+
 {% if DO_REGRID %}
     regrid = {{ REGRID }}
-    {% if DO_STATICS %}
+{% endif %}
+
+{% if DO_REGRID_STATIC %}
     regrid_static = {{ REGRID_STATIC }}
-    {% endif %}
 {% endif %}
 
 {% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
 {% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
 {% set DO_NATIVE = NATIVE|length %}
+{% set DO_NATIVE_STATIC = NATIVE_STATIC|length %}
+
 {% if DO_NATIVE %}
     native = {{ NATIVE }}
-    {% if DO_STATICS %}
+{% endif %}
+
+{% if DO_NATIVE_STATIC %}
     native_static = {{ NATIVE_STATIC }}
-    {% endif %}
 {% endif %}
 
     {# Standard Jinja2 triggers are also available (e.g. "replace") #}
@@ -213,46 +219,47 @@ rename-split-to-pp-native<native> => clean-split-native
 {# The static processing is similar to the "every history segment" processing, #}
 {# except uses different history file lists. #}
 pp-starter => STAGE-HISTORY
-{% if DO_STATICS %}
-    {% if DO_REGRID %}
+
+{% if DO_REGRID_STATIC %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
-    {% endif %}
-    {% if DO_NATIVE %}
+
+{% if DO_NATIVE_STATIC %}
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
-    {% endif %}
+{% endif %}
+
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
-    {% if DO_NATIVE and DO_REGRID %}
+{% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
 rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_NATIVE %}
+{% elif DO_NATIVE_STATIC %}
 rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-    {% elif DO_REGRID %}
+{% elif DO_REGRID_STATIC %}
 rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
-    {% endif %}
 {% endif %}
 
 {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
 {% if HISTORY_DIR_REFINED is defined %}
-    {% if DO_STATICS %}
-        {% if DO_REGRID %}
-stage-history-refined => regrid-xy<regrid_static>
-        {% endif %}
-        {% if DO_NATIVE %}
-stage-history-refined => split-netcdf-native<native_static>
-        {% endif %}
+    {% if DO_REGRID_STATIC %}
+    stage-history-refined => regrid-xy<regrid_static>
+    {% endif %}
+
+    {% if DO_NATIVE_STATIC %}
+    stage-history-refined => split-netcdf-native<native_static>
     {% endif %}
 {% endif %}
 
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
-{% if CLEAN_WORK and DO_STATICS %}
-    {% if DO_REGRID %}
-regrid-xy<regrid_static> => clean-history-native
-split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
-rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
+{% if CLEAN_WORK %}
+    {% if DO_REGRID_STATIC %}
+    regrid-xy<regrid_static> => clean-history-native
+    split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
+    rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
     {% endif %}
-    {% if DO_NATIVE %}
-split-netcdf-native<native_static> => clean-history-native
-rename-split-to-pp-native<native_static> => clean-split-native
+
+    {% if DO_NATIVE_STATIC %}
+    split-netcdf-native<native_static> => clean-history-native
+    rename-split-to-pp-native<native_static> => clean-split-native
     {% endif %}
+
 remap-pp-components-static => clean-shards-static
 combine-statics => clean-pp-statics
 {% endif %}
@@ -755,7 +762,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_NATIVE %}
     [[split-netcdf-native<native>]]
         inherit = SPLIT-NETCDF-NATIVE, <native>
-    {% if DO_STATICS %}
+    {% if DO_NATIVE_STATIC %}
     [[split-netcdf-native<native_static>]]
         inherit = SPLIT-NETCDF-NATIVE, <native_static>
         [[[environment]]]
@@ -766,7 +773,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_REGRID %}
     [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid>
-    {% if DO_STATICS %}
+    {% if DO_REGRID_STATIC %}
     [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid_static>
         [[[environment]]]
@@ -801,7 +808,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_NATIVE %}
     [[rename-split-to-pp-native<native>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE, <native>
-    {% if DO_STATICS %}
+    {% if DO_NATIVE_STATIC %}
     [[rename-split-to-pp-native<native_static>]]
         inherit = RENAME-SPLIT-TO-PP-NATIVE, <native_static>
         [[[environment]]]
@@ -812,7 +819,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_REGRID %}
     [[rename-split-to-pp-regrid<regrid>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID, <regrid>
-    {% if DO_STATICS %}
+    {% if DO_REGRID_STATIC %}
     [[rename-split-to-pp-regrid<regrid_static>]]
         inherit = RENAME-SPLIT-TO-PP-REGRID, <regrid_static>
         [[[environment]]]
@@ -910,7 +917,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     {% endif %}
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
@@ -1010,7 +1017,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
-    {% if DO_STATICS %}
+    {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
@@ -1019,7 +1026,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     {% endif %}
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = mkdir -p $outputDir
         [[[environment]]]
@@ -1080,7 +1087,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy"
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[clean-pp-statics]]
         inherit = CLEAN
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/pp/static"
@@ -1096,7 +1103,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy"
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[clean-shards-static]]
         inherit = CLEAN
         script = """
@@ -1197,13 +1204,13 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if SITE != 'ppan_test' %}
     {% if DO_REGRID %}
     [[<regrid>]]
-        {% if DO_STATICS %}
+        {% if DO_REGRID_STATIC %}
     [[<regrid_static>]]
         {% endif %}
     {% endif %}
     {% if DO_NATIVE %}
     [[<native>]]
-        {% if DO_STATICS %}
+        {% if DO_NATIVE_STATIC %}
     [[<native_static>]]
         {% endif %}
     {% endif %}
