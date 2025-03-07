@@ -93,7 +93,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
                 continue
 
             for static_info in comp_info["static"]:
-                results = static_info.get("sources")
+                results = results + static_info.get("sources")
 
         elif temporal_type == "temporal":
             results = results + comp_info.get("sources")

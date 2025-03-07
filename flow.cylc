@@ -222,6 +222,7 @@ pp-starter => STAGE-HISTORY
 
 {% if DO_REGRID_STATIC %}
 STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
+{% endif %}
 
 {% if DO_NATIVE_STATIC %}
 STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
