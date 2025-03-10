@@ -249,21 +249,21 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
-{% if CLEAN_WORK %}
-    {% if DO_REGRID_STATIC %}
+{% if CLEAN_WORK and DO_REGRID_STATIC %}
     regrid-xy<regrid_static> => clean-history-native
     split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
     rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-    {% endif %}
+    remap-pp-components-static => clean-shards-static
+    combine-statics => clean-pp-statics
+{% endif %}
 
-    {% if DO_NATIVE_STATIC %}
+{% if CLEAN_WORK and DO_NATIVE_STATIC %}
     split-netcdf-native<native_static> => clean-history-native
     rename-split-to-pp-native<native_static> => clean-split-native
-    {% endif %}
-
-remap-pp-components-static => clean-shards-static
-combine-statics => clean-pp-statics
+    remap-pp-components-static => clean-shards-static
+    combine-statics => clean-pp-statics
 {% endif %}
+
 """
 
 
