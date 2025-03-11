@@ -64,6 +64,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
             for static_info in comp_info["static"]:
                 if static_info.get("sources") is not None:
                     results = results + static_info.get("sources")
+## to-do: assess offline diagnostics
 #                elif:
 #                    results = results + static_info.get("offline_sources")
 
@@ -78,7 +79,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
 
     # Returns a comma separated list of sources
     logger.debug("Returning string" + ', '.join(answer))
-    return(', '.join(answer)
+    return(', '.join(answer))
 
 ## OWN TESTING ##
 #print(form_task_parameters('regrid-xy', 'temporal', 'ocean_cobalt_sfc ocean_cobalt_btm', 'COBALT_postprocess.yaml')))
