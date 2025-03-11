@@ -1,7 +1,4 @@
-#import re
 import os
-#import metomi.rose.config
-#import ast
 from pathlib import Path 
 import yaml
 
@@ -22,8 +19,6 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
     """
     logger.debug(f"Desired pp components: {pp_components_str}")
     pp_components = pp_components_str.split()
-#    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
-#    node = metomi.rose.config.load(path_to_conf)
 
     # Path to yaml configuration
     exp_dir = Path(__file__).resolve().parents[1]
@@ -47,7 +42,6 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
             logger.debug('No')
             continue
 
-#### CHECK THIS SECTION ####
         # Set grid type if component has xyInterp defined or not
         if "xyInterp" not in comp_info.keys():
             candidate_grid_type = "native"
@@ -60,31 +54,6 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
             logger.debug(f"Skipping as not right grid; got '{candidate_grid_type}' and wanted '{grid_type}'")
             continue
 
-## original
-#        # filter static and temporal
-#        # if freq is not set             => temporal
-#        # if freq includes "P0Y"         => static
-#        # if freq does not include "P0Y" => temporal
-#        freq = node.get_value(keys=[item, 'freq'])
-#        if freq is not None and 'P0Y' in freq and temporal_type == 'temporal':
-#            logger.debug("Skipping static when temporal is requested")
-#            continue
-#        if temporal_type == "static":
-#            if freq is not None and 'P0Y' not in freq:
-#                logger.debug("Skipping as static is requested, no P0Y here", freq)
-#                continue
-#        elif (temporal_type == "temporal"):
-#            if freq is not None and 'P0Y' in freq:
-#                logger.debug("Skipping as temporal is requested, P0Y here", freq)
-#                continue
-#        else:
-#            raise Exception("Unknown temporal type:", temporal_type)
-#
-#        # convert array in string form to array
-#        sources = ast.literal_eval(node.get_value(keys=[item, 'sources']))
-#        results.extend(sources)
-
-## rewrite
         # Filter static and temporal
         if temporal_type == "static":
             #print(comp_info["static"]["freq"])
@@ -109,9 +78,9 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
 
     # Returns a comma separated list of sources
     logger.debug("Returning string" + ', '.join(answer))
-    return(', '.join(answer))
+    return(', '.join(answer)
 
-## TESTING ##
+## OWN TESTING ##
 #print(form_task_parameters('regrid-xy', 'temporal', 'ocean_cobalt_sfc ocean_cobalt_btm', 'COBALT_postprocess.yaml')))
 #print(form_task_parameters('regrid-xy', 'static', 'ocean_cobalt_sfc ocean_cobalt_btm', 'COBALT_postprocess.yaml'))
 #print(form_task_parameters('native', 'temporal', 'ocean_cobalt_sfc ocean_cobalt_btm', 'COBALT_postprocess.yaml'))
