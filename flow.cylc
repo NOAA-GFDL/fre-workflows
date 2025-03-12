@@ -263,7 +263,7 @@ combine-statics => clean-pp-statics
         # Recurrence interval: every CHUNK-A
         #
         {# Run the tasks to process CHUNK-A every CHUNK-A, starting after PP_CHUNK_A #}
-        +{{ PP_CHUNK_A | subtract_durations('P1Y') }}/{{ PP_CHUNK_A }} = """
+        {{ PP_CHUNK_A }} = """
 
 {# Tasks can be split over multiple lines if the subsequent ones begin with =>, &, or |                   #}
 {# The make-timeseries tasks for CHUNK-A depend on all segment processing for the time period succeeding. #}
@@ -271,7 +271,7 @@ combine-statics => clean-pp-statics
 {% if DO_REGRID %}
 rename-split-to-pp-regrid<regrid>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
-& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
+& rename-split-to-pp-regrid<regrid>[{{ HISTORY_SEGMENT | multiply_duration(SEGMENT) }}]
     {% endfor %}
     {% if HISTORY_SEGMENT != PP_CHUNK_A %}
 => make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
@@ -284,7 +284,7 @@ rename-split-to-pp-regrid<regrid>
 {% if DO_NATIVE %}
 rename-split-to-pp-native<native>
     {% for SEGMENT in range(1, HIST_SEGMENTS_PER_CHUNK_A) %}
-& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }}]
+& rename-split-to-pp-native<native>[{{ HISTORY_SEGMENT | multiply_duration(SEGMENT) }}]
     {% endfor %}
     {% if HISTORY_SEGMENT != PP_CHUNK_A %}
 => make-timeseries-native-{{ PP_CHUNK_A }}<native>
@@ -338,7 +338,7 @@ REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}:succeed-all => data-catalog
 {# If only one pp chunk is used, then skip the CHUNK-B processing. #}
 {% if DO_SECONDARY_PP %}
         {# Run the tasks to process CHUNK-B every CHUNK-B, starting after CHUNK-B time #}
-        +{{ PP_CHUNK_B | subtract_durations('P1Y') }}/{{ PP_CHUNK_B }} = """
+        {{ PP_CHUNK_B }} = """
 
 {# The make-timeseries tasks for CHUNK-B depend on all CHUNK-A processing for the time period succeeding. #}
     {% if DO_REGRID %}
@@ -349,9 +349,9 @@ make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>
         {% endif %}
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
         {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-& rename-split-to-pp-regrid<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+& rename-split-to-pp-regrid<regrid>[{{ PP_CHUNK_A | multiply_duration(CHUNK)}}]
         {% else %}
-& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+& make-timeseries-regrid-{{ PP_CHUNK_A }}<regrid>[{{ PP_CHUNK_A | multiply_duration(CHUNK)}}]
         {% endif %}
         {% endfor %}
 => make-timeseries-regrid-{{ PP_CHUNK_B }}<regrid>
@@ -368,9 +368,9 @@ make-timeseries-native-{{ PP_CHUNK_A }}<native>
         {% endif %}
         {% for CHUNK in range(1, CHUNK_AS_PER_CHUNK_B) %}
         {% if HISTORY_SEGMENT == PP_CHUNK_A %}
-& rename-split-to-pp-native<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+& rename-split-to-pp-native<native>[{{ PP_CHUNK_A | multiply_duration(CHUNK)}}]
         {% else %}
-& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(-CHUNK)}}]
+& make-timeseries-native-{{ PP_CHUNK_A }}<native>[{{ PP_CHUNK_A | multiply_duration(CHUNK)}}]
         {% endif %}
         {% endfor %}
 => make-timeseries-native-{{ PP_CHUNK_B }}<native>
@@ -836,7 +836,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-ts-{{ PP_CHUNK_A }}<component>]]
         inherit = REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_A }}, <component>
@@ -845,7 +845,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-ts-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK_B }}, <component>
@@ -861,7 +861,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}]]
         inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             currentChunk = {{ PP_CHUNK_A }}
     [[remap-pp-components-av-{{ PP_CHUNK_A }}<component>]]
         inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}, <component>
@@ -870,7 +870,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}]]
         inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-av-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}, <component>
@@ -888,7 +888,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         inherit = COMBINE-TIMEAVGS
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }} --print-year)
+            begin = $(cylc cycle-point --print-year)
             currentChunk = {{ PP_CHUNK_A }}
     [[combine-timeavgs-{{ PP_CHUNK_A }}<component>]]
         inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}, <component>
@@ -900,7 +900,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         inherit = COMBINE-TIMEAVGS
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }} --print-year)
+            begin = $(cylc cycle-point --print-year)
             currentChunk = {{ PP_CHUNK_B }}
     [[combine-timeavgs-{{ PP_CHUNK_B }}<component>]]
         inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}, <component>
@@ -958,7 +958,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
     [[MAKE-TIMESERIES-{{ PP_CHUNK_A }}]]
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             inputChunk = {{ HISTORY_SEGMENT }}
             outputChunk = {{ PP_CHUNK_A }}
 {% if DO_NATIVE %}
@@ -977,7 +977,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_SECONDARY_PP %}
     [[MAKE-TIMESERIES-{{ PP_CHUNK_B }}]]
         [[[environment]]]
-            begin = $(cylc cycle-point --offset=-{{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
+            begin = $(cylc cycle-point)
             inputChunk = {{ PP_CHUNK_A }}
             outputChunk = {{ PP_CHUNK_B }}
     {% if DO_NATIVE %}
@@ -1114,7 +1114,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             for dir in $dirs; do
                 if ls $dir; then
 {% for SEGMENT in range(0, HIST_SEGMENTS_PER_CHUNK_A) %}
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(-SEGMENT) }})*.nc" -print -delete
+                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ HISTORY_SEGMENT | multiply_duration(SEGMENT) }})*.nc" -print -delete
 {% endfor %}
                 fi
             done
@@ -1129,9 +1129,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_SECONDARY_PP %}
     {% for CHUNK in range(0, CHUNK_AS_PER_CHUNK_B) %}
                     if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
-                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY   --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY   --offset={{ PP_CHUNK_A | multiply_duration(CHUNK) }})*.nc" -print -delete
                     else
-                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(-CHUNK) }})*.nc" -print -delete
+                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY --offset={{ PP_CHUNK_A | multiply_duration(CHUNK) }})*.nc" -print -delete
                     fi
     {% endfor %}
 {% else %}
