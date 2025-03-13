@@ -938,6 +938,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         script = rose task-run --verbose --app-key make-timeseries
         [[[environment]]]
             fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
+            pp_stop = {{ PP_STOP }}
 
 {% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE]]
