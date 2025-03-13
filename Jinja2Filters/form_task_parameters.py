@@ -62,14 +62,17 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
                 continue
 
             for static_info in comp_info["static"]:
-                if static_info.get("sources") is not None:
-                    results = results + static_info.get("sources")
+                if static_info.get("source") is not None:
+                    results.append(static_info.get("source"))
+                    #results = results + static_info.get("sources")
 ## to-do: assess offline diagnostics
 #                elif:
 #                    results = results + static_info.get("offline_sources")
 
         elif temporal_type == "temporal":
-            results = results + comp_info.get("sources")
+            for hist_file in comp_info["sources"]:
+                results.append(hist_file.get("history_file"))
+            #results = results + comp_info.get("sources")
 
         else:
             raise Exception(f"Unknown temporal type: {temporal_type}")
