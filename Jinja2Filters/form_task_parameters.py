@@ -7,9 +7,8 @@ import yaml
 
 # set up logging
 import logging
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+fre_logger = logging.getLogger(__name__)
 
 def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
     """Form the task parameter list based on the grid type, the temporal type,
@@ -20,7 +19,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         temporal_type (str): One of: temporal or static
         pp_component (str): all, or a space-separated list
 """
-    logger.debug(f"Desired pp components: {pp_components_str}")
+    fre_logger.debug(f"Desired pp components: {pp_components_str}")
     pp_components = pp_components_str.split()
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
@@ -44,15 +43,13 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         if item == "env" or item == "command":
             continue
         comp = regex_pp_comp.match(item).group()
-        logger.debug(f"Examining item '{item}' comp '{comp}'")
 
         # skip if pp component not desired
-        logger.debug(f"Is {comp} in {pp_components}?")
         if comp in pp_components: 
-            logger.debug('Yes')
+            pass
         else:
-            logger.debug('No')
             continue
+        fre_logger.debug(f"Examining item '{item}' and component '{comp}'")
 
         # skip if grid type is not desired
         # some grid types (i.e. regrid-xy) have subtypes (i.e. 1deg, 2deg)
@@ -60,7 +57,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         # So we will strip off after the slash and the remainder is the grid type
         candidate_grid_type = re.sub('\/.*', '', node.get_value(keys=[item, 'grid']))
         if candidate_grid_type != grid_type:
-            logger.debug(f"Skipping as not right grid; got '{candidate_grid_type}' and wanted '{grid_type}'")
+            fre_logger.debug(f"Skipping as not right grid; got '{candidate_grid_type}' and wanted '{grid_type}'")
             continue
 
         # filter static and temporal
@@ -69,23 +66,25 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         # if freq does not include "P0Y" => temporal
         freq = node.get_value(keys=[item, 'freq'])
         if freq is not None and 'P0Y' in freq and temporal_type == 'temporal':
-            logger.debug("Skipping static when temporal is requested")
+            fre_logger.debug("Skipping static when temporal is requested")
             continue
         if temporal_type == "static":
             if freq is not None and 'P0Y' not in freq:
-                logger.debug("Skipping as static is requested, no P0Y here", freq)
+                fre_logger.debug("Skipping as static is requested, no P0Y here")
                 continue
         elif (temporal_type == "temporal"):
             if freq is not None and 'P0Y' in freq:
-                logger.debug("Skipping as temporal is requested, P0Y here", freq)
+                fre_logger.debug("Skipping as temporal is requested, P0Y here")
                 continue
         else:
             raise Exception("Unknown temporal type:", temporal_type)
 
         # convert array in string form to array
         sources = ast.literal_eval(node.get_value(keys=[item, 'sources']))
-        results.extend(sources)
+        for source in sources:
+            results.append(source['history_file'])
+        fre_logger.debug(f"Results so far: {results}")
 
     answer = sorted(list(set(results)))
-    logger.debug("Returning string" + ', '.join(answer))
+    fre_logger.debug(f"Returning string: {', '.join(answer)}")
     return(', '.join(answer))
