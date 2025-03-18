@@ -2,6 +2,12 @@ import re
 import os
 import metomi.rose.config
 import ast
+
+# set up logging
+import logging
+logging.basicConfig(level=logging.INFO)
+fre_logger = logging.getLogger(__name__)
+
 """! form_remap_dep parses the remap_pp_components rose-app.conf and uses input from rose-suite.conf in the form of
 env variables and returns the pp component and source name dependencies for remap_pp_components task execution. For 
 instance, for an atmos PP component that requires the regridded atmos_month and regridded atmos_daily history 
@@ -50,14 +56,11 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
     else:
         raise Exception("output type not supported")
 
-    #print(pp_components)
-    #print(chunk) 
     ########################
     dict_group_source={}
     remap_comp = None 
-    #print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
+    fre_logger.debug(f"Passed args: grid_type='{grid_type}', temporal_type='{temporal_type}', chunk='{chunk}', pp_components_str='{pp_components_str}'")
     remap_dep = "" 
-    #print("DEBUG: desired pp components:", pp_components)
     path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
     results = []
@@ -73,12 +76,9 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
         if item == "env" or item == "command":
             continue
         comp = regex_pp_comp.match(item).group()
-        #print("DEBUG: Examining", item, comp)
-        #res = [pp_comp for pp_comp in pp_components if(pp_comp in comp)]
         if comp not in pp_components:
-          #print(comp, " not in", pp_components)
-          continue
-        #print("DEBUG: Examining", item, comp)
+            continue
+        fre_logger.debug(f"Examining item '{item}' and component '{comp}'")
 
         # skip if grid type is not desired
         # some grid types (i.e. regrid-xy) have subtypes (i.e. 1deg, 2deg)
@@ -86,7 +86,7 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
         # So we will strip off after the slash and the remainder is the grid type
         candidate_grid_type = re.sub('\/.*', '', node.get_value(keys=[item, 'grid']))
         if candidate_grid_type != grid_type:
-            #print("DEBUG: Skipping as not right grid; got", candidate_grid_type, "and wanted", grid_type)
+            fre_logger.debug(f"Skipping as not right grid; got '{candidate_grid_type}' but wanted '{grid_type}'")
             continue
 
         # skip if temporal type is not desired
@@ -94,19 +94,19 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
         freq = node.get_value(keys=[item, 'freq'])
         if temporal_type == "static":
             if freq and 'P0Y' not in freq:
-                #print("DEBUG: Skipping as static is requested, no P0Y here", freq)
+                fre_logger.debug("Skipping as static is requested, no P0Y here")
                 continue
         elif (temporal_type == "temporal"):
             if freq and 'P0Y' in freq:
-                #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
+                fre_logger.debug("Skipping as temporal is requested, P0Y here")
                 continue
         else:
             raise Exception("Unknown temporal type:", temporal_type)
         # chunk is optional, so if it does not exist then continue on
         chunk_from_config = node.get_value(keys=[item, 'chunk'])
         if chunk_from_config and chunk not in chunk_from_config:
-               #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, chunk_from_config))
-               continue
+            fre_logger.debug("Skipping as chunk '{chunk}' is requested, but not in configuration {chunk_from_config}")
+            continue
 
         results = ast.literal_eval(node.get_value(keys=[item, 'sources']))
         remap_comp = comp
