@@ -499,14 +499,17 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                  echo "Error: Cant stage history files in ${file} to PTMP"
                  exit 1
             fi
-
             #Data Integrity Checking
-            v_dir=$ptmpDir$historyDir/$(basename -s .tar $file)
-            if fre pp histval --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD); then
-                echo "Successfully validated files in ${v_dir} for correct number of timesteps"
+            validation_dir=$ptmpDir$historyDir/$(basename -s .tar $file)
+            if [[ -f v_dir/*diag_manifest* ]]; then 
+                if fre pp histval --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD); then
+                    echo "Successfully validated files in ${validation_dir} for correct number of timesteps"
+                else
+                    echo "Error: Could not verify files in ${validation_dir} contain correct number of timesteps"
+                    exit 1
+                fi
             else
-                echo "Error: Could not verify files in ${v_dir} contain correct number of timesteps"
-                exit 1
+                echo "Warning: No diag_manifest files were found in ${validation_dir}. Please update to a more recent FMS release"
             fi
 
             # Setup PYTHONPATH and io lists for the data lineage tool
