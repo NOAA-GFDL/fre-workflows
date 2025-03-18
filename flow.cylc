@@ -499,6 +499,9 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                  exit 1
             fi
 
+            #Data Integrity Checking
+            fre pp histval -hist $ptmpDir$historyDir/$(basename -s .tar $file) -d $(cylc cycle-point --template CCYYMMDD)
+
             # Setup PYTHONPATH and io lists for the data lineage tool
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
