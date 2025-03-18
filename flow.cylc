@@ -833,6 +833,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         script = rose-task-run --verbose --app-key remap-pp-components
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
+            yaml_config = {{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
@@ -882,8 +883,18 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             currentChunk = {{ PP_CHUNK_B }}
     [[remap-pp-components-av-{{ PP_CHUNK_B }}<component>]]
         inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}, <component>
+{% endif %}
 
-
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
+    [[remap-pp-components-static]]
+        inherit = REMAP-PP-COMPONENTS-TS
+        [[[environment]]]
+            begin = $CYLC_TASK_CYCLE_POINT
+            currentChunk = P0Y
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
+            components = {{ PP_COMPONENTS }}
+            product = static
+            dirTSWorkaround = ""
 {% endif %}
 
 {% if DO_TIMEAVGS %}
@@ -918,18 +929,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
     {% endif %}
 {% endif %}
 
-{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
-    [[remap-pp-components-static]]
-        inherit = REMAP-PP-COMPONENTS-TS
-        [[[environment]]]
-            begin = $CYLC_TASK_CYCLE_POINT
-            currentChunk = P0Y
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
-            components = {{ PP_COMPONENTS }}
-
-            product = static
-            dirTSWorkaround = ""
-{% endif %}
     [[data-catalog]]
         script = """
         fre catalog builder --overwrite $ppdir $ppdir/catalog
