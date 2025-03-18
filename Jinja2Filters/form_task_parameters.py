@@ -35,11 +35,9 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         # Check that pp_components defined matches those in the yaml file
         # Skip component if they don't match
         # skip if pp component not desired
-        logger.debug(f"Is {comp} in {pp_components}?")
         if comp in pp_components: 
-            logger.debug('Yes')
+            pass
         else:
-            logger.debug('No')
             continue
 
         # Set grid type if component has xyInterp defined or not
@@ -58,13 +56,12 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         if temporal_type == "static":
             #print(comp_info["static"]["freq"])
             if "static" not in comp_info.keys():
-                logger.debug("Skipping static as there is no static source")
+                logger.debug("Skipping static as there are no static sources defined")
                 continue
 
             for static_info in comp_info["static"]:
                 if static_info.get("source") is not None:
                     results.append(static_info.get("source"))
-                    #results = results + static_info.get("sources")
 ## to-do: assess offline diagnostics
 #                elif:
 #                    results = results + static_info.get("offline_sources")
