@@ -108,7 +108,9 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
             fre_logger.debug("Skipping as chunk '{chunk}' is requested, but not in configuration {chunk_from_config}")
             continue
 
-        results = ast.literal_eval(node.get_value(keys=[item, 'sources']))
+        sources = ast.literal_eval(node.get_value(keys=[item, 'sources']))
+        for source in sources:
+            results.append(source['history_file'])
         remap_comp = comp
         answer = sorted(list(set(results)))
         if remap_comp is not None:
@@ -141,4 +143,4 @@ def form_remap_dep(grid_type: str, temporal_type: str, chunk: str, pp_components
     # When that happens just exit with an empty string and exit normally.
     return(remap_dep)
 
-#print(form_remap_dep('regrid-xy', 'temporal', 'P4D', 'land atmos land_cubic'))
+#print(form_remap_dep('regrid-xy', 'temporal', 'P1Y', 'land atmos land_cubic', 'ts', 'P1Y'))
