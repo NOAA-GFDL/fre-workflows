@@ -1029,6 +1029,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = mkdir -p $outputDir
+        script = rose task-run --verbose --app-key combine-statics
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             outputDir = {{ PP_DIR }}
