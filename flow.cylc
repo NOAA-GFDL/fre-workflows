@@ -501,7 +501,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
             fi
             #Data Integrity Checking
             validation_dir=$ptmpDir$historyDir/$(basename -s .tar $file)
-            if [[ -f v_dir/*diag_manifest* ]]; then 
+            if [[ -f $validation_dir/*diag_manifest* ]]; then 
                 if fre pp histval --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD); then
                     echo "Successfully validated files in ${validation_dir} for correct number of timesteps"
                 else
