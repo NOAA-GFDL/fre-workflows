@@ -46,6 +46,9 @@
 {# The combined yaml is the definitive configuration source #}
 {% set YAML = EXPERIMENT + '.yaml' %}
 
+{# Retrieve active pp components from the yaml #}
+{% set PP_COMPONENTS = YAML | get_components %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
