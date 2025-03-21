@@ -40,6 +40,13 @@ for comp in $(ls); do
     mkdir -p $outputDir/$comp
     cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
 
+#   #check
+#    if [ -z "$( ls $outputDir/$comp)" ]; then
+#        echo "empty"
+#    else
+#        echo "$(ls $outputDir/$comp)"
+#    fi
+
     if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
         data_lineage_in_dir=$inputDir/$comp/P0Y/P0Y
         data_lineage_out_dir=$outputDir/$comp

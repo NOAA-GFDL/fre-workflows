@@ -50,7 +50,7 @@
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = mkdir -p $outputDir
 {% endif %}
