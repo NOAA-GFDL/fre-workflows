@@ -306,16 +306,16 @@ rename-split-to-pp-native<native>
 {% endif %}
 
 {% if DO_REGRID %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT) }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT, YAML) }}
     {% if DO_TIMEAVGS %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT) }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT, YAML) }}
     {% endif %}
 {% endif %}
 
 {% if DO_NATIVE %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT) }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'ts', HISTORY_SEGMENT, YAML) }}
     {% if DO_TIMEAVGS %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT) }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_A, PP_COMPONENTS, 'av', HISTORY_SEGMENT, YAML) }}
     {% endif %}
 {% endif %}
 
@@ -400,16 +400,16 @@ COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}:succeed-all => clean-pp-timeavgs-{{ PP_CHUNK_B
 {# Generate the per-component make-timeseries => remap-pp-component tasks using Jinja trigger form_remap_dep #}
 {# Throw validation exception if PP_CHUNK_B is not in rose-app.conf                                          #}
     {% if DO_REGRID %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts', YAML) }}
         {% if DO_TIMEAVGS %}
-{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av') }}
+{{ "regrid-xy" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av', YAML) }}
         {% endif %}
     {% endif %}
 
     {% if DO_NATIVE %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts') }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'ts', YAML) }}
         {% if DO_TIMEAVGS %}
-{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av') }}
+{{ "native" | form_remap_dep('temporal', PP_CHUNK_B, PP_COMPONENTS, 'av', YAML) }}
         {% endif %}
     {% endif %}
 
