@@ -1,29 +1,32 @@
+"""
+Form the task parameter list based on the grid type, 
+the temporal type,and the desired pp component(s)
+"""
+
 import os
-from pathlib import Path 
+from pathlib import Path
+import logging
 import yaml
 
 # set up logging
-import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
-    """Form the task parameter list based on the grid type, the temporal type,
-    and the desired pp component(s)
-
+    """
     Arguments:
         grid_type (str): One of: native or regrid-xy
         temporal_type (str): One of: temporal or static
         pp_component (str): all, or a space-separated list
     """
-    logger.debug(f"Desired pp components: {pp_components_str}")
+    logger.debug("Desired pp components: %s", pp_components_str)
     pp_components = pp_components_str.split()
 
     # Path to yaml configuration
     exp_dir = Path(__file__).resolve().parents[1]
     path_to_yamlconfig = os.path.join(exp_dir, yamlfile)
-    # Load and read yaml configuration 
+    # Load and read yaml configuration
     with open(path_to_yamlconfig,'r') as yml:
         yml_info = yaml.safe_load(yml)
 
@@ -35,9 +38,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         # Check that pp_components defined matches those in the yaml file
         # Skip component if they don't match
         # skip if pp component not desired
-        if comp in pp_components: 
-            pass
-        else:
+        if comp not in pp_components:
             continue
 
         # Set grid type if component has xyInterp defined or not
@@ -49,7 +50,7 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
         # Check that candidate_grid_type matches grid type passed in function
         # If not, skip post-processing of component
         if candidate_grid_type != grid_type:
-            logger.debug(f"Skipping as not right grid; got '{candidate_grid_type}' and wanted '{grid_type}'")
+            logger.debug("Skipping as not right grid; got '%s' and wanted '%s'", candidate_grid_type, grid_type)
             continue
 
         # Filter static and temporal
@@ -73,13 +74,13 @@ def form_task_parameters(grid_type, temporal_type, pp_components_str, yamlfile):
 
         else:
             raise Exception(f"Unknown temporal type: {temporal_type}")
-            
+
     # results list --> set --> list: checks for repetitive sources listed
     answer = sorted(list(set(results)))
 
     # Returns a comma separated list of sources
-    logger.debug("Returning string" + ', '.join(answer))
-    return(', '.join(answer))
+    logger.debug("Returning string %s", ', '.join(answer))
+    return ', '.join(answer)
 
 ## OWN TESTING ##
 #print(form_task_parameters('regrid-xy', 'temporal', 'ocean_cobalt_sfc ocean_cobalt_btm', 'COBALT_postprocess.yaml')))
