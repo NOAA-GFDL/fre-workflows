@@ -85,6 +85,7 @@ class AnalysisScript(object):
 
         # Parse the new analysis config items
         if 'legacy' in config:
+            logger.debug(f"{name}: legacy fre-analysis")
             self.is_legacy = True
             # the first word of command will be the script, but there could be more command-line args
             stuff = config["legacy"]["script"].split()
@@ -95,6 +96,7 @@ class AnalysisScript(object):
                 self.legacy_script = stuff.pop(0)
                 self.legacy_script_args = ""
         else:
+            logger.debug(f"{name}: new fre-analysis")
             self.is_legacy = False
 
         self.data_frequency = config["required"]["data_frequency"]
@@ -198,6 +200,7 @@ R1 = \"\"\"
             graph += f"\"\"\"\n"
             if not self.is_legacy:
                 graph += install_analysis_str
+            logger.info(f"{self.name}: will run every '{chunk}'")
             return graph
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -237,6 +240,7 @@ R1 = \"\"\"
                 date += chunk
             if not self.is_legacy:
                 graph += install_analysis_str
+            logger.info(f"{self.name}: will run every '{chunk}' in accumulative mode")
             return graph
 
         if self.script_frequency == "R1":
@@ -270,6 +274,7 @@ R1 = \"\"\"
             graph += f"        \"\"\"\n"
             if not self.is_legacy:
                 graph += install_analysis_str
+            logger.info(f"{self.name}: will run once, '{self.date_range[0]}' to '{self.date_range[1]}'")
             return graph
 
         raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
@@ -426,9 +431,10 @@ fre analysis install \
 
             # create the install script
             if not self.is_legacy:
+                logger.debug(f"{self.name}: Adding install script")
                 definitions += install_str
 
-            logger.debug(f"{self.name}: Finished determining scripting")
+            logger.debug(f"{self.name}: Finished determining scripting for every-chunk")
             return definitions
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -498,8 +504,10 @@ fre analysis install \
 
             # create the install script
             if not self.is_legacy:
+                logger.debug(f"{self.name}: Adding install script")
                 definitions += install_str
 
+            logger.debug(f"{self.name}: Finished determining scripting for every-chunk accumulative")
             return definitions
 
         if self.script_frequency == "R1":
@@ -570,9 +578,11 @@ fre analysis install \
             if self.is_legacy:
                 definitions += legacy_analysis_str
             else:
+                logger.debug(f"{self.name}: Adding install script")
                 definitions += install_str
                 definitions += new_analysis_str
 
+            logger.debug(f"{self.name}: Finished determining scripting for one time")
             return definitions
         raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
