@@ -434,6 +434,11 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
 
 {% endif %}
 
+#
+# Recurrence intervals for climatology tasks
+#
+{{ YAML | get_climatology_info('task-graph') }}
+
 [runtime]
     [[pp-starter]]
         inherit = PP-STARTER
