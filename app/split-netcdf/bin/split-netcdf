@@ -46,7 +46,7 @@ cd $inputDir
 shopt -s extglob
 
 # If in sub-dir mode, process the sub-directories instead of the main one
-if [[ $use_subdirs ]]; then
+if [[ $use_subdirs == 0 ]]; then
     for subdir in $(ls); do
         pushd $subdir
         files=$(echo *.$component?(.tile?).nc)
@@ -108,6 +108,7 @@ if [[ $use_subdirs ]]; then
     done
 else
     files=$(echo *.$component?(.tile?).nc)
+    echo *.?(.tile?).nc
 
     # Exit if no input files are found
     if [[ $files =~ \* ]]; then
