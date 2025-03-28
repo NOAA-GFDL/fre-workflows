@@ -22,13 +22,13 @@ import os
 from pathlib import Path
 import yaml
 
-def rewrite_form_remap_dep(grid_type: str,
-                           temporal_type: str,
-                           chunk: str,
-                           pp_components_str: str,
-                           output_type: str,
-                           yamlfile: str,
-                           history_segment: str=None) -> str:
+def form_remap_dep(grid_type: str,
+                   temporal_type: str,
+                   chunk: str,
+                   pp_components_str: str,
+                   output_type: str,
+                   yamlfile: str,
+                   history_segment: str=None) -> str:
     """ 
     Form the task parameter list based on the grid type,
     the temporal type, and the desired pp component(s)
