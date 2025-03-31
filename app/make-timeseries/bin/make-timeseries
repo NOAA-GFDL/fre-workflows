@@ -137,14 +137,14 @@ type isodatetime
 # Determine how many expected files to concatenate
 inputChunkHrs=$(isodatetime --as-total=H $inputChunk | sed -e 's/\.0$//')
 expectedChunks=$(( $(isodatetime --as-total=H $outputChunk | sed -e 's/\.0$//') / inputChunkHrs ))
-availChunks=$(( $(isodatetime --as-total=H $begin $pp_stop | sed -e 's/\.0$//') / inputChunkHrs ))
+availChunks=$(( $(isodatetime --as-total=H $begin $pp_stop --offset2=$inputChunk | sed -e 's/\.0$//') / inputChunkHrs ))
 
 if ((availChunks >= expectedChunks))
 then
     end=$(isodatetime $begin --offset $outputChunk)
 else
     expectedChunks=$availChunks
-    end=$pp_stop
+    end=$(isodatetime $pp_stop --offset $inputChunk)
 fi
 
 if (( expectedChunks > 0 )); then
