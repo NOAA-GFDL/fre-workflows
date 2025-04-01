@@ -181,7 +181,7 @@
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         env-script = """
             {{ EPMT_PREAMBLE }}
@@ -213,7 +213,7 @@
         """
     {% endfor %}
 
-    {% if DO_STATICS %}
+    {% if DO_REGRID_STATIC %}
         {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in REGRID_STATIC_COMPONENTS %}
     [[<regrid_static={{ KEY }}>]]
@@ -236,7 +236,7 @@
         {{ EPMT_POSTAMBLE }}
         """
     {% endfor %}
-    {% if DO_STATICS %}
+    {% if DO_NATIVE_STATIC %}
         {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in NATIVE_STATIC_COMPONENTS %}
     [[<native_static={{ KEY }}>]]
