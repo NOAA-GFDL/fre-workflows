@@ -465,7 +465,7 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         # Increase time limit for staging jobs to 8 hours
         execution time limit = PT8H
         script = """
-            module load fre/{{ FRE_VERSION }}
+            module load fre/2025.02
             set -euo pipefail
 
             #Stage the contents of a tarfile to PTMP
@@ -499,19 +499,8 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
                  echo "Error: Cant stage history files in ${file} to PTMP"
                  exit 1
             fi
-            #Data Integrity Checking
-            validation_dir=$ptmpDir$historyDir/$(basename -s .tar $file)
-            if [[ -f $validation_dir/*diag_manifest* ]]; then 
-                if fre pp histval --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD); then
-                    echo "Successfully validated files in ${validation_dir} for correct number of timesteps"
-                else
-                    echo "Error: Could not verify files in ${validation_dir} contain correct number of timesteps"
-                    exit 1
-                fi
-            else
-                echo "Warning: No diag_manifest files were found in ${validation_dir}. Please update to a more recent FMS release"
-            fi
-
+            #Data Integrity Checking:q
+            fre pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
             # Setup PYTHONPATH and io lists for the data lineage tool
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
