@@ -1,4 +1,3 @@
-from logging import getLogger
 from pathlib import Path
 
 import metomi.isodatetime.dumpers
@@ -7,9 +6,13 @@ from yaml import safe_load
 
 from legacy_date_conversions import *
 
+# set up logging
+import logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # Global variables just set to reduce typing a little.
-logger = getLogger(__name__)
 duration_parser = metomi.isodatetime.parsers.DurationParser()
 one_year = duration_parser.parse("P1Y")
 time_dumper = metomi.isodatetime.dumpers.TimePointDumper()
@@ -50,6 +53,7 @@ class AnalysisScript(object):
             experiment_stopping_date: Stopping date for the experiment.
         """
         self.name = name
+        logger.debug(f"{name}: initializing AnalysisScript instance")
 
         # Skip if configuration wants to skip it
         self.switch = config["workflow"]["switch"]
@@ -94,10 +98,20 @@ class AnalysisScript(object):
             self.is_legacy = False
 
         self.data_frequency = config["required"]["data_frequency"]
+
+        # if dates are years, convert to string or else ISO conversion will fail
+        if isinstance(config["required"]["date_range"][0], int):
+            one = "{:04d}".format(config["required"]["date_range"][0])
+            two = "{:04d}".format(config["required"]["date_range"][1])
+        else:
+            one = config["required"]["date_range"][0]
+            two = config["required"]["date_range"][1]
         self.date_range = [
-            time_parser.parse(config["required"]["date_range"][0]),
-            time_parser.parse(config["required"]["date_range"][1])
+            time_parser.parse(one),
+            time_parser.parse(two)
         ]
+
+        logger.debug(f"{name}: initialized instance")
 
     def choose_pp_chunk(self, chunk1, chunk2):
         """Choose the most suitable postprocessing chunk size.
@@ -163,10 +177,10 @@ R1 = \"\"\"
 
         graph = ""
 
-        #print(f"DEBUG: script frequency = {self.script_frequency}")
-        #print(f"DEBUG: chunk = {chunk}")
-        #print(f"DEBUG: analysis date range = {self.date_range}")
-        #print(f"DEBUG: exp date range = {self.experiment_date_range}")
+        logger.debug(f"script frequency = {self.script_frequency}")
+        logger.debug(f"chunk = {chunk}")
+        logger.debug(f"analysis date range = {self.date_range}")
+        logger.debug(f"exp date range = {self.experiment_date_range}")
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
@@ -371,7 +385,7 @@ fre analysis install \
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
-            logger.info(f"ANALYSIS: {self.name}: Will run every chunk {chunk}")
+            logger.info(f"{self.name}: Will run every chunk {chunk}")
             if self.is_legacy:
                 definitions += legacy_analysis_str
             else:
@@ -414,6 +428,7 @@ fre analysis install \
             if not self.is_legacy:
                 definitions += install_str
 
+            logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
@@ -422,7 +437,7 @@ fre analysis install \
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
-            logger.info(f"ANALYSIS: {self.name}: Will run each chunk {chunk} from beginning {self.experiment_date_range[0]}")
+            logger.info(f"{self.name}: Will run each chunk {chunk} from beginning {self.experiment_date_range[0]}")
             date = self.experiment_date_range[0] + chunk - one_year
             while date <= self.experiment_date_range[1]:
                 date_str = time_dumper.strftime(date, '%Y')
@@ -502,7 +517,7 @@ fre analysis install \
                     pass
                 else:
                     raise NotImplementedError(f"ERROR: Non-supported analysis script configuration: {self.name}: run-once (R1), timeaverages, and non-accumulative is inconsistent, unless duration '{chunk}' represents {self.date_range[0]} through {self.date_range[1]} inclusive.")
-            logger.info(f"ANALYSIS: {self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})\n")
+            logger.info(f"{self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})")
             date1_str = time_dumper.strftime(self.date_range[0], '%Y')
             date2_str = time_dumper.strftime(self.date_range[1], '%Y')
 
@@ -568,7 +583,7 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop)
         if script_info.switch == False:
-            logger.info("must skip analysis {script_name}.")
+            logger.info(f"{script_name}: Skipping, switch set to off")
             continue
         yield script_info
 
@@ -588,10 +603,12 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
     Returns:
         String containing the task defintions.
     """
+    logger.debug("About to generate all task definitions")
     definitions = ""
     for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
         chunk = script_info.choose_pp_chunk(chunk1, chunk2)
         definitions += script_info.definition(chunk, pp_dir)
+    logger.debug("Finished generating all task definitions")
     return definitions
 
 
@@ -635,6 +652,7 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
         chunk2 (str): Larger chunk size (optional)
         analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
     """
+    logger.debug("get_analysis_info: starting")
     # Convert strings to date objects.
     experiment_start = time_parser.parse(experiment_start)
     experiment_stop = time_parser.parse(experiment_stop)
@@ -648,9 +666,11 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
     with open(experiment_yaml) as file_:
         yaml_ = safe_load(file_)
         if info_type == "task-graph":
+            logger.debug("get_analysis_info: about to return graph")
             return task_graph(yaml_, experiment_components, experiment_start,
                               experiment_stop, chunk1, chunk2, analysis_only)
         elif info_type == "task-definitions":
+            logger.debug("get_analysis_info: about to return definitions")
             return task_definitions(yaml_, experiment_components, experiment_start,
                                    experiment_stop, chunk1, chunk2, pp_dir)
         raise ValueError(f"Invalid information type: {info_type}.")
