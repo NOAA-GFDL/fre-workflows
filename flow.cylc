@@ -476,7 +476,6 @@ REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}:succeed-all => clean-shards-{{ PP_CHUNK_
         # Increase time limit for staging jobs to 8 hours
         execution time limit = PT8H
         script = """
-            module load fre/2025.02
             set -euo pipefail
 
             #Stage the contents of a tarfile to PTMP
