@@ -2,7 +2,7 @@ from metomi.isodatetime.parsers import DurationParser, TimePointParser
 
 def iter_chunks(chunk_sizes, history_segment, pp_start, pp_stop):
     """Return an iterator over all PP chunks. For each chunk, a dictionary is
-       yielded consisting of `chunk_size`, `cycle_point`, and `segments` keys.
+       yielded consisting of `chunk_size`, `cycle_point`, `segments`, and `is_partial` keys.
 
     Arguments:
         chunk_sizes (list of strings)
@@ -17,17 +17,20 @@ def iter_chunks(chunk_sizes, history_segment, pp_start, pp_stop):
       {
         'chunk_size': Duration<P2Y>,
         'cycle_point': TimePoint<0001-01-01>,
-        'segments': [TimePoint<0001-01-01>, TimePoint<0002-01-01>]
+        'segments': [TimePoint<0001-01-01>, TimePoint<0002-01-01>],
+        'is_partial': False
       },
       {
         'chunk_size': Duration<P2Y>,
         'cycle_point': TimePoint<0003-01-01>,
-        'segments': [TimePoint<0003-01-01>]
+        'segments': [TimePoint<0003-01-01>],
+        'is_partial': True
       },
       {
         'chunk_size': Duration<P3Y>,
         'cycle_point': TimePoint<0001-01-01>,
-        'segments': [TimePoint<0001-01-01>, TimePoint<0002-01-01>, TimePoint<0003-01-01>]
+        'segments': [TimePoint<0001-01-01>, TimePoint<0002-01-01>, TimePoint<0003-01-01>],
+        'is_partial': False
       }
     ]
 """
@@ -51,6 +54,7 @@ def iter_chunks(chunk_sizes, history_segment, pp_start, pp_stop):
             yield {
                 'chunk_size': cs,
                 'cycle_point': cycle_point,
-                'segments': [cycle_point + history_segment*i for i in range(n)]
+                'segments': [cycle_point + history_segment*i for i in range(n)],
+                'is_partial': False if n == n_segments_full_chunk else True
             }
             cycle_point += cs
