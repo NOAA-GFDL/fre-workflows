@@ -21,7 +21,7 @@ def get_components(yamlfile):
         yaml_ = yaml.safe_load(file_)
 
         for component in yaml_["postprocess"]["components"]:
-            if component['switch'] is True:
+            if component['postprocess_on'] is True:
                 components.append(component["type"])
 
     # we want to return a list, but some other scripts are expecting a space-separated string
