@@ -282,7 +282,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% for SEGMENT in chunk.segments[1:] %}
                 & rename-split-to-pp-regrid<regrid>[{{ SEGMENT }}]
             {% endfor %}
-            {% if HISTORY_SEGMENT != chunk.chunk_size %}
+            {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
             {% if DO_TIMEAVGS and not chunk.is_partial %}
@@ -295,7 +295,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% for SEGMENT in chunk.segments[1:] %}
                 & rename-split-to-pp-native<native>[{{ SEGMENT }}]
             {% endfor %}
-            {% if HISTORY_SEGMENT != chunk.chunk_size %}
+            {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
             {% if DO_TIMEAVGS and not chunk.is_partial %}
@@ -1027,9 +1027,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         inherit = CLEAN
         script = """
             rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/P0Y
-    {% if DO_REGRID %}
             rm -rf $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/P0Y
-    {% endif %}
         """
 {% endif %}
 
@@ -1038,9 +1036,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
             for dir in $dirs; do
-                if ls $dir; then
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                fi
+                find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
             done
         """
 
@@ -1049,12 +1045,10 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_A }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_A }}"
             for dir in $dirs; do
-                if ls $dir; then
-                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
-                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                    else
-                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                    fi
+                if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                else
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
                 fi
             done
         """
@@ -1065,9 +1059,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_B }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_B }}"
             for dir in $dirs; do
-                if ls $dir; then
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                fi
+                find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
             done
         """
 {% endif %}
@@ -1077,12 +1069,10 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK_A }}
             for dir in $dirs; do
-                if ls $dir; then
-                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
-                        find $dir -type f -name "*.$(cylc cycle-point   --template CCYY)*.nc" -print -delete
-                    else
-                        find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                    fi
+                if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                else
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
                 fi
             done
         """
@@ -1093,9 +1083,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK_B }}
             for dir in $dirs; do
-                if ls $dir; then
-                    find $dir -type f -name "*.*-$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                fi
+                find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
             done
         """
 {% endif %}
