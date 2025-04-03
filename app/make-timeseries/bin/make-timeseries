@@ -126,6 +126,7 @@ echo "    output dir: $outputDir"
 echo "    begin: $begin"
 echo "    input chunk: $inputChunk"
 echo "    output chunk: $outputChunk"
+echo "    pp stop: $pp_stop"
 echo "    component: $component"
 echo "    components allowed to fail: ${fail_ok_components:=}"
 echo "    use subdirs: ${use_subdirs:=}"
@@ -134,7 +135,18 @@ type cdo
 type isodatetime
 
 # Determine how many expected files to concatenate
-expectedChunks=$(( $(isodatetime --as-total=H $outputChunk | sed -e 's/\.0$//') / $(isodatetime --as-total=H $inputChunk | sed -e 's/\.0$//') ))
+inputChunkHrs=$(isodatetime --as-total=H $inputChunk | sed -e 's/\.0$//')
+expectedChunks=$(( $(isodatetime --as-total=H $outputChunk | sed -e 's/\.0$//') / inputChunkHrs ))
+availChunks=$(( $(isodatetime --as-total=H $begin $pp_stop --offset2=$inputChunk | sed -e 's/\.0$//') / inputChunkHrs ))
+
+if ((availChunks >= expectedChunks))
+then
+    end=$(isodatetime $begin --offset $outputChunk)
+else
+    expectedChunks=$availChunks
+    end=$(isodatetime $pp_stop --offset $inputChunk)
+fi
+
 if (( expectedChunks > 0 )); then
     echo NOTE: Expect to concatenate $expectedChunks subchunks
 else
@@ -161,8 +173,6 @@ if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
     echo "Set PYTHONPATH and created i/o lists"
 fi
 
-# Calculate end date
-end=$(isodatetime $begin --offset $outputChunk)
 # remove trailing Z to allow string comparison later
 begin=${begin%Z}
 end=${end%Z}

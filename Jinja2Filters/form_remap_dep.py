@@ -56,7 +56,7 @@ def form_remap_dep(grid_type: str,
     # Note: history_segment should be specified for primary chunk generation,
     # and omitted for secondary chunk generation.
     if output_type == "ts":
-        if history_segment == chunk:
+        if str(history_segment) == str(chunk):
             prereq_task = "rename-split-to-pp"
         else:
             prereq_task = "make-timeseries"
