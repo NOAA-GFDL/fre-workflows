@@ -48,7 +48,10 @@
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load gcp/2.3 hsm/1.3.0
+        pre-script = """
+            module load gcp/2.3 hsm/1.3.0
+            module load fre/{{ FRE_VERSION }}
+        """
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -181,7 +184,7 @@
             MDTF_TMPDIR = $CYLC_WORKFLOW_SHARE_DIR/mdtf
 {% endif %}
 
-{% if DO_STATICS %}
+{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         env-script = """
             {{ EPMT_PREAMBLE }}
@@ -213,7 +216,7 @@
         """
     {% endfor %}
 
-    {% if DO_STATICS %}
+    {% if DO_REGRID_STATIC %}
         {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in REGRID_STATIC_COMPONENTS %}
     [[<regrid_static={{ KEY }}>]]
@@ -236,7 +239,7 @@
         {{ EPMT_POSTAMBLE }}
         """
     {% endfor %}
-    {% if DO_STATICS %}
+    {% if DO_NATIVE_STATIC %}
         {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
         {% for KEY in NATIVE_STATIC_COMPONENTS %}
     [[<native_static={{ KEY }}>]]

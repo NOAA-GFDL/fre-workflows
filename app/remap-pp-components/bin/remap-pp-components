@@ -12,6 +12,13 @@ import glob
 from pathlib import Path
 import metomi.rose.config as mrc
 import ast
+import yaml
+from pathlib import Path
+
+import logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def verify_dirs(in_dir,out_dir):
     """
@@ -207,6 +214,58 @@ def search_files(product,var,source,freq,current_chunk,begin):
 
     return files
 
+######### REWRITE
+def get_variables(comp_info, product):
+    if product == "static" :
+        if comp_info.get("static") is not None:
+            for ah in comp_info.get("static"): #source, variables OR offline_diagnostics, variables
+                if ah.get("variables") is not None:
+                    v = ah.get("variables")
+                else:
+                    v = "all"
+        else:
+            raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
+    else:
+        for ah in comp_info.get("sources"): #history_file,variables
+            if ah.get("variables"):
+                v = ah.get("variables")
+            else:
+                v = "all"
+
+    return v
+
+def get_sources(comp_info, product):
+    sources = []
+    if "static" in product:
+        for ah in comp_info.get("static"):
+            sources.append(ah.get("source"))
+    else:
+        for ah in comp_info.get("sources"):
+            sources.append(ah.get("history_file"))
+
+    return sources
+
+def get_freq(comp_info, product):
+#    if "static" in product:
+#        for ah in comp_info.get("static"):
+#            if "freq" not in ah.keys():
+#                freq = glob.glob("*")
+#    else:
+#    for k in comp_info.keys():
+    if "freq" not in comp_info.keys():
+        freq = glob.glob("*")
+    else:
+        freq = comp_info.get("freq")
+
+    return freq
+
+def get_chunk(comp_info, product):
+    if "chunk" not in comp_info.keys():
+        chunk = glob.glob("*")
+    else:
+        chunk = comp_info.get("chunk")
+
+    return chunk
 ##################################### MAIN FUNCTION #####################################
 def remap():
     """
@@ -228,6 +287,7 @@ def remap():
     begin             = os.getenv('begin')
     current_chunk     = os.getenv('currentChunk')
     components        = os.getenv('components')
+    yaml_config       = os.getenv('yaml_config')
     product           = os.getenv('product')
     dir_ts_workaround = os.getenv('dirTSWorkaround')
     ens_mem           = os.getenv('ens_mem')
@@ -238,6 +298,7 @@ def remap():
     print("    begin: "+begin)
     print("    current chunk: "+current_chunk)
     print("    components: "+components)
+    print("    yaml config: "+yaml_config)
     print("    product: "+product)
     if dir_ts_workaround is not None:
         print("    dirTSWorkaround: "+dir_ts_workaround)
@@ -249,10 +310,19 @@ def remap():
         print("    ens_mem: None")
     copy_tool = os.getenv('COPY_TOOL')
 
-    # Read rose config files (for now)
-    config_dir = os.getcwd()
-    print(f"rose configuration directory: {config_dir}")
-    config = mrc.load(f"{config_dir}/rose-app-run.conf")
+#    # Read rose config files (for now)
+#    config_dir = os.getcwd()
+#    print(f"rose configuration directory: {config_dir}")
+#    config = mrc.load(f"{config_dir}/rose-app-run.conf")
+
+##
+    # Path to yaml configuration
+    exp_dir = Path(__file__).resolve().parents[3]
+    path_to_yamlconfig = os.path.join(exp_dir, yaml_config)
+    # Load and read yaml configuration 
+    with open(path_to_yamlconfig,'r') as yml:
+        yml_info = yaml.safe_load(yml)
+##
 
     # Verify the input and output directories
     verify_dirs(input_dir, output_dir)
@@ -265,169 +335,159 @@ def remap():
     comps = components.split()
     for comp in comps:
         comp = comp.strip('""')
-        try:
-            #comp_out: component in rose config
-            comp_out = config.get([comp])
+##
+#make sure component or source is in yaml file?
+        for comp_info in yml_info["postprocess"]["components"]:
+            components = comp_info.get("type")
 
-            #fields: info associated with each component
-            fields = comp_out.get_value()
-
-        except AttributeError:
-            print(f"WARNING: component {comp} does not exist in rose config")
-            continue
-
-        # check for empty dictionary
-        if fields == {}:
-            print(f"WARNING: component {comp} does not have any associated attributes")
-            continue
-
-        # Define fields
-        if fields.get("variables") is not None:
-            variables = fields.get("variables").get_value()
-            v = variables.split()
-        else:
-            v = "all"
-
-        #GRID
-        if fields.get("grid") is None:
-            grid = glob.glob("*")
-        else:
-            grid = fields.get("grid").get_value()
-            grid = grid.split()
-
-        for g in grid:
-            if ens_mem is not None:
-                newdir = f"{input_dir}/{g}/{ens_mem}"
-                os.chdir(newdir)
+            # Check that pp_components defined matches those in the yaml file
+            logger.debug(f"Is {comp} in {components}?")
+            if comp in components:
+                logger.debug('Yes')
             else:
-                os.chdir(f"{input_dir}/{g}")
+                logger.warning('f"WARNING: component {comp} does not exist in yaml config')
+                continue
 
-            ## SOURCES
-            # convert ascii array to array
-            sources = ast.literal_eval(fields.get("sources").get_value())
+            #if static but no static defined, skip...or raise error?
+            if product == "static":
+                if comp_info.get("static") is None:
+                    continue    
+ 
+### VARIABLE INFORMATION
+#variables defined in yaml
+            # Save variables if defined
+            v = get_variables(comp_info, product)
 
-            for s in sources:
-                # Start in grid directory
-                os.chdir(f"{input_dir}/{g}")
+### GRID INOFRMATION
+            # Set grid type if component has xyInterp defined or not
+            grid = []
+            if "xyInterp" not in comp_info.keys():
+                grid.append("native")
+            else:
+                interp = comp_info.get("xyInterp").split(",")
+                interp = '_'.join(interp)
+                interp_method = comp_info.get("interpMethod")
+                grid.append(f"regrid-xy/{interp}.{interp_method}")     
 
-                # Go into source directory
-                # The source directory may not exist as expected, if the source
-                # is timeaveraged and not annual or monthly.
+            for g in grid:
                 if ens_mem is not None:
-                    source_dir = os.path.join(input_dir, g, ens_mem, s)
+                    newdir = f"{input_dir}/{g}/{ens_mem}"
+                    os.chdir(newdir)
                 else:
-                    source_dir = os.path.join(input_dir, g, s)
-                if not os.path.exists(source_dir) and product == "av":
-                    print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
-                    continue
-                os.chdir(source_dir)
+                    os.chdir(f"{input_dir}/{g}")
 
-                #FREQ
-                if fields.get("freq") is None:
-                    freq = glob.glob("*")
-                else:
-                    freq = ast.literal_eval(fields.get("sources").get_value())
-
-                for f in freq:
+##sources
+                sources = get_sources(comp_info, product)
+                print(sources)
+                for s in sources:
                     if ens_mem is not None:
-                        os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
+                        source_dir = os.path.join(input_dir, g, ens_mem, s)
                     else:
-                        os.chdir(f"{input_dir}/{g}/{s}/{f}")
+                        source_dir = os.path.join(input_dir, g, s)
+                    if not os.path.exists(source_dir) and product == "av":
+                        print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
+                        continue
+                    os.chdir(source_dir)
 
-                    #CHUNK
-                    if fields.get("chunk") is None:
-                        chunk = glob.glob("*")
-                    else:
-                        chunk = ast.literal_eval(fields.get("chunk").get_value())
-
-                    for c in chunk:
-                        if c != current_chunk:
-                            continue
+###FREQ STUFF
+                    freq = get_freq(comp_info, product) ###might have to be a list
+                 
+                    for f in freq:
                         if ens_mem is not None:
-                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}")
                         else:
-                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                            os.chdir(f"{input_dir}/{g}/{s}/{f}")
 
-                        # Create directory
-                        # ts output is written to final location, av is not.
-                        # so convert the ts only to bronx-style
-                        if product == "ts":
-                            dirs = create_dir(out_dir = output_dir,
-                                              comp = comp,
-                                              freq = freq_to_legacy(f),
-                                              chunk = chunk_to_legacy(c),
-                                              ens = ens_mem,
-                                              dir_ts = dir_ts_workaround)
-                        else:
-                            dirs = create_dir(out_dir = output_dir,
-                                              comp = comp,
-                                              freq = f,
-                                              chunk = c,
-                                              ens = ens_mem,
-                                              dir_ts = dir_ts_workaround)
-
-                        print(f"directory created: {dirs}")
-
-                        # Search for files in chunk directory
-                        if ens_mem is not None:
-                            os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
-                        else:
-                            os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
-                        files = search_files(product = product,
-                                             var = v,
-                                             source = s,
-                                             freq = f,
-                                             current_chunk = current_chunk,
-                                             begin = begin)
-
-                        print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
-
-                        if not files:
+##chunk stuff
+                        chunk = get_chunk(comp_info, product)  ## might have to be a list ...
+                        for c in chunk:
+                            if c != current_chunk:
+                                continue
                             if ens_mem is not None:
-                                raise Exception("\nError: No input files found in",
-                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
+                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                             else:
-                                raise Exception("\nError: No input files found in",
-                                                f"{input_dir}/{g}/{s}/{f}/{c}")
+                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+##directory stuff???
 
-                        os.chdir(output_dir)
+                            # Create directory
+                            # ts output is written to final location, av is not.
+                            # so convert the ts only to bronx-style
+                            if product == "ts":
+                                dirs = create_dir(out_dir = output_dir,
+                                                  comp = comp,
+                                                  freq = freq_to_legacy(f),
+                                                  chunk = chunk_to_legacy(c),
+                                                  ens = ens_mem,
+                                                  dir_ts = dir_ts_workaround)
+                            else:
+                                dirs = create_dir(out_dir = output_dir,
+                                                  comp = comp,
+                                                  freq = f,
+                                                  chunk = c,
+                                                  ens = ens_mem,
+                                                  dir_ts = dir_ts_workaround)
 
-                        for file in files:
-                            newfile1 = file.split(".",1)[1]
-                            newfile2 = f"{comp}.{newfile1}"
-
-                            # If file exists, remove it
-                            # (would exist if workflow was run previously)
-                            output_file = os.path.join(output_dir, dirs, newfile2)
-                            if os.path.exists(output_file):
-                                os.remove(output_file)
-
-                            # Replace with new file
+                            print(f"directory created: {dirs}")
+##########
+                            # Search for files in chunk directory
                             if ens_mem is not None:
-                                link = ["ln",
-                                        f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
-                                        f"{output_dir}/{dirs}/{newfile2}"]
+                                os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                             else:
-                                link = ["ln",
-                                        f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                        f"{output_dir}/{dirs}/{newfile2}"]
+                                os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+                            files = search_files(product = product,
+                                                 var = v,
+                                                 source = s,
+                                                 freq = f,
+                                                 current_chunk = current_chunk,
+                                                 begin = begin)
+                            print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
+##########
 
-                            run = subprocess.run( link, check = False )
-                            ret = run.returncode
-
-                            if ret != 0:
-                                if ens_mem is None:
-                                    copy = [f"{copy_tool}",
-                                            f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dirs}/{newfile2}" ]
-                                    subprocess.run( copy, check = False )
+                            if not files:
+                                if ens_mem is not None:
+                                    raise Exception("\nError: No input files found in",
+                                                    f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                                 else:
-                                    copy = [f"{copy_tool}",
+                                    raise Exception("\nError: No input files found in",
+                                                    f"{input_dir}/{g}/{s}/{f}/{c}")
+
+                            os.chdir(output_dir)
+
+                            for file in files:
+                                newfile1 = file.split(".",1)[1]
+                                newfile2 = f"{comp}.{newfile1}"
+                                # If file exists, remove it
+                                # (would exist if workflow was run previously)
+                                output_file = os.path.join(output_dir, dirs, newfile2)
+                                if os.path.exists(output_file):
+                                    os.remove(output_file)
+
+                                # Replace with new file
+                                if ens_mem is not None:
+                                    link = ["ln",
                                             f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
-                                            f"{output_dir}/{dirs}/{newfile2}" ]
-                                    subprocess.run( copy, check = False )
+                                            f"{output_dir}/{dirs}/{newfile2}"]
+                                else:
+                                    link = ["ln",
+                                            f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                            f"{output_dir}/{dirs}/{newfile2}"]
+
+                                run = subprocess.run( link, check = False )
+                                ret = run.returncode
+
+                                if ret != 0:
+                                    if ens_mem is None:
+                                        copy = [f"{copy_tool}",
+                                                f"{input_dir}/{g}/{s}/{f}/{c}/{file}",
+                                                f"{output_dir}/{dirs}/{newfile2}" ]
+                                        subprocess.run( copy, check = False )
+                                    else:
+                                        copy = [f"{copy_tool}",
+                                                f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
+                                                f"{output_dir}/{dirs}/{newfile2}" ]
+                                        subprocess.run( copy, check = False )
 
     print("Component remapping complete")
 
 if __name__ == '__main__':
-    remap()
+    remap() 
