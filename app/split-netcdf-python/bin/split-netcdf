@@ -1,4 +1,4 @@
-#!/bin/python
+ #!/bin/python
 
 # Split NetCDF files by variable
 #
@@ -8,9 +8,10 @@
 # Output format: date.component.var(.tileX).nc
 
 import os
+from os import path
 import glob
 import subprocess
-import cdo
+#import cdo
 import sys
 from pathlib import Path
 
@@ -28,7 +29,7 @@ print("    date: "+date)
 print("    component: "+component)
 print("    use subdirs: "+use_subdirs)
 print("Utilities:")
-type(cdo)
+#type(cdo)
 
 #Verify input directory exists and is a directory
 if inputDir == "":
@@ -43,7 +44,8 @@ if outputDir == "":
 #Find files to split
 #extend globbing used to find both tiled and non-tiled files
 curr_dir = os.getcwd()
-os.chdir("curr_dir/inputDir")
+workdir = os.path.abspath(inputDir)
+os.chdir(workdir)
 
 #If in sub-dir mode, process the sub-directories instead of the main one
 if use_subdirs:
