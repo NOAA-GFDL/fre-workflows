@@ -360,6 +360,11 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {% endif %}
 
+#
+# Recurrence intervals for climatology tasks
+#
+{{ YAML | get_climatology_info('task-graph') }}
+
 [runtime]
     [[pp-starter]]
         inherit = PP-STARTER
