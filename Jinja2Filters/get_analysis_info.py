@@ -56,7 +56,7 @@ class AnalysisScript(object):
         logger.debug(f"{name}: initializing AnalysisScript instance")
 
         # Skip if configuration wants to skip it
-        self.switch = config["workflow"]["switch"]
+        self.switch = config["workflow"]["analysis_on"]
         if self.switch == False:
             return
 
