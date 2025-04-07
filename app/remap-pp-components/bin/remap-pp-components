@@ -214,44 +214,49 @@ def search_files(product,var,source,freq,current_chunk,begin):
 
     return files
 
-######### REWRITE
 def get_variables(comp_info, product):
-    if product == "static" :
+    """
+    Retrieve variables listed for a component
+    Params:
+        comp_info: information about requested component
+        product: temporal, ts, or av
+    """
+    if product == "static":
         if comp_info.get("static") is not None:
-            for ah in comp_info.get("static"): #source, variables OR offline_diagnostics, variables
-                if ah.get("variables") is not None:
-                    v = ah.get("variables")
+            for static_info in comp_info.get("static"):
+                if static_info.get("variables") is not None:
+                    v = static_info.get("variables")
                 else:
                     v = "all"
         else:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
     else:
-        for ah in comp_info.get("sources"): #history_file,variables
-            if ah.get("variables"):
-                v = ah.get("variables")
+        for src_info in comp_info.get("sources"): #history_file,variables
+            if src_info.get("variables"):
+                v = src_info.get("variables")
             else:
                 v = "all"
 
     return v
 
 def get_sources(comp_info, product):
+    """
+    Retrieve source name for a component
+    Params:
+        comp_info: information about requested component
+        product: temporal, ts, or av
+    """
     sources = []
     if "static" in product:
-        for ah in comp_info.get("static"):
-            sources.append(ah.get("source"))
+        for static_info in comp_info.get("static"):
+            sources.append(static_info.get("source"))
     else:
-        for ah in comp_info.get("sources"):
-            sources.append(ah.get("history_file"))
+        for src_info in comp_info.get("sources"):
+            sources.append(src_info.get("history_file"))
 
     return sources
 
 def get_freq(comp_info, product):
-#    if "static" in product:
-#        for ah in comp_info.get("static"):
-#            if "freq" not in ah.keys():
-#                freq = glob.glob("*")
-#    else:
-#    for k in comp_info.keys():
     if "freq" not in comp_info.keys():
         freq = glob.glob("*")
     else:
@@ -310,19 +315,12 @@ def remap():
         print("    ens_mem: None")
     copy_tool = os.getenv('COPY_TOOL')
 
-#    # Read rose config files (for now)
-#    config_dir = os.getcwd()
-#    print(f"rose configuration directory: {config_dir}")
-#    config = mrc.load(f"{config_dir}/rose-app-run.conf")
-
-##
     # Path to yaml configuration
     exp_dir = Path(__file__).resolve().parents[3]
     path_to_yamlconfig = os.path.join(exp_dir, yaml_config)
     # Load and read yaml configuration 
     with open(path_to_yamlconfig,'r') as yml:
         yml_info = yaml.safe_load(yml)
-##
 
     # Verify the input and output directories
     verify_dirs(input_dir, output_dir)
@@ -335,8 +333,8 @@ def remap():
     comps = components.split()
     for comp in comps:
         comp = comp.strip('""')
-##
-#make sure component or source is in yaml file?
+
+        # Make sure component/source is in the yaml configuration file
         for comp_info in yml_info["postprocess"]["components"]:
             components = comp_info.get("type")
 
@@ -348,17 +346,17 @@ def remap():
                 logger.warning('f"WARNING: component {comp} does not exist in yaml config')
                 continue
 
-            #if static but no static defined, skip...or raise error?
+            #if static but no static defined, skip
             if product == "static":
                 if comp_info.get("static") is None:
-                    continue    
+                    logger.warning('Static component requested but not defined')
+                    continue
  
-### VARIABLE INFORMATION
-#variables defined in yaml
+            ## VARIABLE INFORMATION
             # Save variables if defined
             v = get_variables(comp_info, product)
 
-### GRID INOFRMATION
+            ## Loop through grid
             # Set grid type if component has xyInterp defined or not
             grid = []
             if "xyInterp" not in comp_info.keys():
@@ -376,9 +374,8 @@ def remap():
                 else:
                     os.chdir(f"{input_dir}/{g}")
 
-##sources
+                ## Loop through sources
                 sources = get_sources(comp_info, product)
-                print(sources)
                 for s in sources:
                     if ens_mem is not None:
                         source_dir = os.path.join(input_dir, g, ens_mem, s)
@@ -389,7 +386,7 @@ def remap():
                         continue
                     os.chdir(source_dir)
 
-###FREQ STUFF
+                    ## Loop through freq
                     freq = get_freq(comp_info, product) ###might have to be a list
                  
                     for f in freq:
@@ -398,7 +395,7 @@ def remap():
                         else:
                             os.chdir(f"{input_dir}/{g}/{s}/{f}")
 
-##chunk stuff
+                        ## Loop through chunk
                         chunk = get_chunk(comp_info, product)  ## might have to be a list ...
                         for c in chunk:
                             if c != current_chunk:
@@ -407,7 +404,6 @@ def remap():
                                 os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                             else:
                                 os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
-##directory stuff???
 
                             # Create directory
                             # ts output is written to final location, av is not.
