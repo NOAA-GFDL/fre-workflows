@@ -184,7 +184,7 @@ R1 = \"\"\"
 
         if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
            and not self.cumulative:
-            graph += f"+{chunk - one_year}/{self.script_frequency} = \"\"\"\n"
+            graph += f"{self.script_frequency} = \"\"\"\n"
             if analysis_only:
                 graph += f"data-catalog => ANALYSIS-{chunk}?\n"
             else:
@@ -232,7 +232,7 @@ R1 = \"\"\"
                         graph += f"=> ANALYSIS-CUMULATIVE-{time_dumper.strftime(date, '%Y')}\n"
 
                 if not self.is_legacy:
-                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(date, '%Y')}\n"
+                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{time_dumper.strftime(self.experiment_date_range[0], '%Y')}_{time_dumper.strftime(date, '%Y')}\n"
                 graph += f"        \"\"\"\n"
                 date += chunk
             if not self.is_legacy:
@@ -241,25 +241,24 @@ R1 = \"\"\"
 
         if self.script_frequency == "R1":
             # Run the analysis once over a custom date range (can match experiment).
-            date = self.date_range[1]
-            graph += f"R1/{time_dumper.strftime(date, '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
+            graph += f"R1/{time_dumper.strftime(self.date_range[0], '%Y-%m-%dT00:00:00Z')} = \"\"\"\n"
             if not analysis_only:
                 if self.product == "av":
                     graph += f"COMBINE-TIMEAVGS-{chunk}:succeed-all\n"
                 else:
                     graph += f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all\n"
 
-            # Looping backwards through all previous chunks.
-            d = date - chunk
-            i = -1
-            while d >= self.date_range[0]:
+            # Looping forwards
+            d = self.date_range[0]
+            i = 0
+            while d <= self.date_range[1]:
                 if not analysis_only:
                     if self.product == "av":
                         graph += f"& COMBINE-TIMEAVGS-{chunk}[{i*chunk}]:succeed-all\n"
                     else:
                         graph += f"& REMAP-PP-COMPONENTS-TS-{chunk}[{i*chunk}]:succeed-all\n"
-                i -= 1
-                d -= chunk
+                i += 1
+                d += chunk
             if not analysis_only:
                 graph += "=>\n"
             if self.product == "ts":
@@ -396,7 +395,8 @@ fre analysis install \
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
         [[[environment]]]
-            yr1 = $(cylc cycle-point --template=CCYY --offset=-{chunk - one_year})
+            yr1 = $(cylc cycle-point --template=CCYY)
+            yr2 = $(cylc cycle-point --template=CCYY --offset=+{chunk - one_year})
             databegyr = $yr1
             dataendyr = $yr2
             datachunk = {chunk.years}
@@ -438,14 +438,15 @@ fre analysis install \
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
             logger.info(f"{self.name}: Will run each chunk {chunk} from beginning {self.experiment_date_range[0]}")
-            date = self.experiment_date_range[0] + chunk - one_year
+            date = self.experiment_date_range[0]
             while date <= self.experiment_date_range[1]:
-                date_str = time_dumper.strftime(date, '%Y')
+                date_str1 = time_dumper.strftime(date, '%Y')
+                date_str2 = time_dumper.strftime(date + chunk - one_year, '%Y')
 
                 # Add the task definition for each ending time.
                 definitions += f"""
-    [[analysis-{self.name}-{date_str}]]
-        inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
+    [[analysis-{self.name}-{time_dumper.strftime(self.experiment_date_range[0], "%Y")}_{date_str2}]]
+        inherit = ANALYSIS-CUMULATIVE-{date_str2}, analysis-{self.name}
                 """
 
                 if self.is_legacy:
@@ -455,9 +456,9 @@ fre analysis install \
 
                 # Add the task definition family for each ending time.
                 year1 = time_dumper.strftime(self.experiment_date_range[0], "%Y")
-                year2 = time_dumper.strftime(date, "%Y")
+                year2 = time_dumper.strftime(date + chunk - one_year, "%Y")
                 definitions += f"""
-                    [[ANALYSIS-CUMULATIVE-{date_str}]]
+                    [[ANALYSIS-CUMULATIVE-{date_str2}]]
                         inherit = ANALYSIS
                         [[[environment]]]
                             yr1 = {year1}
@@ -490,7 +491,7 @@ fre analysis install \
                             dd += chunk
                     years = "{" + str(years) + "}"
                     definitions += f"""
-    [[analysis-{self.name}-{date_str}]]
+    [[analysis-{self.name}-{self.experiment_date_range[0]}_{date_str2}]]
         [[[environment]]]
             in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
@@ -562,7 +563,7 @@ fre analysis install \
                         dd += chunk
                 years = "{" + str(years) + "}"
                 definitions += f"""
-    [[analysis-{self.name}]]
+    [[analysis-{self.name}-{date1_str}_{date2_str}]]
         [[[environment]]]
             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
