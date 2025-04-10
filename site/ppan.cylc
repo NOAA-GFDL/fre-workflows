@@ -98,6 +98,7 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
+        execution time limit = P1D
         pre-script = """
             # the conda activate below brings in an old fre-nctools
             # that is conda installable. we need an updated
