@@ -101,10 +101,10 @@ def freq_to_legacy(iso_dura):
         freq_legacy = '2hr'
     elif iso_dura=='PT1H':
         freq_legacy = 'hourly'
-    elif iso_dura=='PT30M':
+    elif iso_dura in ['PT30M', 'PT0.5H']:
         freq_legacy = '30min'
     else:
-        raise ValueError("Could not convert ISO duration '{iso_dura}'")
+        raise ValueError(f"Could not convert ISO duration '{iso_dura}'")
 
     return freq_legacy
 

@@ -92,11 +92,17 @@ function process_files {
 
         # chunksize is the duration of the file
         chunk=$(isodatetime $date1 $(isodatetime $date2 --offset=$freq))
-        # if the duration is a 365 or 366 days, count it as a year
+        # Adjustments
+        # 1. if the duration is a 365 or 366 days, count it as a year
+        # 2. if the duration is ~30days, count it as a month
+        # 3. if the duration is 180-185, count it as 6 months
         if [[ $chunk =~ ^P([0-9]+)D$ ]]; then
             if (( ${BASH_REMATCH[1]} > 27 )) && (( ${BASH_REMATCH[1]} < 32 )); then
                 echo "NOTE: Promoting $chunk to P1M"
                 chunk=P1M
+            elif (( ${BASH_REMATCH[1]} > 179)) && (( ${BASH_REMATCH[1]} < 186 )); then
+                echo "NOTE: Promoting $chunk to P6M"
+                chunk=P6M
             else
                 years_int=$(perl -e "print int(${BASH_REMATCH[1]} / 365)")
                 years_frac=$(perl -e "print ${BASH_REMATCH[1]} / 365 - $years_int")
