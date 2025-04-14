@@ -46,6 +46,8 @@
 {# Retrieve active pp components from the yaml #}
 {% set PP_COMPONENTS = YAML | get_components %}
 
+{% set OFFLINE_STATICS = "offline_static" | get_offline_sources(PP_COMPONENTS, YAML) %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -79,6 +81,7 @@
 {# For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded. #}
 {% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
 {% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
+
 {% set DO_REGRID = REGRID|length %}
 {% set DO_REGRID_STATIC = REGRID_STATIC|length %}
 
@@ -92,6 +95,7 @@
 
 {% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
 {% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
+
 {% set DO_NATIVE = NATIVE|length %}
 {% set DO_NATIVE_STATIC = NATIVE_STATIC|length %}
 
@@ -685,6 +689,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% if DO_NATIVE %}
     [[split-netcdf-native<native>]]
         inherit = SPLIT-NETCDF-NATIVE, <native>
+
     {% if DO_NATIVE_STATIC %}
     [[split-netcdf-native<native_static>]]
         inherit = SPLIT-NETCDF-NATIVE, <native_static>
@@ -696,12 +701,12 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% if DO_REGRID %}
     [[split-netcdf-regrid<regrid>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid>
+
     {% if DO_REGRID_STATIC %}
     [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid_static>
         [[[environment]]]
             component = $CYLC_TASK_PARAM_regrid_static
-
     {% endif %}
 {% endif %}
 
@@ -817,6 +822,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             components = {{ PP_COMPONENTS }}
             product = static
             dirTSWorkaround = ""
+            offline_src_dict = {{ OFFLINE_STATICS }}
 {% endif %}
 
 {% if DO_TIMEAVGS %}
@@ -940,12 +946,12 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
+
     {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid_static
-
     {% endif %}
 {% endif %}
 
