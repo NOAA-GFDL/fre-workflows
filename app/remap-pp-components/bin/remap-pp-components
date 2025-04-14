@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """
-Description: Remap components that will be
+Description: Remapi/move components that will be
              post-processed from one convention,
-             such a s history files, to an
+             such as history files, to an
              updated output directory structure
-
 """
 import os
 import subprocess
@@ -14,6 +13,8 @@ import metomi.rose.config as mrc
 import ast
 import yaml
 from pathlib import Path
+import json
+import ast 
 
 import logging
 logging.basicConfig()
@@ -219,7 +220,7 @@ def get_variables(comp_info, product):
     Retrieve variables listed for a component
     Params:
         comp_info: information about requested component
-        product: temporal, ts, or av
+        product: static, ts, or av
     """
     if product == "static":
         if comp_info.get("static") is not None:
@@ -230,6 +231,14 @@ def get_variables(comp_info, product):
                     v = "all"
         else:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
+#        if comp_info.get("static") is not None:
+#            for static_info in comp_info.get("static"):
+#                if static_info.get("variables") is not None:
+#                    v = static_info.get("variables")
+#                else:
+#                    v = "all"
+#        else:
+#            raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
     else:
         for src_info in comp_info.get("sources"): #history_file,variables
             if src_info.get("variables"):
@@ -244,12 +253,17 @@ def get_sources(comp_info, product):
     Retrieve source name for a component
     Params:
         comp_info: information about requested component
-        product: temporal, ts, or av
+        product: static, ts, or av
     """
     sources = []
     if "static" in product:
         for static_info in comp_info.get("static"):
-            sources.append(static_info.get("source"))
+            if static_info.get("source") is not None:
+                sources.append(static_info.get("source"))
+#            if static_info.get("offline_source") is not None:
+#                offline_src_filename = static_info.get("offline_source").split("/")[-1]
+#                offline_src_name = os.path.splitext(offline_src_filename)
+#                sources.append(offline_src_name[0])
     else:
         for src_info in comp_info.get("sources"):
             sources.append(src_info.get("history_file"))
@@ -296,6 +310,8 @@ def remap():
     product           = os.getenv('product')
     dir_ts_workaround = os.getenv('dirTSWorkaround')
     ens_mem           = os.getenv('ens_mem')
+    osd               = os.getenv("offline_src_dict")
+    offline_src_dict = ast.literal_eval(osd)
 
     print("Arguments:")
     print("    input dir: "+input_dir)
@@ -305,6 +321,7 @@ def remap():
     print("    components: "+components)
     print("    yaml config: "+yaml_config)
     print("    product: "+product)
+    print("    offline diagnostics: "+osd)
     if dir_ts_workaround is not None:
         print("    dirTSWorkaround: "+dir_ts_workaround)
     else:
@@ -349,7 +366,7 @@ def remap():
             #if static but no static defined, skip
             if product == "static":
                 if comp_info.get("static") is None:
-                    logger.warning('Static component requested but not defined')
+                    logger.warning('Product set to "static" but no static source requested defined')
                     continue
  
             ## VARIABLE INFORMATION
@@ -376,6 +393,7 @@ def remap():
 
                 ## Loop through sources
                 sources = get_sources(comp_info, product)
+                print(f"SOURCES: {sources}")
                 for s in sources:
                     if ens_mem is not None:
                         source_dir = os.path.join(input_dir, g, ens_mem, s)
@@ -482,6 +500,28 @@ def remap():
                                                 f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
                                                 f"{output_dir}/{dirs}/{newfile2}" ]
                                         subprocess.run( copy, check = False )
+                            ###
+                            #SYMLINK?????
+                            for key in offline_src_dict.keys():
+                                if comp == key and ens_mem is None:
+                                    for off_file in offline_src_dict[key]:
+                                        try:
+                                            offline_link = ["ln",
+                                                            "-s",
+                                                            f"{off_file}",
+                                                            f"{output_dir}/{dirs}"]
+                                            off_run = subprocess.run( offline_link, check = False )
+                                            off_ret = run.returncode
+                                        except:
+                                            #raise ValueError("copy failed")
+                                            offline_copy = ["{copy_tool}",
+                                                            f"{off_file}",
+                                                            f"{output_dir}/{dirs}"]
+                                            subprocess.run( offline_copy, check = False )
+                                else:
+                                    print("offline diagnostics didn't work ...")
+                                    raise ValueError("ahhhhhh")
+                            ###
 
     print("Component remapping complete")
 
