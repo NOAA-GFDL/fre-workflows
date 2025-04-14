@@ -1038,6 +1038,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
                     find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                else
+                    echo "Skipping '$dir' as it does not exist"
                 fi
             done
         """
