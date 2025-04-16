@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Description: Remapi/move components that will be
+Description: Remap/move components that will be
              post-processed from one convention,
              such as history files, to an
              updated output directory structure
@@ -311,6 +311,7 @@ def remap():
     dir_ts_workaround = os.getenv('dirTSWorkaround')
     ens_mem           = os.getenv('ens_mem')
     osd               = os.getenv("offline_src_dict")
+    # convert string to dictionary
     offline_src_dict = ast.literal_eval(osd)
 
     print("Arguments:")
@@ -500,28 +501,29 @@ def remap():
                                                 f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
                                                 f"{output_dir}/{dirs}/{newfile2}" ]
                                         subprocess.run( copy, check = False )
-                            ###
-                            #SYMLINK?????
+
+                            # Symlink or copy the offline diagnostic file for the
+                            # specified component in the output directory.
+                            # Offline diagnostic files will then be in the same 
+                            # location as other static files to be combined.
                             for key in offline_src_dict.keys():
-                                if comp == key and ens_mem is None:
+                                if comp == key:
                                     for off_file in offline_src_dict[key]:
-                                        try:
-                                            offline_link = ["ln",
-                                                            "-s",
-                                                            f"{off_file}",
-                                                            f"{output_dir}/{dirs}"]
-                                            off_run = subprocess.run( offline_link, check = False )
-                                            off_ret = run.returncode
-                                        except:
+                                        offline_link = ["ln",
+                                                        "-s",
+                                                        f"{off_file}",
+                                                        f"{output_dir}/{dirs}"]
+                                        offline_link_run = subprocess.run( offline_link, check = False )
+                                        offline_link_ret = offline_link_run.returncode
+
+                                        if offline_link_ret != 0:
                                             #raise ValueError("copy failed")
                                             offline_copy = ["{copy_tool}",
                                                             f"{off_file}",
                                                             f"{output_dir}/{dirs}"]
                                             subprocess.run( offline_copy, check = False )
                                 else:
-                                    print("offline diagnostics didn't work ...")
-                                    raise ValueError("ahhhhhh")
-                            ###
+                                    logger.info(f"No offline diagnostic files associated with {comp}.")
 
     print("Component remapping complete")
 
