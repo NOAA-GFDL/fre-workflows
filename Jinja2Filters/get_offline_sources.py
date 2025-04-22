@@ -53,7 +53,7 @@ def get_offline_sources(temporal_type, pp_components_str, yamlfile):
                     continue
 
                 # Append offline source paths for component to list
-                off_src.append(static_info.get("offline_source"))
+                offline_src.append(static_info.get("offline_source"))
 
             # Update dictionary with offline source paths
             results.update({comp_info["type"]: offline_src})
