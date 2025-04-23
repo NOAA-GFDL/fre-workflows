@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+
+#
+# Run `fre catalog builder` to generate or regenerate the PP catalog
+#
+
+echo Arguments:
+echo "    PP_DIR: $PP_DIR"
+echo Utilities:
+type fre
+
+TIMESTAMP_FILE=$CYLC_WORKFLOW_RUN_DIR/.catalog
+
+function fre_catalog_builder () {
+    touch $TIMESTAMP_FILE
+    fre catalog builder $* $PP_DIR $PP_DIR/catalog
+}
+
+if [[ ! -f $TIMESTAMP_FILE ]]
+then
+    echo "No timestamp file was found: Generating initial catalog"
+    fre_catalog_builder
+elif [[ `find $PP_DIR -mindepth 2 -type f -newer $TIMESTAMP_FILE -print -quit` ]]
+then
+    echo "Catalog is stale: Regenerating catalog"
+    fre_catalog_builder --overwrite
+else
+    echo "Catalog is up to date"
+fi
