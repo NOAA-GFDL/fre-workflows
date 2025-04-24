@@ -46,8 +46,6 @@
 {# Retrieve active pp components from the yaml #}
 {% set PP_COMPONENTS = YAML | get_components %}
 
-{% set OFFLINE_STATICS = "offline_static" | get_offline_sources(PP_COMPONENTS, YAML) %}
-
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -822,7 +820,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             components = {{ PP_COMPONENTS }}
             product = static
             dirTSWorkaround = ""
-            offline_src_dict = {{ OFFLINE_STATICS }}
 {% endif %}
 
 {% if DO_TIMEAVGS %}
