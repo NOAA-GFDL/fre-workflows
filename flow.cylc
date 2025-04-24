@@ -641,7 +641,15 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[MASK-ATMOS-PLEVEL]]
-        script = rose task-run --verbose --app-key mask-atmos-plevel
+        script = """
+            for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
+                fre app mask-atmos-plevel -i $file -o $file.masked -p $file
+                if [[ -f $file.masked ]]; then
+                    mv -f $file.masked $file
+                    echo "Updated '$file'"
+                fi
+            done
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
 {% if DO_NATIVE %}
