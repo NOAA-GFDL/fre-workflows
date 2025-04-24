@@ -7,8 +7,8 @@ dependencies:
   - python
   - pip
   - noaa-gfdl::fre-cli
+  - pyyaml
 #  - click
-#  - pyyaml
 #  - pylint
 #  - jsonschema
 #  - noaa-gfdl::fre-nctools
