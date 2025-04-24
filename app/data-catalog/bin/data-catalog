@@ -11,21 +11,27 @@ echo "    PP_DIR: $PP_DIR"
 echo Utilities:
 type fre
 
-TIMESTAMP_FILE=$CYLC_WORKFLOW_RUN_DIR/.catalog
+CATALOG_CSV=$PP_DIR/catalog.csv
 
 function fre_catalog_builder () {
-    touch $TIMESTAMP_FILE
+    # Get a timestamp immediately before `fre catalog builder` is run. Assign
+    # this timestamp to catalog.csv afterward, to guarantee that the catalog
+    # will be rebuilt in the edge case where files are being added to the PP
+    # directory while `fre catalog builder` is running.
+
+    TIMESTAMP=`date +%T.%N`
     fre catalog builder $* $PP_DIR $PP_DIR/catalog
+    touch -d $TIMESTAMP $CATALOG_CSV
 }
 
-if [[ ! -f $TIMESTAMP_FILE ]]
+if [[ ! -f $CATALOG_CSV ]]
 then
-    echo "No timestamp file was found: Generating initial catalog"
+    echo "No existing catalog was found: Generating initial catalog"
     fre_catalog_builder
-elif [[ `find $PP_DIR -mindepth 2 -type f -newer $TIMESTAMP_FILE -print -quit` ]]
+elif [[ `find $PP_DIR -mindepth 2 -type f -newer $CATALOG_CSV -print -quit` ]]
 then
     echo "Catalog is stale: Regenerating catalog"
     fre_catalog_builder --overwrite
 else
-    echo "Catalog is up to date"
+    echo "Catalog is up to date: Doing nothing"
 fi
