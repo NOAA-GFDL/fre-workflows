@@ -63,7 +63,7 @@ if use_subdirs:
              continue
 
         # Create output subdir if needed
-        os.mkdir(outputDir/subdir)
+        os.mkdir(os.path.abspath(outputDir)/subdir)
 
         # Split the files by variable
         # Note: cdo may miss some weird land variables related to metadata/cell_measures
