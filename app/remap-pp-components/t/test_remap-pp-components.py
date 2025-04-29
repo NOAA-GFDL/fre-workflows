@@ -54,7 +54,18 @@ else:
     Path(REMAP_OUT).mkdir(parents=True,exist_ok=True)
 
 
-##REMAP NOW USES YAML CONFIG, NOT ROSE APPS
+def test_cdl_file_exists(capfd):
+    """
+    Test for the existence of cdl test file
+    """
+    assert Path(f"{DATA_DIR}/{DATA_FILE_CDL}").exists()
+
+def test_yaml_ex_exists(capfd):
+    """
+    Test for the existence of example yaml configuration
+    """
+    assert Path(YAML_EX).exists()
+
 def test_create_ncfile_with_ncgen_cdl(capfd):
     """
     Check for the creation of required directories
