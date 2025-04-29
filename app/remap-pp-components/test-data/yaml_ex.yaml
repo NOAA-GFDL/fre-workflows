@@ -1,0 +1,18 @@
+postprocess:
+  components:
+    - type: "atmos"
+      sources:
+        - history_file: "atmos_month"
+      sourceGrid: "cubedsphere"
+      xyInterp: "180, 288"
+      interpMethod: "conserve_order2"
+      inputRealm: "atmos"
+      static: 
+      - source: "atmos_static_cmip"
+        variables: ["grid_xt", "grid_yt", "time", "orog"]
+      postprocess_on: False
+    - type: "atmos_scalar"
+      sources:
+        - history_file: "atmos_scalar"
+      inputRealm: "atmos"
+      postprocess_on: True
