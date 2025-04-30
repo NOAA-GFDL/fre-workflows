@@ -214,7 +214,7 @@ def get_variables(comp_info, product):
     """
     Retrieve variables listed for a component
     Params:
-        comp_info: information about requested component
+        comp_info: dictionary of information about requested component
         product: static, ts, or av
     """
     if product == "static":
@@ -239,7 +239,7 @@ def get_sources(comp_info, product):
     """
     Retrieve source name for a component
     Params:
-        comp_info: information about requested component
+        comp_info: dictionary of information about requested component
         product: static, ts, or av
     """
     sources = []
@@ -256,6 +256,8 @@ def get_sources(comp_info, product):
 def get_freq(comp_info):
     """
     Return the frequency
+    Param:
+        comp_info: dictionary of information about requested component
     """
     if "freq" not in comp_info.keys():
         freq = glob.glob("*")
@@ -267,6 +269,8 @@ def get_freq(comp_info):
 def get_chunk(comp_info):
     """
     Return the chunk size
+    Param:
+        comp_info: dictionary of information about requested component
     """
     if "chunk" not in comp_info.keys():
         chunk = glob.glob("*")
@@ -361,7 +365,7 @@ def remap():
                     logger.warning('Product set to "static" but no static source requested defined')
                     continue
 
-                #save list of offline sources for later
+                # Save list of offline sources (if defined) for later
                 for static_info in comp_info.get("static"):
                     if static_info.get("offline_source") is None:
                         continue
@@ -440,12 +444,13 @@ def remap():
                                                   dir_ts = dir_ts_workaround)
 
                             print(f"directory created: {dirs}")
-##########
+
                             # Search for files in chunk directory
                             if ens_mem is not None:
                                 os.chdir(f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                             else:
                                 os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
+
                             files = search_files(product = product,
                                                  var = v,
                                                  source = s,
@@ -453,7 +458,6 @@ def remap():
                                                  current_chunk = current_chunk,
                                                  begin = begin)
                             print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
-##########
 
                             if not files:
                                 if ens_mem is not None:
@@ -474,7 +478,8 @@ def remap():
                                 if os.path.exists(output_file):
                                     os.remove(output_file)
 
-                                # Replace with new file
+                                # Symlink or copy the file for the specified
+                                # component in the output directory
                                 if ens_mem is not None:
                                     link = ["ln",
                                             f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}/{file}",
