@@ -259,14 +259,11 @@ class AnalysisScript(object):
         # ts and av distinction
         if self.product == "ts":
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / frequency / bronx_chunk
-            pre_script = "pre-script = rose task-run --verbose --app-key data-catalog\n"
         else:
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
-            pre_script = ""
 
         legacy_analysis_str = f"""
     [[analysis-{self.name}]]
-        {pre_script}
         script = '''
 # First, sed-replace the template vars and create a runnable analysis script from the template.
 # actually, just sed-replace the undercase environment variables
@@ -322,7 +319,6 @@ $scriptOut {self.legacy_script_args}
 
         new_analysis_str = f"""
     [[analysis-{self.name}]]
-        {pre_script}
         script = '''
 fre analysis run \
     --name              freanalysis_{self.name} \
