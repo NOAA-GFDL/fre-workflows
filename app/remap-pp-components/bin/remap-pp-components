@@ -510,6 +510,9 @@ def remap():
                             # location as other static files to be combined.
                             if offline_srcs is not None:
                                 for src_file in offline_srcs:
+                                    if not Path(src_file).exists():
+                                        raise ValueError(f"Offline diagnostic file defined but {src_file} does not exist or cannot be found!")
+
                                     offline_link = ["ln",
                                                     "-s",
                                                     f"{src_file}",
