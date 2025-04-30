@@ -244,7 +244,7 @@ def test_nccmp_ncgen_remap_ens_mem(capfd):
 # test for static
 def test_remap_pp_components_statics(capfd, monkeypatch):
     """
-    static source, offline diagnostics, (variables????????)
+    Test static sources are remapped to output location correctly
     """
     # Specify environment variables for just this test
     monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
@@ -262,11 +262,21 @@ def test_remap_pp_components_statics(capfd, monkeypatch):
     # 2. link to nc file in output location
     assert all([Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}").exists(),
                 Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/atmos_scalar.bk.nc").exists()])
-#                Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()])
     out, err = capfd.readouterr()
 
+@pytest.mark.skip(reason="Offline file will not be in same place for everyone here - figure out how to test")
+def test_remap_offline_diagnostics(capfd, monkeypatch):
+    """
+    Test offline diagnostic file remapped to output location correctly
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
+    monkeypatch.setenv('currentChunk', "P0Y")
+    monkeypatch.setenv('product', "static")
+    monkeypatch.setenv('dirTSWorkaround', "")
+
+    assert Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()
 
 #to-do:
-# - offlien diagnostic
 # - test for when product = "av"
 # - test grid = regrid-xy
