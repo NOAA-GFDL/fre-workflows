@@ -9,10 +9,13 @@ postprocess:
       inputRealm: "atmos"
       static: 
       - source: "atmos_static_cmip"
-        variables: ["grid_xt", "grid_yt", "time", "orog"]
+        #variables: ["grid_xt", "grid_yt", "time", "orog"]
       postprocess_on: False
     - type: "atmos_scalar"
       sources:
         - history_file: "atmos_scalar"
       inputRealm: "atmos"
+      static:
+        - source: "atmos_static_scalar"
+        #- offline_source: "test-data/empty.nc"
       postprocess_on: True
