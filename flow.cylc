@@ -111,12 +111,12 @@
         # or data-catalog task to run at once, as they can fail if run in parallel.
         [[[default]]]
             limit = 100
-	[[[clean]]]
-	    limit = 1
-	    members = CLEAN
-	[[[data-catalog]]]
-	    limit = 1
-	    members = DATA-CATALOG
+        [[[clean]]]
+            limit = 1
+            members = CLEAN
+        [[[data-catalog]]]
+            limit = 1
+            members = DATA-CATALOG
     {# Graph strings are organized by recurrence interval-- when to run the tasks.    #}
     {# Currently, we use 4 intervals: every history-file segment, once (for statics), #}
     {# every chunk-a, and every chunk-b.                                              #}
