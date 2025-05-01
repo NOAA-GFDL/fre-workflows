@@ -3,20 +3,22 @@ set -euo pipefail
 set -x
 
 #
-# Run `fre catalog builder` to generate or regenerate the PP catalog
+# Run `fre catalog builder` to generate or regenerate the PP catalog.
 #
 
 echo Arguments:
 echo "    PP_DIR: $PP_DIR"
+echo "    CYLC_TASK_LOG_DIR: $CYLC_TASK_LOG_DIR"
 echo Utilities:
 type fre
 
 CATALOG_CSV=$PP_DIR/catalog.csv
+JOB_SCRIPT=$CYLC_TASK_LOG_DIR/job
 
 function fre_catalog_builder () {
     # Get a timestamp immediately before `fre catalog builder` is run. Assign
     # this timestamp to catalog.csv afterward, to guarantee that the catalog
-    # will be rebuilt in the edge case where files are being added to the PP
+    # will be rebuilt in the edge case where files are added to the PP directory
     # directory while `fre catalog builder` is running.
 
     TIMESTAMP=`date +%T.%N`
@@ -24,11 +26,18 @@ function fre_catalog_builder () {
     touch -d $TIMESTAMP $CATALOG_CSV
 }
 
+# There are two cases for which the catalog builder should be run:
+# - If there's no existing catalog.csv file
+# - If the PP directory contains files which are newer than the existing
+#   catalog.csv, excluding any files which are newer than the current task's job
+#   script. This ensures that the catalog is up to date as of the time this task
+#   was scheduled.
+
 if [[ ! -f $CATALOG_CSV ]]
 then
     echo "No existing catalog was found: Generating initial catalog"
     fre_catalog_builder
-elif [[ `find $PP_DIR -mindepth 2 -type f -newer $CATALOG_CSV -print -quit` ]]
+elif [[ `find $PP_DIR -mindepth 2 -type f -newer $CATALOG_CSV ! -newer $JOB_SCRIPT -print -quit` ]]
 then
     echo "Catalog is stale: Regenerating catalog"
     fre_catalog_builder --overwrite

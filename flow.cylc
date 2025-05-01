@@ -768,7 +768,9 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[DATA-CATALOG]]
-        script = rose task-run --verbose --app-key data-catalog
+        script = data-catalog
+	[[[environment]]]
+	    PP_DIR = {{ PP_DIR }}
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 

@@ -171,16 +171,18 @@ class AnalysisScript(object):
 
         if self.script_frequency == chunk and not self.cumulative:
             # Run every chunk (not cumulative)
+            suffix = f"{chunk}"
             graph += f'{self.script_frequency} = """\n'
+
             if analysis_only:
-                graph += f"ANALYSIS-{chunk}?\n"
+                graph += f"ANALYSIS-{suffix}?\n"
             else:
                 if self.product == "av":
                     dep = f"COMBINE-TIMEAVGS-{chunk}:succeed-all"
                 else:
                     dep = f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all"
 
-                graph += f"{dep} => ANALYSIS-{chunk}?\n"
+                graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
 
             if not self.is_legacy:
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
@@ -191,18 +193,18 @@ class AnalysisScript(object):
             deps = []
             d = date0
             while d <= date1:
+                suffix = f"{chunk}-{d.year:04}"
                 graph += f'R1/{d} = """\n'
-                analysis_task = f"ANALYSIS-CUMULATIVE-{d.year:04}"
 
                 if analysis_only:
-                    graph += f"{analysis_task}\n"
+                    graph += f"ANALYSIS-{suffix}\n"
                 else:
                     if self.product == "av":
                         deps.append(f"COMBINE-TIMEAVGS-{chunk}[{d}]:succeed-all")
                     else:
                         deps.append(f"REMAP-PP-COMPONENTS-TS-{chunk}[{d}]:succeed-all")
 
-                    graph += " & ".join(deps) + f" => {analysis_task}\n"
+                    graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
                 if not self.is_legacy:
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{d.year:04}\n"
@@ -211,9 +213,12 @@ class AnalysisScript(object):
                 d += chunk
         elif self.script_frequency == "R1":
             # Run the analysis once, over a custom date range
+            suffix = f"{date0.year:04}_{date1.year:04}"
             graph += f'R1/{date0} = """\n'
 
-            if not analysis_only:
+            if analysis_only:
+                graph += f"ANALYSIS-{suffix}\n"
+            else:
                 deps = []
                 d = date0
                 while d <= date1:
@@ -223,9 +228,7 @@ class AnalysisScript(object):
                         deps.append(f"REMAP-PP-COMPONENTS-TS-{chunk}[{d}]:succeed-all")
                     d += chunk
 
-                graph += " & ".join(deps) + " => "
-
-            graph += f"ANALYSIS-{date0.year:04}_{date1.year:04}\n"
+                graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}"
 
             if not self.is_legacy:
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{date0.year:04}_{date1.year:04}"
@@ -357,6 +360,8 @@ fre analysis install \
 
             # create the task family for all every-interval analysis scripts
             definitions += f"""
+    [[data-catalog-{chunk}]]
+        inherit = DATA-CATALOG
     [[ANALYSIS-{chunk}]]
         inherit = ANALYSIS
         [[[environment]]]
@@ -409,7 +414,7 @@ fre analysis install \
                 # Add the task definition for each ending time.
                 definitions += f"""
     [[analysis-{self.name}-{date_str}]]
-        inherit = ANALYSIS-CUMULATIVE-{date_str}, analysis-{self.name}
+        inherit = ANALYSIS-{chunk}-{date_str}, analysis-{self.name}
                 """
 
                 if self.is_legacy:
@@ -421,7 +426,9 @@ fre analysis install \
                 year1 = f"{self.experiment_date_range[0].year:04}"
                 year2 = f"{date.year:04}"
                 definitions += f"""
-                    [[ANALYSIS-CUMULATIVE-{date_str}]]
+                    [[data-catalog-{chunk}-{date_str}]]
+                        inherit = DATA-CATALOG
+                    [[ANALYSIS-{chunk}-{date_str}]]
                         inherit = ANALYSIS
                         [[[environment]]]
                             yr1 = {year1}
@@ -493,6 +500,8 @@ fre analysis install \
 
             # Set time-varying stuff
             definitions += f"""
+                [[data-catalog-{date1_str}_{date2_str}]]
+                    inherit = DATA-CATALOG
                 [[ANALYSIS-{date1_str}_{date2_str}]]
                     inherit = ANALYSIS
                     [[[environment]]]
