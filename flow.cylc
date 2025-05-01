@@ -774,11 +774,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
-    {% for PP_CHUNK in PP_CHUNKS %}
-        [[data-catalog-{{ PP_CHUNK }}]]
-            inherit = DATA-CATALOG
-    {% endfor %}
-
 {% if DO_TIMEAVGS %}
     [[COMBINE-TIMEAVGS]]
         script = rose task-run --verbose --app-key combine-timeavgs
