@@ -19,7 +19,7 @@ function fre_catalog_builder () {
     # Get a timestamp immediately before `fre catalog builder` is run. Assign
     # this timestamp to catalog.csv afterward, to guarantee that the catalog
     # will be rebuilt in the edge case where files are added to the PP directory
-    # directory while `fre catalog builder` is running.
+    # while `fre catalog builder` is running.
 
     TIMESTAMP=`date +%T.%N`
     fre catalog builder $* $PP_DIR $PP_DIR/catalog
