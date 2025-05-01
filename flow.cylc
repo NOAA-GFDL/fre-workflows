@@ -285,9 +285,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                => make-timeavgs-regrid-{{ chunk.chunk_size }}<regrid>
-            {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
@@ -298,23 +295,14 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                => make-timeavgs-native-{{ chunk.chunk_size }}<native>
-            {% endif %}
         {% endif %}
 
         {% if DO_REGRID %}
             {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
-            {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
-            {% endif %}
         {% endif %}
 
         {% if DO_TIMEAVGS and not chunk.is_partial %}
@@ -499,7 +487,9 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% if DO_TIMEAVGS %}
     [[MAKE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key make-timeavgs
+        script = """
+fre app gen-time-averages --pkg fre-nctools --avg_type all $input_args $output_args
+        """
     {% if DO_NATIVE %}
     [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
