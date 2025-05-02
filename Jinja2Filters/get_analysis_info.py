@@ -243,7 +243,15 @@ class AnalysisScript(object):
         return graph
 
     def definition(self, chunk, pp_dir):
-        """Form the task definition string."""
+        """Generate the cylc task definition string for the analysis script.
+
+        Args:
+            chunk: Post-processing chunk size for this analysis script
+            pp_dir: postprocessing directory
+
+        Returns:
+            Cylc task definition string for this analysis script
+        """
         if self.switch == False:
             return ""
 
@@ -570,7 +578,7 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
         chunks: List of ISO8601 durations used by the workflow.
-        pp_dir: postproceessing directory
+        pp_dir: postprocessing directory
 
     Returns:
         String containing the task defintions.
