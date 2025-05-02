@@ -149,6 +149,10 @@ def test_remap_pp_components(capfd):
                 Path(f"{REMAP_OUT}/{COMPOUT}/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
+## Pytest utilizes mokeypatch fixture which can help set/delete attributes, environments, etc.
+## monkeypatch.setenv() used to set/reset specific envrionment variables in each test, 
+## without resetting them for all tests or the proceeding test (i.e. - wouldn't effect 
+## other test's envrionment variables defined)
 def test_remap_pp_components_with_ensmem(capfd, monkeypatch):
     """
     Checks for success of remapping a file with rose app config using
@@ -278,5 +282,6 @@ def test_remap_offline_diagnostics(capfd, monkeypatch):
     assert Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()
 
 #to-do:
+# - figure out test for offline diagnostics
 # - test for when product = "av"
 # - test grid = regrid-xy
