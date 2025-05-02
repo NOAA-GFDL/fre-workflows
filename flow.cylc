@@ -305,18 +305,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
         {% endif %}
 
-        {% if DO_TIMEAVGS and not chunk.is_partial %}
-            remap-pp-components-av-{{ chunk.chunk_size }}<component> => combine-timeavgs-{{ chunk.chunk_size }}<component>
-            {% if CLEAN_WORK %}
-                COMBINE-TIMEAVGS-{{ chunk.chunk_size }}:succeed-all => clean-pp-timeavgs-{{ chunk.chunk_size }}
-            {% endif %}
-        {% endif %}
-
         {% if CLEAN_WORK %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% endif %}
         {% endif %}
 
         REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => data-catalog
@@ -325,11 +315,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     {% if CLEAN_WORK %}
         {% for segment in chunk.segments %}
             R1/{{ segment }} = """
-                REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% if DO_TIMEAVGS and not chunk.is_partial %}
-                    & REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% endif %}
-                => clean-shards-{{ HISTORY_SEGMENT }}
+                REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
             """
         {% endfor %}
     {% endif %}
@@ -351,7 +337,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 #
 # Recurrence intervals for climatology tasks
 #
-{{ YAML | get_climatology_info('task-graph') }}
+{{ YAML | get_climatology_info('task-graph', CLEAN_WORK) }}
 
 [runtime]
     [[pp-starter]]
@@ -484,60 +470,20 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {% endif %}
 
-{% if DO_TIMEAVGS %}
     [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
-        script = """
-fre app gen-time-averages --pkg fre-nctools --avg_type all $input_args $output_args
-        """
-    {% if DO_NATIVE %}
+        script = rose task-run --verbose --app-key make-timeavgs
     [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
             component = $CYLC_TASK_PARAM_native
-    {% endif %}
-    {% if DO_REGRID %}
     [[MAKE-TIMEAVGS-REGRID]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
-    {% endif %}
-    [[MAKE-TIMEAVGS-{{ PP_CHUNK_A }}]]
-        [[[environment]]]
-            interval = {{ PP_CHUNK_A }}
-    {% if DO_NATIVE %}
-    [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}]]
-        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
-    [[make-timeavgs-native-{{ PP_CHUNK_A }}<native>]]
-        inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_A }}, <native>
-    {% endif %}
-    {% if DO_REGRID %}
-    [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}]]
-        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_A }}
-    [[make-timeavgs-regrid-{{ PP_CHUNK_A }}<regrid>]]
-        inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_A }}, <regrid>
-    {% endif %}
-    {% if DO_SECONDARY_PP %}
-    [[MAKE-TIMEAVGS-{{ PP_CHUNK_B }}]]
-        [[[environment]]]
-            interval = {{ PP_CHUNK_B }}
-        {% if DO_NATIVE %}
-    [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}]]
-        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
-    [[make-timeavgs-native-{{ PP_CHUNK_B }}<native>]]
-        inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK_B }}, <native>
-        {% endif %}
-        {% if DO_REGRID %}
-    [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}]]
-        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK_B }}
-    [[make-timeavgs-regrid-{{ PP_CHUNK_B }}<regrid>]]
-        inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK_B }}, <regrid>
-        {% endif %}
-    {% endif %}
-{% endif %}
+{{ YAML | get_climatology_info('task-definitions', CLEAN_WORK) }}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -784,23 +730,6 @@ fre app gen-time-averages --pkg fre-nctools --avg_type all $input_args $output_a
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-    [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}]]
-        inherit = REMAP-PP-COMPONENTS-AV
-        [[[environment]]]
-            begin = $(cylc cycle-point)
-            currentChunk = {{ PP_CHUNK_A }}
-    [[remap-pp-components-av-{{ PP_CHUNK_A }}<component>]]
-        inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_A }}, <component>
-
-{% if DO_SECONDARY_PP %}
-    [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}]]
-        inherit = REMAP-PP-COMPONENTS-AV
-        [[[environment]]]
-            begin = $(cylc cycle-point)
-            currentChunk = {{ PP_CHUNK_B }}
-    [[remap-pp-components-av-{{ PP_CHUNK_B }}<component>]]
-        inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK_B }}, <component>
-{% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static]]
@@ -814,37 +743,11 @@ fre app gen-time-averages --pkg fre-nctools --avg_type all $input_args $output_a
             dirTSWorkaround = ""
 {% endif %}
 
-{% if DO_TIMEAVGS %}
     [[COMBINE-TIMEAVGS]]
         script = rose task-run --verbose --app-key combine-timeavgs
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
             outputDir = {{ PP_DIR }}/$CYLC_TASK_PARAM_component/av
-    [[COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}]]
-        inherit = COMBINE-TIMEAVGS
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            currentChunk = {{ PP_CHUNK_A }}
-            end = $(cylc cycle-point --print-year --offset={{ PP_CHUNK_A | subtract_durations(HISTORY_SEGMENT) }})
-    [[combine-timeavgs-{{ PP_CHUNK_A }}<component>]]
-        inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_A }}, <component>
-        [[[environment]]]
-            component = $CYLC_TASK_PARAM_component
-
-    {% if DO_SECONDARY_PP %}
-    [[COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}]]
-        inherit = COMBINE-TIMEAVGS
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            currentChunk = {{ PP_CHUNK_B }}
-            end = $(cylc cycle-point --print-year --offset={{ PP_CHUNK_B | subtract_durations(HISTORY_SEGMENT) }})
-    [[combine-timeavgs-{{ PP_CHUNK_B }}<component>]]
-        inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK_B }}, <component>
-        [[[environment]]]
-            component = $CYLC_TASK_PARAM_component
-
-    {% endif %}
-{% endif %}
 
     [[data-catalog]]
         script = """
@@ -1026,49 +929,36 @@ fre app gen-time-averages --pkg fre-nctools --avg_type all $input_args $output_a
         """
 {% endif %}
 
-    [[clean-shards-{{ HISTORY_SEGMENT }}]]
+    [[CLEAN-SHARDS]]
         inherit = CLEAN
         script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/$duration $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/$duration"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
-                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                else
-                    echo "Skipping '$dir' as it does not exist"
-                fi
-            done
-        """
-
-    [[clean-shards-{{ PP_CHUNK_A }}]]
-        inherit = CLEAN
-        script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_A }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_A }}"
-            for dir in $dirs; do
-                if [[ -d $dir ]]; then
-                    if [[ {{ PP_CHUNK_A }} == P1Y ]]; then
+                    if [[ $duration == P1Y ]]; then
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     else
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                    fi
                 else
                     echo "Skipping '$dir' as it does not exist"
                 fi
             done
         """
+    [[clean-shards-{{ HISTORY_SEGMENT }}]]
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = {{ HISTORY_SEGMENT }}
+
+    [[clean-shards-{{ PP_CHUNK_A }}]]
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = {{ PP_CHUNK_A }}
 
 {% if DO_SECONDARY_PP %}
     [[clean-shards-{{ PP_CHUNK_B }}]]
-        inherit = CLEAN
-        script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK_B }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK_B }}"
-            for dir in $dirs; do
-                if [[ -d $dir ]]; then
-                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                else
-                    echo "Skipping '$dir' as it does not exist"
-                fi
-            done
-        """
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = {{ PP_CHUNK_B }}
 {% endif %}
 
     [[clean-pp-timeavgs-{{ PP_CHUNK_A }}]]
