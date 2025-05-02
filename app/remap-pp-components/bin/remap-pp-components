@@ -26,13 +26,13 @@ def verify_dirs(in_dir,out_dir):
 
     # Verify input directory exists and is a directory
     if Path(in_dir).is_dir():
-        print("Input directory is a valid directory")
+        logger.info("Input directory is a valid directory")
     else:
         raise Exception(f"Error: Input directory {in_dir} is not a valid directory")
 
     # Verify output directory exists and is a directory
     if Path(out_dir).is_dir():
-        print("Output directory is a valid directory")
+        logger.info("Output directory is a valid directory")
     else:
         raise Exception(f"Error: Output directory {out_dir} is not a valid directory")
 
@@ -154,13 +154,13 @@ def truncate_date(date, freq):
     """
 
     form = freq_to_date_format(freq)
-    print(f"truncatedateformat: {form}")
+    logger.info(f"truncatedateformat: {form}")
     output = subprocess.Popen(["cylc", "cycle-point", "--template", form, date],
                               stdout=subprocess.PIPE)
 
     bytedate = output.communicate()[0]
     date=str(bytedate.decode())
-    print(f"truncatedate: {date}")
+    logger.info(f"truncatedate: {date}")
 
     #remove trailing newline
     date=date[:(len(date)-1)]
@@ -192,7 +192,7 @@ def search_files(product,var,source,freq,current_chunk,begin):
     else:
         if product == "ts":
             date = truncate_date(begin, freq)
-            print(f"date: {date}")
+            logger.info(f"date: {date}")
         elif product == "av":
             date = truncate_date(begin, "P1Y")
         else:
@@ -202,7 +202,7 @@ def search_files(product,var,source,freq,current_chunk,begin):
             files = glob.glob(f"{source}.{date}-*.*.nc")
         else:
             for v in var:
-                print(f"var: {v}")
+                logger.info(f"var: {v}")
                 files = glob.glob(f"{source}.{date}-*.{v}*.nc")
 
         if product == "av" and current_chunk == "P1Y":
@@ -304,22 +304,22 @@ def remap():
     dir_ts_workaround = os.getenv('dirTSWorkaround')
     ens_mem           = os.getenv('ens_mem')
 
-    print("Arguments:")
-    print("    input dir: "+input_dir)
-    print("    output dir: "+output_dir)
-    print("    begin: "+begin)
-    print("    current chunk: "+current_chunk)
-    print("    components: "+components)
-    print("    yaml config: "+yaml_config)
-    print("    product: "+product)
+    logger.info("Arguments:")
+    logger.info("    input dir: "+input_dir)
+    logger.info("    output dir: "+output_dir)
+    logger.info("    begin: "+begin)
+    logger.info("    current chunk: "+current_chunk)
+    logger.info("    components: "+components)
+    logger.info("    yaml config: "+yaml_config)
+    logger.info("    product: "+product)
     if dir_ts_workaround is not None:
-        print("    dirTSWorkaround: "+dir_ts_workaround)
+        logger.info("    dirTSWorkaround: "+dir_ts_workaround)
     else:
-        print("    dirTSWorkaround: None")
+        logger.info("    dirTSWorkaround: None")
     if ens_mem is not None:
-        print("    ens_mem: "+ens_mem)
+        logger.info("    ens_mem: "+ens_mem)
     else:
-        print("    ens_mem: None")
+        logger.info("    ens_mem: None")
     copy_tool = os.getenv('COPY_TOOL')
 
     # Path to yaml configuration
@@ -402,7 +402,7 @@ def remap():
                     else:
                         source_dir = os.path.join(input_dir, g, s)
                     if not os.path.exists(source_dir) and product == "av":
-                        print(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
+                        logger.info(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
                         continue
                     os.chdir(source_dir)
 
@@ -443,7 +443,7 @@ def remap():
                                                   ens = ens_mem,
                                                   dir_ts = dir_ts_workaround)
 
-                            print(f"directory created: {dirs}")
+                            logger.info(f"directory created: {dirs}")
 
                             # Search for files in chunk directory
                             if ens_mem is not None:
@@ -457,7 +457,7 @@ def remap():
                                                  freq = f,
                                                  current_chunk = current_chunk,
                                                  begin = begin)
-                            print(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
+                            logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
 
                             if not files:
                                 if ens_mem is not None:
@@ -527,7 +527,7 @@ def remap():
                                                         f"{output_dir}/{dirs}"]
                                         subprocess.run( offline_copy, check = False )
 
-    print("Component remapping complete")
+    logger.info("Component remapping complete")
 
 if __name__ == '__main__':
     remap()
