@@ -188,7 +188,6 @@ def search_files(product,var,source,freq,current_chunk,begin):
             files = glob.glob(f"{source}.*.nc")
         else:
             for v in var:
-                print(f"FILES: {source}.{v}*.nc")
                 files = glob.glob(f"{source}.{v}*.nc")
     else:
         if product == "ts":
@@ -222,7 +221,7 @@ def get_variables(comp_info, product):
     if product == "static":
         if comp_info.get("static") is not None:
             for static_info in comp_info.get("static"):
-                if static_info.get("source"):
+                if static_info.get("source") is not None:
                     if static_info.get("variables") is None:
                         vars_dict[static_info.get("source")] = "all"
                     else:
@@ -238,9 +237,9 @@ def get_variables(comp_info, product):
     else:
         for src_info in comp_info.get("sources"): #history_file,variables
             if src_info.get("variables") is None:
-                vars_dict[src_info.get("source")] = "all"
+                vars_dict[src_info.get("history_file")] = "all"
             else:
-                vars_dict[src_info.get("source")] = src_info.get("variables")
+                vars_dict[src_info.get("history_file")] = src_info.get("variables")
 
     return vars_dict
 
@@ -470,7 +469,6 @@ def remap():
                                                  current_chunk = current_chunk,
                                                  begin = begin)
                             logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}', variables '{v_dict[s]}': {files}")
-
                             if not files:
                                 if ens_mem is not None:
                                     raise Exception("\nError: No input files found in",
@@ -482,8 +480,9 @@ def remap():
                             os.chdir(output_dir)
 
                             for file in files:
+                                
                                 newfile1 = file.split(".",1)[1]
-                                newfile2 = f"{comp}.{newfile1}"
+                                newfile2 = f"{s}.{newfile1}"
                                 # If file exists, remove it
                                 # (would exist if workflow was run previously)
                                 output_file = os.path.join(output_dir, dirs, newfile2)
