@@ -164,7 +164,6 @@ function process_files {
         if [[ -f $dir/$newfile ]]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
-            set +u
             if [[ -n $tile ]]; then
                 for t in tile1 tile2 tile3 tile4 tile5 tile6; do
                     f=${file/tile1/$t}

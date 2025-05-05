@@ -73,7 +73,6 @@ function process_timeseries {
 
             # create timeseries
             mkdir -p $newdir
-            set +u
             if [[ $is_tiled ]]; then
                 for (( tile=1; tile <= 6; ++tile )); do
                     newfile=$component.$d1-$d2.$var.tile$tile.nc
