@@ -265,7 +265,7 @@ def test_remap_pp_components_statics(capfd, monkeypatch):
     # 1. creation of output directory structre,
     # 2. link to nc file in output location
     assert all([Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}").exists(),
-                Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/atmos_scalar.bk.nc").exists()])
+                Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
 @pytest.mark.skip(reason="Offline file will not be in same place for everyone here - figure out how to test")
