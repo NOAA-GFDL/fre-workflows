@@ -69,7 +69,7 @@
         pre-script = module load cdo nco && mkdir -p $outputDir
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
+        pre-script = module load netcdf-c cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = """
@@ -85,7 +85,7 @@
         pre-script = module load fre/{{ FRE_VERSION }} 
         
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[MAKE-TIMEAVGS]]
         pre-script = module load fre-python-tools && mkdir -p $outputDir
