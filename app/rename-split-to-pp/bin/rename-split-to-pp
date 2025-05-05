@@ -164,12 +164,15 @@ function process_files {
         if [[ -f $dir/$newfile ]]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
+            set +u
             if [[ -n $tile ]]; then
                 for t in tile1 tile2 tile3 tile4 tile5 tile6; do
                     f=${file/tile1/$t}
                     newf=${newfile/tile1/$t}
                     ln $f $dir/$newf
-
+                    if [[ $freq != P0Y ]]; then
+                        fre pp ppval --path $dir/$newfile
+                    fi
                     if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                         -m data_lineage.bloomfilter.HashGen $dir/$newf)
@@ -179,7 +182,9 @@ function process_files {
                 done
             else
                 ln $file $dir/$newfile
-                
+                if [[ $freq != P0Y ]]; then
+                        fre pp ppval --path $dir/$newfile
+                fi
                 if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                     hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                     -m data_lineage.bloomfilter.HashGen $dir/$newfile)
