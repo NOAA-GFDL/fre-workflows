@@ -217,23 +217,31 @@ def get_variables(comp_info, product):
         comp_info: dictionary of information about requested component
         product: static, ts, or av
     """
+    vars_dict = {}
     if product == "static":
         if comp_info.get("static") is not None:
             for static_info in comp_info.get("static"):
-                if static_info.get("variables") is not None:
-                    v = static_info.get("variables")
-                else:
-                    v = "all"
+                if static_info.get("source") is not None:
+                    if static_info.get("variables") is None:
+                        vars_dict[static_info.get("source")] = "all"
+                    else:
+                        vars_dict[static_info.get("source")] = static_info.get("variables")
+
+                if static_info.get("offline_source") is not None:
+                    if static_info.get("variables") is None:
+                        vars_dict[static_info.get("offline_source")] = "all"
+                    else:
+                        vars_dict[static_info.get("offline_source")] = static_info.get("variables")
         else:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
     else:
         for src_info in comp_info.get("sources"): #history_file,variables
-            if src_info.get("variables"):
-                v = src_info.get("variables")
+            if src_info.get("variables") is None:
+                vars_dict[src_info.get("history_file")] = "all"
             else:
-                v = "all"
+                vars_dict[src_info.get("history_file")] = src_info.get("variables")
 
-    return v
+    return vars_dict
 
 def get_sources(comp_info, product):
     """
@@ -374,7 +382,7 @@ def remap():
 
             ## VARIABLE INFORMATION
             # Save variables if defined
-            v = get_variables(comp_info, product)
+            v_dict = get_variables(comp_info, product)
 
             ## Loop through grid
             # Set grid type if component has xyInterp defined or not
@@ -451,14 +459,16 @@ def remap():
                             else:
                                 os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
 
+                            # if variables defined, loop through variables defined
+                            # for the source being remapped
+                            v = v_dict[s]
                             files = search_files(product = product,
                                                  var = v,
                                                  source = s,
                                                  freq = f,
                                                  current_chunk = current_chunk,
                                                  begin = begin)
-                            logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}': {files}")
-
+                            logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}', variables '{v_dict[s]}': {files}")
                             if not files:
                                 if ens_mem is not None:
                                     raise Exception("\nError: No input files found in",
@@ -470,8 +480,9 @@ def remap():
                             os.chdir(output_dir)
 
                             for file in files:
+                                
                                 newfile1 = file.split(".",1)[1]
-                                newfile2 = f"{comp}.{newfile1}"
+                                newfile2 = f"{s}.{newfile1}"
                                 # If file exists, remove it
                                 # (would exist if workflow was run previously)
                                 output_file = os.path.join(output_dir, dirs, newfile2)
