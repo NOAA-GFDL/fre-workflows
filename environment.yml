@@ -7,7 +7,7 @@ dependencies:
   - python
   - pip
   - noaa-gfdl::fre-cli
-  - pyyaml
+  - conda-forge::pyyaml
 #  - click
 #  - pylint
 #  - jsonschema
