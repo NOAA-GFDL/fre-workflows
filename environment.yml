@@ -1,6 +1,5 @@
 name: fre-workflows
 channels:
-#  - defaults
   - conda-forge
   - noaa-gfdl
 dependencies:
