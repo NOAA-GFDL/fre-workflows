@@ -10,6 +10,7 @@ import subprocess
 import shutil
 import os
 from pathlib import Path
+import ast
 
 #3rd party
 import metomi.rose.config as rose_cfg
@@ -122,20 +123,21 @@ def check_per_component_settings(component_list, rose_app_cfg):
 def make_component_list(config, source):
     '''make list of relevant component names where source file appears in sources'''
     comp_list=[] #will not contain env, or command
-    try:
-        for keys, sub_node in config.walk():
-            sources = sub_node.get_value(keys=['sources'])#.split(' ')
-            if any( [ len(keys) < 1,
-                      keys[0] in ['env', 'command'],
-                      keys[0] in comp_list,
-                      sources is None                ] ):
-                continue
-            sources = sources.split(' ')
-            if source in sources:
-                comp_list.append(keys[0])
-    except Exception as exc:
-        raise Exception(f'config = {config} may be an empty file... check the config') \
-            from exc
+    for keys, sub_node in config.walk():
+        # only target the keys
+        if len(keys) != 1:
+            continue
+
+        # skip env and command keys
+        item = keys[0]
+        if item == "env" or item == "command":
+            continue
+
+        # convert ascii array to array
+        sources = ast.literal_eval(config.get_value(keys=[item, 'sources']))
+
+        if source in sources:
+            comp_list.append(item)
     return comp_list
 
 
