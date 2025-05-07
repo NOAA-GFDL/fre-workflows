@@ -15,6 +15,19 @@ DATA_FILE_NC = Path("atmos_scalar.198001-198412.co2mass.nc")   # Create NC file 
 # YAML configuration example file
 YAML_EX = f"{DATA_DIR}/yaml_ex.yaml"
 
+## keep around - will come in handy eventually when pp
+## relies on dictionary instead of output yaml config
+#YAML_EX = {"postprocess": {"component": [
+#                                     {"type": "atmos_scalar", 
+#                                      "sources": [{"history_file": "atmos_scalar", "variables": "['co2mass']"}],
+#                                      "inputRealm": "atmos",
+#                                      "static": [{"source": "atmos_static_scalar", "variables": "['bk']"},
+#                                                 {"offline_source": "/home/Dana.Singh/fre/CMIP7-static/fre-workflows/app/remap-pp-components/test-data/empty.nc"}],
+#                                      "postprocess_on": "True"}
+#                                    ]
+#                        }
+#          }
+
 # Define/create necessary locatiions
 TEST_OUTDIR = f"{CWD}/test-outDir"
 REMAP_IN = f"{TEST_OUTDIR}/ncgen-output"
@@ -46,7 +59,7 @@ os.environ['begin'] = "19800101T0000Z"
 os.environ['product'] = PRODUCT
 os.environ['dirTSWorkaround'] = "1"
 os.environ['COPY_TOOL'] = COPY_TOOL
-os.environ['yaml_config'] = YAML_EX
+os.environ['yaml_config'] = str(YAML_EX)
 
 # Set up input directory (location previously made in flow.cylc workflow)
 ncgen_native_out = Path(REMAP_IN) / NATIVE_GRID / COMPOUT / FREQ / CHUNK
@@ -188,7 +201,7 @@ def test_remap_pp_components_with_ensmem(capfd, monkeypatch):
                 Path(f"{remap_ens_out}/{COMPOUT}/{PRODUCT}/{os.getenv('ens_mem')}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
-@pytest.mark.xfail() #uncomment to ensure it's the right failure
+@pytest.mark.xfail #uncomment to ensure it's the right failure
 def test_remap_pp_components_product_failure(capfd, monkeypatch):
     """
     Checks for failure of remapping a file with rose app using
@@ -201,7 +214,7 @@ def test_remap_pp_components_product_failure(capfd, monkeypatch):
     # run script
     remap()
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_remap_pp_components_begin_date_failure(capfd, monkeypatch):
     """
     Checks for failure of remapping a file with rose app using
@@ -280,6 +293,63 @@ def test_remap_offline_diagnostics(capfd, monkeypatch):
     monkeypatch.setenv('dirTSWorkaround', "")
 
     assert Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()
+
+## VARIABLE FILTERING TESTS
+def test_remap_variable_filtering(capfd, monkeypatch):
+    """
+    Test variable filtering capabilties
+    - same file should be found as in first regular and static remap 
+      test, but component defined specifies variables this time
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('components', "atmos_scalar_test_vars")
+
+    # run script
+    try:
+        remap()
+    except:
+        assert False
+
+    # Check for
+    # 1. creation of output directory structre,
+    # 2. link to nc file in output location
+    assert all([Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr").exists(),
+                Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
+    out, err = capfd.readouterr()
+    
+@pytest.mark.xfail
+def test_remap_variable_filtering_fail(capfd, monkeypatch):
+    """
+    Test failure of variable filtering capabilties when
+    variable does not exist
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('components', "atmos_scalar_test_vars_fail")
+
+    # run script
+    remap()
+
+#    # Check for
+#    # - no files found?
+
+@pytest.mark.xfail
+def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
+    """
+    Test failure of variable filtering capabilties for statics
+    when variable does not exist
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
+    monkeypatch.setenv('currentChunk', "P0Y")
+    monkeypatch.setenv('product', "static")
+    monkeypatch.setenv('dirTSWorkaround', "")
+    monkeypatch.setenv('components', "atmos_scalar_static_test_vars_fail")
+
+    # run script
+    remap()
+
+#    # Check for
+#    # - no files found?
 
 #to-do:
 # - figure out test for offline diagnostics

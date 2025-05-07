@@ -9,7 +9,6 @@ postprocess:
       inputRealm: "atmos"
       static: 
       - source: "atmos_static_cmip"
-        #variables: ["grid_xt", "grid_yt", "time", "orog"]
       postprocess_on: False
     - type: "atmos_scalar"
       sources:
@@ -17,5 +16,36 @@ postprocess:
       inputRealm: "atmos"
       static:
         - source: "atmos_static_scalar"
-        #- offline_source: "test-data/empty.nc"
+      postprocess_on: True
+
+    # component used to test variable filtering for history files
+    - type: "atmos_scalar_test_vars"
+      sources:
+        - history_file: "atmos_scalar"
+          variables: ["co2mass"]
+      inputRealm: "atmos"
+      static:
+        - source: "atmos_static_scalar"
+          variables: ["bk"]
+#        - offline_source: "/home/Dana.Singh/fre/CMIP7-static/fre-workflows/app/remap-pp-components/test-data/empty.nc"
+      postprocess_on: True
+
+    # component used to test variable filtering failure for history file (variable incorrect)
+    - type: "atmos_scalar_test_vars_fail"
+      sources:
+        - history_file: "atmos_scalar"
+          variables: ["no_var"]
+      inputRealm: "atmos"
+      static:
+        - source: "atmos_static_scalar"
+      postprocess_on: True
+
+    # component used to test variable filtering failure for statics (phalf file not defined)
+    - type: "atmos_scalar_static_test_vars_fail"
+      sources:
+        - history_file: "atmos_scalar"
+      inputRealm: "atmos"
+      static:
+        - source: "atmos_static_scalar"
+          variables: ["bk", "phalf"]
       postprocess_on: True
