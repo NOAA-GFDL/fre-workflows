@@ -27,7 +27,6 @@ postprocess:
       static:
         - source: "atmos_static_scalar"
           variables: ["bk"]
-#        - offline_source: "/home/Dana.Singh/fre/CMIP7-static/fre-workflows/app/remap-pp-components/test-data/empty.nc"
       postprocess_on: True
 
     # component used to test variable filtering failure for history file (variable incorrect)
@@ -47,5 +46,5 @@ postprocess:
       inputRealm: "atmos"
       static:
         - source: "atmos_static_scalar"
-          variables: ["bk", "phalf"]
+          variables: ["bk", "no_var"]
       postprocess_on: True

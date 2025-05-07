@@ -76,12 +76,13 @@ else:
     Path(ncgen_static_out).mkdir(parents=True,exist_ok=True)
     Path(REMAP_OUT).mkdir(parents=True,exist_ok=True)
 
-## TESTS ##
+## FILE EXISTENCE TESTS ##
 def test_cdl_file_exists(capfd):
     """
-    Test for the existence of cdl test file
+    Test for the existence of cdl test files
     """
-    assert Path(f"{DATA_DIR}/{DATA_FILE_CDL}").exists()
+    assert all([Path(f"{DATA_DIR}/{DATA_FILE_CDL}").exists(),
+                Path(f"{DATA_DIR}/{STATIC_DATA_FILE_CDL}")])
 
 def test_yaml_ex_exists(capfd):
     """
@@ -89,6 +90,7 @@ def test_yaml_ex_exists(capfd):
     """
     assert Path(YAML_EX).exists()
 
+## CREATE TEST FILES ##
 def test_create_ncfile_with_ncgen_cdl(capfd):
     """
     Check for the creation of required directories
@@ -143,6 +145,7 @@ def test_create_static_ncfile_with_ncgen_cdl(capfd):
                Path(ncgen_static_out / STATIC_DATA_FILE_NC).exists()])
     out, err = capfd.readouterr()
 
+## TEST REMAP FUNCTION ##
 def test_remap_pp_components(capfd):
     """
     Checks for success of remapping a file with rose app using
@@ -201,7 +204,7 @@ def test_remap_pp_components_with_ensmem(capfd, monkeypatch):
                 Path(f"{remap_ens_out}/{COMPOUT}/{PRODUCT}/{os.getenv('ens_mem')}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
-@pytest.mark.xfail #uncomment to ensure it's the right failure
+@pytest.mark.xfail
 def test_remap_pp_components_product_failure(capfd, monkeypatch):
     """
     Checks for failure of remapping a file with rose app using
@@ -227,7 +230,46 @@ def test_remap_pp_components_begin_date_failure(capfd, monkeypatch):
     # run script
     remap()
 
-# Comparison tests
+## STATIC SOURCE REMAPPING ##
+def test_remap_pp_components_statics(capfd, monkeypatch):
+    """
+    Test static sources are remapped to output location correctly
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
+    monkeypatch.setenv('currentChunk', "P0Y")
+    monkeypatch.setenv('product', "static") 
+    monkeypatch.setenv('dirTSWorkaround', "")
+
+    Path(os.getenv("outputDir")).mkdir(parents=True,exist_ok=True)
+
+    # run script
+    try:
+        remap()
+    except:
+        assert False
+
+    # Check for
+    # 1. creation of output directory structre,
+    # 2. link to nc file in output location
+    assert all([Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}").exists(),
+                Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}").exists()])
+    out, err = capfd.readouterr()
+
+@pytest.mark.skip(reason="Offline file will not be in same place for everyone here - figure out how to test")
+def test_remap_offline_diagnostics(capfd, monkeypatch):
+    """
+    Test offline diagnostic file remapped to output location correctly
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
+    monkeypatch.setenv('currentChunk', "P0Y")
+    monkeypatch.setenv('product', "static")
+    monkeypatch.setenv('dirTSWorkaround', "")
+
+    assert Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()
+
+## COMPARE INPUT AND OUTPUT FILES ##
 def test_nccmp_ncgen_remap(capfd):
     """
     This test compares the results of ncgen and rewrite_remap,
@@ -258,49 +300,31 @@ def test_nccmp_ncgen_remap_ens_mem(capfd):
     assert sp.returncode == 0
     out, err = capfd.readouterr()
 
-# test for static
-def test_remap_pp_components_statics(capfd, monkeypatch):
+def test_nccmp_ncgen_remap_statics(capfd):
     """
-    Test static sources are remapped to output location correctly
+    This test compares the results of ncgen and remap,
+    making sure that the remapped static files are identical.
     """
-    # Specify environment variables for just this test
-    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
-    monkeypatch.setenv('currentChunk', "P0Y")
-    monkeypatch.setenv('product', "static") 
-    monkeypatch.setenv('dirTSWorkaround', "")
+    nccmp = [ "nccmp", "-d",
+              Path(f"{REMAP_IN}/{NATIVE_GRID}/{STATIC_SRC}/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}"),
+              Path(f"{REMAP_OUT}/static/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}")]
 
-    Path(os.getenv("outputDir")).mkdir(parents=True,exist_ok=True)
-
-    # run script
-    remap()
-
-    # Check for
-    # 1. creation of output directory structre,
-    # 2. link to nc file in output location
-    assert all([Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}").exists(),
-                Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}").exists()])
+    sp = subprocess.run( nccmp, check = False)
+    assert sp.returncode == 0
     out, err = capfd.readouterr()
 
-@pytest.mark.skip(reason="Offline file will not be in same place for everyone here - figure out how to test")
-def test_remap_offline_diagnostics(capfd, monkeypatch):
-    """
-    Test offline diagnostic file remapped to output location correctly
-    """
-    # Specify environment variables for just this test
-    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
-    monkeypatch.setenv('currentChunk', "P0Y")
-    monkeypatch.setenv('product', "static")
-    monkeypatch.setenv('dirTSWorkaround', "")
-
-    assert Path(f"{os.getenv('outputDir')}/atmos_scalar/{STATIC_FREQ}/{STATIC_CHUNK}/empty.nc").exists()
-
-## VARIABLE FILTERING TESTS
+## VARIABLE FILTERING TESTS ##
 def test_remap_variable_filtering(capfd, monkeypatch):
     """
     Test variable filtering capabilties
-    - same file should be found as in first regular and static remap 
-      test, but component defined specifies variables this time
+    - same file should be found as in first regular remap test,
+      but component defined specifies variable co2mass
     """
+    # Remove previous output and re-create
+    if Path(REMAP_OUT).exists():
+        shutil.rmtree(REMAP_OUT)
+        Path(REMAP_OUT).mkdir(parents=True,exist_ok=True)
+
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars")
 
@@ -316,12 +340,40 @@ def test_remap_variable_filtering(capfd, monkeypatch):
     assert all([Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr").exists(),
                 Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
-    
+
+def test_remap_static_variable_filtering(capfd, monkeypatch):
+    """
+    Test variable filtering capabilties
+    - same file should be found as in static remap test,
+      but component, defined specifies variable bk
+    """
+    # Specify environment variables for just this test
+    monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
+    monkeypatch.setenv('currentChunk', "P0Y")
+    monkeypatch.setenv('product', "static")
+    monkeypatch.setenv('dirTSWorkaround', "")
+    monkeypatch.setenv('components', "atmos_scalar_test_vars")
+
+    Path(os.getenv("outputDir")).mkdir(parents=True,exist_ok=True)
+
+    # run script
+    try:
+        remap()
+    except:
+        assert False
+
+    # Check for
+    # 1. creation of output directory structre,
+    # 2. link to nc file in output location
+    assert all([Path(f"{os.getenv('outputDir')}/atmos_scalar_test_vars/{STATIC_FREQ}/{STATIC_CHUNK}").exists(),
+                Path(f"{os.getenv('outputDir')}/atmos_scalar_test_vars/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}").exists()])
+    out, err = capfd.readouterr()
+ 
 @pytest.mark.xfail
 def test_remap_variable_filtering_fail(capfd, monkeypatch):
     """
     Test failure of variable filtering capabilties when
-    variable does not exist
+    variable does not exist; variable = no_var
     """
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars_fail")
@@ -329,14 +381,11 @@ def test_remap_variable_filtering_fail(capfd, monkeypatch):
     # run script
     remap()
 
-#    # Check for
-#    # - no files found?
-
 @pytest.mark.xfail
 def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
     """
     Test failure of variable filtering capabilties for statics
-    when variable does not exist
+    when variable does not exist; variables = bk, no_var
     """
     # Specify environment variables for just this test
     monkeypatch.setenv('outputDir', f"{REMAP_OUT}/static")
@@ -347,9 +396,6 @@ def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
 
     # run script
     remap()
-
-#    # Check for
-#    # - no files found?
 
 #to-do:
 # - figure out test for offline diagnostics

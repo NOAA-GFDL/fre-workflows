@@ -209,38 +209,38 @@ def search_files(product,var,source,freq,current_chunk,begin):
 
     return files
 
-def get_variables(comp_info, product):
+def get_variables(comp_info, product, req_source):
     """
-    Retrieve variables listed for a component
+    Retrieve variables listed for a component; save in dictionary for use later
     Params:
         comp_info: dictionary of information about requested component
         product: static, ts, or av
     """
-    vars_dict = {}
     if product == "static":
         if comp_info.get("static") is None:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
 
         for static_info in comp_info.get("static"):
-            if static_info.get("source") is not None:
+            if static_info.get("source") == req_source:
                 if static_info.get("variables") is None:
-                    vars_dict[static_info.get("source")] = "all"
+                    v = "all"
                 else:
-                    vars_dict[static_info.get("source")] = static_info.get("variables")
+                    v = static_info.get("variables")
 
-            if static_info.get("offline_source") is not None:
-                if static_info.get("variables") is None:
-                    vars_dict[static_info.get("offline_source")] = "all"
-                else:
-                    vars_dict[static_info.get("offline_source")] = static_info.get("variables")
+#            if static_info.get("offline_source") is not None:
+#                if static_info.get("variables") is None:
+#                    v = "all"
+#                else:
+#                    v = static_info.get("variables")
     else:
         for src_info in comp_info.get("sources"): #history_file,variables
-            if src_info.get("variables") is None:
-                vars_dict[src_info.get("history_file")] = "all"
-            else:
-                vars_dict[src_info.get("history_file")] = src_info.get("variables")
+            if src_info.get("history_file") == req_source:
+                if src_info.get("variables") is None:
+                    v = "all"
+                else:
+                    v = src_info.get("variables")
 
-    return vars_dict
+    return v
 
 def get_sources(comp_info, product):
     """
@@ -379,10 +379,6 @@ def remap():
 
                     offline_srcs.append(static_info.get("offline_source"))
 
-            ## VARIABLE INFORMATION
-            # Save variables if defined
-            v_dict = get_variables(comp_info, product)
-
             ## Loop through grid
             # Set grid type if component has xyInterp defined or not
             grid = []
@@ -458,16 +454,19 @@ def remap():
                             else:
                                 os.chdir(f"{input_dir}/{g}/{s}/{f}/{c}")
 
-                            # if variables defined, loop through variables defined
-                            # for the source being remapped
-                            v = v_dict[s]
+                            ## VARIABLE INFORMATION for requested source
+                            # Note: variable filtering not done for offline static diagnostics
+                            v = get_variables(comp_info, product, s)
+
                             files = search_files(product = product,
                                                  var = v,
                                                  source = s,
                                                  freq = f,
                                                  current_chunk = current_chunk,
                                                  begin = begin)
-                            logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}', variables '{v_dict[s]}': {files}")
+
+                            logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}', variables '{v}': {files}")
+
                             if not files:
                                 if ens_mem is not None:
                                     raise ValueError("\nError: No input files found in",
