@@ -28,13 +28,13 @@ def verify_dirs(in_dir,out_dir):
     if Path(in_dir).is_dir():
         logger.info("Input directory is a valid directory")
     else:
-        raise Exception(f"Error: Input directory {in_dir} is not a valid directory")
+        raise ValueError(f"Error: Input directory {in_dir} is not a valid directory")
 
     # Verify output directory exists and is a directory
     if Path(out_dir).is_dir():
         logger.info("Output directory is a valid directory")
     else:
-        raise Exception(f"Error: Output directory {out_dir} is not a valid directory")
+        raise ValueError(f"Error: Output directory {out_dir} is not a valid directory")
 
 def create_dir(out_dir,comp,freq,chunk,ens,dir_ts):
     """
@@ -154,13 +154,13 @@ def truncate_date(date, freq):
     """
 
     form = freq_to_date_format(freq)
-    logger.info(f"truncatedateformat: {form}")
+    logger.info("truncatedateformat: %s", form)
     output = subprocess.Popen(["cylc", "cycle-point", "--template", form, date],
                               stdout=subprocess.PIPE)
 
     bytedate = output.communicate()[0]
     date=str(bytedate.decode())
-    logger.info(f"truncatedate: {date}")
+    logger.info("truncatedate: %s", date)
 
     #remove trailing newline
     date=date[:(len(date)-1)]
@@ -191,17 +191,17 @@ def search_files(product,var,source,freq,current_chunk,begin):
     else:
         if product == "ts":
             date = truncate_date(begin, freq)
-            logger.info(f"date: {date}")
+            logger.info("date: %s", date)
         elif product == "av":
             date = truncate_date(begin, "P1Y")
         else:
-            raise Exception("Product not set to ts or av.")
+            raise ValueError("Product not set to ts or av.")
 
         if var == "all":
             files = glob.glob(f"{source}.{date}-*.*.nc")
         else:
             for v in var:
-                logger.info(f"var: {v}")
+                logger.info("var: %s", v)
                 files = glob.glob(f"{source}.{date}-*.{v}*.nc")
 
         if product == "av" and current_chunk == "P1Y":
@@ -312,19 +312,19 @@ def remap():
     ens_mem           = os.getenv('ens_mem')
 
     logger.info("Arguments:")
-    logger.info("    input dir: "+input_dir)
-    logger.info("    output dir: "+output_dir)
-    logger.info("    begin: "+begin)
-    logger.info("    current chunk: "+current_chunk)
-    logger.info("    components: "+components)
-    logger.info("    yaml config: "+yaml_config)
-    logger.info("    product: "+product)
+    logger.info("    input dir: %s", input_dir)
+    logger.info("    output dir: %s", output_dir)
+    logger.info("    begin: %s", begin)
+    logger.info("    current chunk: %s", current_chunk)
+    logger.info("    components: %s", components)
+    logger.info("    yaml config: %s", yaml_config)
+    logger.info("    product: %s", product)
     if dir_ts_workaround is not None:
-        logger.info("    dirTSWorkaround: "+dir_ts_workaround)
+        logger.info("    dirTSWorkaround: %s", dir_ts_workaround)
     else:
         logger.info("    dirTSWorkaround: None")
     if ens_mem is not None:
-        logger.info("    ens_mem: "+ens_mem)
+        logger.info("    ens_mem: %s", ens_mem)
     else:
         logger.info("    ens_mem: None")
     copy_tool = os.getenv('COPY_TOOL')
@@ -357,12 +357,12 @@ def remap():
             if comp in yaml_components:
                 logger.debug('Yes')
             else:
-                logger.warning('f"WARNING: component {comp} does not exist in yaml config')
+                logger.warning("WARNING: component %s does not exist in yaml config", comp)
                 continue
 
             # Continue if not looking at correct information for requested component
             if comp != comp_info.get("type"):
-                logger.warning(f"Info not associated with component requested")
+                logger.warning("Info not associated with component, %s, requested", comp)
                 continue
 
             offline_srcs=[]
@@ -409,7 +409,7 @@ def remap():
                     else:
                         source_dir = os.path.join(input_dir, g, s)
                     if not os.path.exists(source_dir) and product == "av":
-                        logger.info(f"Source directory '{source_dir}' does not exist, but this could be expected, so skipping.")
+                        logger.info("Source directory '%s' does not exist, but this could be expected, so skipping.", source_dir)
                         continue
                     os.chdir(source_dir)
 
@@ -450,7 +450,7 @@ def remap():
                                                   ens = ens_mem,
                                                   dir_ts = dir_ts_workaround)
 
-                            logger.info(f"directory created: {dirs}")
+                            logger.info("directory created: %s", dirs)
 
                             # Search for files in chunk directory
                             if ens_mem is not None:
@@ -470,16 +470,15 @@ def remap():
                             logger.info(f"{len(files)} files found for component '{comp}', source '{s}', product '{product}', grid '{g}', chunk '{c}', variables '{v_dict[s]}': {files}")
                             if not files:
                                 if ens_mem is not None:
-                                    raise Exception("\nError: No input files found in",
+                                    raise ValueError("\nError: No input files found in",
                                                     f"{input_dir}/{g}/{ens_mem}/{s}/{f}/{c}")
                                 else:
-                                    raise Exception("\nError: No input files found in",
+                                    raise ValueError("\nError: No input files found in",
                                                     f"{input_dir}/{g}/{s}/{f}/{c}")
 
                             os.chdir(output_dir)
 
                             for file in files:
-                                
                                 newfile1 = file.split(".",1)[1]
                                 newfile2 = f"{s}.{newfile1}"
                                 # If file exists, remove it
