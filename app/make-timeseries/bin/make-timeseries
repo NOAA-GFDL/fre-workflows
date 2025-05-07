@@ -88,7 +88,7 @@ function process_timeseries {
                     fi
 
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
-                    fre pp ppval --path $newdir/$newfile
+                    fre -v pp ppval --path $newdir/$newfile
                 done
             else
                 if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
@@ -101,7 +101,7 @@ function process_timeseries {
                 fi
                 newfile=$component.$d1-$d2.$var.nc
                 cdo --history -O mergetime ${files[@]} $newdir/$newfile
-                fre pp ppval --path $newdir/$newfile
+                fre -v pp ppval --path $newdir/$newfile
             fi
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then

@@ -176,7 +176,7 @@ function process_files {
                     newf=${newfile/tile1/$t}
                     ln $f $dir/$newf
                     if [[ $freq != P0Y ]]; then
-                        fre pp ppval --path $dir/$newfile
+                        fre -v pp ppval --path $dir/$newfile
                     fi
                     if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
@@ -188,7 +188,7 @@ function process_files {
             else
                 ln $file $dir/$newfile
                 if [[ $freq != P0Y ]]; then
-                        fre pp ppval --path $dir/$newfile
+                        fre -v pp ppval --path $dir/$newfile
                 fi
                 if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                     hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
