@@ -181,7 +181,6 @@ def search_files(product,var,source,freq,current_chunk,begin):
         current_chunk: current chunk to post-process
         freq: frequency
     """
-
     # with glob - files seen as list
     if freq == "P0Y":
         if var == "all":
@@ -219,21 +218,21 @@ def get_variables(comp_info, product):
     """
     vars_dict = {}
     if product == "static":
-        if comp_info.get("static") is not None:
-            for static_info in comp_info.get("static"):
-                if static_info.get("source") is not None:
-                    if static_info.get("variables") is None:
-                        vars_dict[static_info.get("source")] = "all"
-                    else:
-                        vars_dict[static_info.get("source")] = static_info.get("variables")
-
-                if static_info.get("offline_source") is not None:
-                    if static_info.get("variables") is None:
-                        vars_dict[static_info.get("offline_source")] = "all"
-                    else:
-                        vars_dict[static_info.get("offline_source")] = static_info.get("variables")
-        else:
+        if comp_info.get("static") is None:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
+
+        for static_info in comp_info.get("static"):
+            if static_info.get("source") is not None:
+                if static_info.get("variables") is None:
+                    vars_dict[static_info.get("source")] = "all"
+                else:
+                    vars_dict[static_info.get("source")] = static_info.get("variables")
+
+            if static_info.get("offline_source") is not None:
+                if static_info.get("variables") is None:
+                    vars_dict[static_info.get("offline_source")] = "all"
+                else:
+                    vars_dict[static_info.get("offline_source")] = static_info.get("variables")
     else:
         for src_info in comp_info.get("sources"): #history_file,variables
             if src_info.get("variables") is None:
@@ -539,6 +538,5 @@ def remap():
                                         subprocess.run( offline_copy, check = False )
 
     logger.info("Component remapping complete")
-
 if __name__ == '__main__':
     remap()
