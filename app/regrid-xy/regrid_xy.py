@@ -440,7 +440,8 @@ def regrid_xy( ):
             fregrid_command.append(f'{more_options}')
 
         print(f"\n\nabout to run the following command: \n{' '.join(fregrid_command)}\n")
-        fregrid_proc = subprocess.run( fregrid_command, check = False )#i hate it
+        # will raise an CalledProcessError exception on failure
+        fregrid_proc = subprocess.run( fregrid_command, check = True )
         fregrid_rc =fregrid_proc.returncode
         print(f'fregrid_result.returncode()={fregrid_rc}')
 
