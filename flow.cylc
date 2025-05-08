@@ -409,7 +409,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
                  exit 1
             fi
             #Data Integrity Checking:q
-            fre pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
+            fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
             # Setup PYTHONPATH and io lists for the data lineage tool
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
