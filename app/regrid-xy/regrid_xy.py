@@ -16,8 +16,6 @@ import ast
 import metomi.rose.config as rose_cfg
 from netCDF4 import Dataset
 
-FREGRID_SHARED_FILES='/home/fms/shared_fregrid_remap_files'
-
 # formerly in shared.sh
 def truncate_date(date, freq):
     format=freq_to_date_format(freq)
@@ -376,22 +374,14 @@ def regrid_xy( ):
             remap_cache_file = \
                 f'{remap_dir}/{input_grid}/{input_realm}/' + \
                 f'{source_nx}-by-{source_ny}/{interp_method}/{remap_file}'
-            central_remap_cache_file = \
-                f'{FREGRID_SHARED_FILES}/{input_grid}/' + \
-                f'{source_nx}_by_{source_ny}/{remap_file}'
 
             print(f'remap_file               = {remap_file              }' + \
-                  f'remap_cache_file         = {remap_cache_file        }' + \
-                  f'central_remap_cache_file = {central_remap_cache_file}' )
+                  f'remap_cache_file         = {remap_cache_file        }')
 
             if Path( remap_cache_file ).exists():
                 print(f'NOTE: using cached remap file {remap_cache_file}')
                 shutil.copy(remap_cache_file,
                             remap_cache_file.split('/').pop())
-            elif Path( central_remap_cache_file ).exists():
-                print(f'NOTE: using centrally cached remap file {remap_cache_file}')
-                shutil.copy(central_remap_cache_file,
-                            central_remap_cache_file.split('/').pop())
 
 
 
