@@ -3,10 +3,10 @@ channels:
   - conda-forge
   - noaa-gfdl
 dependencies:
-#  - python
-#  - pip
+  - python
+  - pip
   - noaa-gfdl::fre-cli
-#  - conda-forge::pyyaml
+  - conda-forge::pyyaml
 #  - click
 #  - pylint
 #  - jsonschema
