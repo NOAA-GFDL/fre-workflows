@@ -73,7 +73,6 @@ function process_timeseries {
 
             # create timeseries
             mkdir -p $newdir
-
             if [[ $is_tiled ]]; then
                 for (( tile=1; tile <= 6; ++tile )); do
                     newfile=$component.$d1-$d2.$var.tile$tile.nc
@@ -89,6 +88,7 @@ function process_timeseries {
                     fi
 
                     cdo --history -O mergetime $tiled_files $newdir/$newfile
+                    fre -v pp ppval --path $newdir/$newfile
                 done
             else
                 if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
@@ -101,6 +101,7 @@ function process_timeseries {
                 fi
                 newfile=$component.$d1-$d2.$var.nc
                 cdo --history -O mergetime ${files[@]} $newdir/$newfile
+                fre -v pp ppval --path $newdir/$newfile
             fi
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
