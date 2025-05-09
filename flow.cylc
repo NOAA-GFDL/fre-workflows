@@ -660,7 +660,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[SPLIT-NETCDF]]
         pre-script = mkdir -p $outputDir
         {# script = rose task-run --verbose --app-key split-netcdf #}
-        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file
+        yaml_config = {{ YAML }}
+        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y $yaml-config
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
 
@@ -684,7 +685,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {# use_subdirs = 1 #}
             history_file = $CYLC_TASK_PARAM_regrid
             component = $CYLC_TASK_PARAM_component
-            script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file --use-subdirs
+            script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y $yaml_config --use-subdirs
             {# components = {{ PP_COMPONENTS }} #}
 {% endif %}
 
@@ -695,7 +696,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[split-netcdf-native<native_static>]]
         inherit = SPLIT-NETCDF-NATIVE, <native_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_native_static
+            history_file = $CYLC_TASK_PARAM_native_static
     {% endif %}
 {% endif %}
 
@@ -706,7 +707,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_regrid_static
+            history_file = $CYLC_TASK_PARAM_regrid_static
 
     {% endif %}
 {% endif %}
