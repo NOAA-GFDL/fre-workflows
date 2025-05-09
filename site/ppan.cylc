@@ -84,7 +84,7 @@
             mkdir -p $outputDir
         """
 
-    [[data-catalog]]
+    [[DATA-CATALOG]]
         pre-script = module load fre/{{ FRE_VERSION }} 
         
     [[MAKE-TIMESERIES]]

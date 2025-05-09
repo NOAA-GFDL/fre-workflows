@@ -60,7 +60,7 @@ jobs:
              cd - ;
 
       - name: in fre-workflows environment, remap-pp-components pytest and pylint
-        continue-on-error: true
+        continue-on-error: false
         run: |
           # pytest unittests for remap-pp-components
           cd app/remap-pp-components && \
