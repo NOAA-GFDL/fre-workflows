@@ -633,20 +633,17 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             history_file = $CYLC_TASK_PARAM_native
             component = $CYLC_TASK_PARAM_component
-            {# components = {{ PP_COMPONENTS }} #}
 {% endif %}
 
 {% if DO_REGRID %}
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
+        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y $yaml_config --use-subdirs
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
-            {# use_subdirs = 1 #}
             history_file = $CYLC_TASK_PARAM_regrid
             component = $CYLC_TASK_PARAM_component
-            script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y $yaml_config --use-subdirs
-            {# components = {{ PP_COMPONENTS }} #}
 {% endif %}
 
 {% if DO_NATIVE %}
