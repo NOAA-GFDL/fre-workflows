@@ -17,30 +17,9 @@ one_year = duration_parser.parse("P1Y")
 time_parser = TimePointParser(assumed_time_zone=(0, 0))
 
 
-def str_to_bool(value): 
-    """Converts a string to boolean.
-
-    Args:
-        value: String input.
-
-    Returns:
-        Bool value for the string.
-
-    Raises:
-        ValueError if the string cannot be interpreted.
-    """
-    if isinstance(value, bool):
-        return value
-    if value.lower().startswith("t") or value.lower().startswith("y"):
-        return True
-    if value.lower().startswith("f") or value.lower().startswith("n"):
-        return False
-    raise ValueError(f"cannot convert string '{value}' to boolean.")
-
-
 class AnalysisScript(object):
     def __init__(self, name, config, experiment_components, experiment_starting_date,
-                 experiment_stopping_date):
+                 experiment_stopping_date, pp_chunks):
         """Initialize the analysis script object.
 
         Args:
@@ -49,6 +28,7 @@ class AnalysisScript(object):
             experiment_components: List of string experiment component names.
             experiment_starting_date: Starting date for the experiment.
             experiment_stopping_date: Stopping date for the experiment.
+            pp_chunks: List of ISO8601 durations used by the workflow.
         """
         self.name = name
         logger.debug(f"{name}: initializing AnalysisScript instance")
@@ -72,14 +52,12 @@ class AnalysisScript(object):
 
         # Parse the rest of the 'workflow' config items
         self.product = config["workflow"]["product"]
-        if "cumulative" in config["workflow"]:
-            self.cumulative = str_to_bool(config["workflow"]["cumulative"])
-        else:
-            self.cumulative = False
-        if config["workflow"]["script_frequency"] == "R1":
-            self.script_frequency = "R1"
-        else:
-            self.script_frequency = duration_parser.parse(config["workflow"]["script_frequency"])
+        self.script_type = config["workflow"]["script_type"]
+        self.chunk = duration_parser.parse(config["workflow"]["chunk_size"])
+
+        if self.chunk not in pp_chunks:
+            raise ValueError(f"ERROR: Analysis script '{self.name}' requests chunk size '{self.chunk}', but " +
+                             f"this chunk size is not declared in 'pp_chunks'")
 
         # Parse the new analysis config items
         if 'legacy' in config:
@@ -111,48 +89,10 @@ class AnalysisScript(object):
 
         logger.debug(f"{name}: initialized instance")
 
-    def choose_pp_chunk(self, chunks):
-        """Choose the most suitable postprocessing chunk size.
-
-        Args:
-            chunks: List of ISO8601 durations used by the workflow.
-
-        Returns:
-            Most suitable chunk (pp subdirectory) for the script
-        """
-        analysis_years = self.date_range[1].year - self.date_range[0].year + 1
-        chunks_str = ", ".join(chunks)
-        chunks = [duration_parser.parse(c) for c in chunks]
-
-        if self.script_frequency == "R1":
-            if self.product == 'av':
-                if self.cumulative:
-                    return max(chunks)
-                else:
-                    for c in chunks:
-                        if c.years == analysis_years:
-                            return c
-
-                    raise NotImplementedError(f"ERROR: Non-supported analysis script configuration: {self.name}: " +
-                                              f"run-once (R1), timeaverages, and non-accumulative is inconsistent, " +
-                                              f"unless one of the chunk sizes ({chunks_str}) represents "
-                                              f"{self.date_range[0]} through {self.date_range[1]}, inclusive.")
-            else:
-                return min(chunks)
-
-        # If any chunk matches the script frequency, return that chunk.
-        for c in chunks:
-            if c == self.script_frequency:
-                return c
-
-        raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}: script frequency " +
-                                  f"'{self.script_frequency}' matches none of the pp chunks ({chunks_str})")
-
-    def graph(self, chunk, analysis_only):
+    def graph(self, analysis_only):
         """Generate the cylc task graph string for the analysis script.
 
         Args:
-            chunk: Post-processing chunk size for this analysis script
             analysis_only: Boolean; can we assume pp files are already there?
 
         Returns:
@@ -163,24 +103,24 @@ class AnalysisScript(object):
 
         graph = ""
 
-        logger.debug(f"script frequency = {self.script_frequency}")
-        logger.debug(f"chunk = {chunk}")
+        logger.debug(f"script type = {self.script_type}")
+        logger.debug(f"chunk size = {self.chunk}")
         logger.debug(f"analysis date range = {self.date_range}")
 
         date0, date1 = self.date_range
 
-        if self.script_frequency == chunk and not self.cumulative:
+        if self.script_type == "independent":
             # Run every chunk (not cumulative)
-            suffix = f"{chunk}"
-            graph += f'{self.script_frequency} = """\n'
+            suffix = f"{self.chunk}"
+            graph += f'{self.chunk} = """\n'
 
             if analysis_only:
                 graph += f"ANALYSIS-{suffix}?\n"
             else:
                 if self.product == "av":
-                    dep = f"COMBINE-TIMEAVGS-{chunk}:succeed-all"
+                    dep = f"COMBINE-TIMEAVGS-{self.chunk}:succeed-all"
                 else:
-                    dep = f"REMAP-PP-COMPONENTS-TS-{chunk}:succeed-all"
+                    dep = f"REMAP-PP-COMPONENTS-TS-{self.chunk}:succeed-all"
 
                 graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
 
@@ -188,21 +128,21 @@ class AnalysisScript(object):
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
 
             graph += f'"""\n'
-        elif self.script_frequency == chunk and self.cumulative:
+        elif self.script_type == "cumulative":
             # Run every chunk (cumulative)
             deps = []
             d = date0
             while d <= date1:
-                suffix = f"{chunk}-{d.year:04}"
+                suffix = f"{self.chunk}-{d.year:04}"
                 graph += f'R1/{d} = """\n'
 
                 if analysis_only:
                     graph += f"ANALYSIS-{suffix}\n"
                 else:
                     if self.product == "av":
-                        deps.append(f"COMBINE-TIMEAVGS-{chunk}[{d}]:succeed-all")
+                        deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
                     else:
-                        deps.append(f"REMAP-PP-COMPONENTS-TS-{chunk}[{d}]:succeed-all")
+                        deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
 
                     graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
@@ -210,8 +150,8 @@ class AnalysisScript(object):
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{d.year:04}\n"
 
                 graph += '"""\n'
-                d += chunk
-        elif self.script_frequency == "R1":
+                d += self.chunk
+        elif self.script_type == "one-shot":
             # Run the analysis once, over a custom date range
             suffix = f"{date0.year:04}_{date1.year:04}"
             graph += f'R1/{date0} = """\n'
@@ -223,10 +163,10 @@ class AnalysisScript(object):
                 d = date0
                 while d <= date1:
                     if self.product == "av":
-                        deps.append(f"COMBINE-TIMEAVGS-{chunk}[{d}]:succeed-all")
+                        deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
                     else:
-                        deps.append(f"REMAP-PP-COMPONENTS-TS-{chunk}[{d}]:succeed-all")
-                    d += chunk
+                        deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
+                    d += self.chunk
 
                 graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}"
 
@@ -242,11 +182,10 @@ class AnalysisScript(object):
 
         return graph
 
-    def definition(self, chunk, pp_dir):
+    def definition(self, pp_dir):
         """Generate the cylc task definition string for the analysis script.
 
         Args:
-            chunk: Post-processing chunk size for this analysis script
             pp_dir: postprocessing directory
 
         Returns:
@@ -265,7 +204,7 @@ class AnalysisScript(object):
             "6hr": "6hr",
         }
         frequency = cmip_to_bronx[self.data_frequency]
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(chunk)
+        bronx_chunk = convert_iso_duration_to_bronx_chunk(self.chunk)
 
         # ts and av distinction
         if self.product == "ts":
@@ -325,7 +264,7 @@ $scriptOut {self.legacy_script_args}
             freq = {frequency}
             staticfile = {pp_dir}/{self.components[0]}/{self.components[0]}.static.nc
             scriptLabel = {self.name}
-            datachunk = {chunk.years}
+            datachunk = {self.chunk.years}
             """
 
         new_analysis_str = f"""
@@ -354,13 +293,12 @@ fre analysis install \
         '''
         """
 
-        if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
-           and not self.cumulative:
+        if self.script_type == "independent" and self.date_range == self.experiment_date_range:
             # to make the task run, we will create a corresponding task graph below
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
-            logger.info(f"{self.name}: Will run every chunk {chunk}")
+            logger.info(f"{self.name}: Will run every chunk {self.chunk}")
             if self.is_legacy:
                 definitions += legacy_analysis_str
             else:
@@ -368,21 +306,21 @@ fre analysis install \
 
             # create the task family for all every-interval analysis scripts
             definitions += f"""
-    [[data-catalog-{chunk}]]
+    [[data-catalog-{self.chunk}]]
         inherit = DATA-CATALOG
-    [[ANALYSIS-{chunk}]]
+    [[ANALYSIS-{self.chunk}]]
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc cycle-point --template=CCYY)
             databegyr = $yr1
             dataendyr = $yr2
-            datachunk = {chunk.years}
+            datachunk = {self.chunk.years}
                 """
 
             # inherit from the task family
             definitions += f"""
     [[analysis-{self.name}]]
-        inherit = ANALYSIS-{chunk}
+        inherit = ANALYSIS-{self.chunk}
             """
 
             # For time averages, set the in_data_file variable
@@ -391,7 +329,7 @@ fre analysis install \
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
                     times = 'ann'
-                if chunk == one_year:
+                if self.chunk == one_year:
                     years = '$yr1'
                 else:
                     years = '$yr1-$yr2'
@@ -408,13 +346,12 @@ fre analysis install \
             logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
 
-        if self.script_frequency == chunk and self.date_range == self.experiment_date_range \
-           and self.cumulative:
+        if self.script_type == "cumulative" and self.date_range == self.experiment_date_range:
             # Case 2: run the analysis every chunk, but depend on all previous chunks too.
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
-            logger.info(f"{self.name}: Will run each chunk {chunk} from beginning {self.experiment_date_range[0]}")
+            logger.info(f"{self.name}: Will run each chunk {self.chunk} from beginning {self.experiment_date_range[0]}")
             date = self.experiment_date_range[0]
             while date <= self.experiment_date_range[1]:
                 date_str = f"{date.year:04}"
@@ -422,7 +359,7 @@ fre analysis install \
                 # Add the task definition for each ending time.
                 definitions += f"""
     [[analysis-{self.name}-{date_str}]]
-        inherit = ANALYSIS-{chunk}-{date_str}, analysis-{self.name}
+        inherit = ANALYSIS-{self.chunk}-{date_str}, analysis-{self.name}
                 """
 
                 if self.is_legacy:
@@ -434,9 +371,9 @@ fre analysis install \
                 year1 = f"{self.experiment_date_range[0].year:04}"
                 year2 = f"{date.year:04}"
                 definitions += f"""
-                    [[data-catalog-{chunk}-{date_str}]]
+                    [[data-catalog-{self.chunk}-{date_str}]]
                         inherit = DATA-CATALOG
-                    [[ANALYSIS-{chunk}-{date_str}]]
+                    [[ANALYSIS-{self.chunk}-{date_str}]]
                         inherit = ANALYSIS
                         [[[environment]]]
                             yr1 = {year1}
@@ -459,21 +396,21 @@ fre analysis install \
                         dd = self.experiment_date_range[0]
                         while dd <= date:
                             y1 = f"{dd.year:04}"
-                            y2 = f"{(dd + chunk - one_year).year:04}"
+                            y2 = f"{(dd + self.chunk - one_year).year:04}"
                             if len(years) > 0:
                                 years += ','
                             if y1 == y2:
                                 years += f"{y1}"
                             else:
                                 years += f"{y1}-{y2}"
-                            dd += chunk
+                            dd += self.chunk
                     years = "{" + str(years) + "}"
                     definitions += f"""
     [[analysis-{self.name}-{date_str}]]
         [[[environment]]]
             in_data_file = {self.components[0]}.{years}.{times}.nc
                     """
-                date += chunk
+                date += self.chunk
 
             # create the install script
             if not self.is_legacy:
@@ -481,21 +418,16 @@ fre analysis install \
 
             return definitions
 
-        if self.script_frequency == "R1":
+        if self.script_type == "one-shot":
             # Locate the nearest enclosing chunks.
             d1 = self.experiment_date_range[0]
-            while d1 <= self.date_range[0] - chunk:
-                d1 += chunk
+            while d1 <= self.date_range[0] - self.chunk:
+                d1 += self.chunk
             d2 = self.experiment_date_range[1]
-            while d2 >= self.date_range[1] + chunk:
-                d2 -= chunk
+            while d2 >= self.date_range[1] + self.chunk:
+                d2 -= self.chunk
             d1_str = f"{d1.year:04}"
             d2_str = f"{d2.year:04}"
-            if self.product == 'av' and not self.cumulative:
-                if chunk.years == d2.year - d1.year + 1:
-                    pass
-                else:
-                    raise NotImplementedError(f"ERROR: Non-supported analysis script configuration: {self.name}: run-once (R1), timeaverages, and non-accumulative is inconsistent, unless duration '{chunk}' represents {self.date_range[0]} through {self.date_range[1]} inclusive.")
             logger.info(f"{self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})")
             date1_str = f"{self.date_range[0].year:04}"
             date2_str = f"{self.date_range[1].year:04}"
@@ -533,14 +465,14 @@ fre analysis install \
                     dd = d1
                     while dd <= d2:
                         y1 = f"{dd.year:04}"
-                        y2 = f"{(dd + chunk - one_year).year:04}"
+                        y2 = f"{(dd + self.chunk - one_year).year:04}"
                         if len(years) > 0:
                             years += ','
                         if y1 == y2:
                             years += f"{y1}"
                         else:
                             years += f"{y1}-{y2}"
-                        dd += chunk
+                        dd += self.chunk
                 years = "{" + str(years) + "}"
                 definitions += f"""
     [[analysis-{self.name}]]
@@ -558,18 +490,18 @@ fre analysis install \
         raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
 
-def task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
+def task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
     for script_name, script_params in yaml_["analysis"].items():
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
-                                     experiment_start, experiment_stop)
+                                     experiment_start, experiment_stop, pp_chunks)
         if script_info.switch == False:
             logger.info(f"{script_name}: Skipping, switch set to off")
             continue
         yield script_info
 
 
-def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop, chunks, pp_dir):
+def task_definitions(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks, pp_dir):
     """Return the task definitions for all user-defined analysis scripts.
 
     Args:
@@ -577,7 +509,7 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
         experiment_components: List of string experiment component names.
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
-        chunks: List of ISO8601 durations used by the workflow.
+        pp_chunks: List of ISO8601 durations used by the workflow.
         pp_dir: postprocessing directory
 
     Returns:
@@ -585,14 +517,13 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
     """
     logger.debug("About to generate all task definitions")
     definitions = ""
-    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
-        chunk = script_info.choose_pp_chunk(chunks)
-        definitions += script_info.definition(chunk, pp_dir)
+    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
+        definitions += script_info.definition(pp_dir)
     logger.debug("Finished generating all task definitions")
     return definitions
 
 
-def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, chunks, analysis_only):
+def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks, analysis_only):
     """Return the task graphs for all user-defined analysis scripts.
 
     Args:
@@ -600,21 +531,20 @@ def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, 
         experiment_components: List of string experiment component names.
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
-        chunks: List of ISO8601 durations used by the workflow.
+        pp_chunks: List of ISO8601 durations used by the workflow.
         analysis_only: Optional boolean to not depend on remap tasks (assume pp files already exist)
 
     Returns:
         String containing the task graphs.
     """
     graph = ""
-    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop):
-        chunk = script_info.choose_pp_chunk(chunks)
-        graph += script_info.graph(chunk, analysis_only)
+    for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
+        graph += script_info.graph(analysis_only)
     return graph
 
 
 def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
-                           experiment_start, experiment_stop, chunks, analysis_only=False):
+                           experiment_start, experiment_stop, pp_chunks, analysis_only=False):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
     Args:
@@ -627,13 +557,14 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
                                         Not used for every-interval scripts.
                                         For cumulative scripts, use for yr1
         pp_stop_str (str):              last cycle point to process
-        chunks: List of ISO8601 durations used by the workflow.
+        pp_chunks: List of ISO8601 durations used by the workflow.
         analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
     """
     logger.debug("get_analysis_info: starting")
     # Convert strings to date objects.
     experiment_start = time_parser.parse(experiment_start)
     experiment_stop = time_parser.parse(experiment_stop)
+    pp_chunks = [duration_parser.parse(c) for c in pp_chunks]
 
     # split the pp_components into a list
     experiment_components = experiment_components.split()
@@ -643,9 +574,9 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
         if info_type == "task-graph":
             logger.debug("get_analysis_info: about to return graph")
             return task_graph(yaml_, experiment_components, experiment_start,
-                              experiment_stop, chunks, analysis_only)
+                              experiment_stop, pp_chunks, analysis_only)
         elif info_type == "task-definitions":
             logger.debug("get_analysis_info: about to return definitions")
             return task_definitions(yaml_, experiment_components, experiment_start,
-                                   experiment_stop, chunks, pp_dir)
+                                   experiment_stop, pp_chunks, pp_dir)
         raise ValueError(f"Invalid information type: {info_type}.")

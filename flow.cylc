@@ -13,12 +13,6 @@
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
 {% set SITE = SITE %}
 
-{% set PP_CHUNKS = [PP_CHUNK_A] %}
-
-{% if PP_CHUNK_B is defined and PP_CHUNK_B != PP_CHUNK_A %}
-    {% do PP_CHUNKS.append(PP_CHUNK_B) %}
-{% endif %}
-
 {# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
 {% if ANALYSIS_START is not defined %}
     {% set ANALYSIS_START = PP_START %}
