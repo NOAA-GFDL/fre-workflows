@@ -16,7 +16,15 @@ import ast
 import metomi.rose.config as rose_cfg
 from netCDF4 import Dataset
 
-FREGRID_SHARED_FILES='/home/fms/shared_fregrid_remap_files'
+# these variables will cause fregrid errors
+# they should have variable attribute interp_method=NONE
+# from the model but they do not, yet
+non_regriddable_variables = [
+    'geolon_c', 'geolat_c', 'geolon_u', 'geolat_u', 'geolon_v', 'geolat_v',
+    'FA_X', 'FA_Y', 'FI_X', 'FI_Y', 'IX_TRANS', 'IY_TRANS', 'UI', 'VI', 'UO', 'VO',
+    'wet_c', 'wet_v', 'wet_u', 'dxCu', 'dyCu', 'dxCv', 'dyCv', 'Coriolis',
+    'areacello_cu', 'areacello_cv', 'areacello_bu'
+]
 
 # formerly in shared.sh
 def truncate_date(date, freq):
@@ -149,6 +157,8 @@ def make_regrid_var_list(target_file, interp_method = None):
     for var_name in all_fin_vars:
         if var_name in ['average_T1','average_T2',
                         'average_DT','time_bnds' ]:
+            continue
+        if var_name in non_regriddable_variables:
             continue
         if len(all_fin_vars[var_name].shape) < 2 :
             continue
@@ -376,22 +386,14 @@ def regrid_xy( ):
             remap_cache_file = \
                 f'{remap_dir}/{input_grid}/{input_realm}/' + \
                 f'{source_nx}-by-{source_ny}/{interp_method}/{remap_file}'
-            central_remap_cache_file = \
-                f'{FREGRID_SHARED_FILES}/{input_grid}/' + \
-                f'{source_nx}_by_{source_ny}/{remap_file}'
 
             print(f'remap_file               = {remap_file              }' + \
-                  f'remap_cache_file         = {remap_cache_file        }' + \
-                  f'central_remap_cache_file = {central_remap_cache_file}' )
+                  f'remap_cache_file         = {remap_cache_file        }')
 
             if Path( remap_cache_file ).exists():
                 print(f'NOTE: using cached remap file {remap_cache_file}')
                 shutil.copy(remap_cache_file,
                             remap_cache_file.split('/').pop())
-            elif Path( central_remap_cache_file ).exists():
-                print(f'NOTE: using centrally cached remap file {remap_cache_file}')
-                shutil.copy(central_remap_cache_file,
-                            central_remap_cache_file.split('/').pop())
 
 
 
@@ -438,7 +440,8 @@ def regrid_xy( ):
             fregrid_command.append(f'{more_options}')
 
         print(f"\n\nabout to run the following command: \n{' '.join(fregrid_command)}\n")
-        fregrid_proc = subprocess.run( fregrid_command, check = False )#i hate it
+        # will raise an CalledProcessError exception on failure
+        fregrid_proc = subprocess.run( fregrid_command, check = True )
         fregrid_rc =fregrid_proc.returncode
         print(f'fregrid_result.returncode()={fregrid_rc}')
 
