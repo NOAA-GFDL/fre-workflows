@@ -838,17 +838,15 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = mkdir -p $outputDir
-        # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key regrid-xy
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            begin = $CYLC_TASK_CYCLE_POINT
-            fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            source = $CYLC_TASK_PARAM_regrid
-            gridSpec = {{ PP_GRID_SPEC }}
-            defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
+        script = """
+fre app regrid --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
+               --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
+               --begin=$CYLC_TASK_CYCLE_POINT \
+               --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
+               --source=$CYLC_TASK_PARAM_regrid \
+               --grid_spec={{ PP_GRID_SPEC }} \
+               --xy={{ PP_DEFAULT_XYINTERP }}
+        """
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
 
