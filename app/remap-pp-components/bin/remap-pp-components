@@ -181,13 +181,16 @@ def search_files(product,var,source,freq,current_chunk,begin):
         current_chunk: current chunk to post-process
         freq: frequency
     """
-    # with glob - files seen as list
+    files = []
+    # with glob - files found as list
     if freq == "P0Y":
         if var == "all":
-            files = glob.glob(f"{source}.*.nc")
+            f = glob.glob(f"{source}.*.nc")
+            files.extend(f)
         else:
             for v in var:
-                files = glob.glob(f"{source}.{v}*.nc")
+                f = glob.glob(f"{source}.{v}*.nc")
+                files.extend(f)
     else:
         if product == "ts":
             date = truncate_date(begin, freq)
@@ -198,14 +201,17 @@ def search_files(product,var,source,freq,current_chunk,begin):
             raise ValueError("Product not set to ts or av.")
 
         if var == "all":
-            files = glob.glob(f"{source}.{date}-*.*.nc")
+            f = glob.glob(f"{source}.{date}-*.*.nc")
+            files.extend(f)
         else:
             for v in var:
                 logger.info("var: %s", v)
-                files = glob.glob(f"{source}.{date}-*.{v}*.nc")
+                f = glob.glob(f"{source}.{date}-*.{v}*.nc")
+                files.extend(f)
 
         if product == "av" and current_chunk == "P1Y":
-            files = glob.glob(f"{source}.{date}.*.nc")
+            f = glob.glob(f"{source}.{date}.*.nc")
+            files.extend(f)
 
     return files
 
