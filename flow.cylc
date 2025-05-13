@@ -402,6 +402,13 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
                  echo "Error: Cant stage history files in ${file} to PTMP"
                  exit 1
             fi
+
+            # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
+            mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
+                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+
             #Data Integrity Checking:q
             fre pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
             # Setup PYTHONPATH and io lists for the data lineage tool
@@ -411,12 +418,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
                 export output_file_list=
                 echo "Set PYTHONPATH and created i/o lists"
             fi
-
-            # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
-            mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
-                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
                 outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
@@ -838,26 +839,28 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = mkdir -p $outputDir
-        # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key regrid-xy
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            begin = $CYLC_TASK_CYCLE_POINT
-            fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            source = $CYLC_TASK_PARAM_regrid
-            gridSpec = {{ PP_GRID_SPEC }}
-            defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
+        script = """
+fre --verbose app regrid \
+               --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
+               --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
+               --begin=$CYLC_TASK_CYCLE_POINT \
+               --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
+               --source=$source \
+               --grid_spec={{ PP_GRID_SPEC }} \
+               --tmp_dir=$CYLC_TASK_WORK_DIR \
+               --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
+        """
+        # there may be a race condition that causes the fast jobs to fail
+        execution retry delays = 2*PT5M
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
+        [[[environment]]]
+            source = $CYLC_TASK_PARAM_regrid
 
-    {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid_static
-    {% endif %}
 {% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
