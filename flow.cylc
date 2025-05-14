@@ -618,14 +618,15 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = mkdir -p $outputDir
-        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y {{ YAML }}
+        pre-script = mkdir -p $outputDir; module load fre
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
 
 {% if DO_NATIVE %}
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; new arg for forcing split of all vars #}
+        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -s $history_file  --split-all-vars
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
@@ -636,7 +637,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% if DO_REGRID %}
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
-        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -c $component -s $history_file -y {{ YAML }} --use-subdirs
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; new arg for forcing split of all vars #}
+        script = fre pp split-netcdf-wrapper -i $inputDir -o outputDir -s $history_file --split-all-vars --use-subdirs
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
