@@ -857,11 +857,12 @@ fre --verbose app regrid \
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid
-
+    {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid_static
+    {% endif %}
 {% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
