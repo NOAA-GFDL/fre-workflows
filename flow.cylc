@@ -618,7 +618,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = mkdir -p $outputDir; module load fre
+        pre-script = module load fre/test; mkdir -p $outputDir
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
 
