@@ -93,7 +93,6 @@
         pre-script = """
             module load fre/{{ FRE_VERSION }}
             module load fre-nctools/2023.01.02 nco
-            mkdir -p $outputDir
         """
         [[[environment]]]
             TMPDIR = $CYLC_TASK_WORK_DIR
