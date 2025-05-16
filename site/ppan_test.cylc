@@ -132,9 +132,6 @@
         """
         pre-script = module load fre/{{ FRE_VERSION }} 
         
-        [[[directives]]]
-            --partition=analysis
-
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
@@ -146,17 +143,11 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
+        execution time limit = P1D
         pre-script = """
-            # the conda activate below brings in an old fre-nctools
-            # that is conda installable. we need an updated
-            # fre-nctools to regrid new ocean output
-            module load miniforge
-            set +u
-            conda activate /nbhome/fms/conda/envs/fre-2025.01
-            set -u
+            module load fre/{{ FRE_VERSION }}
             module load fre-nctools/2024.05
             which fregrid
-            mkdir -p $outputDir
         """
 {% endif %}
 
