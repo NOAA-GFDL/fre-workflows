@@ -168,7 +168,7 @@ class AnalysisScript(object):
                         deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
                     d += self.chunk
 
-                graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}"
+                graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
             if not self.is_legacy:
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{date0.year:04}_{date1.year:04}"

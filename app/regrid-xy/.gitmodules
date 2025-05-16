@@ -1,4 +1,0 @@
-[submodule "shared"]
-	path = shared
-	url = https://gitlab.gfdl.noaa.gov/fre2/apps/shared.git
-	branch = python.rewrite
