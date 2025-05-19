@@ -68,7 +68,7 @@
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }}
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load cray-hdf5 cray-netcdf cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
