@@ -23,7 +23,7 @@ load a fre module from the pre-script of your cylc task:
 
 ```
     [[SPLIT-NETCDF]]
-        pre-script = module load fre/2025.03; mkdir -p $outputDir
+        pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
 ```
 
 Features in fre-cli are merged into main

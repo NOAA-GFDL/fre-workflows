@@ -620,8 +620,13 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = module load fre/test; mkdir -p $outputDir
+        pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
         [[[environment]]]
+            {# $date was used as an input arg in the earlier version of  #}
+            {# split-netcdf without getting referenced in the script itself. #}
+            {# I think it's a reference to an older script that got removed in #}
+            {# the first round of cylc rewrites; keeping it here in case #}
+            {# we turn out to need it during the user testing. #}
             date = $CYLC_TASK_CYCLE_POINT
 
 {% if DO_NATIVE %}
@@ -632,8 +637,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
-            history_file = $CYLC_TASK_PARAM_native
-            component = $CYLC_TASK_PARAM_component
 {% endif %}
 
 {% if DO_REGRID %}
@@ -644,8 +647,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
-            history_file = $CYLC_TASK_PARAM_regrid
-            component = $CYLC_TASK_PARAM_component
 {% endif %}
 
 {% if DO_NATIVE %}
