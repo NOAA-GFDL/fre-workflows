@@ -649,6 +649,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             history_file = $CYLC_TASK_PARAM_regrid
+            use_subdirs = 1
 {% endif %}
 
 {% if DO_NATIVE %}
