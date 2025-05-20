@@ -38,11 +38,6 @@
 
 #{% endif %}
 
-{% if DO_REGRID %}
-    [[REGRID-XY]]
-        pre-script = mkdir -p $outputDir
-{% endif %}
-
 {% if DO_MDTF %}
     [[mdtf]]
         pre-script = mkdir -p $MDTF_TMPDIR
