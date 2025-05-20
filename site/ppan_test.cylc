@@ -112,7 +112,7 @@
         pre-script = module load cdo nco && mkdir -p $outputDir
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo && mkdir -p $outputDir
+        pre-script = module load netcdf-c cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = """
@@ -124,7 +124,7 @@
             mkdir -p $outputDir
         """
 
-    [[data-catalog]]
+    [[DATA-CATALOG]]
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
@@ -132,11 +132,8 @@
         """
         pre-script = module load fre/{{ FRE_VERSION }} 
         
-        [[[directives]]]
-            --partition=analysis
-
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[MAKE-TIMEAVGS]]
         pre-script = module load fre-python-tools && mkdir -p $outputDir
@@ -146,17 +143,11 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
+        execution time limit = P1D
         pre-script = """
-            # the conda activate below brings in an old fre-nctools
-            # that is conda installable. we need an updated
-            # fre-nctools to regrid new ocean output
-            module load miniforge
-            set +u
-            conda activate /nbhome/fms/conda/envs/fre-2025.01
-            set -u
+            module load fre/{{ FRE_VERSION }}
             module load fre-nctools/2024.05
             which fregrid
-            mkdir -p $outputDir
         """
 {% endif %}
 
