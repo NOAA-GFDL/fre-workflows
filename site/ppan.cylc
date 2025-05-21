@@ -69,7 +69,8 @@
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = set +u; module load miniforge; conda activate fre-cli; set -u
+        pre_script = module load fre/{{ FRE_VERSION }}
+        {# pre-script = set +u; module load miniforge; conda activate fre-cli; set -u #}
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load netcdf-c cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
