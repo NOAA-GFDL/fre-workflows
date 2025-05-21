@@ -37,7 +37,7 @@
 [scheduler]
     {# Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos. #}
     {# (For prototyping and graphing, change this to True.)                                     #}
-    allow implicit tasks = False
+    allow implicit tasks = false
 
     {# Configure the directories and files to be included in the remote file installation #}
     install = app/*, bin/*, etc/*, lib/*
@@ -262,9 +262,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                => make-timeavgs-regrid-{{ chunk.chunk_size }}<regrid>
-            {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
@@ -275,37 +272,18 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                => make-timeavgs-native-{{ chunk.chunk_size }}<native>
-            {% endif %}
         {% endif %}
 
         {% if DO_REGRID %}
             {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
-            {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
-            {% endif %}
-        {% endif %}
-
-        {% if DO_TIMEAVGS and not chunk.is_partial %}
-            remap-pp-components-av-{{ chunk.chunk_size }}<component> => combine-timeavgs-{{ chunk.chunk_size }}<component>
-            {% if CLEAN_WORK %}
-                COMBINE-TIMEAVGS-{{ chunk.chunk_size }}:succeed-all => clean-pp-timeavgs-{{ chunk.chunk_size }}
-            {% endif %}
         {% endif %}
 
         {% if CLEAN_WORK %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
-                REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% endif %}
         {% endif %}
 
         REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all
@@ -316,11 +294,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     {% if CLEAN_WORK %}
         {% for segment in chunk.segments %}
             R1/{{ segment }} = """
-                REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% if DO_TIMEAVGS and not chunk.is_partial %}
-                    & REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% endif %}
-                => clean-shards-{{ HISTORY_SEGMENT }}
+                REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
             """
         {% endfor %}
     {% endif %}
@@ -334,6 +308,11 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     {% endif %}
 
 {% endif %}
+
+#
+# Recurrence intervals for climatology tasks
+#
+{{ YAML | get_climatology_info('task-graph') }}
 
 [runtime]
     [[pp-starter]]
@@ -468,43 +447,20 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {% endif %}
 
-{% if DO_TIMEAVGS %}
     [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeavgs
-    {% if DO_NATIVE %}
     [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
             component = $CYLC_TASK_PARAM_native
-    {% endif %}
-    {% if DO_REGRID %}
     [[MAKE-TIMEAVGS-REGRID]]
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
-    {% endif %}
-    {% for PP_CHUNK in PP_CHUNKS %}
-        [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
-            [[[environment]]]
-                interval = {{ PP_CHUNK }}
-        {% if DO_NATIVE %}
-            [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK }}
-            [[make-timeavgs-native-{{ PP_CHUNK }}<native>]]
-                inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}, <native>
-        {% endif %}
-        {% if DO_REGRID %}
-            [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK }}
-            [[make-timeavgs-regrid-{{ PP_CHUNK }}<regrid>]]
-                inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}, <regrid>
-        {% endif %}
-    {% endfor %}
-{% endif %}
+{{ YAML | get_climatology_info('task-definitions') }}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -744,16 +700,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
 
-    {% for PP_CHUNK in PP_CHUNKS %}
-        [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
-            inherit = REMAP-PP-COMPONENTS-AV
-            [[[environment]]]
-                begin = $(cylc cycle-point)
-                currentChunk = {{ PP_CHUNK }}
-        [[remap-pp-components-av-{{ PP_CHUNK }}<component>]]
-            inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}, <component>
-    {% endfor %}
-
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -773,26 +719,12 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
-{% if DO_TIMEAVGS %}
     [[COMBINE-TIMEAVGS]]
         script = rose task-run --verbose --app-key combine-timeavgs
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
-            outputDir = {{ PP_DIR }}/$CYLC_TASK_PARAM_component/av
-
-    {% for PP_CHUNK in PP_CHUNKS %}
-        [[COMBINE-TIMEAVGS-{{ PP_CHUNK }}]]
-            inherit = COMBINE-TIMEAVGS
-            [[[environment]]]
-                inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-                currentChunk = {{ PP_CHUNK }}
-                end = $(cylc cycle-point --print-year --offset={{ PP_CHUNK | subtract_durations(HISTORY_SEGMENT) }})
-        [[combine-timeavgs-{{ PP_CHUNK }}<component>]]
-            inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK }}, <component>
-            [[[environment]]]
-                component = $CYLC_TASK_PARAM_component
-    {% endfor %}
-{% endif %}
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
+            outputDir = {{ PP_DIR }}/$component/av
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
@@ -943,50 +875,45 @@ fre --verbose app regrid \
         """
 {% endif %}
 
-    [[clean-shards-{{ HISTORY_SEGMENT }}]]
+    [[CLEAN-SHARDS]]
         inherit = CLEAN
         script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/$duration $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/$duration"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
-                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                    if [[ $duration == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
                 else
                     echo "Skipping '$dir' as it does not exist"
                 fi
             done
         """
+    [[clean-shards-{{ HISTORY_SEGMENT }}]]
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = {{ HISTORY_SEGMENT }}
 
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[clean-shards-{{ PP_CHUNK }}]]
-            inherit = CLEAN
-            script = """
-                dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK }}"
-                for dir in $dirs; do
-                    if [[ -d $dir ]]; then
-                        if [[ {{ PP_CHUNK }} == P1Y ]]; then
-                            find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                        else
-                            find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                        fi
-                    else
-                        echo "Skipping '$dir' as it does not exist"
-                    fi
-                done
-            """
-
-        [[clean-pp-timeavgs-{{ PP_CHUNK }}]]
-            inherit = CLEAN
-            script = """
-                dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK }}
-                for dir in $dirs; do
-                    if [[ {{ PP_CHUNK }} == P1Y ]]; then
-                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                    else
-                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                    fi
-                done
-            """
+    [[clean-shards-{{ PP_CHUNK }}]]
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = {{ PP_CHUNK }}
     {% endfor %}
+
+    [[CLEAN-PP-TIMEAVGS]]
+        inherit = CLEAN
+        script = """
+            dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/$duration
+            for dir in $dirs; do
+                if [[ $duration == P1Y ]]; then
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                else
+                    find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                fi
+            done
+        """
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}
