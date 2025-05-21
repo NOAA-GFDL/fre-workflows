@@ -88,27 +88,28 @@ class Climatology(object):
                 count += 1
             graph += f" => make-timeavgs-{grid}-P{self.interval_years}Y_{source}\n"
             if clean_work:
+                graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
                 count = 0
                 while count < chunks_per_interval:
                     if count == 0:
-                        #graph += f"=> clean-shards-{self.pp_chunk}"
-                        graph += f"make-timeavgs-{grid}-P{self.interval_years}Y_{source} => clean-shards-{self.pp_chunk}\n"
+                        graph += f" => clean-shards-{self.pp_chunk}"
                     else:
-                        offset = -1 * count * self.pp_chunk
-                        graph += f"make-timeavgs-{grid}-P{self.interval_years}Y_{source}[{offset}] => clean-shards-{self.pp_chunk}\n"
-                        #graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
+                        offset = count * self.pp_chunk
+                        graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
                     count += 1
-                #graph += "\n"
+                graph += "\n"
 
         for index, source in enumerate(self.sources):
             if index == 0:
                 graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
             else:
                 graph += f" & make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
-        graph += f" => remap-pp-components-av-P{self.interval_years}Y_{self.component}\n"
+        graph += f" => remap-pp-components-av-P{self.interval_years}Y_{self.component}"
+        graph += f" => combine-timeavgs-P{self.interval_years}Y_{self.component}"
         if clean_work:
-            graph += f"=> clean-shards-P{self.interval_years}Y\n"
-        graph += f"    & combine-timeavgs-P{self.interval_years}Y_{self.component}\n"
+            graph += f" => clean-shards-P{self.interval_years}Y & clean-pp-timeavgs-P{self.interval_years}Y\n"
+        else:
+            graph += "\n"
 
         graph += f"\"\"\"\n"
 
@@ -164,10 +165,7 @@ def task_generator(yaml_):
             components.append(component["type"])
 
     # determine pp chunk to use. require the timeaverage interval to be a multiple of pp chunk
-    pp_chunk = None
-    pp_chunks = [yaml_["postprocess"]["settings"]["pp_chunk_a"]]
-    if "pp_chunk_b" in yaml_["postprocess"]["settings"]:
-        pp_chunks.append(yaml_["postprocess"]["settings"]["pp_chunk_b"])
+    pp_chunks = yaml_["postprocess"]["settings"]["pp_chunks"]
 
     for component in yaml_["postprocess"]["components"]:
         if not component['postprocess_on']:
@@ -258,4 +256,4 @@ def get_climatology_info(experiment_yaml, info_type):
         raise ValueError(f"Invalid information type: {info_type}.")
 
 # example for interactive testing
-#print(get_climatology_info('c96L65_am5f8d6r1_amip.yaml', 'task-definitions')
+#print(get_climatology_info('c96L65_am5f8d6r1_amip.yaml', 'task-graph'))

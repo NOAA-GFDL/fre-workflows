@@ -889,7 +889,6 @@ fre --verbose app regrid \
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/$duration $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/$duration"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
-<<<<<<< HEAD
                     if [[ $duration == P1Y ]]; then
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     else
