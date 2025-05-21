@@ -37,7 +37,7 @@
 [scheduler]
     {# Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos. #}
     {# (For prototyping and graphing, change this to True.)                                     #}
-    allow implicit tasks = true
+    allow implicit tasks = false
 
     {# Configure the directories and files to be included in the remote file installation #}
     install = app/*, bin/*, etc/*, lib/*
@@ -700,10 +700,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
 
-# note to self
-# need to create this task: REMAP-PP-COMPONENTS-AV-PP_CHUNK
-# and remap-pp-components-av-PP_CHUNK<component>
-
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -729,10 +725,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             begin = $(cylc cycle-point --print-year)
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             outputDir = {{ PP_DIR }}/$component/av
-
-    # note to self
-    # need to create these tasks: COMBINE-TIMEAVGS-PP_CHUNK
-    # and combine-timeavgs-PP_CHUNK<component>
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
@@ -922,9 +914,6 @@ fre --verbose app regrid \
                 fi
             done
         """
-
-    # note to self
-    # need to add: clean-pp-timeavgs-PP_CHUNK
 
 # Site-specific settings
 {% include 'site/' ~ SITE ~ '.cylc' %}

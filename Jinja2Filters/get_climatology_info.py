@@ -153,6 +153,18 @@ class Climatology(object):
             end = $(cylc cycle-point --print-year --offset={offset})
         """
 
+        if clean_work:
+            definitions += f"""
+    [[clean-shards-P{self.interval_years}Y]]
+        inherit = CLEAN-SHARDS
+        [[[environment]]]
+            duration = P{self.interval_years}Y
+    [[clean-pp-timeavgs-P{self.interval_years}Y]]
+        inherit = CLEAN-PP-TIMEAVGS
+        [[[environment]]]
+            duration = P{self.interval_years}Y
+            """
+
         return definitions
 
 def task_generator(yaml_):
@@ -256,4 +268,4 @@ def get_climatology_info(experiment_yaml, info_type):
         raise ValueError(f"Invalid information type: {info_type}.")
 
 # example for interactive testing
-#print(get_climatology_info('c96L65_am5f8d6r1_amip.yaml', 'task-graph'))
+#print(get_climatology_info('c96L65_am5f8d6r1_amip.yaml', 'task-definitions'))
