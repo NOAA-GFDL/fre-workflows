@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 from pathlib import Path
 import yaml
@@ -21,7 +20,6 @@ def get_variables(yamlfile, pp_components):
     fre_logger.debug(f"PP components: {pp_components}")
 
     pp_comp = pp_components.split()
-#    print(pp_comp)
     with open(yamlfile) as file_:
         yml = yaml.safe_load(file_)
 
@@ -56,4 +54,4 @@ def get_variables(yamlfile, pp_components):
     return src_vars
 
 ## TEST ##
-print(get_variables("/home/Dana.Singh/fre/get-vars-jinjafilter/Jinja2Filters/yaml_ex.yaml", "atmos_scalar atmos_scalar_test_vars atmos_scalar_test_vars_fail atmos_scalar_static_test_vars_fail"))
+#print(get_variables("/home/Dana.Singh/fre/get-vars-jinjafilter/Jinja2Filters/yaml_ex.yaml", "atmos_scalar atmos_scalar_test_vars atmos_scalar_test_vars_fail atmos_scalar_static_test_vars_fail"))
