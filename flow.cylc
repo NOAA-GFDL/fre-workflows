@@ -27,6 +27,9 @@
 {# Retrieve active pp components from the yaml #}
 {% set PP_COMPONENTS = YAML | get_components %}
 
+{# Retrieve defined variables associated with active pp components from the yaml in a dictionary #}
+{% set SRC_VARS = YAML | get_variables(PP_COMPONENTS) %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -624,6 +627,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = rose task-run --verbose --app-key split-netcdf
         [[[environment]]]
             date = $CYLC_TASK_CYCLE_POINT
+            src_vars_dict = {{ SRC_VARS }}
 
 {% if DO_NATIVE %}
     [[SPLIT-NETCDF-NATIVE]]
@@ -719,6 +723,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
             yaml_config = {{ YAML }}
+            src_vars_dict = {{ SRC_VARS }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS

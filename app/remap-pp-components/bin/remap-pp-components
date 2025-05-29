@@ -11,6 +11,7 @@ import glob
 from pathlib import Path
 import logging
 import yaml
+import ast
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -215,37 +216,51 @@ def search_files(product,var,source,freq,current_chunk,begin):
 
     return files
 
-def get_variables(comp_info, product, req_source):
+def get_variables(comp_info, product, req_source, src_vars):
     """
     Retrieve variables listed for a component; save in dictionary for use later
     Params:
         comp_info: dictionary of information about requested component
         product: static, ts, or av
+        req_source: source being assessed
+        src_vars: dictionary of defined variables with associated sources
     """
     if product == "static":
         if comp_info.get("static") is None:
             raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
 
-        for static_info in comp_info.get("static"):
-            if static_info.get("source") == req_source:
-                if static_info.get("variables") is None:
-                    v = "all"
-                else:
-                    v = static_info.get("variables")
+    ## Dictionary of variables associated with pp component source name are retrieved through Jinjafilter get_variables.py
+    # 1. Loop through each element in dictionary passed
+    # 2. match pp component source name with the requested source being assessed
+    # 3. Save variables associated with that pp component 
+    for src_name in src_vars.keys():
+        if req_source == src_name:
+            v = src_vars[req_source]
 
-#            if static_info.get("offline_source") is not None:
+#    if product == "static":
+#        if comp_info.get("static") is None:
+#            raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
+#
+#        for static_info in comp_info.get("static"):
+#            if static_info.get("source") == req_source:
 #                if static_info.get("variables") is None:
 #                    v = "all"
 #                else:
 #                    v = static_info.get("variables")
-    else:
-        for src_info in comp_info.get("sources"): #history_file,variables
-            if src_info.get("history_file") == req_source:
-                if src_info.get("variables") is None:
-                    v = "all"
-                else:
-                    v = src_info.get("variables")
-
+#
+##            if static_info.get("offline_source") is not None:
+##                if static_info.get("variables") is None:
+##                    v = "all"
+##                else:
+##                    v = static_info.get("variables")
+#    else:
+#        for src_info in comp_info.get("sources"): #history_file,variables
+#            if src_info.get("history_file") == req_source:
+#                if src_info.get("variables") is None:
+#                    v = "all"
+#                else:
+#                    v = src_info.get("variables")
+#
     return v
 
 def get_sources(comp_info, product):
@@ -313,6 +328,7 @@ def remap():
     current_chunk     = os.getenv('currentChunk')
     components        = os.getenv('components')
     yaml_config       = os.getenv('yaml_config')
+    src_vars_dict     = ast.literal_eval(os.getenv('src_vars_dict'))
     product           = os.getenv('product')
     dir_ts_workaround = os.getenv('dirTSWorkaround')
     ens_mem           = os.getenv('ens_mem')
@@ -324,6 +340,7 @@ def remap():
     logger.info("    current chunk: %s", current_chunk)
     logger.info("    components: %s", components)
     logger.info("    yaml config: %s", yaml_config)
+    logger.info("    source and var list: %s", src_vars_dict)
     logger.info("    product: %s", product)
     if dir_ts_workaround is not None:
         logger.info("    dirTSWorkaround: %s", dir_ts_workaround)
@@ -462,7 +479,7 @@ def remap():
 
                             ## VARIABLE INFORMATION for requested source
                             # Note: variable filtering not done for offline static diagnostics
-                            v = get_variables(comp_info, product, s)
+                            v = get_variables(comp_info, product, s, src_vars_dict)
 
                             files = search_files(product = product,
                                                  var = v,
