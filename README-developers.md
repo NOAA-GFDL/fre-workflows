@@ -1,8 +1,8 @@
-User-Specific settings
+# User-Specific settings
 
-User settings
+## User settings
 
-You hae to have a file in your /home directory that looks like this: 
+You have to have a file in your /home directory that looks like this: 
 
 ```
 > cat /home/Carolyn.Whitlock/.bash_profile
@@ -17,10 +17,11 @@ We'd like a longer-term solution by adding a link to the binary in one of the
 places that is already added to our $PATH, but that's in progress.
 
 
-Experiment settings
+## Experiment settings
 
 The current organization of the yaml has a bunch of experiment-wide settings in
 a file called settings.yaml: 
+
 
 ```
 yaml_workflow/pp/settings.yaml:
@@ -47,11 +48,12 @@ postprocess:
     do_analysis:                False
     do_analysis_only:           False
 ```
+
 You'll see reference to some of the settings in this file throughout the workflow
 as variables. It's useful to make sure some of these are set to specific values
 for developer work:
 
-  postprocess:settings:clean_work 
+  postprocess:switches:clean_work 
   what it does: Whether you clean up the contents of the intermediate directories
     produced by your experiment before going on to the next step - for example, 
     removing the local history directory once you have all files split by
@@ -68,7 +70,7 @@ for developer work:
   
 
 
-Batch environment setup and fre-cli
+# Batch environment setup and fre-cli
 
 The slurm jobs that cylc submits are run from a bare environment, not a copy of
 the local environment you submitted the jobs from. This means that if you want to
@@ -90,20 +92,20 @@ layers of configuration - settings can be set in more than one place, and the
 most specific settings are prioritized over the least specific settings. The
 overall hierarchy looks something like this:
 
-highest priority---  experiment yaml > sites/$sitefile.cylc > flow.cylc ---lowest priority
+highest priority---  sites/$sitefile.cylc > flow.cylc ---lowest priority
 
 Prioritization does not mean that the settings in any file are ignored - but if 
 the settings in two files disagree, cylc goes with the setting value in the 
 higher-priority file over the lower-prioirty one.
 
 We currently have pre-scripts defined for every step of the workflow in
-sites/$sitefile.cylc, and that means YOU NEED TO EDIT THERE. Fot testing at the
+sites/$sitefile.cylc, and that means YOU NEED TO EDIT THERE. For testing at the
 lab, that means you are editing site/ppan.cylc . 
 
 How you edit sites/ppan.cylc looks different depending on how far along in the 
 development process the features that you are testing are: 
 
-Features in fre-cli are part of a release
+### Features in fre-cli are part of a release
 
 If the features that you want to include are part of a fre release, you can 
 load a fre module from the pre-script of your cylc task: 
@@ -113,7 +115,7 @@ load a fre module from the pre-script of your cylc task:
         pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
 ```
 
-Features in fre-cli are merged into main
+### Features in fre-cli are merged into main
 
 If the features that you want to include are merged into main but not yet part 
 of a fre release, you can use them by loading fre/test. 
@@ -124,7 +126,7 @@ of a fre release, you can use them by loading fre/test.
 ```
 
 
-Features in fre-cli are in a development branch
+### Features in fre-cli are in a development branch
 
 If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that 
