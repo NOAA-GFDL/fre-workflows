@@ -24,8 +24,8 @@ a file called settings.yaml:
 
 
 ```
-yaml_workflow/pp/settings.yaml:
-  directories:
+> cat yaml_workflow/pp/settings.yaml:
+directories:
   history_dir: !join [/archive/$USER/, *FRE_STEM, /, *name, /, *platform, -, *target, /, history]
   pp_dir: !join [/archive/$USER/, *FRE_STEM, /, *name, /, *platform, -, *target, /, pp]
   analysis_dir: !join [/nbhome/$USER/, *FRE_STEM, /, *name]
@@ -53,14 +53,16 @@ You'll see reference to some of the settings in this file throughout the workflo
 as variables. It's useful to make sure some of these are set to specific values
 for developer work:
 
+
   postprocess:switches:clean_work 
-  what it does: Whether you clean up the contents of the intermediate directories
+  
+  *what it does:* Whether you clean up the contents of the intermediate directories
     produced by your experiment before going on to the next step - for example, 
     removing the local history directory once you have all files split by
     split.netcdf
-  value for production:  True
-  value for development: False
-  why: It's a lot easier to debug what may have gone wrong with previous steps
+  *value for production:*  True
+  *value for development:* False
+  *why:* It's a lot easier to debug what may have gone wrong with previous steps
    when you can refer to the actual files produced in those steps and selectively
    re-run. However, this is not necessary on a production run and the intermediate
    files take up a LOT of space.
