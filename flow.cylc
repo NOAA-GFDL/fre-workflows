@@ -620,7 +620,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        
+        pre-script = mkdir -p $outputDir
         [[[environment]]]
             {# $date was used as an input arg in the earlier version of  #}
             {# split-netcdf without getting referenced in the script itself. #}
