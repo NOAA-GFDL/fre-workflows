@@ -190,7 +190,9 @@ def task_generator(yaml_):
                     if interval_years % chunk.years == 0:
                         pp_chunk = chunk
                         break
-                if not pp_chunk:
+                try:
+                    pp_chunk
+                except UnboundLocalError:
                     raise Exception(f"Unsupported climatology configuration: Interval in years '{interval_years}' is not a multiple of any pp chunk {pp_chunks}")
 
 
@@ -268,4 +270,4 @@ def get_climatology_info(experiment_yaml, info_type):
         raise ValueError(f"Invalid information type: {info_type}.")
 
 # example for interactive testing
-#print(get_climatology_info('c96L65_am5f8d6r1_amip.yaml', 'task-definitions'))
+#print(get_climatology_info('ESM4.5_candidateA.yaml', 'task-definitions'))
