@@ -450,11 +450,13 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[MAKE-TIMEAVGS]]
         script = rose task-run --verbose --app-key make-timeavgs
     [[MAKE-TIMEAVGS-NATIVE]]
+        inherit = MAKE-TIMEAVGS
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
             component = $CYLC_TASK_PARAM_native
     [[MAKE-TIMEAVGS-REGRID]]
+        inherit = MAKE-TIMEAVGS
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
