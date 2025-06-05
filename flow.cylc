@@ -211,7 +211,7 @@ STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<reg
 {% endif %}
 
 {% if DO_NATIVE_STATIC %}
-STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+STAGE-HISTORY:succeed-all => split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
 {% endif %}
 
 {# After cataloging the regridded and native statics, remap them to pp components as desired #}
@@ -236,18 +236,18 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
 {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
 {% if CLEAN_WORK and DO_REGRID_STATIC %}
-    regrid-xy<regrid_static> => clean-history-native
-    split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
-    rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-    remap-pp-components-static => clean-shards-static
-    combine-statics => clean-pp-statics
+regrid-xy<regrid_static> => clean-history-native
+split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
+rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
+remap-pp-components-static => clean-shards-static
+combine-statics => clean-pp-statics
 {% endif %}
 
 {% if CLEAN_WORK and DO_NATIVE_STATIC %}
-    split-netcdf-native<native_static> => clean-history-native
-    rename-split-to-pp-native<native_static> => clean-split-native
-    remap-pp-components-static => clean-shards-static
-    combine-statics => clean-pp-statics
+split-netcdf-native<native_static> => clean-history-native
+rename-split-to-pp-native<native_static> => clean-split-native
+remap-pp-components-static => clean-shards-static
+combine-statics => clean-pp-statics
 {% endif %}
 
 """
@@ -285,8 +285,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         {% if CLEAN_WORK %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
         {% endif %}
-
-        REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all
     """
 
     R1/$ = REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => data-catalog-final
