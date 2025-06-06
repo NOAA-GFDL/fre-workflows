@@ -25,20 +25,20 @@ a file called settings.yaml:
 
 ```
 > cat yaml_workflow/pp/settings.yaml:
-directories:
-  history_dir: !join [/archive/$USER/, *FRE_STEM, /, *name, /, *platform, -, *target, /, history]
-  pp_dir: !join [/archive/$USER/, *FRE_STEM, /, *name, /, *platform, -, *target, /, pp]
-  analysis_dir: !join [/nbhome/$USER/, *FRE_STEM, /, *name]
-  ptmp_dir: "/xtmp/$USER/ptmp"
 
+directories:
+  history_dir: "/archive/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA/ppan-prod-openmp/history"
+  pp_dir: "/archive/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA/ppan-prod-openmp/pp"
+  analysis_dir: "/nbhome/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA"
+  ptmp_dir: "/xtmp/$USER/ptmp"
 postprocess:
   settings:
     site: "ppan"
     history_segment: "P1Y"
-    pp_start: *PP_START_YEAR 
-    pp_stop: *PP_STOP_YEAR
-    pp_chunks: [*PP_CMIP_CHUNK]
-    pp_grid_spec: *PP_GRID_SPEC
+    pp_start: 0002 
+    pp_stop: 0003
+    pp_chunks: ["P5Y"]
+    pp_grid_spec: "/work/Niki.Zadeh/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar"
   switches:
     do_timeavgs:                False
     clean_work:                 False
@@ -151,6 +151,10 @@ implements, so we need to turn that setting on and off for a single operation.
 
 If this is not set/unset, you're going to see an unset variable error when you
 try to load the conda environment
+
+Please note that these instructions are for running at the GFDL; they have not 
+yet been tested outside the lab. Consult someone in MSD when you get to that 
+point.
 
 
 
