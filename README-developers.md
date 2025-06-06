@@ -74,6 +74,23 @@ for developer work:
 
 # Batch environment setup and fre-cli
 
+## Local environment setup
+Currently we do NOT recommend running fre-workflows experiments using the 
+developer conda environments. Instead, we recommend using the gfdl modulefiles
+for cylc and the latest fre release:
+
+```
+module load cylc
+module load fre/2025.03
+```
+
+This applies even if you're testing fre features as we describe later in this 
+document; generally, the changes you are testing are changes meant to run in the 
+batch jobs, not as part of the submission process. The submission process is
+standardized enough that you can use the lab-standard modules, which is going to
+eliminate a possible source of error in your environment setup.
+
+## Remote environment setup
 The slurm jobs that cylc submits are run from a bare environment, not a copy of
 the local environment you submitted the jobs from. This means that if you want to
 invoke fre-cli tools from within fre-workflows, you need to add fre-cli to the 
@@ -103,6 +120,26 @@ higher-priority file over the lower-prioirty one.
 We currently have pre-scripts defined for every step of the workflow in
 sites/$sitefile.cylc, and that means YOU NEED TO EDIT THERE. For testing at the
 lab, that means you are editing site/ppan.cylc . 
+
+Please note: these steps may include changes that you do not want to include
+in your git history for safety's sake. To avoid adding these to your git 
+history, you can edit the code in ~/cylc-src/$your_test_experiment directly
+after checking it out with a fre pp checkout: 
+
+```
+> fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
+> pushd ~/cylc-src/ESM4.5_candidateA__ppan__prod-openmp
+> ls 
+app/	       environment.yml	       etc/		       Jinja2Filters/  pytest.ini	     README-portability.md    site/
+bin/	       envs/		       flow.cylc	       lib/	       README-developers.md  README_using_fre-cli.md  tests/
+data_lineage/  ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose-suite.conf
+> emacs site/ppan.cylc
+```
+
+The code that cylc runs from in ~/cylc-run/$your_test_experiment is copied from
+~/cylc-src/$your_test_experiment , not re-cloned from git. It's a bad idea to 
+put any changes you want to be permanent in ~/cylc-src/$your_test_experiment - 
+but you probably do not want these changes to be permanent. 
 
 How you edit sites/ppan.cylc looks different depending on how far along in the 
 development process the features that you are testing are: 
@@ -140,7 +177,7 @@ have access to your conda environments.
         pre-script = """
                      module load miniforge
                      set +u
-                     conda activate fre-cli
+                     conda activate my-fre-cli-env
                      set -u
                      mkdir -p $outputDir
                      """
@@ -150,12 +187,13 @@ a conda environment requires less strict variable checking than cylc normally
 implements, so we need to turn that setting on and off for a single operation.
 
 If this is not set/unset, you're going to see an unset variable error when you
-try to load the conda environment
+try to load the conda environment.
 
-Please note that these instructions are for running at the GFDL; they have not 
-yet been tested outside the lab. Consult someone in MSD when you get to that 
-point.
+You can avoid putting calls to your conda environment in your git history by
+adding 
 
+This should be generic to all sites, though we have not yet had a chance to run
+this outside of the lab (i.e. Gaea).
 
 
 For more information on conda environment setup for fre-cli, see: 
