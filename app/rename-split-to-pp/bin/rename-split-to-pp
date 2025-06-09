@@ -15,7 +15,7 @@ function process_files {
         my_path=
     fi
     
-    files_processed_count=1
+    files_processed_count=0
     for file in $files; do
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
