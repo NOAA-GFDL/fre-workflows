@@ -200,7 +200,7 @@ sources=land_static
 ```
 Note that the `atmos_scalar` component does not have an entry here, as we requested a `native` regridding for source files in
 that component. Full documentation on the available input configuration fields is available in the 
-[`app/regrid-xy` directory](https://github.com/NOAA-GFDL/fre-workflows/tree/update.README/app/regrid-xy), but some things worth 
+[`app/regrid-xy` directory](https://github.com/NOAA-GFDL/fre-workflows/blob/main/README.md), but some things worth 
 noting above:
 - `inputGrid` can be `cubedsphere` or `tripolar`.
 - `inputRealm` attribute is used for identifying the `land`, `atmos`, or `ocean` grid mosaic file.
