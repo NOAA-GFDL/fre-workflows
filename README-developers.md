@@ -121,7 +121,8 @@ We currently have pre-scripts defined for every step of the workflow in
 sites/$sitefile.cylc, and that means YOU NEED TO EDIT THERE. For testing at the
 lab, that means you are editing site/ppan.cylc . 
 
-Please note: these steps may include changes that you do not want to include
+
+*Please note:* these steps may include changes that you do not want to include
 in your git history for safety's sake. To avoid adding these to your git 
 history, you can edit the code in ~/cylc-src/$your_test_experiment directly
 after checking it out with a fre pp checkout: 
@@ -139,7 +140,10 @@ data_lineage/  ESM4.5_candidateA.yaml  generic-global-config/  meta/	       READ
 The code that cylc runs from in ~/cylc-run/$your_test_experiment is copied from
 ~/cylc-src/$your_test_experiment , not re-cloned from git. It's a bad idea to 
 put any changes you want to be permanent in ~/cylc-src/$your_test_experiment - 
-but you probably do not want these changes to be permanent. 
+but you probably do not want these changes to be permanent. This is a little bit
+risky - it can be hard to keep track of where your edits are taking place - but
+allows you to avoid awkward back-and-forth edits in your git history.
+
 
 How you edit sites/ppan.cylc looks different depending on how far along in the 
 development process the features that you are testing are: 
@@ -188,9 +192,6 @@ implements, so we need to turn that setting on and off for a single operation.
 
 If this is not set/unset, you're going to see an unset variable error when you
 try to load the conda environment.
-
-You can avoid putting calls to your conda environment in your git history by
-adding 
 
 This should be generic to all sites, though we have not yet had a chance to run
 this outside of the lab (i.e. Gaea).
