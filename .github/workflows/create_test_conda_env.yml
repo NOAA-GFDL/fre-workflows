@@ -77,5 +77,5 @@ jobs:
         continue-on-error: false
         run: |
           cd Jinja2Filters && \
-            pytest -v -r ; \
+            pytest -v ; \
             cd - ;
