@@ -7,6 +7,7 @@ def test_subtraction():
     P1M = metomi.isodatetime.parsers.DurationParser().parse('P1M')
     P2M = metomi.isodatetime.parsers.DurationParser().parse('P2M')
     P1Y = metomi.isodatetime.parsers.DurationParser().parse('P1Y')
+
     assert P1D == subtract_durations.subtract_durations('P10D', 'P9D')
     assert P1M == subtract_durations.subtract_durations('P2M', 'P1M')
     assert P1M == subtract_durations.subtract_durations('P3M', 'P2M')
