@@ -43,10 +43,10 @@ def test(tmp_path):
     assert '' == form_task_parameters.form_task_parameters('native', 'temporal', 'foo', yaml_file)
 
     # Retrieve both atmos and land
-    assert 'atmos_daily, atmos_month, land_daily, land_month' == form_task_parameters.form_task_parameters('regrid-xy', 'temporal', 'atmos land', yaml_file)
-    assert 'atmos_month, grid_spec, land_static' == form_task_parameters.form_task_parameters('regrid-xy', 'static', 'atmos land', yaml_file)
-    assert 'land_daily, land_month, river' == form_task_parameters.form_task_parameters('native', 'temporal', 'land_cubic', yaml_file)
-    assert 'land_static' == form_task_parameters.form_task_parameters('native', 'static', 'land_cubic', yaml_file)
+    assert 'atmos_daily, atmos_month, land_daily, land_month' == form_task_parameters.form_task_parameters('regrid-xy', 'temporal', 'atmos land land_cubic', yaml_file)
+    assert 'atmos_month, grid_spec, land_static'              == form_task_parameters.form_task_parameters('regrid-xy', 'static', 'atmos land land_cubic', yaml_file)
+    assert 'land_daily, land_month, river'                    == form_task_parameters.form_task_parameters('native', 'temporal', 'atmos land land_cubic', yaml_file)
+    assert 'land_static'                                      == form_task_parameters.form_task_parameters('native', 'static', 'atmos land land_cubic', yaml_file)
 
     # Error: yaml file does not exist
     # arggg https://docs.pytest.org/en/stable/how-to/assert.html
