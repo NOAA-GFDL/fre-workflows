@@ -62,7 +62,8 @@ os.environ['product'] = PRODUCT
 os.environ['dirTSWorkaround'] = "1"
 os.environ['COPY_TOOL'] = COPY_TOOL
 os.environ['yaml_config'] = str(YAML_EX)
-os.environ['src_vars_dict'] = "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}"
+#os.environ['src_vars_dict'] = "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}"
+os.environ['src_vars_dict'] = "{'atmos_scalar': 'all', 'atmos_static_scalar': 'all'}"
 
 # Set up input directory (location previously made in flow.cylc workflow)
 ncgen_native_out = Path(REMAP_IN) / NATIVE_GRID / COMPOUT / FREQ / CHUNK
@@ -330,6 +331,7 @@ def test_remap_variable_filtering(capfd, monkeypatch):
 
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}")
 
     # run script
     try:
@@ -338,13 +340,12 @@ def test_remap_variable_filtering(capfd, monkeypatch):
         assert False
 
     # Check for
-    # 1. creation of output directory structre,
+    # 1. creation of output directory structure
     # 2. link to nc file in output location
     assert all([Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr").exists(),
                 Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
-@pytest.mark.skip(reason='test')
 def test_remap_static_variable_filtering(capfd, monkeypatch):
     """
     Test variable filtering capabilties
@@ -357,6 +358,7 @@ def test_remap_static_variable_filtering(capfd, monkeypatch):
     monkeypatch.setenv('product', "static")
     monkeypatch.setenv('dirTSWorkaround', "")
     monkeypatch.setenv('components', "atmos_scalar_test_vars")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}")
 
     Path(os.getenv("outputDir")).mkdir(parents=True,exist_ok=True)
 
@@ -373,8 +375,7 @@ def test_remap_static_variable_filtering(capfd, monkeypatch):
                 Path(f"{os.getenv('outputDir')}/atmos_scalar_test_vars/{STATIC_FREQ}/{STATIC_CHUNK}/{STATIC_DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
  
-#@pytest.mark.xfail
-@pytest.mark.skip(reason='test')
+@pytest.mark.xfail
 def test_remap_variable_filtering_fail(capfd, monkeypatch):
     """
     Test failure of variable filtering capabilties when
@@ -382,12 +383,12 @@ def test_remap_variable_filtering_fail(capfd, monkeypatch):
     """
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars_fail")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass', 'no_var'], 'atmos_static_scalar': ['atmos_static_scalar']}")
 
     # run script
     remap()
 
-#@pytest.mark.xfail
-@pytest.mark.skip(reason='test')
+@pytest.mark.xfail
 def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
     """
     Test failure of variable filtering capabilties for statics
@@ -399,6 +400,7 @@ def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
     monkeypatch.setenv('product', "static")
     monkeypatch.setenv('dirTSWorkaround', "")
     monkeypatch.setenv('components', "atmos_scalar_static_test_vars_fail")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['all'], 'atmos_static_scalar': ['no_var']}")
 
     # run script
     remap()
