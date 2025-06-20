@@ -1,8 +1,10 @@
 import os
 import subprocess
 import shutil
+import ast
 from pathlib import Path
 import pytest
+import json
 from remap_pp_components import remap
 
 CWD = os.getcwd()
@@ -60,6 +62,8 @@ os.environ['product'] = PRODUCT
 os.environ['dirTSWorkaround'] = "1"
 os.environ['COPY_TOOL'] = COPY_TOOL
 os.environ['yaml_config'] = str(YAML_EX)
+#os.environ['src_vars_dict'] = "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}"
+os.environ['src_vars_dict'] = "{'atmos_scalar': 'all', 'atmos_static_scalar': 'all'}"
 
 # Set up input directory (location previously made in flow.cylc workflow)
 ncgen_native_out = Path(REMAP_IN) / NATIVE_GRID / COMPOUT / FREQ / CHUNK
@@ -165,7 +169,7 @@ def test_remap_pp_components(capfd):
                 Path(f"{REMAP_OUT}/{COMPOUT}/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
     out, err = capfd.readouterr()
 
-## Pytest utilizes mokeypatch fixture which can help set/delete attributes, environments, etc.
+## Pytest utilizes monkeypatch fixture which can help set/delete attributes, environments, etc.
 ## monkeypatch.setenv() used to set/reset specific envrionment variables in each test, 
 ## without resetting them for all tests or the proceeding test (i.e. - wouldn't effect 
 ## other test's envrionment variables defined)
@@ -327,6 +331,7 @@ def test_remap_variable_filtering(capfd, monkeypatch):
 
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}")
 
     # run script
     try:
@@ -335,7 +340,7 @@ def test_remap_variable_filtering(capfd, monkeypatch):
         assert False
 
     # Check for
-    # 1. creation of output directory structre,
+    # 1. creation of output directory structure
     # 2. link to nc file in output location
     assert all([Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr").exists(),
                 Path(f"{REMAP_OUT}/atmos_scalar_test_vars/{PRODUCT}/monthly/5yr/{DATA_FILE_NC}").exists()])
@@ -353,6 +358,7 @@ def test_remap_static_variable_filtering(capfd, monkeypatch):
     monkeypatch.setenv('product', "static")
     monkeypatch.setenv('dirTSWorkaround', "")
     monkeypatch.setenv('components', "atmos_scalar_test_vars")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass'], 'atmos_static_scalar': ['bk']}")
 
     Path(os.getenv("outputDir")).mkdir(parents=True,exist_ok=True)
 
@@ -377,6 +383,7 @@ def test_remap_variable_filtering_fail(capfd, monkeypatch):
     """
     # Specify environment variables for just this test
     monkeypatch.setenv('components', "atmos_scalar_test_vars_fail")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['co2mass', 'no_var'], 'atmos_static_scalar': ['atmos_static_scalar']}")
 
     # run script
     remap()
@@ -393,6 +400,7 @@ def test_remap_static_variable_filtering_fail(capfd, monkeypatch):
     monkeypatch.setenv('product', "static")
     monkeypatch.setenv('dirTSWorkaround', "")
     monkeypatch.setenv('components', "atmos_scalar_static_test_vars_fail")
+    monkeypatch.setenv('src_vars_dict', "{'atmos_scalar': ['all'], 'atmos_static_scalar': ['no_var']}")
 
     # run script
     remap()
