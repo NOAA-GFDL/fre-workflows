@@ -242,30 +242,6 @@ def get_variables(comp_info, product, req_source, src_vars):
         if req_source == src_name:
             v = src_vars[req_source]
 
-#    if product == "static":
-#        if comp_info.get("static") is None:
-#            raise ValueError(f"Product is set to static but no static sources/variables defined for {comp_info.get('type')}")
-#
-#        for static_info in comp_info.get("static"):
-#            if static_info.get("source") == req_source:
-#                if static_info.get("variables") is None:
-#                    v = "all"
-#                else:
-#                    v = static_info.get("variables")
-#
-##            if static_info.get("offline_source") is not None:
-##                if static_info.get("variables") is None:
-##                    v = "all"
-##                else:
-##                    v = static_info.get("variables")
-#    else:
-#        for src_info in comp_info.get("sources"): #history_file,variables
-#            if src_info.get("history_file") == req_source:
-#                if src_info.get("variables") is None:
-#                    v = "all"
-#                else:
-#                    v = src_info.get("variables")
-#
     return v
 
 def get_sources(comp_info, product):
