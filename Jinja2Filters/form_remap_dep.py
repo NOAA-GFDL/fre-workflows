@@ -21,6 +21,12 @@ See form_remap_dep invocations from flow.cylc
 import os
 from pathlib import Path
 import yaml
+import logging
+
+# set up logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def form_remap_dep(grid_type: str,
                    temporal_type: str,
@@ -65,14 +71,12 @@ def form_remap_dep(grid_type: str,
     else:
         raise Exception("output type not supported")
 
-    #print(pp_components)
-    #print(chunk)
     ########################
     dict_group_source={}
     remap_comp = None
-    #print("DEBUG: Passed args ",grid_type, temporal_type, chunk, pp_components_str)
+    logger.debug(f"Passed args: {grid_type}, {temporal_type}, {chunk}, {pp_components_str}")
     remap_dep = ""
-    #print("DEBUG: desired pp components:", pp_components)
+    logger.debug(f"desired pp components: {pp_components}")
 
     # Path to yaml configuration
     exp_dir = Path(__file__).resolve().parents[1]
@@ -87,9 +91,9 @@ def form_remap_dep(grid_type: str,
     for comp_info in yml_info["postprocess"]["components"]:
         comp = comp_info.get("type")
 
-        #print("DEBUG: Examining", item, comp)
+        logger.debug(f"Examining {comp}")
         if comp not in pp_components:
-            #print(comp, " not in", pp_components)
+            logger.debug(f"{comp} not in {pp_components}")
             continue
 
         # skip if grid type is not desired
@@ -100,7 +104,7 @@ def form_remap_dep(grid_type: str,
             candidate_grid_type = "regrid-xy"
 
         if candidate_grid_type != grid_type:
-            #print("DEBUG: Skipping as not right grid; got", candidate_grid_type, "and wanted", grid_type)
+            logger.debug(f"Skipping as not right grid; got {candidate_grid_type} and wanted {grid_type}")
             continue
 
 ##########NOT SURE YET
@@ -110,11 +114,11 @@ def form_remap_dep(grid_type: str,
         freq = comp_info.get("freq")
         if temporal_type == "static":
             if freq is not None and 'P0Y' not in freq:
-                #print("DEBUG: Skipping as static is requested, no P0Y here", freq)
+                logger.debug("Skipping as static is requested, no P0Y here", freq)
                 continue
         elif temporal_type == "temporal":
             if freq is not None and 'P0Y' in freq:
-                #print("DEBUG: Skipping as temporal is requested, P0Y here", freq)
+                logger.debut("Skipping as temporal is requested, P0Y here", freq)
                 continue
         else:
             raise Exception(f"Unknown temporal type: {temporal_type}")
@@ -122,7 +126,7 @@ def form_remap_dep(grid_type: str,
 #        # chunk is optional, so if it does not exist then continue on
         chunk_from_config = comp_info.get("chunk")
         if chunk_from_config is not None and chunk not in chunk_from_config:
-            #print("DEBUG: Skipping as {} is requested, but not in rose-app config {}:".format(chunk, comp_info["chunk"]))
+            logger.debug("Skipping as {} is requested, but not in rose-app config {}:".format(chunk, comp_info["chunk"]))
             continue
 ##########
         results=[]
@@ -166,4 +170,4 @@ def form_remap_dep(grid_type: str,
     return remap_dep
 
 # Testing #
-#print(form_remap_dep('regrid-xy', 'temporal', 'P4D', 'atmos_cmip atmos', 'ts', 'c96L65_am5f7b12r1_amip_TEST_GRAPH.yaml'))
+#print(form_remap_dep('native', 'temporal', 'P1Y', 'atmos land land_cubic', 'ts', 'config.yaml', 'P1Y'))
