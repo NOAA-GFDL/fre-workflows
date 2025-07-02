@@ -41,15 +41,6 @@ jobs:
              pylint -v ; \
              cd - ;
 
-      - name: in fre-workflows environment, regrid-xy pytest and pylint
-        continue-on-error: true
-        run: |
-          # pytest unittests for regrid-xy
-          cd app/regrid-xy && \
-             pytest -v -v -rx --cov=regrid_xy ./t ; \
-             pylint -v ; \
-             cd - ;
-
       - name: in fre-workflows environment, make-timeseries pytest and pylint
         continue-on-error: true
         run: |
