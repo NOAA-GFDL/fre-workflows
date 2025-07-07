@@ -715,7 +715,18 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
     [[REMAP-PP-COMPONENTS]]
         # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key remap-pp-components
+        #script = rose-task-run --verbose --app-key remap-pp-components
+        script = """
+            fre --verbose app remap --input-dir     = $inputDir \
+                                    --output-dir    = $outputDir \
+                                    --begin-date    = $begin \
+                                    --current-chunk = $currentChunk \
+                                    --product       = $product \
+                                    --ts-workaround = $dirTSWorkaround \
+                                    --pp-components = $components \
+                                    --ens-mem       = $ens_mem \
+                                    --yaml-config   = $yaml_config
+        """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
             yaml_config = {{ YAML }}
@@ -726,7 +737,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
-            dirTSWorkaround = 1
+            dirTSWorkaround = True
     {% for PP_CHUNK in PP_CHUNKS %}
         [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
             inherit = REMAP-PP-COMPONENTS-TS
@@ -743,7 +754,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-
+            dirTSWorkaround = False
     {% for PP_CHUNK in PP_CHUNKS %}
         [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
             inherit = REMAP-PP-COMPONENTS-AV
@@ -763,7 +774,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             components = {{ PP_COMPONENTS }}
             product = static
-            dirTSWorkaround = ""
+            dirTSWorkaround = False
 {% endif %}
 
     [[DATA-CATALOG]]
