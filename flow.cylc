@@ -717,19 +717,20 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
         #script = rose-task-run --verbose --app-key remap-pp-components
         script = """
-            fre --verbose app remap --input-dir     = $inputDir \
-                                    --output-dir    = $outputDir \
-                                    --begin-date    = $begin \
-                                    --current-chunk = $currentChunk \
-                                    --product       = $product \
-                                    --ts-workaround = $dirTSWorkaround \
-                                    --pp-components = $components \
-                                    --ens-mem       = $ens_mem \
-                                    --yaml-config   = $yaml_config
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --ts-workaround=$dirTSWorkaround \
+                                    --pp-components=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
-            yaml_config = {{ YAML }}
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS

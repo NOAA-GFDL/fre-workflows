@@ -76,11 +76,11 @@
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = """
-            module load fre-nctools miniforge
-            set +u
-            conda activate /nbhome/fms/conda/envs/fre-2025.01
-            set -u
-            module load gcp
+            module load fre/{{ FRE_VERSION }} gcp fre-nctools
+#            module load miniforge
+#            set +u
+#            conda activate /home/Dana.Singh/conda/envs/fre-cli
+#            set -u
             mkdir -p $outputDir
         """
 
