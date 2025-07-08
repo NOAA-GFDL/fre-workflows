@@ -14,7 +14,8 @@ function process_files {
     else
         my_path=
     fi
-
+    
+    files_processed_count=0
     for file in $files; do
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
@@ -175,7 +176,9 @@ function process_files {
                     f=${file/tile1/$t}
                     newf=${newfile/tile1/$t}
                     ln $f $dir/$newf
-
+                    if [[ $freq != P0Y ]]; then
+                        fre -v pp ppval --path $dir/$newfile
+                    fi
                     if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                         hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                         -m data_lineage.bloomfilter.HashGen $dir/$newf)
@@ -185,7 +188,9 @@ function process_files {
                 done
             else
                 ln $file $dir/$newfile
-                
+                if [[ $freq != P0Y ]]; then
+                        fre -v pp ppval --path $dir/$newfile
+                fi
                 if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
                     hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
                     -m data_lineage.bloomfilter.HashGen $dir/$newfile)
@@ -194,7 +199,13 @@ function process_files {
                 fi
             fi
         fi
+        files_processed_count=$((files_processed_count+1))
     done
+    echo "${files_processed_count} files processed"
+    if $(( files_processed_count == 0)); then
+        echo "Error in rename-split-to-pp: no files in input dir matched requirements for processing!"
+        exit 1
+    fi
 }
 
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
