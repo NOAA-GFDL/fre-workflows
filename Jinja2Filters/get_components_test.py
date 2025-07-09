@@ -8,6 +8,7 @@ CONFIG = {'postprocess': {'components': [{'postprocess_on': True, 'type': 'comp1
                                        {'postprocess_on': False, 'type': 'comp3'}]}}
 
 def test_get_components(tmp_path):
+    """Give 2 active components and one inactive component, expect the first two back"""
     # create temporary directory
     temp_dir = tmp_path
     temp_dir.mkdir(exist_ok=True)
