@@ -71,14 +71,18 @@ class Climatology(object):
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
-        for source in self.sources:
+        for index, source in enumerate(self.sources):
             count = 0
             while count < chunks_per_interval:
+                if index == 0:
+                    connector = ""
+                else:
+                    connector = " & "
                 if count == 0:
                     if self.pp_chunk == history_segment:
-                        graph += f"    rename-split-to-pp-{grid}_{source}"
+                        graph += f"{connector}rename-split-to-pp-{grid}_{source}"
                     else:
-                        graph += f"    make-timeseries-{grid}-{self.pp_chunk}_{source}"
+                        graph += f"{connector}make-timeseries-{grid}-{self.pp_chunk}_{source}"
                 else:
                     offset = count * self.pp_chunk
                     if self.pp_chunk == history_segment:
@@ -86,26 +90,20 @@ class Climatology(object):
                     else:
                         graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
                 count += 1
-            graph += f" => make-timeavgs-{grid}-P{self.interval_years}Y_{source}\n"
-            if clean_work:
-                graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
-                count = 0
-                while count < chunks_per_interval:
-                    if count == 0:
-                        graph += f" => clean-shards-{self.pp_chunk}"
-                    else:
-                        offset = count * self.pp_chunk
-                        graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
-                    count += 1
-                graph += "\n"
-
-        for index, source in enumerate(self.sources):
-            if index == 0:
-                graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
-            else:
-                graph += f" & make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
-        graph += f" => remap-pp-components-av-P{self.interval_years}Y_{self.component}"
-        graph += f" => combine-timeavgs-P{self.interval_years}Y_{self.component}"
+            graph += "\n"
+            #if clean_work:
+            #    graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
+            #    count = 0
+            #    while count < chunks_per_interval:
+            #        if count == 0:
+            #            graph += f" => clean-shards-{self.pp_chunk}"
+            #        else:
+            #            offset = count * self.pp_chunk
+            #            graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
+            #        count += 1
+            #    graph += "\n"
+        graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+        graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}"
         if clean_work:
             graph += f" => clean-shards-P{self.interval_years}Y & clean-pp-timeavgs-P{self.interval_years}Y\n"
         else:
@@ -124,29 +122,21 @@ class Climatology(object):
         else:
             grid = "native"
         chunks_per_interval = self.interval_years / self.pp_chunk.years
-        for source in self.sources:
-            definitions += f"""
-    [[make-timeavgs-{grid}-P{self.interval_years}Y_{source}]]
-        inherit = MAKE-TIMEAVGS-{grid.upper()}
-        [[[environment]]]
-            component = {source}
-            interval = P{self.interval_years}Y
-            chunks_per_interval = {chunks_per_interval}
-        """
 
         definitions += f"""
-    [[remap-pp-components-av-P{self.interval_years}Y_{self.component}]]
-        inherit = REMAP-PP-COMPONENTS-AV
+    [[climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
+        inherit = MAKE-TIMEAVGS-{grid.upper()}
         [[[environment]]]
-            begin = $(cylc cycle-point)
-            currentChunk = P{self.interval_years}Y
+            component = {self.component}
+            interval = P{self.interval_years}Y
+            chunks_per_interval = {chunks_per_interval}
         """
 
         offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
 
         definitions += f"""
-    [[combine-timeavgs-P{self.interval_years}Y_{self.component}]]
-        inherit = COMBINE-TIMEAVGS
+    [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
+        inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
             component = {self.component}
             currentChunk = P{self.interval_years}Y
