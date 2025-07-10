@@ -101,9 +101,6 @@
         """
 {% endif %}
 
-    [[MASK-ATMOS-PLEVEL]]
-        pre-script = module load fre/{{
-
     [[CLEAN]]
         pre-script = "set -x"
 
@@ -115,8 +112,4 @@
     [[ANALYSIS]]
         pre-script = """
             module load gcp
-        """
-
-    [[BUILD-ANALYSIS]]
-        pre-script = """
         """
