@@ -36,7 +36,7 @@ def lookup_source_for_component(yaml_, component):
     return(sources)
 
 class Climatology(object):
-    def __init__(self, component, frequency, interval_years, pp_chunk, sources, regrid):
+    def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid):
         """Initialize the climatology object
 
         Args:
@@ -45,7 +45,7 @@ class Climatology(object):
             interval_years: Number of years in the averaging window
             pp_chunk: ISO8601 duration available in timeseries to be used as input
             sources: List of history files
-            regrid: True if horizontally regridded; False otherwise
+            grid: 'native' or 'regrid-xy/lat_lon.conserve_orderX'
         """
         logger.debug(f"Initializing climatology for component '{component}'")
 
@@ -54,18 +54,18 @@ class Climatology(object):
         self.interval_years = interval_years
         self.pp_chunk = pp_chunk
         self.sources = sources
-        self.regrid = regrid
+        self.grid = grid
 
-        logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}', pp_chunk='{pp_chunk}', sources={sources}, regrid='{regrid}'")
+        logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}', pp_chunk='{pp_chunk}', sources={sources}, grid='{grid}'")
 
     def graph(self, history_segment, clean_work):
         """Generate the cylc task graph string for the climatology.
         """
 
-        if self.regrid:
-            grid = "regrid"
-        else:
+        if self.grid == 'native':
             grid = "native"
+        else:
+            grid = "regrid"
 
         graph = f"P{self.interval_years}Y = \"\"\"\n"
 
@@ -117,19 +117,17 @@ class Climatology(object):
         """Generate the cylc task definitions for the climatology.
         """
         definitions = ""
-        if self.regrid:
-            grid = "regrid"
-        else:
-            grid = "native"
-        chunks_per_interval = self.interval_years / self.pp_chunk.years
+        sources = ','.join(self.sources)
 
         definitions += f"""
     [[climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = MAKE-TIMEAVGS-{grid.upper()}
+        inherit = MAKE-TIMEAVGS
         [[[environment]]]
-            component = {self.component}
-            interval = P{self.interval_years}Y
-            chunks_per_interval = {chunks_per_interval}
+            sources = {sources}
+            output_interval = P{self.interval_years}Y
+            input_interval = P{self.pp_chunk.years}Y
+            grid = {self.grid}
+            frequency = {self.frequency}
         """
 
         offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
@@ -187,9 +185,9 @@ def task_generator(yaml_):
 
 
                 if "xyInterp" in component:
-                    regrid = True
+                    grid = 'regrid-xy/' + component['interpMethod']
                 else:
-                    regrid = False
+                    grid = 'native'
 
                 climatology_info = Climatology(
                     component=component["type"],
@@ -197,7 +195,7 @@ def task_generator(yaml_):
                     interval_years=interval_years,
                     pp_chunk=pp_chunk,
                     sources=lookup_source_for_component(yaml_, component["type"]),
-                    regrid=regrid
+                    grid=grid
                 )
                 yield climatology_info
 
