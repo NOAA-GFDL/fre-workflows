@@ -414,20 +414,17 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
 {% endif %}
 
     [[MAKE-TIMEAVGS]]
-        script = rose task-run --verbose --app-key make-timeavgs
-    [[MAKE-TIMEAVGS-NATIVE]]
-        inherit = MAKE-TIMEAVGS
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/native
-            component = $CYLC_TASK_PARAM_native
-    [[MAKE-TIMEAVGS-REGRID]]
-        inherit = MAKE-TIMEAVGS
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
-            component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
+        script = """
+            fre app gen-time-averages-wrapper \
+                --cycle_point     $CYLC_TASK_CYCLE_POINT \
+                --dir             $CYLC_WORKFLOW_SHARE_DIR/shards \
+                --sources         $sources \
+                --output_interval $output_interval \
+                --input_interval  $input_interval \
+                --grid            $grid \
+                --frequency       $frequency
+        """
+
 {{ YAML | get_climatology_info('task-definitions') }}
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
