@@ -109,7 +109,7 @@
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ FRE_VERSION }}
+        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load netcdf-c cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
