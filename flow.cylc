@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = 2025.03 %}
+{% set FRE_VERSION = 2025.04 %}
 
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
