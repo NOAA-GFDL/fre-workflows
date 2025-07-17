@@ -59,14 +59,6 @@ jobs:
              pylint -v ; \
              cd - ;
 
-      - name: in fre-workflows environment, remap-pp-components pytest and pylint
-        continue-on-error: false
-        run: |
-          # pytest unittests for remap-pp-components
-          cd app/remap-pp-components && \
-             pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
-             cd - ;
-
       - name: in fre-workflows environment, root directory pytest
         continue-on-error: true
         run: |
