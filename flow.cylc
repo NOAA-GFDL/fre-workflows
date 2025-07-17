@@ -723,7 +723,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
                                     --current-chunk=$currentChunk \
                                     --product=$product \
                                     --ts-workaround=$dirTSWorkaround \
-                                    --pp-components=$components \
+                                    --pp-component=$components \
                                     --copy-tool=$COPY_TOOL \
                                     --yaml-config=$yaml_config \
                                     --ens-mem=${ens_mem:-""}
@@ -767,8 +767,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     {% endfor %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
-    [[remap-pp-components-static]]
-        inherit = REMAP-PP-COMPONENTS-TS
+    [[remap-pp-components-static<component>]]
+        inherit = REMAP-PP-COMPONENTS-TS, <component>
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
