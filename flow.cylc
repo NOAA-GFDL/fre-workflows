@@ -773,7 +773,6 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
-            components = {{ PP_COMPONENTS }}
             product = static
             dirTSWorkaround = False
 {% endif %}
