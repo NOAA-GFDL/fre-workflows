@@ -17,4 +17,4 @@ jobs:
           # Print pwd then run script
           echo "Currently in:"
           pwd
-          /contrib/Ciheim.Brown/runnertest.sh
+          /contrib/runnertest.sh
