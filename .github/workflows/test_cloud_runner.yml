@@ -6,7 +6,7 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      #- uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       #- name: Set up Python
       #  uses: actions/setup-python@v5
       #  with:
@@ -17,4 +17,5 @@ jobs:
           # Print pwd then run script
           echo "Currently in:"
           pwd
+          ls -lah
           /contrib/runnertest.sh
