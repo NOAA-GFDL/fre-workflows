@@ -22,6 +22,7 @@ jobs:
           # Print pwd then run script
           echo "Currently in:"
           cat ./flow.cylc
+          exit 1
           pwd
           ls -lah
           cd /contrib/Ciheim.Brown/ppp
