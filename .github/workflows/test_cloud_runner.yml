@@ -18,4 +18,5 @@ jobs:
           echo "Currently in:"
           pwd
           ls -lah
+          git branch
           /contrib/runnertest.sh
