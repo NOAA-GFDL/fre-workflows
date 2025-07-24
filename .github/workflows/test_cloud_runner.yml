@@ -2,6 +2,11 @@ name: create_test_conda_env
 
 on: [push]
 
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-cloud:
     runs-on: self-hosted
