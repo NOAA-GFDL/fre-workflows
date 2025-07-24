@@ -343,6 +343,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         script = """
             # Returns 0 if ready, 1 if not
             #
+            echo "YUP IT WORKS!"
+            exit 1
             echo Arguments:
             echo "    INFO: trigger: $targetFile"
             echo "    INFO: cycle point: $CYLC_TASK_CYCLE_POINT"
