@@ -18,5 +18,5 @@ jobs:
           echo "Currently in:"
           pwd
           ls -lah
-          git branch
+          cat /contrib/Ciheim.Brown/ppp/runscript.sh
           /contrib/runnertest.sh
