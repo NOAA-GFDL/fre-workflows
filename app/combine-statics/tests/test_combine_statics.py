@@ -108,4 +108,4 @@ def test_cdo_merge_output_content():
         history_str = sf.__dict__.get("history")
 
     assert all ([cdo_call in history_str,
-                 "atmos_static_scalar.bk1.nc","atmos_static_scalar.bk2.nc","atmos_static_scalar.bk3.nc"])
+                 all(comp in history_str for comp in ["atmos_static_scalar.bk1.nc","atmos_static_scalar.bk2.nc","atmos_static_scalar.bk3.nc"])])
