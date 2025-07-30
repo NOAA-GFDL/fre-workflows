@@ -2,6 +2,7 @@
 Test combine-statics task script
 """
 import os
+import re
 import subprocess
 import shutil
 from pathlib import Path
@@ -100,12 +101,13 @@ def test_cdo_merge_output_content():
     """
     Test that netcdf output file has cdo merge call with the correct files
     """
-    outfile = f"{COMBINE_STATICS_OUT}/atmos_static_scalar/atmos_static_scalar.static.nc"
+    outfile = "atmos_static_scalar.static.nc"
 
     # read output static netcdf file
-    with Dataset(outfile, 'r') as sf:
-        cdo_call = """cdo -O merge atmos_static_scalar.bk1.nc atmos_static_scalar.bk2.nc atmos_static_scalar.bk3.nc /home/Dana.Singh/fre/combine-statics-test/fre-workflows/app/combine-statics/tests/combine_statics_output/atmos_static_scalar/atmos_static_scalar.static.nc"""
+    with Dataset(f"{COMBINE_STATICS_OUT}/atmos_static_scalar/{outfile}", 'r') as sf:
         history_str = sf.__dict__.get("history")
 
-    assert all ([cdo_call in history_str,
+    expected_cdo_str = f"""cdo -O merge atmos_static_scalar.bk1.nc atmos_static_scalar.bk2.nc atmos_static_scalar.bk3.nc .*{outfile}"""
+
+    assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in ["atmos_static_scalar.bk1.nc","atmos_static_scalar.bk2.nc","atmos_static_scalar.bk3.nc"])])
