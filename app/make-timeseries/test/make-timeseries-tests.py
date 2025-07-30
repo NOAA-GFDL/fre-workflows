@@ -25,7 +25,7 @@ output_dir = tempfile.TemporaryDirectory()
 
     def run_make_timeseries(self, env_vars):
         result = subprocess.run(
-            ['./make_timeseries.sh'],
+            ['./../bin/make_timeseries.sh'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
