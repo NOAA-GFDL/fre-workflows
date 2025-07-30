@@ -58,6 +58,14 @@ jobs:
              pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
              cd - ;
 
+      - name: in fre-workflows environment, combine-statics pytest and pylint
+        continue-on-error: false
+        run: |
+          # pytest unittests for remap-pp-components
+          cd app/combine-statics && \
+             pytest -v -v -rx --cov=bin/combine-statics ./tests ; \
+             cd - ;
+
       - name: in fre-workflows environment, root directory pytest
         continue-on-error: true
         run: |
