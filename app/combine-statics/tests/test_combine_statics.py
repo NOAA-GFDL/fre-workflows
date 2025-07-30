@@ -114,4 +114,4 @@ def test_combine_statics_output_content():
     expected_cdo_str = f"""cdo -O merge atmos_static_scalar.bk1.nc atmos_static_scalar.bk2.nc atmos_static_scalar.bk3.nc .*{outfile}"""
 
     assert all ([re.search(expected_cdo_str, history_str),
-                 all(comp in history_str for comp in ["atmos_static_scalar.bk1.nc","atmos_static_scalar.bk2.nc","atmos_static_scalar.bk3.nc"])]
+                 all(comp in history_str for comp in ["atmos_static_scalar.bk1.nc","atmos_static_scalar.bk2.nc","atmos_static_scalar.bk3.nc"])])
