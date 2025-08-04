@@ -1,5 +1,5 @@
 ''' for testing fre workflows make-timeseries '''
-import pathlib as pl
+import pathlib as Path
 import pytest
 import subprocess
 import tempfile
