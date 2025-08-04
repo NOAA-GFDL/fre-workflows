@@ -22,7 +22,7 @@ def setUp(self):
     self.output_dir = tempfile.TemporaryDirectory()
 
 
-def run_make_timeseries(self, env_vars):
+def test_run_make_timeseries(self, env_vars):
     result = subprocess.run(
         ['./../bin/make_timeseries'],
         stdout=subprocess.PIPE,
