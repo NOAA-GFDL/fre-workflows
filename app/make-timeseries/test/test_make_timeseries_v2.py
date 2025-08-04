@@ -23,16 +23,15 @@ output_dir = tempfile.TemporaryDirectory()
 ### Tests
 ###################################
 
-    def run_make_timeseries(self, env_vars):
-        result = subprocess.run(
-            ['./../bin/make_timeseries.sh'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            env={**os.environ, **env_vars},
-            cwd=self.test_dir.name
-        )
-        return result
+def run_make_timeseries(self, env_vars):
+    result = subprocess.run(
+        ['./../bin/make_timeseries.sh'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env={**os.environ, **env_vars},
+        cwd=self.test_dir.name)
+    return result
 
 
 
