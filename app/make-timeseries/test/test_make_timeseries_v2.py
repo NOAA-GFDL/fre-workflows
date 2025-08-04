@@ -1,3 +1,4 @@
+''' for testing fre workflows make-timeseries '''
 import unittest
 import os
 import tempfile
@@ -6,6 +7,7 @@ from pathlib import Path
 
 class TestMakeTimeseries(unittest.TestCase):
 
+    ''' Do all settup of temporary test locations as a separate function'''
     def setUp(self):
         # Create temporary directories and files to simulate the environment
         self.test_dir = tempfile.TemporaryDirectory()
@@ -20,10 +22,6 @@ class TestMakeTimeseries(unittest.TestCase):
 
         self.output_dir = tempfile.TemporaryDirectory()
 
-    def tearDown(self):
-        # Clean up temporary directories
-        self.test_dir.cleanup()
-        self.output_dir.cleanup()
 
     def run_make_timeseries(self, env_vars):
         result = subprocess.run(
@@ -36,4 +34,8 @@ class TestMakeTimeseries(unittest.TestCase):
         )
         return result
 
-
+    '''Do all the tear down of temprary files and directories at the end'''
+    def tearDown(self):
+        # Clean up temporary directories
+        self.test_dir.cleanup()
+        self.output_dir.cleanup()
