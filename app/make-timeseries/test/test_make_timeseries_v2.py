@@ -1,44 +1,39 @@
-''' for testing fre workflows make-timeseries '''
-import pathlib as Path
-import pytest
-import subprocess
-import tempfile
+import unittest
 import os
-###################################
-### Setup
-###################################
+import tempfile
+import subprocess
+from pathlib import Path
 
-# Create temporary directories and files to simulate the environment
-test_dir = tempfile.TemporaryDirectory()
-component = "component"
-(Path(test_dir.name) /component).mkdir(parents=True, exist_ok=True)
+class TestMakeTimeseries(unittest.TestCase):
 
-# Create nested directory structure and files
-freq_dir = Path(test_dir.name) / component / 'P1Y'
-freq_dir.mkdir(parents=True, exist_ok=True)
-(freq_dir / 'test_var.date-01.nc').touch()
-(freq_dir / 'test_var.date-02.nc').touch()
+    def setUp(self):
+        # Create temporary directories and files to simulate the environment
+        self.test_dir = tempfile.TemporaryDirectory()
+        self.component = "component"
+        (Path(self.test_dir.name) / self.component).mkdir(parents=True, exist_ok=True)
+        
+        # Create nested directory structure and files
+        self.freq_dir = Path(self.test_dir.name) / self.component / 'P1Y'
+        self.freq_dir.mkdir(parents=True, exist_ok=True)
+        (self.freq_dir / 'test_var.date-01.nc').touch()
+        (self.freq_dir / 'test_var.date-02.nc').touch()
 
-output_dir = tempfile.TemporaryDirectory()
-###################################
-### Tests
-###################################
+        self.output_dir = tempfile.TemporaryDirectory()
 
-def run_make_timeseries(self, env_vars):
-    result = subprocess.run(
-        ['./../bin/make_timeseries.sh'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        env={**os.environ, **env_vars},
-        cwd=self.test_dir.name)
-    return result
+    def tearDown(self):
+        # Clean up temporary directories
+        self.test_dir.cleanup()
+        self.output_dir.cleanup()
+
+    def run_make_timeseries(self, env_vars):
+        result = subprocess.run(
+            ['./../bin/make_timeseries'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env={**os.environ, **env_vars},
+            cwd=self.test_dir.name
+        )
+        return result
 
 
-
-###################################
-### Tear down
-###################################
-# Clean up temporary directories
-test_dir.cleanup()
-output_dir.cleanup()
