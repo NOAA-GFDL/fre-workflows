@@ -1,4 +1,4 @@
-name: create_test_conda_env
+name: run_ppp
 
 on: [push]
 
@@ -22,7 +22,7 @@ jobs:
           # Print pwd then run script
           echo "Currently in:"
           cat ./flow.cylc
-          exit 0
+          # exit 0
           pwd
           ls -lah
           cd /contrib/Ciheim.Brown/ppp
