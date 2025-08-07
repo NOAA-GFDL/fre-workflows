@@ -26,6 +26,7 @@ jobs:
           #ls -lah
           #cd /contrib/Ciheim.Brown/ppp
           #singularity exec --writable-tmpfs --bind ./ppp-setup/:/mnt --bind ./ppp-setup/history:/mnt/history:ro --bind ./ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar ./ppp-7-16-25.sif ./runscript.sh
-          singularity exec --writable-tmpfs --bind /contrib/Ciheim.Brown/ppp/ppp-setup/:/mnt --bind /contrib/Ciheim.Brown/ppp/ppp-setup/history:/mnt/history:ro --bind /contrib/Ciheim.Brown/ppp/ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar /contrib/Ciheim.Brown/ppp/ppp-7-16-25.sif ./runscript.sh
+          singularity exec --writable-tmpfs --bind ./ppp-setup/:/mnt --bind ./ppp-setup/history:/mnt/history:ro --bind ./ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar ./ppp-7-16-25.sif /contrib/GITHUB_RUNNER_CONFIG_DONT_TOUCH/actions-runner/_work/fre-workflows/fre-workflows
+/runscript.sh
           grep -r "=ERR" /mnt/ppp-setup/cylc-run
           # /contrib/runnertest.sh
