@@ -25,16 +25,21 @@ conda activate /app/cylc-flow-tools
 get_user_input () {
     # User input
     echo Please Enter Experiment Name:
-    read -r expname
+#    read -r expname
 
     echo Please Enter Platform:
-    read -r plat
+#    read -r plat
 
     echo Please Enter Target:
-    read -r targ
+#    read -r targ
 
     echo Please Enter Path to model yaml file:
-    read -r yamlfile
+#    read -r yamlfile
+
+    expname="c96L65_am5f8d6r3_amip"
+    plat="gfdl.ncrc5-intel22-classic"
+    targ="debug_reg"
+    yamlfile="./yaml_workflow/am5.yaml"
     name=${expname}__${plat}__${targ}
 }
 
