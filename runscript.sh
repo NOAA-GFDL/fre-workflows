@@ -39,6 +39,7 @@ get_user_input () {
     expname="c96L65_am5f8d6r3_amip"
     plat="gfdl.ncrc5-intel22-classic"
     targ="debug_reg"
+    pwd
     yamlfile="/contrib/Ciheim.Brown/ppp/yaml_workflow/am5.yaml"
     name=${expname}__${plat}__${targ}
 }
