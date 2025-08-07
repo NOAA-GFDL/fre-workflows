@@ -74,18 +74,22 @@ fre_pp_steps () {
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
 
-    case ${hostname} in
-        *"pclusternoaa"*)
-            echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
-            mkdir -p /mnt/cylc-src/${name}
-            cp -r ./* /mnt/cylc-src/${name}
-            ;;
-        *)
-            echo -e "\nRunning fre pp checkout to create ${HOME}/cylc-src/${name} ...... "
-            exit 0
-            fre -v pp checkout -e ${expname} -p ${plat} -t ${targ}
-            ;; 
-    esac
+    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
+    mkdir -p /mnt/cylc-src/${name}
+    cp -r ./* /mnt/cylc-src/${name}
+
+#    case ${hostname} in
+#        *"pclusternoaa"*)
+#            echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
+#            mkdir -p /mnt/cylc-src/${name}
+#            cp -r ./* /mnt/cylc-src/${name}
+#            ;;
+#        *)
+#            echo -e "\nRunning fre pp checkout to create ${HOME}/cylc-src/${name} ...... "
+#            exit 0
+#            fre -v pp checkout -e ${expname} -p ${plat} -t ${targ}
+#            ;; 
+#    esac
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
