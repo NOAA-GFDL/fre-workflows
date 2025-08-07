@@ -21,10 +21,12 @@ jobs:
         run: |
           # Print pwd then run script
           echo "Currently in:"
-          cat ./flow.cylc
+          #cat ./flow.cylc
           # exit 0
           pwd
-          ls -lah
-          cd /contrib/Ciheim.Brown/ppp
-          singularity exec --writable-tmpfs --bind ./ppp-setup/:/mnt --bind ./ppp-setup/history:/mnt/history:ro --bind ./ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar ./ppp-7-16-25.sif ./runscript.sh
+          #ls -lah
+#          cd /contrib/Ciheim.Brown/ppp
+#          singularity exec --writable-tmpfs --bind ./ppp-setup/:/mnt --bind ./ppp-setup/history:/mnt/history:ro --bind ./ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar ./ppp-7-16-25.sif ./runscript.sh
+          singularity exec --writable-tmpfs --bind /contrib/Ciheim.Brown/ppp/ppp-setup/:/mnt --bind /contrib/Ciheim.Brown/ppp/ppp-setup/history:/mnt/history:ro --bind /contrib/Ciheim.Brown/ppp/ppp-setup/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar /contrib/Ciheim.Brown/ppp/ppp-7-16-25.sif ./runscript.sh
+          grep -r "=ERR" /mnt/ppp-setup/cylc-run
       # /contrib/runnertest.sh
