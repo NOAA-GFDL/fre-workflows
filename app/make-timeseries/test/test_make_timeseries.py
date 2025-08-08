@@ -6,11 +6,7 @@ import dateutil.parser
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-DATA_DIR  = Path("files")
-DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
-DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
-DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
-DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
+
 
 """Usage on runnung this app test for make_timeseries is as follows:
 1) module load fre/test cylc cdo python/3.9
@@ -30,6 +26,13 @@ def test_make_timeseries(capfd, tmp_path):
    global dir_tmp_out
    global component_new_file
 
+   #set data
+   DATA_DIR  = Path("files")
+   DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
+   DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
+   DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
+   DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
+   
    begin_cycle_point= "00050101T0000Z"
    chunk= "P2Y"
    freq= "P2Y"
@@ -76,6 +79,9 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for failure of
    merging and renaming a file with rose app as an invalid definition of the environment component.
    """
+   #run settup
+   test_make_timeseries(capfd, tmp_path)
+   
    din_check = str(dir_tmp_in)
    global rose_dir
    outputChunk = "P4Y"
