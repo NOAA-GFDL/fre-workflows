@@ -26,15 +26,19 @@ get_user_input () {
     # User input
     echo Please Enter Experiment Name:
 #    read -r expname
+    echo "c96L65_am5f8d6r3_amip"
 
     echo Please Enter Platform:
 #    read -r plat
+    echo "gfdl.ncrc5-intel22-classic"
 
     echo Please Enter Target:
 #    read -r targ
+    echo "debug"
 
     echo Please Enter Path to model yaml file:
 #    read -r yamlfile
+    echo "/contrib/Ciheim.Brown/ppp/yaml_workflow/am5.yaml"
 
     expname="c96L65_am5f8d6r3_amip"
     plat="gfdl.ncrc5-intel22-classic"
