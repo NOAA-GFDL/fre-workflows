@@ -3,9 +3,11 @@ name: run_ppp
 # .github/workflows/dependent-workflow.yml
 on:
   workflow_run:
-    workflows: create_test_conda_env
+    workflows: ["create_test_conda_env"]
     types:
       - completed
+    branches:
+      - main
 
 # cancel running jobs if theres a newer push
 #concurrency:
