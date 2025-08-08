@@ -6,7 +6,7 @@ import dateutil.parser
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-DATA_DIR  = Path("test-data")
+DATA_DIR  = Path("files")
 DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
 DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
 DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
@@ -114,14 +114,14 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
    os.makedirs( rose_dir, exist_ok = True )
 
    ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{din_check}',
+           '-D',  f'[env]inputDir={din_check}',
            '-D',  '[env]begin=00050101T0000Z',
-           '-D',  '[env]outputDir='f'{dout_check}',
+           '-D',  f'[env]outputDir={dout_check}',
            '-D',  '[env]inputChunk=P2Y',
            '-D',  '[env]outputChunk=P4Y',
-           '-D',  '[env]component=atmos_tracer'
-           '-S',  './../rose-app.conf'
-          ]
+           '-D',  '[env]component=atmos_tracer',
+           '-D',  '[env]pp_stop=00070102T0000Z',
+        ]
    print (ex);
    sp = subprocess.run( ex )
    assert sp.returncode == 0
