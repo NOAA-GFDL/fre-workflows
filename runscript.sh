@@ -39,7 +39,6 @@ get_user_input () {
     expname="c96L65_am5f8d6r3_amip"
     plat="gfdl.ncrc5-intel22-classic"
     targ="debug_reg"
-    pwd
     yamlfile="/contrib/Ciheim.Brown/ppp/yaml_workflow/am5.yaml"
     name=${expname}__${plat}__${targ}
 }
@@ -112,7 +111,7 @@ fre_pp_steps () {
 
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
-    cylc play --no-detach --debug ${name}
+    cylc play --no-detach --debug -s STALL_TIMEOUT="PT0S" ${name}
 }
 
 main () {
