@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from . import form_task_parameters
+from Jinja2Filters import form_task_parameters
 
 @pytest.fixture()
 def yaml_file(tmp_path):

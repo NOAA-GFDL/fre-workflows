@@ -1,7 +1,7 @@
 import pytest
 import yaml
 import metomi.isodatetime.parsers
-from . import get_components
+from Jinja2Filters import get_components
 
 CONFIG = {'postprocess': {'components': [{'postprocess_on': True, 'type': 'comp1'},
                                        {'postprocess_on': True, 'type': 'comp2'},
