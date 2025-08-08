@@ -93,7 +93,6 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
            '-D',  '[env]inputChunk=P2Y',
            '-D',  '[env]outputChunk=P4Y',
            '-D',  '[env]component=atmos'
-           '-S',  './../rose-app.conf'
           ]
    print (ex);
    sp = subprocess.run( ex )
@@ -121,6 +120,7 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
            '-D',  '[env]inputChunk=P2Y',
            '-D',  '[env]outputChunk=P4Y',
            '-D',  '[env]component=atmos_tracer'
+           '-S',  './../rose-app.conf'
           ]
    print (ex);
    sp = subprocess.run( ex )
