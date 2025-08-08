@@ -75,6 +75,7 @@ fre_pp_steps () {
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
 
     echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
+    rm -rf /mnt/cylc-src/${name}
     mkdir -p /mnt/cylc-src/${name}
     cp -r ./* /mnt/cylc-src/${name}
 
