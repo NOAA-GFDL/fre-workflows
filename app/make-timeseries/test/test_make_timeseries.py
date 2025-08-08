@@ -14,6 +14,8 @@ from dateutil.relativedelta import relativedelta
 3) pytest t/test_make_timeseries.py
 """
 
+@pytest.fixture()
+
 def test_make_timeseries(capfd, tmp_path):
    """This is a pytest compilation of routines.  Each of the test_* routines below will be called in the properly specified order.
    First executes the creation of required directories and a *.nc files from *.cdl text files.
