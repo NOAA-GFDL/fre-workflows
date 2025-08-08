@@ -13,6 +13,11 @@
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
 {% set SITE = SITE %}
 
+{# Setting STALL_TIMEOUT here gives the ability to override the value if necessary #}
+{# A use case for overriding this value is exhibited in the fre-workflows pipeline test_cloud_runner.yaml #}
+{# In this pipeline, the stall timeout will be 0 in order for the workflow to immediately abort is stalled #}
+{% set STALL_TIMEOUT = P1W %}
+
 {# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
 {% if ANALYSIS_START is not defined %}
     {% set ANALYSIS_START = PP_START %}
@@ -46,7 +51,7 @@
     [[events]]
         # When the stall timeout is reached, a stalled workflow will exit
         # and remove the /xtmp working directory.
-        stall timeout = P1W
+        stall timeout = {{ STALL_TIMEOUT }}
 
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
