@@ -111,7 +111,7 @@ fre_pp_steps () {
 
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
-    cylc play --no-detach --debug -s STALL_TIMEOUT="PT0S" ${name}
+    cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
 }
 
 main () {
