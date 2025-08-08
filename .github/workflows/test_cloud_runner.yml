@@ -1,5 +1,5 @@
 name: run_ppp
-
+on: [push]
 # cancel running jobs if theres a newer push
 #concurrency:
 #  group: ${{ github.workflow }}-${{ github.ref }}
