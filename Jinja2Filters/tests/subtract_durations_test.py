@@ -1,6 +1,6 @@
 import pytest
 import metomi.isodatetime.parsers
-from . import subtract_durations
+from Jinja2Filters import subtract_durations
 
 @pytest.mark.parametrize("minuend, subtrahend, difference",
     [('P10D', 'P9D', 'P1D'),

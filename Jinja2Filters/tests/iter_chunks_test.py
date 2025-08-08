@@ -1,7 +1,7 @@
 import pytest
 import metomi.isodatetime
 from metomi.isodatetime.parsers import DurationParser, TimePointParser
-from . import iter_chunks
+from Jinja2Filters import iter_chunks
 
 duration_parser = DurationParser()
 time_parser = TimePointParser(default_to_unknown_time_zone=True)
