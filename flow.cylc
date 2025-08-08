@@ -13,7 +13,7 @@
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
 {% set SITE = SITE %}
 
-{# Setting STALL_TIMEOUT here gives the ability to override the value if necessary #}
+{# Setting STALL_TIMEOUT here provides the ability to override the value if necessary #}
 {# A use case for overriding this value is exhibited in the fre-workflows pipeline test_cloud_runner.yaml #}
 {# In this pipeline, the stall timeout will be 0 in order for the workflow to immediately abort is stalled #}
 {% set STALL_TIMEOUT = P1W %}
