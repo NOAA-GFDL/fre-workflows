@@ -16,65 +16,52 @@ from dateutil.relativedelta import relativedelta
 
 
 def test_make_timeseries(capfd, tmp_path):
-   """This is a pytest compilation of routines.  Each of the test_* routines below will be called in the properly specified order.
-   First executes the creation of required directories and a *.nc files from *.cdl text files.
-   The tmp_path fixture which will provide a temporary directory unique to the test invocation, created in the base temporary directory.
-   The capfd fixture as input in all three subroutines allows access to stdout/stderr output created during test execution
-   Usage of command ncgen -o and then merge and remane the file via the proper cdo history command depends on the chunks given as input.
-   """
-   global dir_tmp_in, new_dir
-   global freq, component
-   global dir_tmp_out
-   global component_new_file
+    global dir_tmp_in, new_dir
+    global freq, component
+    global dir_tmp_out
+    global component_new_file
 
-   #set data
-   DATA_DIR  = Path("files")
-   DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
-   DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
-   DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
-   DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
-   
-   begin_cycle_point= "00050101T0000Z"
-   chunk= "P2Y"
-   freq= "P2Y"
-   var= "average_DT"
-   component = "atmos_tracer"
-   files = []
-
-   dir_tmp_in = tmp_path / "in_dir"
+    DATA_DIR = Path("files")
+    DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
+    DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
+    DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
+    DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
     
-   din_check = f'{tmp_path}/in_dir/{component}/{freq}/{chunk}'
-   os.makedirs( din_check, exist_ok = True )
+    component = "atmos_tracer"
+    chunk = freq = "P2Y"
+    dir_tmp_in = tmp_path / "in_dir"
+    din_check = f'{tmp_path}/in_dir/{component}/{freq}/{chunk}'
+    os.makedirs(din_check, exist_ok = True)
 
-   dout_check = tmp_path / "out_dir"
-   dout_check.mkdir()
-   dout_check = str(dout_check)
+    dout_check = tmp_path / "out_dir"
+    dout_check.mkdir()
+    dout_check = str(dout_check)
 
-   ex = [ 'ncgen', '-o', din_check / DATA_FILE_NC_P1Y, DATA_DIR / DATA_FILE_P1Y ];
-   sp = subprocess.run( ex )
-   ex = [ 'ncgen', '-o', din_check / DATA_FILE_NC_P2Y, DATA_DIR / DATA_FILE_P2Y ];
-   sp = subprocess.run( ex )
+    ex = ['ncgen', '-o', din_check / DATA_FILE_NC_P1Y, DATA_DIR / DATA_FILE_P1Y]
+    sp = subprocess.run(ex)
+    assert sp.returncode == 0, f'ncgen failed: {ex}'
 
-   first_cycle_date = str(DATA_FILE_NC_P1Y)[14:20]
+    ex = ['ncgen', '-o', din_check / DATA_FILE_NC_P2Y, DATA_DIR / DATA_FILE_P2Y]
+    sp = subprocess.run(ex)
+    assert sp.returncode == 0, f'ncgen failed: {ex}'
 
-   files.append(str(DATA_FILE_NC_P1Y))
-
-   second_cycle_date = str(DATA_FILE_NC_P2Y)[14:20]    
+    first_cycle_date = str(DATA_FILE_NC_P1Y)[14:20]
+    second_cycle_date = str(DATA_FILE_NC_P2Y)[14:20]
     
-   files.append(str(DATA_FILE_NC_P2Y))
+    new_dir = dout_check
+    component_new_file = f'{component}.{first_cycle_date}-{second_cycle_date}.average_DT.nc'
 
-   init_date=str(files[0])[13:19]
+    ex = ['cdo', '--history', '-O', 'mergetime', f'{din_check}/{DATA_FILE_NC_P1Y.name}', f'{din_check}/{DATA_FILE_NC_P2Y.name}', f'{dout_check}/{component_new_file}']
+    print(f'Running: {ex}')
+    sp = subprocess.run(ex)
+    assert sp.returncode == 0, f'cdo failed: {ex}'
+    captured = capfd.readouterr()
 
-   end_date=str(files[1])[20:26]
+    # Now file creation is confirmed
+    assert Path(f'{din_check}/{DATA_FILE_NC_P1Y.name}').exists()
+    assert Path(f'{din_check}/{DATA_FILE_NC_P2Y.name}').exists()
+    assert Path(f'{dout_check}/{component_new_file}').exists()
 
-   new_dir = dout_check
-   end_point_din = str(din_check)
-
-   component_new_file = f'{component}.{init_date}-{end_date}.{var}.nc'
-
-   ex = [ 'cdo', '--history', '-O', 'mergetime', f'{end_point_din}/{files[0]} {end_point_din}/{files[1]}', f'{dout_check}/{component_new_file}' ];
-   sp = subprocess.run( ex )
-   captured = capfd.readouterr()
 
 def test_rose_failure_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for failure of
