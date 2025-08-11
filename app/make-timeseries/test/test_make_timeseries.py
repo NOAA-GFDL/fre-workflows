@@ -14,7 +14,6 @@ from dateutil.relativedelta import relativedelta
 3) pytest t/test_make_timeseries.py
 """
 
-@pytest.fixture()
 
 def test_make_timeseries(capfd, tmp_path):
    """This is a pytest compilation of routines.  Each of the test_* routines below will be called in the properly specified order.
@@ -81,8 +80,6 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for failure of
    merging and renaming a file with rose app as an invalid definition of the environment component.
    """
-   #run settup
-   test_make_timeseries(capfd, tmp_path)
    
    din_check = str(dir_tmp_in)
    global rose_dir
