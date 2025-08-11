@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = 2025.03 %}
+{% set FRE_VERSION = 2025.04 %}
 
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
@@ -415,12 +415,12 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
 
     [[MAKE-TIMEAVGS]]
         script = """
-            fre app gen-time-averages-wrapper \
-                --cycle_point     $CYLC_TASK_CYCLE_POINT \
+            fre -vv app gen-time-averages-wrapper \
+                --cycle-point     $CYLC_TASK_CYCLE_POINT \
                 --dir             $CYLC_WORKFLOW_SHARE_DIR/shards \
                 --sources         $sources \
-                --output_interval $output_interval \
-                --input_interval  $input_interval \
+                --output-interval $output_interval \
+                --input-interval  $input_interval \
                 --grid            $grid \
                 --frequency       $frequency
         """
