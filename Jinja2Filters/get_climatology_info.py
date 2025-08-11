@@ -185,7 +185,8 @@ def task_generator(yaml_):
 
 
                 if "xyInterp" in component:
-                    grid = 'regrid-xy/' + component['interpMethod']
+                    lat_lon = component['xyInterp'].split(',')
+                    grid = 'regrid-xy/' + lat_lon[0] + '_' + lat_lon[1] + '.' + component['interpMethod']
                 else:
                     grid = 'native'
 
