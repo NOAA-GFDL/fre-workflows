@@ -45,4 +45,5 @@ jobs:
                   job_err_dir=$(echo "${err%/*}")
                   cat "${job_err_dir}/job.out"
               done
+              exit 1
           fi
