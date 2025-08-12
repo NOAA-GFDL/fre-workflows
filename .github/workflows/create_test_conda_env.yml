@@ -57,14 +57,6 @@ jobs:
              pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
              cd - ;
 
-      - name: root directory pytest, PPANHandler
-        run: |
-          pytest -v -v -rx ./tests/test_PPANHandler.py
-
-      - name: root directory pytest, papiex_tooler
-        run: |
-          pytest -v -v -rx ./tests/test_papiex_tooler.py
-
       - name: root directory pytest, analysis_validator
         continue-on-error: true
         run: |
@@ -80,3 +72,11 @@ jobs:
           cd Jinja2Filters && \
              pytest -v ./tests ; \
              cd - ;
+
+      - name: root directory pytest, PPANHandler
+        run: |
+          pytest -v -v -rx ./tests/test_PPANHandler.py
+
+      - name: root directory pytest, papiex_tooler
+        run: |
+          pytest -v -v -rx ./tests/test_papiex_tooler.py
