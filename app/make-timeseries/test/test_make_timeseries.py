@@ -21,7 +21,7 @@ def test_make_timeseries(capfd, tmp_path):
     global dir_tmp_out
     global component_new_file
 
-    DATA_DIR = Path("files")
+    DATA_DIR = Path("app/make-timeseries/test/files")
     DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
     DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
     DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
