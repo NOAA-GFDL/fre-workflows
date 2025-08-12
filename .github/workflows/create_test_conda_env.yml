@@ -26,13 +26,13 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
+      - name: cylc lint
         continue-on-error: true
         run: |
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: in fre-workflows environment, data_lineage unittest and pylint
+      - name: data_lineage, unittest and pylint
         continue-on-error: true
         run: |
           # unittests for data_lineage
@@ -41,7 +41,7 @@ jobs:
              pylint -v ; \
              cd - ;
 
-      - name: in fre-workflows environment, make-timeseries pytest and pylint
+      - name: make-timeseries, pytest and pylint
         continue-on-error: true
         run: |
           # pytest unittests for make-timeseries
@@ -50,23 +50,33 @@ jobs:
              pylint -v ; \
              cd - ;
 
-      - name: in fre-workflows environment, remap-pp-components pytest and pylint
-        continue-on-error: false
+      - name: remap-pp-components, pytest and pylint
         run: |
           # pytest unittests for remap-pp-components
           cd app/remap-pp-components && \
              pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
              cd - ;
 
-      - name: in fre-workflows environment, root directory pytest
+      - name: root directory pytest, PPANHandler
+        run: |
+          pytest -v -v -rx ./tests/test_PPANHandler.py
+
+      - name: root directory pytest, papiex_tooler
+        run: |
+          pytest -v -v -rx ./tests/test_papiex_tooler.py
+
+      - name: root directory pytest, analysis_validator
         continue-on-error: true
         run: |
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests
+          pytest -v -v -rx ./tests/test_analysis_validator.py
+
+      - name: root directory pytest, chunkcheck
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_chunkcheck.py
 
       - name: Jinja2filter tests
-        continue-on-error: false
         run: |
           cd Jinja2Filters && \
-            pytest -v ./tests ; \
-            cd - ;
+             pytest -v ./tests ; \
+             cd - ;
