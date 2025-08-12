@@ -85,8 +85,8 @@
         """
 
     [[DATA-CATALOG]]
-        pre-script = module load fre/{{ FRE_VERSION }} 
-        
+        pre-script = module load fre/{{ FRE_VERSION }}
+
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 

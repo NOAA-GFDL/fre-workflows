@@ -218,7 +218,7 @@
             {% endif %}
 
             {% if DO_NATIVE_STATIC %}
-            STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+            STAGE-HISTORY:succeed-all => split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
             {% endif %}
 
             {# After cataloging the regridded and native statics, remap them to pp components as desired #}
@@ -413,11 +413,11 @@
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
-                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
             #Data Integrity Checking
-            fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
+            fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
+                --date_string $(cylc cycle-point --template CCYYMMDD)
 
             # Setup PYTHONPATH and io lists for the data lineage tool
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
@@ -594,7 +594,8 @@
 {% endif %}
 
 {% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
-    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] | replace(".", "_") %}
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] |
+        replace(".", "_") %}
     [[preAnalysis-{{ preanalysis_name }}]]
         inherit = PRE-ANALYSIS
         script = """
@@ -639,7 +640,8 @@
 {% if DO_NATIVE %}
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
-        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; new arg for forcing split of all vars #}
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
+        {# new arg for forcing split of all vars #}
         script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
@@ -650,7 +652,8 @@
 {% if DO_REGRID %}
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
-        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; new arg for forcing split of all vars #}
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
+        {# new arg for forcing split of all vars #}
         script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
@@ -961,7 +964,8 @@
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} \
+            $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
                     find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
@@ -975,7 +979,8 @@
     [[clean-shards-{{ PP_CHUNK }}]]
         inherit = CLEAN
         script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK }}"
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK }} \
+            $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK }}"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
                     if [[ {{ PP_CHUNK }} == P1Y ]]; then
