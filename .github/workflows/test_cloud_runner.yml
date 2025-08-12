@@ -36,7 +36,8 @@ jobs:
           # Check if list of error statuses is empty or not
           # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
           if [ ${#err_out_list[@]} -eq 0 ]; then
-              echo "No exit status ERR found"                                                                                    exit 0`
+              echo "No exit status ERR found"    
+              exit 0
           else
               echo "Exit status ERR found"
               echo $err_out_list
