@@ -41,10 +41,10 @@ jobs:
           else
               echo "Exit status ERR found"
               echo $err_out_list
+              echo "Printing job.err ..."
+              for err in $err_out_list; do
+                  job_err_dir=$(echo "${err%/*}")
+                  cat "${job_err_dir}/job.err"
+              done
               exit 1  
           fi
-
-          for err in $err_out_list; do
-              job_err_dir=$(echo "${err%/*}")
-              cat "${job_err_dir}/job.err"
-          done
