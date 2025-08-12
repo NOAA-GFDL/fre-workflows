@@ -214,7 +214,8 @@
             pp-starter => STAGE-HISTORY
 
             {% if DO_REGRID_STATIC %}
-            STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
+            STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static>
+                => rename-split-to-pp-regrid<regrid_static>
             {% endif %}
 
             {% if DO_NATIVE_STATIC %}
@@ -223,7 +224,8 @@
 
             {# After cataloging the regridded and native statics, remap them to pp components as desired #}
             {% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
-            rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+            rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static>
+                => remap-pp-components-static => combine-statics
             {% elif DO_NATIVE_STATIC %}
             rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
             {% elif DO_REGRID_STATIC %}
@@ -413,7 +415,8 @@
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
+            ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
+                || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
             #Data Integrity Checking
             fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
