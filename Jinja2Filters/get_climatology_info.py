@@ -103,11 +103,12 @@ class Climatology(object):
             #        count += 1
             #    graph += "\n"
         graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-        graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}"
-        if clean_work:
-            graph += f" => clean-shards-P{self.interval_years}Y & clean-pp-timeavgs-P{self.interval_years}Y\n"
-        else:
-            graph += "\n"
+        graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+        graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+        #if clean_work:
+        #    graph += f" => clean-shards-P{self.interval_years}Y & clean-pp-timeavgs-P{self.interval_years}Y\n"
+        #else:
+        #    graph += "\n"
 
         graph += f"\"\"\"\n"
 
@@ -133,8 +134,17 @@ class Climatology(object):
         offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
 
         definitions += f"""
-    [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
+    [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
         inherit = REMAP-PP-COMPONENTS-AV
+        [[[environment]]]
+            component = {self.component}
+            currentChunk = P{self.interval_years}Y
+            end = $(cylc cycle-point --print-year --offset={offset})
+        """
+
+        definitions += f"""
+    [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
+        inherit = COMBINE-TIMEAVGS
         [[[environment]]]
             component = {self.component}
             currentChunk = P{self.interval_years}Y
