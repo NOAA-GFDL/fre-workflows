@@ -4,7 +4,8 @@ name: create_test_conda_env
 on:
   workflow_run:
     workflows: ["run_ppp"]
-    types: [in_progress]
+    types:
+      - completed
 
 jobs:
   build-linux:
