@@ -3,15 +3,16 @@ name: create_test_conda_env
 #on: [push]
 on:
   workflow_run:
-    workflows: run_ppp
-    types:
-      - completed
+    workflows: ["run_ppp"]
+    types: [in_progress]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Sleep
+        run: sleep 30
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

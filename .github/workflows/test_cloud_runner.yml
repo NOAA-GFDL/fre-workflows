@@ -41,7 +41,7 @@ jobs:
           else
               echo "\nEXIT STATUS ERR FOUND"
               for err in $err_out_list; do
-                  echo "Printing job.err for ${err%/*} ..."
+                  echo "Printing job.out for ${err%/*} ..."
                   job_err_dir=$(echo "${err%/*}")
                   cat "${job_err_dir}/job.out"
               done
