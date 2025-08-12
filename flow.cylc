@@ -638,12 +638,12 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
         # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
         script = rose-task-run --verbose --app-key remap-pp-components
         [[[environment]]]
-            components = $CYLC_TASK_PARAM_component
             yaml_config = {{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
         [[[environment]]]
+            components = $CYLC_TASK_PARAM_component
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
