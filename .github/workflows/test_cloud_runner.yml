@@ -31,5 +31,5 @@ jobs:
         continue-on-error: true
       - name: Print job exist status
         run: |
-          grep -r "CYLC_JOB_EXIT=ERR" /mnt/ppp-setup/cylc-run/c96L65_am5f8d6r3_amip__gfdl.ncrc5-intel22-classic__debug_reg/log/job/
+          grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/c96L65_am5f8d6r3_amip__gfdl.ncrc5-intel22-classic__debug_reg/log/job/
           exit 1
