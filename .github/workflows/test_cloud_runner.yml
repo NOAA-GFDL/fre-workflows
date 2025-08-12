@@ -39,9 +39,9 @@ jobs:
               echo "No exit status ERR found"    
               exit 0
           else
-              echo "EXIT STATUS ERR FOUND"
-              echo "Printing job.err FOR ${err%/*} ..."
+              echo "\nEXIT STATUS ERR FOUND"
               for err in $err_out_list; do
+                  echo "Printing job.err for ${err%/*} ..."
                   job_err_dir=$(echo "${err%/*}")
                   cat "${job_err_dir}/job.out"
               done
