@@ -42,7 +42,7 @@ jobs:
              cd - ;
 
       - name: in fre-workflows environment, make-timeseries pytest and pylint
-        continue-on-error: true
+        continue-on-error: false
         run: |
           # pytest unittests for make-timeseries
           cd app/make-timeseries && \
