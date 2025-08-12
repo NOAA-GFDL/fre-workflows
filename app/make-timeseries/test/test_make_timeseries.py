@@ -75,7 +75,7 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
    dout_check.mkdir()
    dout_check = str(dout_check)
 
-   rose_dir = f'{tmp_path}/out_dir/{component}/{freq}/{outputChunk}'
+   rose_dir = f'app/make-timeseries/test/{tmp_path}/out_dir/{component}/{freq}/{outputChunk}'
    os.makedirs( rose_dir, exist_ok = True )
 
    ex = [ "rose", "app-run",
