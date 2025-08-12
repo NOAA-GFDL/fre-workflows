@@ -6,6 +6,8 @@ on:
     workflows: ["run_ppp"]
     types:
       - completed
+    branches:
+      - main
 
 jobs:
   build-linux:
