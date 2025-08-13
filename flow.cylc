@@ -664,6 +664,7 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
+            begin = $(cylc cycle-point --print-year)
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static]]

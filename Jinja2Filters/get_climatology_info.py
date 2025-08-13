@@ -137,7 +137,7 @@ class Climatology(object):
     [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
         inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
-            component = {self.component}
+            components = {self.component}
             currentChunk = P{self.interval_years}Y
             end = $(cylc cycle-point --print-year --offset={offset})
         """
