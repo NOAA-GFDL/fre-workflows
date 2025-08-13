@@ -690,7 +690,7 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            outputDir = {{ PP_DIR }}/$component/av
+            PP_DIR = {{ PP_DIR }}
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
