@@ -19,14 +19,14 @@ def test_import():
     from lib.python.tool_ops_w_papiex import test_import
     assert test_import() == 0
 
-    
+
 def test_import_papiex_ops():
     ''' check that op list data can be imported '''
     import lib.python.papiex_ops as ops
     assert all( [ ops.op_list is not None,
-                     len(ops.op_list) > 0  ] ) 
+                     len(ops.op_list) > 0  ] )
 
-    
+
 def test_simple_failing_command():
     ''' check that setting/unsetting PAPIEX_TAGS around an op
     will not touch the exit status of that op '''
@@ -56,24 +56,24 @@ def test_simple_failing_command():
               '\n {control_out}, \n {control_err}, \n {control_ret_code}')
         assert all( [ control_out is not None,
                       control_err is not None,
-                      control_ret_code is not None ] )        
+                      control_ret_code is not None ] )
     except OSError as exc:
         print('problem getting output from control proc')
         assert False
 
     # if we're testing over and over and '.notags' version exists,
     # clobber the tagged version and replace it with '.notags' version
-    test_script_targ = control_script_targ+'.tags'
+    test_script_targ = control_script_targ + '.tags'
     if Path(test_script_targ).exists():
-        Path(test_script_targ).unlink()    
+        Path(test_script_targ).unlink()
 
     # call the routine
     tool_ops_w_papiex(fin_name = control_script_targ,
                       fms_modulefiles = None)
-    
+
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()
-    
+
     # now check that the script fails, as it should, after tooling
     test_proc = None
     try:
@@ -85,51 +85,51 @@ def test_simple_failing_command():
     except OSError as exc:
         print('problem with sourcing test script after tagging')
         assert False
-                    
+
     try:
         out, err = (
             f.decode() for f in test_proc.communicate(DEVNULL) )
         ret_code = test_proc.wait()
-        print(f'out, err, ret_code = \n {out}, \n {err}, \n {ret_code}')        
+        print(f'out, err, ret_code = \n {out}, \n {err}, \n {ret_code}')
     except OSError as exc:
         print('problem getting output from job-submission test_proc.')
         assert False
 
-    # check that the script output, all of it, is unchanged. 
+    # check that the script output, all of it, is unchanged.
     assert all ( [ control_out == out,
                    control_err == err,
-                   control_ret_code == 0, 
+                   control_ret_code == 0,
                    control_ret_code == ret_code ] )
 
 
-def test_check_simple_failing_command_for_diff():    
+def test_check_simple_failing_command_for_diff():
     ''' check the simple_failing_command script for differences after the
-    prev test, which could in theory succeed if tool_ops_w_papiex copies 
+    prev test, which could in theory succeed if tool_ops_w_papiex copies
     the script but without adding tooling.'''
-    
-    control_script_targ = str(Path.cwd()) + SIMPLE_FAILING_BASH
+
+    control_script_targ = SIMPLE_FAILING_BASH
     assert Path(control_script_targ).exists() #quick check
-    
-    script_targ = control_script_targ + '.tags'
-    assert Path(script_targ).exists() #quick check
+
+    test_script_targ = control_script_targ + '.tags'
+    assert Path(test_script_targ).exists() #sanity
 
     # check quickly that they are different in some manner.
-    is_different = not fc.cmp( control_script_targ, script_targ,
+    is_different = not fc.cmp( control_script_targ, test_script_targ,
                                shallow = False)
     print(f'different? {is_different}\n\n')
-    assert is_different        
-    
+    assert is_different
+
     # now we will explicitly check for those differencves
     the_infile = open(control_script_targ)
     infile_contents = the_infile.readlines()
     the_infile.close()
     assert infile_contents is not None
-    
-    the_outfile = open(script_targ)
+
+    the_outfile = open(test_script_targ)
     outfile_contents = the_outfile.readlines()
     the_outfile.close()
     assert outfile_contents is not None
-    
+
     # better be something in here.
     differences = dl.ndiff(infile_contents, outfile_contents)
     assert differences is not None
@@ -147,121 +147,116 @@ def test_check_simple_failing_command_for_diff():
     #    else:
     #        continue
 
-    
-def test_rose_task_run_for_diff():    
+    # cleanup
+    assert Path(test_script_targ).exists()
+    Path(test_script_targ).unlink()
+
+
+def test_rose_task_run_for_diff():
+    ''' check that a rose-app-run call gets tagged appropriately '''
     control_script_targ = AM5_ROSE_TASK
+    assert Path(control_script_targ).exists() #quick check
 
     # if we're testing over and over and '.notags' version exists,
     # clobber the tagged version and replace it with '.notags' version
     test_script_targ = control_script_targ + '.tags'
     if Path(test_script_targ).exists():
-        Path(test_script_targ).unlink()    
+        Path(test_script_targ).unlink()
 
     # call the routine
     tool_ops_w_papiex(fin_name = control_script_targ,
                       fms_modulefiles = None)
-    
+
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()
 
-
-    script_targ=control_script_targ+'.tags'
-    assert Path(control_script_targ).exists() #quick check
-    assert Path(script_targ).exists() #quick check
-
     # check quickly that they are different in some manner.
-    is_different=not fc.cmp( control_script_targ, script_targ,
-                             shallow=False)
+    is_different = not fc.cmp( control_script_targ, test_script_targ,
+                             shallow = False)
     print(f'different? {is_different}\n\n')
     assert is_different
-    
-    # now we will explicitly check for those differences
+
+    # open the original file and read it's contents
     the_infile = open(control_script_targ)
-    infile_contents=the_infile.readlines()
+    infile_contents = the_infile.readlines()
     the_infile.close()
     assert infile_contents is not None
-    
-    the_outfile = open(script_targ)
-    outfile_contents=the_outfile.readlines()
+
+    # open the output file and read it's contents
+    the_outfile = open(test_script_targ)
+    outfile_contents = the_outfile.readlines()
     the_outfile.close()
     assert outfile_contents is not None
-    
-    # better be something in here.
-    differences=dl.ndiff(infile_contents, outfile_contents)
+
+    # now we will explicitly check for those differences
+    differences = dl.ndiff(infile_contents, outfile_contents)
     assert differences is not None
-    
-    # pytest suppresses print output by default.
-    # to view this and other print output in pytest
-    # from PASSING tests, run something like:
-    #      python -m pytest -rP tests/test_papiex_tooler
-    # to get the same for FAILING tests,
-    #      python -m pytest -rx tests/test_papiex_tooler
-    def_is_different_for_sure=False
+
+    # sanity check
+    def_is_different_for_sure = False
     for line in differences:
-        if line[0]=='-' or line[0]=='+':
-            def_is_different_for_sure=True
+        if line[0] == '-' or line[0] == '+':
+            def_is_different_for_sure = True
             print(line)
         else:
             continue
-    
-    # sanity check
     assert def_is_different_for_sure
 
+    # cleanup
+    Path(test_script_targ).unlink()
 
-def test_pp_starter_for_no_diff():    
+
+def test_pp_starter_for_no_diff():
+    ''' make sure a pp-starter task doesnt get tagged '''
     control_script_targ = PP_STARTER_TASK
+    assert Path(control_script_targ).exists()
 
     # if we're testing over and over and '.notags' version exists,
     # clobber the tagged version and replace it with '.notags' version
-    test_script_targ=control_script_targ+'.tags'
+    test_script_targ = control_script_targ + '.tags'
     if Path(test_script_targ).exists():
-        Path(test_script_targ).unlink()    
+        Path(test_script_targ).unlink()
 
     # call the routine
     tool_ops_w_papiex(fin_name = control_script_targ,
                       fms_modulefiles = None)
-    
+
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()
 
-
-    script_targ=control_script_targ+'.tags'
-    assert Path(control_script_targ).exists() #quick check
-    assert Path(script_targ).exists() #quick check
+    # check the input file was not accidentally clobbered too
+    assert Path(control_script_targ).exists()
 
     # check quickly that they are different in some manner.
-    is_different=not fc.cmp( control_script_targ, script_targ,
-                             shallow=False)
+    is_different = not fc.cmp( control_script_targ, test_script_targ,
+                             shallow = False)
     print(f'different? {is_different}\n\n')
+    assert not is_different
+
+    # open the original file and read it's contents
+    the_infile = open(control_script_targ)
+    infile_contents = the_infile.readlines()
+    the_infile.close()
+
+    # open the output file and read it's contents
+    the_outfile = open(test_script_targ)
+    outfile_contents = the_outfile.readlines()
+    the_outfile.close()
 
     # now we will explicitly check for those differences
-    the_infile = open(control_script_targ)
-    infile_contents=the_infile.readlines()
-    the_infile.close()
-    
-    the_outfile = open(script_targ)
-    outfile_contents=the_outfile.readlines()
-    the_outfile.close()
-    differences=dl.ndiff(infile_contents, outfile_contents)
+    differences = dl.ndiff(infile_contents, outfile_contents)
+    #assert differences is None # ndiff doesn't return None for 0 differences
 
-    # pytest suppresses print output by default.
-    # to view this and other print output in pytest
-    # from PASSING tests, run something like:
-    #      python -m pytest -rP tests/test_papiex_tooler
-    # to get the same for FAILING tests,
-    #      python -m pytest -rx tests/test_papiex_tooler
-    def_is_different_for_sure=False
+    def_is_different_for_sure = False
     if differences is not None:
         for line in differences:
-            if line[0]=='-' or line[0]=='+':
-                def_is_different_for_sure=True
+            if line[0] == '-' or line[0] == '+':
+                def_is_different_for_sure = True
                 print(line)
             else:
                 continue
-
-    # note- just because the files are the same doesn't
-    #       mean that difflib.ndiff returns None
-    #assert differences is None
-    assert not is_different
+    # the real check for a lack of differences
     assert not def_is_different_for_sure
-    
+
+    # cleanup
+    Path(test_script_targ).unlink()

@@ -1,4 +1,4 @@
-''' 
+'''
 tests for PPAN specific job_runner_handler class.
 
 test from the root directory with:
@@ -14,7 +14,7 @@ def test_import(capfd):
     # print(f'__name__=={__name__}')
     from lib.python.ppan_handler import PPANHandler
     test_handler=PPANHandler()
-    
+
     assert test_handler is not None
     assert test_handler.test_import() == 0
 
@@ -24,7 +24,7 @@ def test_tool_ops_import_in_handler(capfd):
     # print(f'__name__=={__name__}')
     from lib.python.ppan_handler import PPANHandler
     test_handler=PPANHandler()
-    
+
     assert test_handler is not None
     assert test_handler.test_tool_ops_import() == 0
 
@@ -33,9 +33,9 @@ def test_submit(capfd):
     #print(f'__name__=={__name__}')
     from lib.python.ppan_handler import PPANHandler
     test_handler=PPANHandler()
-            
-    # fudge submit_opts input for dry_run == True    
-    submit_opts={'env':{}}    
+
+    # fudge submit_opts input for dry_run == True
+    submit_opts={'env':{}}
     ret_code, ret_out, ret_err = test_handler.submit(
                                    job_file_path = JOB_FILE_PATH,
                                    submit_opts = submit_opts,
@@ -62,4 +62,3 @@ def test_cleanup(capfd):
     Path(JOB_FILE_PATH+'.notags').rename(JOB_FILE_PATH)
     assert not Path(JOB_FILE_PATH+'.notags').exists()
     assert Path(JOB_FILE_PATH).exists()
-    

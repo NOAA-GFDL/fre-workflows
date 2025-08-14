@@ -65,7 +65,7 @@ jobs:
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint -v --fail-under 4.50 ./lib/python
+          pylint -v --fail-under 7.50 ./lib/python
 
       - name: chunkchecker pytest (guarded against failure)
         continue-on-error: true
