@@ -45,7 +45,7 @@ jobs:
       - name: make-timeseries pytest
         continue-on-error: true
         run: |
-          pytest -v -v -rx --cov=./app/make-timeseries/bin/make-timeseries ./app/make-timeseries/test
+          pytest -v -v -rx ./app/make-timeseries/test
 
       - name: remap-pp-components pytest
         continue-on-error: true
