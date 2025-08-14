@@ -26,7 +26,7 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: cylc lint (guardeded against failure)
+      - name: cylc lint (guarded against failure)
         continue-on-error: true
         run: |
           # lint .cylc workflow files
@@ -37,10 +37,10 @@ jobs:
         run: |
           python -m unittest discover -s ./data_lineage -v
 
-      - name: data_lineage pylint (guarded against failure)
+      - name: data_lineage pylint
         continue-on-error: true
         run: |
-          pylint -v ./data_lineage
+          pylint -v --fail-under 4.00 ./data_lineage
 
       - name: Jinja2filter pytest
         run: |
