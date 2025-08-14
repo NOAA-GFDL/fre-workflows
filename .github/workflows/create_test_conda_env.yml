@@ -57,7 +57,7 @@ jobs:
 
       - name: PPANHandler pytest
         run: |
-          pytest -v -v -rx ./tests/test_PPANHandler.py
+          pytest -v -v -rx ./lib/python/tests/test_PPANHandler.py
 
       - name: papiex_tooler pytest (guarded against failure)
         continue-on-error: true
