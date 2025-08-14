@@ -26,7 +26,7 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
+      - name: cylc lint
         continue-on-error: true
         run: |
           # lint .cylc workflow files
@@ -42,6 +42,16 @@ jobs:
         run: |
           pylint -v ./data_lineage
 
+      - name: Jinja2filter pytest
+        continue-on-error: false
+        run: |
+          pytest -v ./Jinja2Filters/tests
+
+      - name: Jinja2filter pylint
+        continue-on-error: true
+        run: |
+          pylint ./Jinja2Filters
+
       - name: make-timeseries pytest
         continue-on-error: true
         run: |
@@ -50,7 +60,7 @@ jobs:
       - name: remap-pp-components pytest
         continue-on-error: true
         run: |
-          cd ./app/remap-pp-components/ ; \
+          cd ./app/remap-pp-components/ && \
             pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
             cd -
 
@@ -73,16 +83,6 @@ jobs:
         continue-on-error: true
         run: |
           pylint ./lib/python
-
-      - name: Jinja2filter pytest
-        continue-on-error: false
-        run: |
-          pytest -v ./Jinja2Filters/tests
-
-      - name: Jinja2filter pylint
-        continue-on-error: true
-        run: |
-          pylint ./Jinja2Filters
 
       - name: chunkchecker pytest
         continue-on-error: true
