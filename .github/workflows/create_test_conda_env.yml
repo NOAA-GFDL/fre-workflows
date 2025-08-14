@@ -89,6 +89,11 @@ jobs:
         run: |
           pytest -v -v -rx ./tests/test_chunkcheck.py
 
+      - name: analysis_validator pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_analysis_validator.py
+
       - name: python macros pylint
         continue-on-error: true
         run: |
