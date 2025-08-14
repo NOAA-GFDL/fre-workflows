@@ -32,15 +32,16 @@ jobs:
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: data_lineage unittest (guarded against failure)
-        continue-on-error: true
+      - name: data_lineage unittest
         run: |
-          python -m unittest discover -s ./data_lineage -v
+          cd ./data_lineage && \
+            python -m unittest discover -s ./tests -v ; \
+            cd - ;
 
       - name: data_lineage pylint
         continue-on-error: true
         run: |
-          pylint -v --fail-under 4.00 ./data_lineage
+          pylint -v --fail-under 6.90 ./data_lineage
 
       - name: Jinja2filter pytest
         run: |
@@ -90,4 +91,4 @@ jobs:
 
       - name: python macros pylint
         run: |
-          pylint -v --failu-under 4.00 ./meta/lib/python/macros/
+          pylint -v --fail-under 4.00 ./meta/lib/python/macros/
