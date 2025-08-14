@@ -77,22 +77,28 @@ jobs:
         run: |
           pytest -v -v -rx ./tests/test_papiex_tooler.py
 
-      - name: papiex_tooler pylint
+      - name: papiex_ops and tool_ops_w_papiex pylint
         continue-on-error: true
         run: |
-          pylint ./lib/python/papiex_tooler.py
+          pylint ./lib/python/tool_ops_w_papiex.py
+          pylint ./lib/python/papiex_ops.py
 
       - name: Jinja2filter pytest
         continue-on-error: false
         run: |
-            pytest -v ./Jinja2Filters/tests
+          pytest -v ./Jinja2Filters/tests
 
       - name: Jinja2filter pylint
         continue-on-error: true
         run: |
-            pytest -v ./Jinja2Filters/tests
-            
-￼      - name: chunkchecker pytest
-         continue-on-error: true
-         run: |
-             pytest -v -v -rx ./tests/test_chunkcheck.py
+          pylint ./Jinja2Filters
+
+      - name: chunkchecker pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_chunkcheck.py
+
+      - name: python macros pylint
+        continue-on-error: true
+        run: |
+          pylint ./meta/lib/python/macros/
