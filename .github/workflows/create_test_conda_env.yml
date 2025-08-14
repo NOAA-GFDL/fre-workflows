@@ -26,18 +26,18 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: cylc lint
+      - name: cylc lint (guardeded against failure)
         continue-on-error: true
         run: |
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: data_lineage unittest
+      - name: data_lineage unittest (guardeded against failure)
         continue-on-error: true
         run: |
           python -m unittest discover -s ./data_lineage -v
 
-      - name: data_lineage pylint
+      - name: data_lineage pylint (guardeded against failure)
         continue-on-error: true
         run: |
           pylint -v ./data_lineage
@@ -47,54 +47,54 @@ jobs:
         run: |
           pytest -v ./Jinja2Filters/tests
 
-      - name: Jinja2filter pylint
+      - name: Jinja2filter pylint (guarded against failure)
         continue-on-error: true
         run: |
           pylint ./Jinja2Filters
 
-      - name: make-timeseries pytest
+      - name: make-timeseries pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./app/make-timeseries/test
 
-      - name: remap-pp-components pytest
+      - name: remap-pp-components pytest (guarded against failure)
         continue-on-error: true
         run: |
           cd ./app/remap-pp-components/ && \
             pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
             cd -
 
-      - name: remap-pp-components pylint
+      - name: remap-pp-components pylint (guarded against failure)
         continue-on-error: true
         run: |
           pylint -v app/remap-pp-components/bin/remap-pp-components
 
-      - name: PPANHandler pytest
+      - name: PPANHandler pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./tests/test_PPANHandler.py
 
-      - name: papiex_tooler pytest
+      - name: papiex_tooler pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./tests/test_papiex_tooler.py
 
-      - name: papiex_ops and tool_ops_w_papiex pylint
+      - name: papiex_ops and tool_ops_w_papiex pylint (guarded against failure)
         continue-on-error: true
         run: |
           pylint ./lib/python
 
-      - name: chunkchecker pytest
+      - name: chunkchecker pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./tests/test_chunkcheck.py
 
-      - name: analysis_validator pytest
+      - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./tests/test_analysis_validator.py
 
-      - name: python macros pylint
+      - name: python macros pylint (guarded against failure)
         continue-on-error: true
         run: |
           pylint ./meta/lib/python/macros/
