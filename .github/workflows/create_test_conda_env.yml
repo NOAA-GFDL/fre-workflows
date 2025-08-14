@@ -32,41 +32,67 @@ jobs:
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: in fre-workflows environment, data_lineage unittest and pylint
+      - name: data_lineage unittest
         continue-on-error: true
         run: |
-          # unittests for data_lineage
-          cd data_lineage && \
-             python -m unittest discover -s test -v ; \
-             pylint -v ; \
-             cd - ;
+          python -m unittest discover -s data_lineage/test -v
 
-      - name: in fre-workflows environment, make-timeseries pytest and pylint
+      - name: data_lineage pylint
         continue-on-error: true
         run: |
-          # pytest unittests for make-timeseries
-          cd app/make-timeseries && \
-             pytest -v -v -rx --cov=bin/make-timeseries ./test ; \
-             pylint -v ; \
-             cd - ;
+          pylint -v data_lineage
 
-      - name: in fre-workflows environment, remap-pp-components pytest and pylint
+      - name: make-timeseries pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx --cov=app/make-timeseties/bin/make-timeseries ./app/make-timeseries/test
+
+      - name: make-timeseries pylint
+        continue-on-error: true
+        run: |
+          pylint -v app/make-timeseties/bin/make-timeseries
+
+      - name: remap-pp-components pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx --cov=app/remap-pp-components/bin/remap-pp-components ./app/remap-pp-components/test
+
+      - name: remap-pp-components pylint
+        continue-on-error: true
+        run: |
+          pylint -v app/remap-pp-components/bin/remap-pp-components
+
+      - name: PPANHandler pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_PPANHandler.py
+
+      - name: PPANHandler pylint
+        continue-on-error: true
+        run: |
+          pylint ./lib/python/PPANHandler.py
+
+      - name: papiex_tooler pytest
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_papiex_tooler.py
+
+      - name: papiex_tooler pylint
+        continue-on-error: true
+        run: |
+          pylint ./lib/python/papiex_tooler.py
+
+      - name: Jinja2filter pytest
         continue-on-error: false
         run: |
-          # pytest unittests for remap-pp-components
-          cd app/remap-pp-components && \
-             pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
-             cd - ;
+            pytest -v ./Jinja2Filters/tests
 
-      - name: in fre-workflows environment, root directory pytest
+      - name: Jinja2filter pylint
         continue-on-error: true
         run: |
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests
-
-      - name: Jinja2filter tests
-        continue-on-error: false
-        run: |
-          cd Jinja2Filters && \
-            pytest -v ./tests ; \
-            cd - ;
+            pytest -v ./Jinja2Filters/tests
+            
+￼      - name: chunkchecker pytest
+         continue-on-error: true
+         run: |
+             pytest -v -v -rx ./tests/test_chunkcheck.py
