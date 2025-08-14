@@ -59,10 +59,9 @@ jobs:
         run: |
           pytest -v -v -rx ./lib/python/tests/test_PPANHandler.py
 
-      - name: papiex_tooler pytest (guarded against failure)
-        continue-on-error: true
+      - name: papiex_tooler pytest
         run: |
-          pytest -v -v -rx ./tests/test_papiex_tooler.py
+          pytest -v -v -rx ./lib/python/tests/test_papiex_tooler.py
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |

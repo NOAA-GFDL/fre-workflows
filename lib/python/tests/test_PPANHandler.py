@@ -7,7 +7,7 @@ test from the root directory with:
 from pathlib import Path
 import filecmp
 
-JOB_FILE_PATH='./tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
+JOB_FILE_PATH='lib/python/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
 
 def test_import(capfd):
     ''' check that ppan_handler can be imported.'''
@@ -55,6 +55,8 @@ def test_file_cmp_and_clean(capfd):
     # check to make sure the two files are not the same
     assert not filecmp.cmp(JOB_FILE_PATH, JOB_FILE_PATH+'.notags')
 
+def test_cleanup(capfd):
+    ''' sep routine for clean up '''
     # clean up, and make sure we're back at our starting state
     Path(JOB_FILE_PATH).unlink()
     Path(JOB_FILE_PATH+'.notags').rename(JOB_FILE_PATH)
