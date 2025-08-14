@@ -32,45 +32,40 @@ jobs:
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: data_lineage unittest (guardeded against failure)
+      - name: data_lineage unittest (guarded against failure)
         continue-on-error: true
         run: |
           python -m unittest discover -s ./data_lineage -v
 
-      - name: data_lineage pylint (guardeded against failure)
+      - name: data_lineage pylint (guarded against failure)
         continue-on-error: true
         run: |
           pylint -v ./data_lineage
 
       - name: Jinja2filter pytest
-        continue-on-error: false
         run: |
           pytest -v ./Jinja2Filters/tests
 
-      - name: Jinja2filter pylint (guarded against failure)
-        continue-on-error: true
+      - name: Jinja2filter pylint
         run: |
-          pylint ./Jinja2Filters
+          pylint -v --fail-under 7.00 ./Jinja2Filters
 
       - name: make-timeseries pytest (guarded against failure)
         continue-on-error: true
         run: |
           pytest -v -v -rx ./app/make-timeseries/test
 
-      - name: remap-pp-components pytest (guarded against failure)
-        continue-on-error: true
+      - name: remap-pp-components pytest
         run: |
           cd ./app/remap-pp-components/ && \
             pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
             cd -
 
-      - name: remap-pp-components pylint (guarded against failure)
-        continue-on-error: true
+      - name: remap-pp-components pylint
         run: |
-          pylint -v app/remap-pp-components/bin/remap-pp-components
+          pylint -v --fail-under 9.0 app/remap-pp-components/bin/remap-pp-components
 
-      - name: PPANHandler pytest (guarded against failure)
-        continue-on-error: true
+      - name: PPANHandler pytest
         run: |
           pytest -v -v -rx ./tests/test_PPANHandler.py
 
@@ -79,10 +74,9 @@ jobs:
         run: |
           pytest -v -v -rx ./tests/test_papiex_tooler.py
 
-      - name: papiex_ops and tool_ops_w_papiex pylint (guarded against failure)
-        continue-on-error: true
+      - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint ./lib/python
+          pylint -v --fail-under 4.50 ./lib/python
 
       - name: chunkchecker pytest (guarded against failure)
         continue-on-error: true
@@ -94,7 +88,6 @@ jobs:
         run: |
           pytest -v -v -rx ./tests/test_analysis_validator.py
 
-      - name: python macros pylint (guarded against failure)
-        continue-on-error: true
+      - name: python macros pylint
         run: |
-          pylint ./meta/lib/python/macros/
+          pylint -v --failu-under 4.00 ./meta/lib/python/macros/
