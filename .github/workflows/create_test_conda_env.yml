@@ -35,27 +35,24 @@ jobs:
       - name: data_lineage unittest
         continue-on-error: true
         run: |
-          python -m unittest discover -s data_lineage/test -v
+          python -m unittest discover -s ./data_lineage -v
 
       - name: data_lineage pylint
         continue-on-error: true
         run: |
-          pylint -v data_lineage
+          pylint -v ./data_lineage
 
       - name: make-timeseries pytest
         continue-on-error: true
         run: |
-          pytest -v -v -rx --cov=app/make-timeseties/bin/make-timeseries ./app/make-timeseries/test
-
-      - name: make-timeseries pylint
-        continue-on-error: true
-        run: |
-          pylint -v app/make-timeseties/bin/make-timeseries
+          pytest -v -v -rx --cov=./app/make-timeseries/bin/make-timeseries ./app/make-timeseries/test
 
       - name: remap-pp-components pytest
         continue-on-error: true
         run: |
-          pytest -v -v -rx --cov=app/remap-pp-components/bin/remap-pp-components ./app/remap-pp-components/test
+          cd ./app/remap-pp-components/ ; \
+            pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
+            cd -
 
       - name: remap-pp-components pylint
         continue-on-error: true
@@ -67,11 +64,6 @@ jobs:
         run: |
           pytest -v -v -rx ./tests/test_PPANHandler.py
 
-      - name: PPANHandler pylint
-        continue-on-error: true
-        run: |
-          pylint ./lib/python/PPANHandler.py
-
       - name: papiex_tooler pytest
         continue-on-error: true
         run: |
@@ -80,8 +72,7 @@ jobs:
       - name: papiex_ops and tool_ops_w_papiex pylint
         continue-on-error: true
         run: |
-          pylint ./lib/python/tool_ops_w_papiex.py
-          pylint ./lib/python/papiex_ops.py
+          pylint ./lib/python
 
       - name: Jinja2filter pytest
         continue-on-error: false
