@@ -44,16 +44,6 @@ jobs:
         run: |
           pytest -v -v -rx ./app/make-timeseries/test
 
-      - name: remap-pp-components pytest
-        run: |
-          cd ./app/remap-pp-components/ && \
-            pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
-            cd -
-
-      - name: remap-pp-components pylint
-        run: |
-          pylint -v --fail-under 9.0 app/remap-pp-components/bin/remap-pp-components
-
       - name: PPANHandler pytest
         run: |
           pytest -v -v -rx ./tests/test_PPANHandler.py

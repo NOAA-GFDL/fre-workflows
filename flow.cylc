@@ -736,10 +736,22 @@
 
     [[REMAP-PP-COMPONENTS]]
         # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key remap-pp-components
+        #script = rose-task-run --verbose --app-key remap-pp-components
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --ts-workaround=$dirTSWorkaround \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
-            yaml_config = {{ YAML }}
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
@@ -747,7 +759,7 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
-            dirTSWorkaround = 1
+            dirTSWorkaround = True
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -764,7 +776,7 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-
+            dirTSWorkaround = False
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-AV
@@ -776,15 +788,14 @@
     {% endfor %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
-    [[remap-pp-components-static]]
-        inherit = REMAP-PP-COMPONENTS-TS
+    [[remap-pp-components-static<component>]]
+        inherit = REMAP-PP-COMPONENTS-TS, <component>
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
-            components = {{ PP_COMPONENTS }}
             product = static
-            dirTSWorkaround = ""
+            dirTSWorkaround = False
 {% endif %}
 
     [[DATA-CATALOG]]

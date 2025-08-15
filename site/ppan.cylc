@@ -77,14 +77,7 @@
         pre-script = module load netcdf-c cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = """
-            module load fre-nctools miniforge
-            set +u
-            conda activate /nbhome/fms/conda/envs/fre-2025.01
-            set -u
-            module load gcp
-            mkdir -p $outputDir
-        """
+        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
 
     [[DATA-CATALOG]]
         pre-script = module load fre/{{ FRE_VERSION }}
