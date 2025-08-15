@@ -1,0 +1,49 @@
+name: run_ppp
+on: [push]
+# cancel running jobs if theres a newer push
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.ref }}
+#  cancel-in-progress: true
+
+jobs:
+  test-cloud:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      #- name: Set up Python
+      #  uses: actions/setup-python@v5
+      #  with:
+      #    python-version: '>=3.9'
+      - name: Run test script
+        run: |
+          # Print pwd then run script
+          echo "Currently in:"
+          pwd
+
+          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt
+                      --bind /contrib/container-test/history:/mnt/history:ro
+                      --bind /contrib/container-test/grid_spec/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar
+                      --bind /contrib/container-test"
+          container_path=/contrib/Ciheim.Brown/ppp/ppp-7-16-25.sif
+          runscript_path=./runscript.sh
+
+          singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
+        continue-on-error: true
+      - name: Print job exist status
+        run: |
+          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/c96L65_am5f8d6r3_amip__gfdl.ncrc5-intel22-classic__debug_reg/log/job/))
+
+          # Check if list of error statuses is empty or not
+          # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
+          if [ ${#err_out_list[@]} -eq 0 ]; then
+              echo "No exit status ERR found"    
+              exit 0
+          else
+              echo "\nEXIT STATUS ERR FOUND"
+              for err in $err_out_list; do
+                  echo "Printing job.out for ${err%/*} ..."
+                  job_err_dir=$(echo "${err%/*}")
+                  cat "${job_err_dir}/job.out"
+              done
+              exit 1
+          fi
