@@ -26,41 +26,58 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
+      - name: cylc lint (guarded against failure)
         continue-on-error: true
         run: |
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: in fre-workflows environment, data_lineage unittest and pylint
-        continue-on-error: true
+      - name: Jinja2filter pytest
         run: |
-          # unittests for data_lineage
-          cd data_lineage && \
-             python -m unittest discover -s test -v ; \
-             pylint -v ; \
-             cd - ;
+          pytest -v ./Jinja2Filters/tests
 
-      - name: in fre-workflows environment, regrid-xy pytest and pylint
-        continue-on-error: true
+      - name: Jinja2filter pylint
         run: |
-          # pytest unittests for regrid-xy
-          cd app/regrid-xy && \
-             pytest -v -v -rx --cov=regrid_xy ./t ; \
-             pylint -v ; \
-             cd - ;
+          pylint -v --fail-under 7.00 ./Jinja2Filters
 
-      - name: in fre-workflows environment, make-timeseries pytest and pylint
+      - name: make-timeseries pytest (guarded against failure)
         continue-on-error: true
         run: |
-          # pytest unittests for make-timeseries
-          cd app/make-timeseries && \
-             pytest -v -v -rx --cov=bin/make-timeseries ./test ; \
-             pylint -v ; \
-             cd - ;
+          pytest -v -v -rx ./app/make-timeseries/test
 
-      - name: in fre-workflows environment, root directory pytest
+      - name: remap-pp-components pytest
+        run: |
+          cd ./app/remap-pp-components/ && \
+            pytest -v -v -rx --cov=./bin/remap-pp-components ./t ;
+            cd -
+
+      - name: remap-pp-components pylint
+        run: |
+          pylint -v --fail-under 9.0 app/remap-pp-components/bin/remap-pp-components
+
+      - name: PPANHandler pytest
+        run: |
+          pytest -v -v -rx ./tests/test_PPANHandler.py
+
+      - name: papiex_tooler pytest (guarded against failure)
         continue-on-error: true
         run: |
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests
+          pytest -v -v -rx ./tests/test_papiex_tooler.py
+
+      - name: papiex_ops and tool_ops_w_papiex pylint
+        run: |
+          pylint -v --fail-under 4.50 ./lib/python
+
+      - name: chunkchecker pytest (guarded against failure)
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_chunkcheck.py
+
+      - name: analysis_validator pytest (guarded against failure)
+        continue-on-error: true
+        run: |
+          pytest -v -v -rx ./tests/test_analysis_validator.py
+
+      - name: python macros pylint
+        run: |
+          pylint -v --fail-under 4.00 ./meta/lib/python/macros/
