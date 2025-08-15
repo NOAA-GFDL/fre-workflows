@@ -1,5 +1,5 @@
 '''
-this file shows the target ops of interest within the FRE/Canopy 
+this file shows the target ops of interest within the FRE/Canopy
 postprocessing repo. this file is strictly data.
 '''
 
@@ -7,7 +7,7 @@ postprocessing repo. this file is strictly data.
 #    [\s?|^] matches a single whitespace character if present
 #    or the beginning of a string
 # regex note 2 -
-#    (?:\s+|$) matches a single whitespace character, or the 
+#    (?:\s+|$) matches a single whitespace character, or the
 #    end of a line, or the end of a string, i think... see
 #    https://stackoverflow.com/questions/16519744
 
@@ -35,7 +35,7 @@ dmput = {'op_name'       : 'dmput',
           'r_string_w_if' : '{ export PAPIEX_TAGS="op:dmput;op_instance:OP_INSTANCE"; dmput ',
           'r_string_rose' : None
 }
-fregrid = {'op_name'      : 'fregrid',    
+fregrid = {'op_name'      : 'fregrid',
           'op_instance'  : 0,
           's_string'     : r'[\s?|^]regrid-xy(?:\s+|$)',
           'r_string'     : None,
@@ -70,35 +70,35 @@ mv = {'op_name'       : 'mv',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE"; mv ',
       'r_string_rose' : None
 }
-#ncatted = {'op_name'     : 'ncatted',    
+#ncatted = {'op_name'     : 'ncatted',
 #           'op_instance' : 0,
 #           's_string'    : None,
 #           'r_string'    : 'export PAPIEX_TAGS="op:ncatted;op_instance:OP_INSTANCE";',
 #           'r_string_w_if' : None,
 #           'r_string_rose' : None
 #}
-#nccopy = {'op_name'     : 'nccopy',    
+#nccopy = {'op_name'     : 'nccopy',
 #.         'op_instance' : 0,
 #          's_string'    : None,
 #          'r_string'    : 'export PAPIEX_TAGS="op:nccopy;op_instance:OP_INSTANCE";',
 #          'r_string_w_if' : None,
 #          'r_string_rose' : None
 #}
-#ncks = {'op_name'     : 'ncks',    
+#ncks = {'op_name'     : 'ncks',
 #.       'op_instance' : 0,
 #        's_string'    : None,
 #        'r_string'    : 'export PAPIEX_TAGS="op:ncks;op_instance:OP_INSTANCE";',
 #        'r_string_w_if' : None,
 #        'r_string_rose' : None
 #}
-#ncrcat = {'op_name'     : 'ncrcat',    
+#ncrcat = {'op_name'     : 'ncrcat',
 #          'op_instance' : 0,
 #          's_string'    : None,
 #          'r_string'    : 'export PAPIEX_TAGS="op:ncrcat;op_instance:OP_INSTANCE";',
 #          'r_string_w_if' : None,
 #          'r_string_rose' : None
 #}
-plevel = {'op_name'      : 'plevel',    
+plevel = {'op_name'      : 'plevel',
           'op_instance'  : 0,
           's_string'     : r'[\s?|^]mask-atmos-plevel(?:\s+|$)',
           'r_string'     : None,
@@ -112,7 +112,7 @@ rm = {'op_name'       : 'rm',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE"; rm ',
       'r_string_rose' : None
 }
-#splitvars = {'op_name'     : 'splitvars',    
+#splitvars = {'op_name'     : 'splitvars',
 #             'op_instance' : 0,
 #             's_string'    : None,
 #             'r_string'    : 'export PAPIEX_TAGS="op:splitvars;op_instance:OP_INSTANCE";',
@@ -140,9 +140,9 @@ timser = {'op_name'       : 'timser',
           'r_string_w_if' : None,
           'r_string_rose' : 'export PAPIEX_TAGS="op:timser;op_instance:OP_INSTANCE"; '
 }
-#untar = {'op_name'       : 'untar',    
+#untar = {'op_name'       : 'untar',
 #         'op_instance'   : 0,
-#         's_string'      : None, 
+#         's_string'      : None,
 #         'r_string'      : 'export PAPIEX_TAGS="op:untar;op_instance:OP_INSTANCE";',
 #         'r_string_w_if' : None,
 #         'r_string_rose' : None
@@ -171,11 +171,10 @@ op_list = [
 #    untar
 ]
 
-# for metadata annotations. 
+# for metadata annotations.
 jtag_dict = {'exp_name' : 'set name =',
              'exp_component' : '#INFO:component=',
              'exp_time' : 'set oname =',
              'exp_platform' : 'set platform =',
              'exp_target' : 'set target =',
              'exp_seg_months' : 'set segment_months ='}
-
