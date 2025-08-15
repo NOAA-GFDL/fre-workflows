@@ -26,8 +26,7 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: cylc lint (guarded against failure)
-        continue-on-error: true
+      - name: in fre-workflows environment, cylc lint
         run: |
           # lint .cylc workflow files
           cylc lint -v
@@ -44,16 +43,6 @@ jobs:
         continue-on-error: true
         run: |
           pytest -vv -rx ./app/make-timeseries/test
-
-      - name: remap-pp-components pytest
-        run: |
-          cd ./app/remap-pp-components/ && \
-            pytest -vv -rx --cov=./bin/remap-pp-components ./t ;
-            cd -
-
-      - name: remap-pp-components pylint
-        run: |
-          pylint -v --fail-under 9.0 app/remap-pp-components/bin/remap-pp-components
 
       - name: PPANHandler pytest
         run: |
