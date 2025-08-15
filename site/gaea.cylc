@@ -68,13 +68,13 @@
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load cray-hdf5 cray-netcdf cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load cdo gcp && mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
@@ -97,7 +97,7 @@
 
     [[CLEAN]]
         pre-script = "set -x"
-		
+
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = module load cdo && mkdir -p $outputDir
