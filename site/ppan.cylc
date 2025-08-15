@@ -59,12 +59,14 @@
                 ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
                 echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
                 ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
-                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/modify_refineDiag $hsmdate/\*
+                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} \
+                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
-            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} -w $TMPDIR/history_refineDiag $hsmdate
+            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} \
+                -w $TMPDIR/history_refineDiag $hsmdate
         """
 {% endif %}
 
@@ -85,8 +87,8 @@
         """
 
     [[DATA-CATALOG]]
-        pre-script = module load fre/{{ FRE_VERSION }} 
-        
+        pre-script = module load fre/{{ FRE_VERSION }}
+
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
