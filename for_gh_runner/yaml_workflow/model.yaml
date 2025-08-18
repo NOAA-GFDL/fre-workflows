@@ -13,8 +13,8 @@ fre_properties:
 
 experiments:
   - name: "test_pp"
-    settings: "settings.yaml"
     pp:
+      - "settings.yaml"
       - "pp1.yaml"
 #    analysis:
 #      - "an1.yaml"
