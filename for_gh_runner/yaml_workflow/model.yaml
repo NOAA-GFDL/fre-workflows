@@ -1,6 +1,6 @@
 fre_properties:
-  - &YAML_VERSION
-  - &FRE_STEM        !join [, *YAML_VERSION]
+  - &YAML_VERSION    "test01"
+  - &FRE_STEM        !join ["ppp_container/", *YAML_VERSION]
   - &PP_XYINTERP96   "180, 288"
   - &EXP_AMIP_START  "19800101T0000Z"
   - &EXP_AMIP_END    "19830101T0000Z"
