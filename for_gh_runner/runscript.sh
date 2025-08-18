@@ -26,23 +26,22 @@ get_user_input () {
     # User input
     echo Please Enter Experiment Name:
 #    read -r expname
-    echo "c96L65_am5f8d6r3_amip"
+    echo "Experiment name: c96L65_am5f8d6r3_amip"
 
     echo Please Enter Platform:
 #    read -r plat
-    echo "gfdl.ncrc5-intel22-classic"
+    echo "Platform: gfdl.ncrc5-intel22-classic"
 
     echo Please Enter Target:
 #    read -r targ
-    echo "debug"
+    echo "Target: debug"
 
     echo Please Enter Path to model yaml file:
 #    read -r yamlfile
-    echo "/contrib/Ciheim.Brown/ppp/yaml_workflow/am5.yaml"
 
     expname="c96L65_am5f8d6r3_amip"
     plat="gfdl.ncrc5-intel22-classic"
-    targ="debug_reg"
+    targ="debug"
     yamlfile="/contrib/container-test/yaml_workflow/am5.yaml"
     name=${expname}__${plat}__${targ}
 }
@@ -82,19 +81,6 @@ fre_pp_steps () {
     rm -rf /mnt/cylc-src/${name}
     mkdir -p /mnt/cylc-src/${name}
     cp -r ./* /mnt/cylc-src/${name}
-
-#    case ${hostname} in
-#        *"pclusternoaa"*)
-#            echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
-#            mkdir -p /mnt/cylc-src/${name}
-#            cp -r ./* /mnt/cylc-src/${name}
-#            ;;
-#        *)
-#            echo -e "\nRunning fre pp checkout to create ${HOME}/cylc-src/${name} ...... "
-#            exit 0
-#            fre -v pp checkout -e ${expname} -p ${plat} -t ${targ}
-#            ;; 
-#    esac
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
