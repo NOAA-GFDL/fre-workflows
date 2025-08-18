@@ -29,21 +29,22 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
         continue-on-error: true
+
       - name: Print job exist status
         run: |
           err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/c96L65_am5f8d6r3_amip__gfdl.ncrc5-intel22-classic__debug_reg/log/job/))
 
-          # Check if list of error statuses is empty or not
+          # Check if list of error status is empty or not
           # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
           if [ ${#err_out_list[@]} -eq 0 ]; then
-              echo "No exit status ERR found"    
+              echo "CYLC_JOB_EXIT=ERR not found with in any task log."    
               exit 0
           else
               echo "\nEXIT STATUS ERR FOUND"
               for err in $err_out_list; do
                   echo "Printing job.out for ${err%/*} ..."
                   job_err_dir=$(echo "${err%/*}")
-                  cat "${job_err_dir}/job.out"
+                  cat "${job_err_dir}/job.err"
               done
               exit 1
           fi
