@@ -1,0 +1,14 @@
+netcdf atmos_static_scalar_1.bk {
+dimensions:
+        lat = 6 ;
+        lon = 7 ;
+variables:
+        float bk(lat, lon) ;
+                bk:long_name = "vertical coordinate sigma value" ;
+                bk:wrong_units = "wrong_unit" ;
+                bk:missing_value = 1.e+20f ;
+                bk:_FillValue = 1.e+20f ;
+                bk:cell_methods = "time: point" ;
+        float lat(lat) ;
+        float lon(lon) ;
+}
