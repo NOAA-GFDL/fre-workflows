@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from . import form_remap_dep
+from Jinja2Filters import form_remap_dep
 
 @pytest.fixture()
 def sample_yaml(tmp_path):
