@@ -39,10 +39,12 @@ get_user_input () {
     echo Please Enter Path to model yaml file:
 #    read -r yamlfile
 
-    expname="c96L65_am5f8d6r3_amip"
+    expname="test_pp"
     plat="gfdl.ncrc5-intel22-classic"
-    targ="debug"
-    yamlfile="/contrib/container-test/yaml_workflow/am5.yaml"
+    targ="test_pp"
+    yamlfile="./for_gh_runner/yaml_workflow/model.yaml"
+    ##on cloud
+    #"/contrib/container-test/yaml_workflow/am5.yaml"
     name=${expname}__${plat}__${targ}
 }
 
