@@ -27,9 +27,10 @@ def test_import_papiex_ops():
                      len(ops.op_list) > 0  ] )
 
 
-def test_simple_failing_command():
-    ''' check that setting/unsetting PAPIEX_TAGS around an op
-    will not touch the exit status of that op '''
+def test_running_a_simple_failing_command():
+    ''' run a simple script that fails in a control manner and make sure it fails in the intended manner.
+    the failure should occur with an exit code of 0 by design.'''
+    
     control_script_targ = SIMPLE_FAILING_BASH
     assert Path(control_script_targ).exists() #quick check
 
@@ -49,20 +50,26 @@ def test_simple_failing_command():
     control_out, control_err = None, None
     control_ret_code = None
     try:
+        # output is byte-code, have to decode 
         control_out, control_err = (
             f.decode() for f in control_proc.communicate(DEVNULL) )
         control_ret_code = control_proc.wait()
         print(f'control_out, control_err, control_ret_code = ' + \
-              '\n {control_out}, \n {control_err}, \n {control_ret_code}')
-        assert all( [ control_out is not None,
-                      control_err is not None,
-                      control_ret_code is not None ] )
+              f'\n {control_out}, \n{control_err}, \n{control_ret_code}')
+        assert all( [ control_out == '',
+                      control_err == "mv: cannot stat 'DNE_file': No such file or directory\n",
+                      control_ret_code == 0 ] )
     except OSError as exc:
         print('problem getting output from control proc')
         assert False
+        
 
+def test_tagging_a_simple_failing_command():
+    ''' check that setting/unsetting PAPIEX_TAGS around an op will not affect the outcome of the previous
+    failing script.'''
     # if we're testing over and over and '.notags' version exists,
     # clobber the tagged version and replace it with '.notags' version
+    control_script_targ = SIMPLE_FAILING_BASH
     test_script_targ = control_script_targ + '.tags'
     if Path(test_script_targ).exists():
         Path(test_script_targ).unlink()
@@ -87,6 +94,7 @@ def test_simple_failing_command():
         assert False
 
     try:
+        # output is byte-code, have to decode 
         out, err = (
             f.decode() for f in test_proc.communicate(DEVNULL) )
         ret_code = test_proc.wait()
@@ -96,10 +104,9 @@ def test_simple_failing_command():
         assert False
 
     # check that the script output, all of it, is unchanged.
-    assert all ( [ control_out == out,
-                   control_err == err,
-                   control_ret_code == 0,
-                   control_ret_code == ret_code ] )
+    assert all ( [ out == '',
+                   err == "mv: cannot stat 'DNE_file': No such file or directory\n",
+                   ret_code == 0 ] )
 
 
 def test_check_simple_failing_command_for_diff():
