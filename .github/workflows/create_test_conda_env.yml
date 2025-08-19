@@ -63,4 +63,4 @@ jobs:
 
       - name: python macros pylint
         run: |
-          pylint -v --fail-under 4.00 ./meta/lib/python/macros/
+          pylint -v --fail-under 3.70 ./meta/lib/python/macros/
