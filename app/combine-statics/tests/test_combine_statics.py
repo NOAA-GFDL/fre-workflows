@@ -35,11 +35,11 @@ COMBINE_STATICS_OUT = f"{TEST_DIR}/test-output/combine-statics-output"
 if Path(NCGEN_OUT).exists() and Path(COMBINE_STATICS_OUT).exists():
     shutil.rmtree(NCGEN_OUT)
     shutil.rmtree(COMBINE_STATICS_OUT)
-    Path(f"{NCGEN_OUT}/{COMP_NAME}/P0Y/P0Y").mkdir(parents=True,exist_ok=True)
-    Path(COMBINE_STATICS_OUT).mkdir(parents=True,exist_ok=True)
+    Path(f"{NCGEN_OUT}/{COMP_NAME}/P0Y/P0Y").mkdir(parents=True,exist_ok=False)
+    Path(COMBINE_STATICS_OUT).mkdir(parents=True,exist_ok=False)
 else:
-    Path(f"{NCGEN_OUT}/{COMP_NAME}/P0Y/P0Y").mkdir(parents=True,exist_ok=True)
-    Path(COMBINE_STATICS_OUT).mkdir(parents=True,exist_ok=True)
+    Path(f"{NCGEN_OUT}/{COMP_NAME}/P0Y/P0Y").mkdir(parents=True,exist_ok=False)
+    Path(COMBINE_STATICS_OUT).mkdir(parents=True,exist_ok=False)
 
 def test_cdl_file_exists():
     """
@@ -65,7 +65,7 @@ def test_ncgen_static_nc_files():
               f"{DATA_DIR}/{inputfile}"]
 
         # Run ncgen command
-        sp = subprocess.run( ex, check = False )
+        sp = subprocess.run( ex, check = True )
         # Check for
         # 1. ncgen command success
         # 2. nc file creation
@@ -94,7 +94,7 @@ def test_combine_statics(monkeypatch):
     monkeypatch.setenv("outputDir", COMBINE_STATICS_OUT)
 
     script = f"{COMBINE_STATICS_DIR}/bin/combine-statics"
-    sp = subprocess.run(script, check = False)
+    sp = subprocess.run(script, check = True)
 
     # Check for
     # 1. combine-statics script success
