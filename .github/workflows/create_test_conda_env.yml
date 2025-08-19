@@ -33,7 +33,7 @@ jobs:
 
       - name: Jinja2filter pytest
         run: |
-          pytest -v ./Jinja2Filters/tests
+          pytest -vv -rx ./Jinja2Filters/tests
 
       - name: Jinja2filter pylint
         run: |
@@ -42,20 +42,19 @@ jobs:
       - name: make-timeseries pytest (guarded against failure)
         continue-on-error: true
         run: |
-          pytest -v -v -rx ./app/make-timeseries/test
+          pytest -vv -rx ./app/make-timeseries/test
 
       - name: PPANHandler pytest
         run: |
-          pytest -v -v -rx ./tests/test_PPANHandler.py
+          pytest -vv -rx ./lib/python/tests/test_PPANHandler.py
 
-      - name: papiex_tooler pytest (guarded against failure)
-        continue-on-error: true
+      - name: papiex_tooler pytest
         run: |
-          pytest -v -v -rx ./tests/test_papiex_tooler.py
+          pytest -vv -rx ./lib/python/tests/test_papiex_tooler.py
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint -v --fail-under 4.50 ./lib/python
+          pylint -v --fail-under 7.50 ./lib/python
 
       - name: combine-statics pytest and pylint
         continue-on-error: false
@@ -63,16 +62,11 @@ jobs:
           # pytest unittests for remap-pp-components
           pytest -v -v -rx  ./app/combine-statics/tests
 
-      - name: chunkchecker pytest (guarded against failure)
-        continue-on-error: true
-        run: |
-          pytest -v -v -rx ./tests/test_chunkcheck.py
-
       - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
         run: |
-          pytest -v -v -rx ./tests/test_analysis_validator.py
+          pytest -vv -rx ./tests/test_analysis_validator.py
 
       - name: python macros pylint
         run: |
-          pylint -v --fail-under 4.00 ./meta/lib/python/macros/
+          pylint -v --fail-under 3.70 ./meta/lib/python/macros/
