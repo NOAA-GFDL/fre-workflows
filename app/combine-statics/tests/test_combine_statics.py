@@ -102,9 +102,9 @@ def test_combine_statics(monkeypatch):
     assert all ([sp.returncode == 0,
                  Path(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/atmos_static_scalar.static.nc").is_file()])
 
-def test_combine_statics_output_content():
+def test_combine_statics_output_cdomergecmd():
     """
-    Test that netcdf output file has cdo merge call with the correct files
+    Test that netcdf output file has expected cdo merge call with the correct files
     """
     outfile = "atmos_static_scalar.static.nc"
 
@@ -118,6 +118,38 @@ def test_combine_statics_output_content():
     assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in STATIC_DATA_NCFILE)])
 
+def test_combine_statics_output_content():
+    """
+    Test that netcdf output file has expected numerical content after merging
+    """
+    outfile = "atmos_static_scalar.static.nc"
+
+    # read output static netcdf file
+    with Dataset(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/{outfile}", 'r') as sf:
+        #lon_values = sf.variables['lon']
+        #lat_values = sf.variables['lat']
+        #print(type(lat_values[:]))
+
+        # Check lat/lon dimensions
+        for dim_name, dim_info in sf.dimensions.items():
+            # Make sure lat and lon are included in the dimensions
+            assert dim_name in ['lat', 'lon']
+
+            # Make sure the value of lat carried through the merge correctly
+            if dim_name == 'lat':
+                assert dim_info.size == 6
+            # Make sure the value of lon carried through the merge correctly
+            if dim_name == 'lon':
+                assert dim_info.size == 7
+
+        # Check lat/lon data
+        # assert lon_values[:] == range(0, 7, 1) 
+        # assert lat_values[:] == range(0, 6, 1)
+
+            
+
+#####assert only one lat and lon exists...........
+ 
 # TO-DO: Having issues trying to generate an expected failure when
 # adding a static netcdf file that should fail at cdo merge
 #def test_combine_statics_failure():
