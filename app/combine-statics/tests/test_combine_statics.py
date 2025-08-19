@@ -143,13 +143,10 @@ def test_combine_statics_output_content():
                 assert dim_info.size == 7
 
         # Check lat/lon data
-        # assert lon_values[:] == range(0, 7, 1) 
+        # assert lon_values[:] == range(0, 7, 1)
         # assert lat_values[:] == range(0, 6, 1)
 
-            
-
 #####assert only one lat and lon exists...........
- 
 # TO-DO: Having issues trying to generate an expected failure when
 # adding a static netcdf file that should fail at cdo merge
 #def test_combine_statics_failure():

@@ -65,7 +65,7 @@ jobs:
       - name: combine-statics pylint
         run: |
           # pytest unittests for remap-pp-components
-          pylint -v --fail-under  8.75 ./app/combine-statics
+          pylint -v --fail-under  8.90 ./app/combine-statics
 
       - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
