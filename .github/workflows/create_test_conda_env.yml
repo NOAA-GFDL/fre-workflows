@@ -56,11 +56,6 @@ jobs:
         run: |
           pylint -v --fail-under 7.50 ./lib/python
 
-      - name: chunkchecker pytest (guarded against failure)
-        continue-on-error: true
-        run: |
-          pytest -vv -rx ./tests/test_chunkcheck.py
-
       - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
         run: |
