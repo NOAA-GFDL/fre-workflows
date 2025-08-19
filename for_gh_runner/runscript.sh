@@ -40,11 +40,13 @@ get_user_input () {
 #    read -r yamlfile
 
     expname="test_pp"
-    plat="gfdl.ncrc5-intel22-classic"
-    targ="test_pp"
+    plat="ptest"
+    targ="ttest"
     yamlfile="./for_gh_runner/yaml_workflow/model.yaml"
+
     ##on cloud
     #"/contrib/container-test/yaml_workflow/am5.yaml"
+
     name=${expname}__${plat}__${targ}
 }
 
@@ -70,9 +72,9 @@ fre_pp_steps () {
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Stopping and removing ${name}... "
-#        cylc stop --now --now $name
-#        sleep 5
-#        echo "   Removing ${name}... "
+        #cylc stop --now --now $name
+        #sleep 5
+        #echo "   Removing ${name}... "
         cylc clean ${name}
     fi
 

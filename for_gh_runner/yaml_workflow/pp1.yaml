@@ -1,5 +1,6 @@
 postprocess:
   components:
+    ## regridded component
     - type: "atmos"
       sources:
         - history_file: "atmos_monthly"
@@ -8,6 +9,8 @@ postprocess:
       inputRealm: 'atmos'
       sourceGrid: 'cubedsphere'
       postprocess_on: True
+
+    ## native component
     - type: "atmos_scalar"
       sources:
         - history_file: "atmos_scalar"
