@@ -118,5 +118,6 @@ def test_combine_statics_output_content():
     assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in STATIC_DATA_NCFILE)])
 
-# TO-DO: Having issues trying to generate an expected failure when adding a static netcdf file that should fail at cdo merge 
+# TO-DO: Having issues trying to generate an expected failure when
+# adding a static netcdf file that should fail at cdo merge
 #def test_combine_statics_failure():

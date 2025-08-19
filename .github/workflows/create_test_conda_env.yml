@@ -56,11 +56,16 @@ jobs:
         run: |
           pylint -v --fail-under 7.50 ./lib/python
 
-      - name: combine-statics pytest and pylint
+      - name: combine-statics pytest
         continue-on-error: false
         run: |
           # pytest unittests for remap-pp-components
           pytest -v -v -rx  ./app/combine-statics/tests
+
+      - name: combine-statics pylint
+        run: |
+          # pytest unittests for remap-pp-components
+          pylint -v --fail-under  8.75 ./app/combine-statics
 
       - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
