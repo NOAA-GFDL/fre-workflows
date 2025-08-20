@@ -1,7 +1,6 @@
-<!-- 
-based on: https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing/-/raw/d51df76e537222a3c78405b5749fe59306e6d2bd/README.md
--->
-This repository holds code for defining tasks, applications, tools, workflows, and other aspects of the FRE2 postprocessing
+#fre-workflows
+
+This repository holds code for defining tasks, applications, tools, workflows, and other aspects of the next-generation FRE postprocessing
 ecosystem. 
 
 
@@ -24,7 +23,7 @@ cd fre-workflows
 
 
 <!-- ______________________________________________________________________________________________________________________ -->
-## 2. Load Cylc, the backend workflow engine used by FRE2
+## 2. Load Cylc, the backend workflow engine used by FRE
 [`cylc`](https://cylc.github.io/cylc-doc/stable/html/) lets us parse workflow template files (`*.cylc`) and their 
 configurations into modular, interdependent batch jobs. Tools used by those jobs (e.g. `fre-nctools` or `xarray`) should 
 be loaded by those jobs as part of their requirements and do not need to be loaded at this time unless desired.
