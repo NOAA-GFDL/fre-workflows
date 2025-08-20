@@ -687,14 +687,14 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-a
 
     [[COMBINE-TIMEAVGS]]
         script = """
-fre --debug combine-time-averages \
-    --in-dir = $inputDir/$component \
-    --out-dir = $outputDir \
-    --component = $component \
-    --begin = $begin \
-    --end = $end \
-    --frequency = $frequency \
-    --interval = $interval
+fre -vv app combine-time-averages \
+    --in-dir=$inputDir/$component \
+    --out-dir=$outputDir \
+    --component=$component \
+    --begin=$begin \
+    --end=$end \
+    --frequency=$frequency \
+    --interval=$interval
         """
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
