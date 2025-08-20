@@ -147,8 +147,8 @@ class Climatology(object):
         inherit = COMBINE-TIMEAVGS
         [[[environment]]]
             component = {self.component}
-            outputDir = $PP_DIR/$component/av
-            currentChunk = P{self.interval_years}Y
+            frequency = {self.frequency}
+            interval = P{self.interval_years}Y
             end = $(cylc cycle-point --print-year --offset={offset})
         """
 
