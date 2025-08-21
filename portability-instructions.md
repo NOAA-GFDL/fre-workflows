@@ -163,7 +163,7 @@ export TMPDIR=/path/to/TMPDIR/tmp
 ### 3. Transfer data
 - Globus online was used to transfer experiment data and any other necessary data (HISTORY_DIR, PP_GRID_SPEC)
 
-### 4. Canopy PP steps
+### 4. `fre-cli` PP steps
 #### ***4a. Configure Edits***
 i. pp.yaml
 ```
