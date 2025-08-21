@@ -11,15 +11,15 @@ To help understand the workflow configuration, the following diagram was created
 flowchart TD
 
 subgraph Parts of Workflow 
-%%C["Cylc Workflow:\nGeneral purpose workflow engine that \norchestrates cycling systems very efficiently\n\n(https://cylc.github.io/cylc-doc/stable/html/)"]
-F[Cylc workflow: \nflow.cylc]
-F-->S{{1. site\n-set user site\n-can be gfdl-ws, generic, or ppan}}
-F--->f1{{2. meta: \n-information about the workflow}} 
+%%C["Cylc Workflow:<br>General purpose workflow engine that <br>orchestrates cycling systems very efficiently<br><br>(https://cylc.github.io/cylc-doc/stable/html/)"]
+F[Cylc workflow: <br>flow.cylc]
+F-->S{{1. site<br>-set user site<br>-can be gfdl-ws, generic, or ppan}}
+F--->f1{{2. meta: <br>-information about the workflow}} 
 %%-.-> RS
-F---->f2{{"3. schedule: \n-settings for the scheduler\n-non-task-specific workflow configuration"}}
-F----->f3{{4.task parameters: \n-define task parameters values and parameter templates}}
-F------>f4{{5.scheduling: \n-allows cylc to determine when tasks are ready to run\n-define families\n-defines qualifiers}}
-F------->f5{{"6.runtime: \n-determines how, where, and what to execute when tasks are ready \n-can specify what script to execute, what compute resources to use, \n and how to run a task"}}
+F---->f2{{"3. schedule: <br>-settings for the scheduler<br>-non-task-specific workflow configuration"}}
+F----->f3{{4.task parameters: <br>-define task parameters values and parameter templates}}
+F------>f4{{5.scheduling: <br>-allows cylc to determine when tasks are ready to run<br>-define families<br>-defines qualifiers}}
+F------->f5{{"6.runtime: <br>-determines how, where, and what to execute when tasks are ready <br>-can specify what script to execute, what compute resources to use, <br>and how to run a task"}}
 end
 ```
 
@@ -45,11 +45,11 @@ end
 
 subgraph generic configuration
 s3-->E
-E[activate envs]-->e1[cylc.yaml: \n-cylc dependencies]
+E[activate envs]-->e1[cylc.yaml: <br>-cylc dependencies]
 s3-->genp[platform = localhost]
 end
 
-G[global.cylc] --> g1["-defines default Cylc Flow settings for a user or site \n-includes info for each platform used in the site configs"]
+G[global.cylc] --> g1["-defines default Cylc Flow settings for a user or site <br>-includes info for each platform used in the site configs"]
 wsp -.->G
 ppanp -.->G
 genp -..->G
