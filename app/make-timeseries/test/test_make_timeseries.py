@@ -126,6 +126,7 @@ def test_nccmp_make_timeseries(capfd, tmp_path):
     """
     nccmp= [ 'nccmp', '-d', f'{new_dir}/{component_new_file}', f'{rose_dir}/{component_new_file}' ]; 
     sp = subprocess.run(nccmp)
-    assert sp.returncode == 0
     captured = capfd.readouterr()
+    print("THE ERROR OUTPUT FOR NCCMP IS   ",captured)
+    assert sp.returncode == 0
 
