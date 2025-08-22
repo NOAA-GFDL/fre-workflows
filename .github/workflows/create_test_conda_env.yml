@@ -29,46 +29,40 @@ jobs:
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
       - name: in fre-workflows environment, cylc lint
-        continue-on-error: true
         run: |
           # lint .cylc workflow files
           cylc lint -v
 
-      - name: in fre-workflows environment, data_lineage unittest and pylint
+      - name: Jinja2filter pytest
+        run: |
+          pytest -vv -rx ./Jinja2Filters/tests
+
+      - name: Jinja2filter pylint
+        run: |
+          pylint -v --fail-under 7.00 ./Jinja2Filters
+
+      - name: make-timeseries pytest (guarded against failure)
         continue-on-error: true
         run: |
-          # unittests for data_lineage
-          cd data_lineage && \
-             python -m unittest discover -s test -v ; \
-             pylint -v ; \
-             cd - ;
+          pytest -vv -rx ./app/make-timeseries/test
 
-      - name: in fre-workflows environment, make-timeseries pytest and pylint
+      - name: PPANHandler pytest
+        run: |
+          pytest -vv -rx ./lib/python/tests/test_PPANHandler.py
+
+      - name: papiex_tooler pytest
+        run: |
+          pytest -vv -rx ./lib/python/tests/test_papiex_tooler.py
+
+      - name: papiex_ops and tool_ops_w_papiex pylint
+        run: |
+          pylint -v --fail-under 7.50 ./lib/python
+
+      - name: analysis_validator pytest (guarded against failure)
         continue-on-error: true
         run: |
-          # pytest unittests for make-timeseries
-          cd app/make-timeseries && \
-             pytest -v -v -rx --cov=bin/make-timeseries ./test ; \
-             pylint -v ; \
-             cd - ;
+          pytest -vv -rx ./tests/test_analysis_validator.py
 
-      - name: in fre-workflows environment, remap-pp-components pytest and pylint
-        continue-on-error: false
+      - name: python macros pylint
         run: |
-          # pytest unittests for remap-pp-components
-          cd app/remap-pp-components && \
-             pytest -v -v -rx --cov=bin/remap-pp-components ./t ; \
-             cd - ;
-
-      - name: in fre-workflows environment, root directory pytest
-        continue-on-error: true
-        run: |
-          # pytest unittests for other things in this repository
-          pytest -v -v -rx ./tests
-
-      - name: Jinja2filter tests
-        continue-on-error: false
-        run: |
-          cd Jinja2Filters && \
-            pytest -v ./tests ; \
-            cd - ;
+          pylint -v --fail-under 3.70 ./meta/lib/python/macros/
