@@ -22,6 +22,9 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+#update fre-cli env?
+pip install --upgrade fre-cli
+
 get_user_input () {
     # User input
     echo Please Enter Experiment Name:
