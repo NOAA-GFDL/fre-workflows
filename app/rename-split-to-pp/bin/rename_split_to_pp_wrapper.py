@@ -2,8 +2,10 @@
 #used for the pytest tests, intended to be replaced
 #once a full replacement for rename-split-to-pp exists
 
+import sys
 import os
 import subprocess
+import pprint
 
 def call_rename_split_to_pp(inputDir, outputDir, history_source, do_regrid):
     '''
@@ -16,11 +18,29 @@ def call_rename_split_to_pp(inputDir, outputDir, history_source, do_regrid):
     os.environ["inputDir"]  = inputDir
     os.environ["outputDir"] = outputDir
     os.environ["component"] = history_source
-    if do_regrid:
-        os.environ["use_subdirs"] = 1
+    print("do_regrid " + do_regrid)
+    if do_regrid == "True":
+        print("do_regrid is set to True")
+        os.environ["use_subdirs"] = "True"
+    #else:
+    #    os.environ["use_subdirs"] = "0"
     #rename-split-to-pp is a bash script    
-    app_loc = os.path.abspath("app/rename-split-to-pp/bin/rename-split-to-pp")
     ##and this file is currently located 3 directories up from the root of the repo
-    #thisloc = os.path.abspath(__file__)
-    out0,err0 = subprocess.run(app_loc, capture_output=True)
+    thisloc = os.path.abspath(__file__)
+    app_loc = os.path.dirname(thisloc) + "/rename-split-to-pp"
+    print("calling rename-split-to-pp")
+    out0 = subprocess.run(app_loc, capture_output=True)
+    pprint.pp(out0.stdout.split(b"\n"), width=240)
+    pprint.pp(out0.stderr.split(b"\n"), width=240)
+    #for el in out0.stdout:
+    #    print(el)
+    
+if __name__ == "__main__":
+    print(len(sys.argv))
+    if len(sys.argv) == 5:
+        call_rename_split_to_pp(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    else:
+        print("Wrong number of args: we need 4 for to call rename-split-to-pp, got " + str(len(sys.argv) - 1))
+        sys.exit(2)
+
     
