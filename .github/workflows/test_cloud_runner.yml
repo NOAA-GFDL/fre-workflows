@@ -50,4 +50,4 @@ jobs:
 ##To-do:
 # - upload job.out/job.err as artifacts
 # - figure out if container will be hosted on cloud or somehow pulled from registry
-#
+# - examine behavior of runner in draft vs not draft mode
