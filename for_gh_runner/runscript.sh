@@ -25,7 +25,6 @@ conda activate /app/cylc-flow-tools
 #update fre-cli env?
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
-fre app --help
 
 get_user_input () {
     # User input
@@ -82,6 +81,8 @@ fre_pp_steps () {
         #echo "   Removing ${name}... "
         cylc clean ${name}
     fi
+
+    fre app --help
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
