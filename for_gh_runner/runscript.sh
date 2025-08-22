@@ -24,9 +24,9 @@ conda activate /app/cylc-flow-tools
 
 #update fre-cli env?
 #pip install --upgrade fre-cli
-conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
+#conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
 fre app --help
-exit 0
+
 get_user_input () {
     # User input
     echo Please Enter Experiment Name:

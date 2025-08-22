@@ -10,6 +10,3 @@ dependencies:
   - conda-forge::rsync
   - conda-forge::make
   - conda-forge::vim
-  - conda-forge::pip
-  - pip:
-    - "--editable=git+https://github.com/NOAA-GFDL/fre-cli.git" 
