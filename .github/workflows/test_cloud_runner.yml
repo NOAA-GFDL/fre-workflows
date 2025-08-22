@@ -21,7 +21,7 @@ jobs:
                       --bind /contrib/container-test/grid_spec/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar
                       --bind /contrib/container-test"
 
-          container_path=/contrib/container-test/ppp-7-16-25.sif
+          container_path=/contrib/container-test/ppp_8-22.sif
           runscript_path=./for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
