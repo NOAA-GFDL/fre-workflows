@@ -47,4 +47,7 @@ jobs:
               exit 1
           fi
 
-##to-do: upload job.out/job.err as artifacts
+##To-do:
+# - upload job.out/job.err as artifacts
+# - figure out if container will be hosted on cloud or somehow pulled from registry
+#
