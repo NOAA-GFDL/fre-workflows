@@ -16,7 +16,10 @@ function process_files {
     fi
     
     files_processed_count=0
-    for file in $files; do
+    #$files is defined before process_files is called
+    echo $files
+    for file in ${files[@]}; do
+        echo $file
         # tiled or non-tiled
         if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
             date=$(echo $file | cut -d. -f1)
@@ -47,14 +50,20 @@ function process_files {
         timesteps=$(cdo ntime $file 2> /dev/null)
         # statics and files with one timestamp aren't handled well
         # cdo ntime reports 1 for statics, so need to use another call to distingush
-        if (( $timesteps == 1 )); then
-            # statics
-            if (( $(cdo ndate $file 2> /dev/null) == 0 )); then
+        # the comparisons at line 54 and 59 are very sensitive to (( vs (
+        if ( $timesteps == 1 ); then
+            # one timestep can mean 2 things: either you have a static file 
+            # (when frequency and chunksize are both 0)
+            # or you are dealing with a timeseries file that has one timestep
+            # and you need to look at the time_bnds to get them
+            if ( $(cdo ndate $file 2> /dev/null) == 0 ); then
+                #this is the static case
                 freq=P0Y
             else
-                # possibly no good way to do this other than time_bnds
+                # this is the timeseries case
+                # possibly no good way to get freq/chunksize other than time_bnds
                 if ! ncdump -v time_bnds $file; then
-                    err WARNING: Skipping file that has one timestep but no time_bnds for frequency detection
+                    err WARNING: Skipping timeseries file that has one timestep but no time_bnds for frequency detection
                     continue
                 else
                     d1=$(ncdump -t -v time_bnds $file | tail -n 2 | head -n 1 | cut -d, -f1 | sed 's/[";]//g' | sed 's/^ *//' | sed 's/ *$//' | tr ' ' T)
@@ -168,7 +177,9 @@ function process_files {
         fi
 
         mkdir -p $dir
-        if [[ -f $dir/$newfile ]]; then
+        #using a [[ here breaks the check for a new file in some cases, which breaks
+        #the linking step around line 185
+        if [ -f $dir/$newfile ]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
             if [[ -n $tile ]]; then
@@ -202,7 +213,7 @@ function process_files {
         files_processed_count=$((files_processed_count+1))
     done
     echo "${files_processed_count} files processed"
-    if $(( files_processed_count == 0)); then
+    if $(( files_processed_count == 0 )); then
         echo "Error in rename-split-to-pp: no files in input dir matched requirements for processing!"
         exit 1
     fi
@@ -251,7 +262,9 @@ cd $inputDir
 shopt -s extglob
 
 # Find and process the input files
-if [[ $use_subdirs ]]; then
+echo "use_subdirs:"
+echo $use_subdirs
+if [[ $use_subdirs == "True" ]]; then
     for subdir in $(ls); do
         pushd $subdir
         files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
@@ -273,6 +286,7 @@ if [[ $use_subdirs ]]; then
 else
     # target only the tile1 files for efficiency, at the cost of assuming there are 6
     files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
+    echo $files
 
     # Exit if no input files are found
     if [[ $files =~ \* ]]; then
