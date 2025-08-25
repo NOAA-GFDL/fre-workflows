@@ -118,6 +118,7 @@ def test_combine_statics_output_cdomergecmd():
     assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in STATIC_DATA_NCFILE)])
 
+#### CHECK NC FILE OUTPUT ####
 def test_combine_statics_output_content():
     """
     Test that netcdf output file has expected numerical content after merging
@@ -126,27 +127,31 @@ def test_combine_statics_output_content():
 
     # read output static netcdf file
     with Dataset(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/{outfile}", 'r') as sf:
-        #lon_values = sf.variables['lon']
-        #lat_values = sf.variables['lat']
-        #print(type(lat_values[:]))
-
-        # Check lat/lon dimensions
+        ## Check dimensions/dimension values
         for dim_name, dim_info in sf.dimensions.items():
-            # Make sure lat and lon are included in the dimensions
             assert dim_name in ['lat', 'lon']
 
-            # Make sure the value of lat carried through the merge correctly
+            # Make sure the value of lat/lon carried through the merge correctly
             if dim_name == 'lat':
                 assert dim_info.size == 6
-            # Make sure the value of lon carried through the merge correctly
             if dim_name == 'lon':
                 assert dim_info.size == 7
 
-        # Check lat/lon data
-        # assert lon_values[:] == range(0, 7, 1)
-        # assert lat_values[:] == range(0, 6, 1)
+        ## Check variables/variable types
+        nc_varlist = sf.variables   #var_list
+
+        for v in ['lat', 'lon', 'bk', 'ak', 'ck']: #variables from the 3 nc files
+            # Ensure variables include var_list
+            assert v in nc_varlist
+
+            # Ensure data types of variables are float32
+            nc_vartype = nc_varlist[f'{v}'].dtype
+            assert nc_vartype == 'float32'
+
+        # Check data/data values
+        #nc_varlist[f'{v}'][:]
 
 #####assert only one lat and lon exists...........
 # TO-DO: Having issues trying to generate an expected failure when
-# adding a static netcdf file that should fail at cdo merge
+#        adding a static netcdf file that should fail at cdo merge
 #def test_combine_statics_failure():
