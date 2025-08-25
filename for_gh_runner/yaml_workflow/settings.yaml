@@ -1,0 +1,23 @@
+# directories shared across tools
+directories:
+  history_dir:        "/mnt/history"
+  pp_dir:             "/mnt/pp"
+#  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
+  ptmp_dir:           "/mnt/ptmp"
+
+postprocess:
+  settings:
+    history_segment:         "P1Y"
+    site:                    "generic"
+    pp_chunks:               [*PP_CHUNK96]
+    pp_start:                *EXP_AMIP_START
+    pp_stop:                 *EXP_AMIP_END
+    pp_grid_spec:            *GRID_SPEC96
+  switches:
+    do_timeavgs:             True
+    clean_work:              True
+    do_refinediag:           False
+    do_atmos_plevel_masking: False
+    do_preanalysis:          False
+    do_analysis:             False
+    do_analysis_only:        False
