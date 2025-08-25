@@ -51,13 +51,26 @@ function process_files {
         # statics and files with one timestamp aren't handled well
         # cdo ntime reports 1 for statics, so need to use another call to distingush
         # the comparisons at line 54 and 59 are very sensitive to (( vs (
-        if ( $timesteps == 1 ); then
+        echo $timesteps
+        if (( ${timesteps} == 1 )); then
             # one timestep can mean 2 things: either you have a static file 
             # (when frequency and chunksize are both 0)
             # or you are dealing with a timeseries file that has one timestep
             # and you need to look at the time_bnds to get them
-            if ( $(cdo ndate $file 2> /dev/null) == 0 ); then
-                #this is the static case
+            echo $(cdo ndate $file 2)
+            #Counts every variable in the file that has time as a record dimension. For a static file, 
+            #this should be 0 or 1; for a timeseries file, this will be greater than 1.
+            #This assumes that we will have a record dimension named time - but frankly, 
+            #that's an assumption we're already making when we search for time_bnds
+            n_time_vars=$(ncks --trd -m $file | grep "(Record coordinate is time)" | wc -l)
+            if [[ "${n_time_vars}" -ge "1" ]]; then
+                is_static=1
+            else
+                is_static=0
+            fi
+            #if (( $(cdo ndate $file 2> /dev/null) == 0 )); then
+            if [ $is_static == 1 ]; then
+                #this is the static case - you do not have a second timestep so this is 0
                 freq=P0Y
             else
                 # this is the timeseries case
@@ -179,7 +192,7 @@ function process_files {
         mkdir -p $dir
         #using a [[ here breaks the check for a new file in some cases, which breaks
         #the linking step around line 185
-        if [ -f $dir/$newfile ]; then
+        if [[ -f $dir/$newfile ]]; then
             err Output location $dir/$newfile already exists, not overwriting
         else
             if [[ -n $tile ]]; then
@@ -213,7 +226,7 @@ function process_files {
         files_processed_count=$((files_processed_count+1))
     done
     echo "${files_processed_count} files processed"
-    if $(( files_processed_count == 0 )); then
+    if [ $files_processed_count == 0 ]; then
         echo "Error in rename-split-to-pp: no files in input dir matched requirements for processing!"
         exit 1
     fi
@@ -343,4 +356,3 @@ fi
 
 echo Natural end of the shard renaming
 exit 0
-

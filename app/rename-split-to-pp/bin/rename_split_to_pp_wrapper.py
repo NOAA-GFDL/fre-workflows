@@ -32,8 +32,7 @@ def call_rename_split_to_pp(inputDir, outputDir, history_source, do_regrid):
     out0 = subprocess.run(app_loc, capture_output=True)
     pprint.pp(out0.stdout.split(b"\n"), width=240)
     pprint.pp(out0.stderr.split(b"\n"), width=240)
-    #for el in out0.stdout:
-    #    print(el)
+    return out0.returncode
     
 if __name__ == "__main__":
     print(len(sys.argv))
