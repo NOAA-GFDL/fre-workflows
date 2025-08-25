@@ -75,14 +75,12 @@ fre_pp_steps () {
     # experiment cleaned if previously installed
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
-        echo "   Stopping and removing ${name}... "
+        #echo "   Stopping and removing ${name}... "
         #cylc stop --now --now $name
         #sleep 5
-        #echo "   Removing ${name}... "
+        echo "   Removing ${name}... "
         cylc clean ${name}
     fi
-
-    fre app --help
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
