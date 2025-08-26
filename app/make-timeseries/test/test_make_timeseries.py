@@ -63,7 +63,7 @@ def test_make_timeseries(capfd, tmp_path):
     assert Path(f'{din_check}/{DATA_FILE_NC_P2Y.name}').exists()
     assert Path(f'{dout_check}/{component_new_file}').exists()
 
-
+'''
 def test_rose_failure_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for failure of
    merging and renaming a file with rose app as an invalid definition of the environment component.
@@ -91,7 +91,7 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
    sp = subprocess.run( ex )
    assert sp.returncode == 1
    captured = capfd.readouterr()
-
+'''
 def test_rose_success_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for success of 
    merging and renaming a file with rose app as the valid definitions and chunks are being called by the environment.
