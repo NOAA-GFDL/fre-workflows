@@ -6,8 +6,11 @@ import re
 import subprocess
 import shutil
 from pathlib import Path
-from netCDF4 import Dataset
-
+#from netCDF4 import Dataset
+import xarray as xr
+import numpy as np
+import pytest
+ 
 # Define test dirs
 COMBINE_STATICS_DIR = Path(__file__).resolve().parents[1]
 TEST_DIR = Path(f"{COMBINE_STATICS_DIR}/tests")
@@ -102,15 +105,33 @@ def test_combine_statics(monkeypatch):
     assert all ([sp.returncode == 0,
                  Path(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/atmos_static_scalar.static.nc").is_file()])
 
-def test_combine_statics_output_cdomergecmd():
+@pytest.fixture
+def load_dataset():
+    """
+    Load and open the final netcdf file using xarray
+    """
+    outfile = "atmos_static_scalar.static.nc"
+
+    # read output static netcdf file
+    # xarray dataset object
+    sf = xr.open_dataset(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/{outfile}")
+    # sf available to use for test
+    yield sf
+    # close dataset
+    sf.close()
+
+#### CHECK NC FILE OUTPUT ####
+def test_combine_statics_output_cdomergecmd(load_dataset):
     """
     Test that netcdf output file has expected cdo merge call with the correct files
     """
     outfile = "atmos_static_scalar.static.nc"
 
-    # read output static netcdf file
-    with Dataset(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/{outfile}", 'r') as sf:
-        history_str = sf.__dict__.get("history")
+    # Use pytest fixture to open netcdf file
+    static_file = load_dataset
+
+    # sf.attrs: dict
+    history_str = static_file.attrs['history']
 
     ncfiles = " ".join(STATIC_DATA_NCFILE)
     expected_cdo_str = f"cdo -O merge {ncfiles} .*{outfile}"
@@ -118,38 +139,62 @@ def test_combine_statics_output_cdomergecmd():
     assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in STATIC_DATA_NCFILE)])
 
-#### CHECK NC FILE OUTPUT ####
-def test_combine_statics_output_content():
+def test_combine_statics_output_dimensions(load_dataset):
     """
-    Test that netcdf output file has expected numerical content after merging
+    Test for expected dimnesions and dimensions values in 
+    final netcdf file.
     """
-    outfile = "atmos_static_scalar.static.nc"
+    # Use pytest fixture to open netcdf file
+    static_file = load_dataset
+    
+    ## Check dimensions/dimension values ##
+    # sf.dims - xarray class
+    assert "lat" in static_file.dims
+    assert "lon" in static_file.dims
 
-    # read output static netcdf file
-    with Dataset(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/{outfile}", 'r') as sf:
-        ## Check dimensions/dimension values
-        for dim_name, dim_info in sf.dimensions.items():
-            assert dim_name in ['lat', 'lon']
+    # sf.sizes: sizes object; specialized dictionary of dimensions sizes
+    assert static_file.sizes["lat"] == 4
+    assert static_file.sizes["lon"] == 5 
 
-            # Make sure the value of lat/lon carried through the merge correctly
-            if dim_name == 'lat':
-                assert dim_info.size == 6
-            if dim_name == 'lon':
-                assert dim_info.size == 7
+def test_combine_statics_output_variables(load_dataset):
+    """
+    Test for expected variables (and correct variable types)
+    are included in final netcdf file.
+    """
+    # Use pytest fixture to open netcdf file
+    static_file = load_dataset
 
-        ## Check variables/variable types
-        nc_varlist = sf.variables   #var_list
+    ## Check variables/variable types ##
+    # sf.data_vars - xarray class
+    nc_varlist = static_file.data_vars
 
-        for v in ['lat', 'lon', 'bk', 'ak', 'ck']: #variables from the 3 nc files
-            # Ensure variables include var_list
-            assert v in nc_varlist
+    for v in ['bk', 'ak', 'ck']: #variables from the 3 nc files
+        # Ensure variables include var_list
+        assert v in nc_varlist
 
-            # Ensure data types of variables are float32
-            nc_vartype = nc_varlist[f'{v}'].dtype
-            assert nc_vartype == 'float32'
+        # Ensure data types of variables are float32
+        nc_vartype = nc_varlist[f'{v}'].dtype
+        assert nc_vartype == 'float32'
+        #print(f"{v} is of type: {nc_vartype}")
 
-        # Check data/data values
-        #nc_varlist[f'{v}'][:]
+def test_combine_statics_output_data(load_dataset):
+    """
+    Test for expected data values in final netcdf file. 
+    """
+    # Use pytest fixture to open netcdf file
+    static_file = load_dataset
+
+    nc_varlist = static_file.data_vars
+
+    expected_data = np.array([[1, 2, 3, 4, 5],
+                             [6, 7, 8, 9, 10],
+                             [11, 12, 13, 14, 15],
+                             [16, 17, 18, 19, 20]])
+
+    for v in ['bk', 'ak', 'ck']:
+        val = nc_varlist[f'{v}'].values
+        assert (val == expected_data).all()
+        #print(f"{v} has values: {val}")
 
 #####assert only one lat and lon exists...........
 # TO-DO: Having issues trying to generate an expected failure when
