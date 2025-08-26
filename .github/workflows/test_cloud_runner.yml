@@ -23,30 +23,33 @@ jobs:
 
           container_path=/contrib/container-test/ppp_8-22.sif
           runscript_path=./for_gh_runner/runscript.sh
+          workflow_id=test_pp__ptest__ttest
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-        continue-on-error: true
 
-      - name: Print job exist status
-        run: |
-          # Search for if there is an ERR status for any task; if so, add grep output to a list
-          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/))
+          cylc cat-log ${workflow_id}
+        continue-on-error: False
 
-          # Check if list of error status is empty or not
-          # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
-          # If list is not empty, and ERR status was found -> print the job.err output
-          if [ ${#err_out_list[@]} -eq 0 ]; then
-              echo "CYLC_JOB_EXIT=ERR not found with in any task log."    
-              exit 0
-          else
-              echo "\nEXIT STATUS ERR FOUND"
-              for err in $err_out_list; do
-                  echo "Printing job.err for ${err%/*} ..."
-                  job_err_dir=$(echo "${err%/*}")
-                  cat "${job_err_dir}/job.err"
-              done
-              exit 1
-          fi
+#      - name: Print job exist status
+#        run: |
+#          # Search for if there is an ERR status for any task; if so, add grep output to a list
+#          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/))
+#
+#          # Check if list of error status is empty or not
+#          # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
+#          # If list is not empty, and ERR status was found -> print the job.err output
+#          if [ ${#err_out_list[@]} -eq 0 ]; then
+#              echo "CYLC_JOB_EXIT=ERR not found with in any task log."    
+#              exit 0
+#          else
+#              echo "\nEXIT STATUS ERR FOUND"
+#              for err in $err_out_list; do
+#                  echo "Printing job.err for ${err%/*} ..."
+#                  job_err_dir=$(echo "${err%/*}")
+#                  cat "${job_err_dir}/job.err"
+#              done
+#              exit 1
+#          fi
 
 ##To-do:
 # - upload job.out/job.err as artifacts
