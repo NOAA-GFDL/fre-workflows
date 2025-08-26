@@ -10,7 +10,7 @@ from pathlib import Path
 import xarray as xr
 import numpy as np
 import pytest
- 
+
 # Define test dirs
 COMBINE_STATICS_DIR = Path(__file__).resolve().parents[1]
 TEST_DIR = Path(f"{COMBINE_STATICS_DIR}/tests")
@@ -105,7 +105,7 @@ def test_combine_statics(monkeypatch):
     assert all ([sp.returncode == 0,
                  Path(f"{COMBINE_STATICS_OUT}/{COMP_NAME}/atmos_static_scalar.static.nc").is_file()])
 
-@pytest.fixture
+@pytest.fixture(name="load_ncfile")
 def load_dataset():
     """
     Load and open the final netcdf file using xarray
@@ -121,14 +121,14 @@ def load_dataset():
     sf.close()
 
 #### CHECK NC FILE OUTPUT ####
-def test_combine_statics_output_cdomergecmd(load_dataset):
+def test_combine_statics_output_cdomergecmd(load_ncfile):
     """
     Test that netcdf output file has expected cdo merge call with the correct files
     """
     outfile = "atmos_static_scalar.static.nc"
 
     # Use pytest fixture to open netcdf file
-    static_file = load_dataset
+    static_file = load_ncfile
 
     # sf.attrs: dict
     history_str = static_file.attrs['history']
@@ -139,14 +139,14 @@ def test_combine_statics_output_cdomergecmd(load_dataset):
     assert all ([re.search(expected_cdo_str, history_str),
                  all(comp in history_str for comp in STATIC_DATA_NCFILE)])
 
-def test_combine_statics_output_dimensions(load_dataset):
+def test_combine_statics_output_dimensions(load_ncfile):
     """
     Test for expected dimnesions and dimensions values in 
     final netcdf file.
     """
     # Use pytest fixture to open netcdf file
-    static_file = load_dataset
-    
+    static_file = load_ncfile
+
     ## Check dimensions/dimension values ##
     # sf.dims - xarray class
     assert "lat" in static_file.dims
@@ -154,15 +154,15 @@ def test_combine_statics_output_dimensions(load_dataset):
 
     # sf.sizes: sizes object; specialized dictionary of dimensions sizes
     assert static_file.sizes["lat"] == 4
-    assert static_file.sizes["lon"] == 5 
+    assert static_file.sizes["lon"] == 5
 
-def test_combine_statics_output_variables(load_dataset):
+def test_combine_statics_output_variables(load_ncfile):
     """
     Test for expected variables (and correct variable types)
     are included in final netcdf file.
     """
     # Use pytest fixture to open netcdf file
-    static_file = load_dataset
+    static_file = load_ncfile
 
     ## Check variables/variable types ##
     # sf.data_vars - xarray class
@@ -177,12 +177,12 @@ def test_combine_statics_output_variables(load_dataset):
         assert nc_vartype == 'float32'
         #print(f"{v} is of type: {nc_vartype}")
 
-def test_combine_statics_output_data(load_dataset):
+def test_combine_statics_output_data(load_ncfile):
     """
     Test for expected data values in final netcdf file. 
     """
     # Use pytest fixture to open netcdf file
-    static_file = load_dataset
+    static_file = load_ncfile
 
     nc_varlist = static_file.data_vars
 
