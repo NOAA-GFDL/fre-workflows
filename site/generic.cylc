@@ -11,7 +11,6 @@
         execution time limit = PT4H
         platform = localhost
         [[[events]]]
-            mail events = startup, shutdown, abort, workflow timeout, stall, inactivity timeout
             submission timeout = P1D
         [[[environment]]]
             COPY_TOOL=cp
