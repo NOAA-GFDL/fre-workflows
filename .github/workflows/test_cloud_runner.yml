@@ -23,15 +23,17 @@ jobs:
 
           container_path=/contrib/container-test/ppp_8-22.sif
           runscript_path=./for_gh_runner/runscript.sh
-          workflow_id=test_pp__ptest__ttest
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
-          cylc cat-log ${workflow_id}
-        continue-on-error: False
+        continue-on-error: True
 
-#      - name: Print job exist status
-#        run: |
+      - name: Print workflow scheduler log
+        run: |
+          workflow_id=test_pp__ptest__ttest
+
+          cylc cat-log ${workflow_id}
+
 #          # Search for if there is an ERR status for any task; if so, add grep output to a list
 #          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/))
 #
@@ -51,6 +53,12 @@ jobs:
 #              exit 1
 #          fi
 
+      - name: Upload workflow-run log files
+        uses: actions/upload-artifact@v4
+        with:
+          name: fre-workflow-logs 
+          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest
+          if-no-files-found: error
 ##To-do:
 # - upload job.out/job.err as artifacts
 # - figure out if container will be hosted on cloud or somehow pulled from registry
