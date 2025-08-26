@@ -16,7 +16,7 @@ jobs:
           echo "Currently in:"
           pwd
 
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt
+          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
                       --bind /contrib/container-test/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar
                       --bind /contrib/container-test"
