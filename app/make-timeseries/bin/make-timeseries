@@ -33,6 +33,10 @@ function process_timeseries {
         # Loop over variables within suitable input directories
         for var in $(ls | xargs -n1 | cut -d. -f3 | sort | uniq); do
             echo Evaluating variable $var
+	    echo "ls test below"
+            test=$(pwd)
+            echo $test
+	    ls ../
 
             # tiled or non-tiled
             if ls $component.*.$var.tile1.nc; then
@@ -43,7 +47,7 @@ function process_timeseries {
 
             # for tiled files, use tile1 for the time range comparisons
             files=()
-            for file in $(ls *.$var(.tile1).nc); do
+            for file in $(ls *.$var?(.tile1).nc); do
                 date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
                 if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
                     files+=($file)
