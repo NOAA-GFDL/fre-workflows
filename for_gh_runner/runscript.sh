@@ -112,10 +112,7 @@ fre_pp_steps () {
     echo "AHHHHHHHHHHHHH"
     echo $?
     # If cylc play was unsuccesful, show log
-    if [ $? -ne 0 ]; then
-        echo "PP workflow run failed...extracting log"
-        cylc cat-log ${name}
-    fi
+    cylc cat-log ${name}
 }
 
 main () {
