@@ -5,7 +5,7 @@ note these instructions will be/are from https://github.com/NOAA-GFDL/fre-cli/tr
 1. Checkout postprocessing workflow template
 This will clone the postprocessing repository into `/home/$USER/cylc-src/EXPNAME__PLATFORM__TARGET`.
 ```
-module load fre/canopy
+module load fre/2025.04
 fre pp checkout -e EXPNAME -p PLATFORM -t TARGET
 ```
 
