@@ -49,7 +49,6 @@ function process_timeseries {
 					files+=($file)
 				fi
 			done
-            fi
 
             if (( ${#files[@]} != $expectedChunks )); then
                 # Not sure what to do here- this is unexpected to us but possibly expected by user
