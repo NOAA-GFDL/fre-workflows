@@ -32,6 +32,7 @@ function process_timeseries {
 
         # Loop over variables within suitable input directories
         for var in $(ls | xargs -n1 | cut -d. -f3 | sort | uniq); do
+            echo Evaluating variable $var
 
             # tiled or non-tiled
             if ls $component.*.$var.tile1.nc; then
