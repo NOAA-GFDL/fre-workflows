@@ -1,5 +1,8 @@
 name: run_ppp
-on: [push]
+on:
+  pull_request:
+    branches:
+      - main
 # cancel running jobs if theres a newer push
 #concurrency:
 #  group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,18 +17,19 @@ jobs:
         run: |
           # Print pwd then run script
           echo "Currently in:"
-          pwd
+          cwd=$(pwd)
+          echo $cwd
 
+          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
                       --bind /contrib/container-test/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/c96_OM4_025_grid_No_mg_drag_v20160808.tar:/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar
+                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
 
           container_path=/contrib/container-test/ppp_8-22.sif
-          runscript_path=./for_gh_runner/runscript.sh
+          runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-
         continue-on-error: True
 
       - name: Upload workflow-run log files
@@ -35,7 +39,12 @@ jobs:
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
-      - name: Print failed tasks
+      - name: Print any succeeded tasks
+        run: |
+          # List tasks that have succeeded in the workflow
+          grep "(received)succeeded" /contrib/container-test/ppp-setup/log.out
+
+      - name: Print any failed tasks
         run: |
           # Search for if there is an ERR status for any task
           if grep -q "failed/ERR" /contrib/container-test/ppp-setup/log.out; then
@@ -47,6 +56,5 @@ jobs:
           echo "Workflow ran successfully"
 
 ##To-do:
-# - upload job.out/job.err as artifacts
 # - figure out if container will be hosted on cloud or somehow pulled from registry
 # - examine behavior of runner in draft vs not draft mode
