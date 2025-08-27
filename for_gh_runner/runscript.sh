@@ -67,6 +67,13 @@ create_dirs () {
     done
 }
 
+check_exit_status () {
+    if [ $? -ne 0 ]; then
+        echo "$1 failed"
+        exit 1
+    fi
+}
+
 fre_pp_steps () {
 ###### FRE-CLI STEPS ######
     # experiment cleaned if previously installed
@@ -86,24 +93,25 @@ fre_pp_steps () {
     rm -rf /mnt/cylc-src/${name}
     mkdir -p /mnt/cylc-src/${name}
     cp -r ./* /mnt/cylc-src/${name}
+    check_exit_status "mock checkout (cp)"
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
     
     ## Configure the rose-suite and rose-app files for the workflow
-    echo -e "\nConfiguring the rose-suite and rose-app files ..."
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
     fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
+    check_exit_status "configure-yaml"
 
     ## Validate the configuration files
-    echo -e "\nValidating rose-suite and rose-app configuration files for workflow ... "
     echo -e "\nRunning fre pp validate to validate rose-suite and rose-app configuration files for workflow ... "
     fre -v pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validate, no kill"
+    check_exit_status "validate"
 
     # Install
-    echo -e "\nInstalling the workflow in ${HOME}/cylc-run/${name} ... "
     echo -e "\nRunning fre pp install to instal the workflow in ${HOME}/cylc-run/${name} ... "
     fre -v pp install -e ${expname} -p ${plat} -t ${targ}
+    check_exit_status "install"
 
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
