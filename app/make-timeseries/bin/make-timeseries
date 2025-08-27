@@ -36,14 +36,16 @@ function process_timeseries {
 	    echo "ls test below"
             test=$(pwd)
             echo $test
-	    ls ../
 
             # tiled or non-tiled
             if ls $component.*.$var.tile1.nc; then
                 is_tiled=1
+		tiled_ls=$(ls $component.*.$var.tile1.nc)
+		echo $tiled_ls
             else
                 is_tiled=""
             fi
+	    echo is_tiled
 
 	            # for tiled files, use tile1 for the time range comparisons
 			if is_tiled = "1"; then
