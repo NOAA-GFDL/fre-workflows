@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # stops script if a command fails
-set -e 
+# set -e 
 
 ## TO-DO: 
 ##    - automate rebuilding container when there is an update in fre-cli

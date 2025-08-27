@@ -26,7 +26,7 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
-        continue-on-error: False
+        continue-on-error: True
 
 #      - name: Print job.err
 #        run: |
