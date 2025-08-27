@@ -109,6 +109,8 @@ fre_pp_steps () {
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
 
+    echo "AHHHHHHHHHHHHH"
+    echo $?
     # If cylc play was unsuccesful, show log
     if [ $? -ne 0 ]; then
         echo "PP workflow run failed...extracting log"
