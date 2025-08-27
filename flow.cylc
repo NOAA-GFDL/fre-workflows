@@ -389,6 +389,7 @@
             echo Utilities:
             type hsmget
             type cylc
+            exit 1
             #Verify history directory exists and is a directory
             if [[ ! -d $historyDir ]]; then
                 echo "Error: Archive directory ${historyDir} does not exist or isnt a directory"
