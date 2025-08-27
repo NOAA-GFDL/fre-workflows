@@ -46,7 +46,7 @@ function process_timeseries {
             fi
 
 	            # for tiled files, use tile1 for the time range comparisons
-			if is_tiled == 1; then
+			if is_tiled = "1"; then
 	            files=()
 	            for file in $(ls *.$var?(.tile1).nc); do
 	                date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
