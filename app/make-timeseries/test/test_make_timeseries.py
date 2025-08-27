@@ -120,7 +120,7 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
    sp = subprocess.run( ex )
    captured = capfd.readouterr()
    print("TEST SUCCESS OUTPUT IS HERE    ", captured)
-   subprocess.run( ex )
+   print(subprocess.run( ex ))
    assert sp.returncode == 0
 
 def test_nccmp_make_timeseries(capfd, tmp_path):
