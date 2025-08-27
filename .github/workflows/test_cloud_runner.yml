@@ -28,17 +28,24 @@ jobs:
 
         continue-on-error: True
 
-      - name: Print failed tasks
-        run: |
-          # Search for if there is an ERR status for any task; if so, add grep output to a list
-          grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
-
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
         with:
-          name: fre-workflow-logs 
+          name: fre-workflow-logs
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
+
+      - name: Print failed tasks
+        run: |
+          # Search for if there is an ERR status for any task
+          if grep -q "failed/ERR" /contrib/container-test/ppp-setup/log.out; then
+              echo "Task failures found: CHECK THE LOG FILES UPLOADED AS ARTIFACTS"
+              grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
+              exit 1
+          fi
+
+          echo "Workflow ran successfully"
+
 ##To-do:
 # - upload job.out/job.err as artifacts
 # - figure out if container will be hosted on cloud or somehow pulled from registry
