@@ -26,14 +26,10 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
-        continue-on-error: True
+        continue-on-error: False
 
-      - name: Print workflow scheduler log
-        run: |
-          workflow_id=test_pp__ptest__ttest
-
-          cylc cat-log ${workflow_id}
-
+#      - name: Print job.err
+#        run: |
 #          # Search for if there is an ERR status for any task; if so, add grep output to a list
 #          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/))
 #

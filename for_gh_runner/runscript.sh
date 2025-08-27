@@ -29,9 +29,6 @@ conda activate /app/cylc-flow-tools
 get_user_input () {
     # User input
     echo Please Enter Experiment Name:
-#    read -r expname
-    echo "Experiment name: c96L65_am5f8d6r3_amip"
-
     echo Please Enter Platform:
 #    read -r plat
     echo "Platform: gfdl.ncrc5-intel22-classic"
@@ -111,6 +108,12 @@ fre_pp_steps () {
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
+
+    # If cylc play was unsuccesful, show log
+    if [ $? ne 0 ]; then
+        echo "PP workflow run failed...extracting log"
+        cylc cat-log ${name}
+    fi
 }
 
 main () {
