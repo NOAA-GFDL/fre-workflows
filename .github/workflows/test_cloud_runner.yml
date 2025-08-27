@@ -28,26 +28,10 @@ jobs:
 
         continue-on-error: True
 
-#      - name: Print job.err
-#        run: |
-#          # Search for if there is an ERR status for any task; if so, add grep output to a list
-#          err_out_list=($(grep -r "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/))
-#
-#          # Check if list of error status is empty or not
-#          # If list if empty, workflow may have succeeded (TO-DO: Check for other statuses)
-#          # If list is not empty, and ERR status was found -> print the job.err output
-#          if [ ${#err_out_list[@]} -eq 0 ]; then
-#              echo "CYLC_JOB_EXIT=ERR not found with in any task log."    
-#              exit 0
-#          else
-#              echo "\nEXIT STATUS ERR FOUND"
-#              for err in $err_out_list; do
-#                  echo "Printing job.err for ${err%/*} ..."
-#                  job_err_dir=$(echo "${err%/*}")
-#                  cat "${job_err_dir}/job.err"
-#              done
-#              exit 1
-#          fi
+      - name: Print failed tasks
+        run: |
+          # Search for if there is an ERR status for any task; if so, add grep output to a list
+          grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
