@@ -45,14 +45,16 @@ function process_timeseries {
                 is_tiled=""
             fi
 
-            # for tiled files, use tile1 for the time range comparisons
-            files=()
-            for file in $(ls *.$var?(.tile1).nc); do
-                date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
-                if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
-                    files+=($file)
-                fi
-            done
+	            # for tiled files, use tile1 for the time range comparisons
+			if is_tiled == 1; then
+	            files=()
+	            for file in $(ls *.$var?(.tile1).nc); do
+	                date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
+	                if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
+	                    files+=($file)
+	                fi
+	            done
+			fi
 
             if (( ${#files[@]} != $expectedChunks )); then
                 # Not sure what to do here- this is unexpected to us but possibly expected by user
