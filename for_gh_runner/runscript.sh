@@ -111,7 +111,7 @@ fre_pp_steps () {
 
     echo "AHHHHHHHHHHHHH"
     # Put log in output file
-    cylc cat-log ${name} >> "/mnt/log.out"
+    cylc cat-log ${name} > "/mnt/log.out"
 
 }
 
