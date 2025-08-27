@@ -109,7 +109,6 @@ fre_pp_steps () {
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
 
-    echo "AHHHHHHHHHHHHH"
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
 
