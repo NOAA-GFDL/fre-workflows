@@ -124,6 +124,8 @@ def test_nccmp_make_timeseries(capfd, tmp_path):
     and making sure that the two new created renamed files are identical. Also, returns code equals zero if the comparison was successful.
     """
     nccmp= [ 'nccmp', '-d', f'{new_dir}/{component_new_file}', f'{rose_dir}/{component_new_file}' ]; 
+    print("THE NEW DIR IS   ", f'{new_dir}/{component_new_file}')
+    print("THE ROSE DIR IS   ", f'{rose_dir}/{component_new_file}')
     sp = subprocess.run(nccmp)
     captured = capfd.readouterr()
     print("THE ERROR OUTPUT FOR NCCMP IS   ",captured)
