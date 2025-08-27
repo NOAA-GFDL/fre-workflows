@@ -40,9 +40,10 @@ function process_timeseries {
             else
                 is_tiled=""
             fi
+			files=()
+
             if [[ $is_tiled -eq 1 ]]; then
 				# for tiled files, use tile1 for the time range comparisons
-				files=()
 				for file in $(ls *.$var?(.tile1).nc); do
 					date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
 					if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
