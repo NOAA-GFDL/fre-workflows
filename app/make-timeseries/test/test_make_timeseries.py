@@ -88,8 +88,9 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
           ]
    print (ex);
    sp = subprocess.run( ex )
-   assert sp.returncode == 1
    captured = capfd.readouterr()
+   print("TEST ROSE FAIL  OUTPUT IS HERE    ", captured)
+   assert sp.returncode == 1
 
 def test_rose_success_make_timeseries(capfd, tmp_path):
    """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for success of 
@@ -116,8 +117,9 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
         ]
    print (ex);
    sp = subprocess.run( ex )
-   assert sp.returncode == 0
    captured = capfd.readouterr()
+   print("TEST SUCCESS OUTPUT IS HERE    ", captured)
+   assert sp.returncode == 0
 
 def test_nccmp_make_timeseries(capfd, tmp_path):
     """This subroutine tests by comparing the two files created by the two routines above described 
