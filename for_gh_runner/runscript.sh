@@ -110,9 +110,9 @@ fre_pp_steps () {
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
 
     echo "AHHHHHHHHHHHHH"
-    echo $?
-    # If cylc play was unsuccesful, show log
-    cylc cat-log ${name}
+    # Put log in output file
+    cylc cat-log ${name} >> "/mnt/log.out"
+
 }
 
 main () {

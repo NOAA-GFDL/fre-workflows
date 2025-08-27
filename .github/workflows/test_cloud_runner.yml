@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fre-workflow-logs 
-          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest
+          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 ##To-do:
 # - upload job.out/job.err as artifacts
