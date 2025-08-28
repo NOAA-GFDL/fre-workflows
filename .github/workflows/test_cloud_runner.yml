@@ -30,7 +30,7 @@ jobs:
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-        continue-on-error: True
+        #continue-on-error: True
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
