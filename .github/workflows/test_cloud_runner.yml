@@ -40,8 +40,8 @@ jobs:
 
       - name: Print any succeeded tasks
         run: |
-          # List tasks that have succeeded in the workflow
-          grep "(received)succeeded" /contrib/container-test/ppp-setup/log.out
+          # List tasks that have succeeded (and completed) in the workflow
+          grep -E ":succeeded.*completed" /contrib/container-test/ppp-setup/log.out
 
       - name: Print any failed tasks
         run: |
