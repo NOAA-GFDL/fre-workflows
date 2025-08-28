@@ -31,6 +31,11 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
+          # Can potentially do this to get list of tasks
+          #task_list=$(cylc list test_pp__ptest__ttest)
+          #task1=$(echo $task_list | cut -d ' ' -f1) ....
+
+
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
         with:
@@ -38,21 +43,61 @@ jobs:
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
-      - name: Print any succeeded tasks
+      - name: Print pp-starter successes or failures
         run: |
-          # List tasks that have succeeded (and completed) in the workflow
-          grep -E ":succeeded.*completed" /contrib/container-test/ppp-setup/log.out
+          # Successes 
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" ./cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/*/job.status
 
-      - name: Print any failed tasks
-        run: |
-          # Search for if there is an ERR status for any task
-          if grep -q "failed/ERR" /contrib/container-test/ppp-setup/log.out; then
-              echo "Task failures found: CHECK THE LOG FILES UPLOADED AS ARTIFACTS"
-              grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
+          # Failures
+          grep -q -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/*/job.status
+          if [ $? -eq 0 ]; then
+              grep -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/*/job.status
               exit 1
           fi
+          echo "No failures found"
 
-          echo "Workflow ran successfully"
+      - name: Print stage-history successes or failures
+        run: |
+          # Successes 
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" ./cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/*/job.status
+
+          # Failures
+          grep -q -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/*/job/status
+          if [ $? -eq 0 ]; then
+              grep -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/*/job.status
+              exit 1
+          fi
+          echo "No failures found"
+
+      - name: Print regrid-xy successes or failures
+        run: |
+          # Successes 
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" ./cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/*/job.status
+
+          # Failures
+          grep -q -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/*/job.status
+          if [ $? -eq 0 ]; then
+              grep -E "CYLC_JOB_EXIT=ERR" ./cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/*/job.status
+              exit 1
+          fi
+          echo "No failures found"
+
+## Keep in here for now as a just in case reference ##
+#      - name: Print any succeeded tasks
+#        run: |
+#          # List tasks that have succeeded (and completed) in the workflow
+#          grep -E ":succeeded.*completed" /contrib/container-test/ppp-setup/log.out
+#
+#      - name: Print any failed tasks
+#        run: |
+#          # Search for if there is an ERR status for any task
+#          if grep -q "failed/ERR" /contrib/container-test/ppp-setup/log.out; then
+#              echo "Task failures found: CHECK THE LOG FILES UPLOADED AS ARTIFACTS"
+#              grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
+#              exit 1
+#          fi
+#
+#          echo "Workflow ran successfully"
 
 ##To-do:
 # - figure out if container will be hosted on cloud or somehow pulled from registry
