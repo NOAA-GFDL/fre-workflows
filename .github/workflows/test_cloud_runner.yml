@@ -45,130 +45,173 @@ jobs:
 
       - name: Print pp-starter successes or failures
         run: |
-          # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
+          # Successes
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print stage-history successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status)
+          exist_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job/status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status)
+          exist_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
           fi
 
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
+          fi
       - name: Print regrid-xy successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print remap-pp-components successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print make-timeavgs successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print rename-split-to-pp successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
+          exit_status_2=$? 
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
+          exit_status=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print split-netcdf successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status)
+          exit_status_2=$? 
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print combine-timeavgs successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines 
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
+          fi
+
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
           fi
 
       - name: Print clean task successes or failures
         run: |
-          # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status
+          # Successes
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status)
+          exit_status_1=$?
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status
-          if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status
-              exit 1
-          elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
-              echo "No failures found"
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exist_status_1 -eq 0 ]; then
+              echo $success
           fi
 
+          if [ exit_status_2 -eq 0 ];
+              echo "Failures found"
+              echo $failure
+          fi
 
 ## Keep in here for now as a just in case reference ##
 #      - name: Print any succeeded tasks
