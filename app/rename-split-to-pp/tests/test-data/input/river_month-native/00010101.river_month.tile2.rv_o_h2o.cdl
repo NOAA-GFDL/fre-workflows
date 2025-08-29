@@ -53,7 +53,7 @@ variables:
 		:associated_files = "areacellr: 00010101.river_static_cmip.nc land_area: 00010101.river_static.nc" ;
 		:grid_type = "regular" ;
 		:grid_tile = "N/A" ;
-		:history = "Fri Aug 29 13:41:37 2025: ncks -d grid_xt,0,14 -d grid_yt,0,9 /work/cew/scratch//00010101.river_month.tile2.nc -O /work/cew/scratch/workflow-test/river_month//ncks_out//00010101.river_month.tile2.nc" ;
+		:history = "Fri Aug 29 14:00:37 2025: ncks -d grid_xt,0,14 -d grid_yt,0,9 /work/cew/scratch//00010101.river_month.tile2.nc -O /work/cew/scratch/workflow-test/river_month//ncks_out//00010101.river_month.tile2.nc" ;
 		:NCO = "netCDF Operators version 5.1.9 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
 data:
 

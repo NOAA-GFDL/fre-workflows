@@ -76,7 +76,7 @@ variables:
 		:associated_files = "areacello: 00010101.ocean_static.nc" ;
 		:grid_type = "regular" ;
 		:grid_tile = "N/A" ;
-		:history = "Fri Aug 29 13:42:28 2025: ncks -d xh,532,546 -d yh,526,535 /work/cew/scratch//00010101.ocean_annual.nc -O /work/cew/scratch/workflow-test/ocean_annual//ncks_out//00010101.ocean_annual.nc" ;
+		:history = "Fri Aug 29 13:55:18 2025: ncks -d xh,532,546 -d yh,526,535 /work/cew/scratch//00010101.ocean_annual.nc -O /work/cew/scratch/workflow-test/ocean_annual//ncks_out//00010101.ocean_annual.nc" ;
 		:NCO = "netCDF Operators version 5.1.9 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
 data:
 

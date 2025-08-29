@@ -49,35 +49,35 @@
 
 # ################################################################################
 # 
-# #timeseries month case (need all 6 tiles)
-# indir=/work/cew/scratch/
-# infiles=00010101.river_month.*.nc
-# history_source="river_month"
-# 
-# file_gen_outdir=/work/cew/scratch/workflow-test/$history_source/
-# testing_outdir=/home/cew/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/
-# vars=("rv_o_h2o")
-# ncks_cmd='ncks -d grid_xt,0,14 -d grid_yt,0,9 $ncksi -O $ncks_outdir/$ncks_outfile'
-# 
-# echo "calling make_test_data"
-# #make_test_data.sh $indir $infiles $history_source $ncks_outdir $split_nc_outdir $split_nc_vars $split_nc_filter $rename_indir $rename_outdir $rename_test_outdir $ncks_cmd
-# make_test_data.sh $indir $infiles $history_source $file_gen_outdir $testing_outdir "$vars" "$ncks_cmd"
-# echo "finished calling make_test_data"
-
-# ################################################################################
-#
-#timeseries annual case (need all 6 tiles)
+#timeseries month case (need all 6 tiles)
 indir=/work/cew/scratch/
-infiles=00010101.ocean_annual.nc
-history_source="ocean_annual"
+infiles=00010101.river_month.*.nc
+history_source="river_month"
 
 file_gen_outdir=/work/cew/scratch/workflow-test/$history_source/
 testing_outdir=/home/cew/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/
-vars=("so")
-ncks_cmd='ncks -d xh,532,546 -d yh,526,535 $ncksi -O $ncks_outdir/$ncks_outfile'
+vars=("rv_o_h2o")
+ncks_cmd='ncks -d grid_xt,0,14 -d grid_yt,0,9 $ncksi -O $ncks_outdir/$ncks_outfile'
 
 echo "calling make_test_data"
 #make_test_data.sh $indir $infiles $history_source $ncks_outdir $split_nc_outdir $split_nc_vars $split_nc_filter $rename_indir $rename_outdir $rename_test_outdir $ncks_cmd
 make_test_data.sh $indir $infiles $history_source $file_gen_outdir $testing_outdir "$vars" "$ncks_cmd"
 echo "finished calling make_test_data"
+
+# ################################################################################
+#
+# #timeseries annual case (need all 6 tiles)
+# indir=/work/cew/scratch/
+# infiles=00010101.ocean_annual.nc
+# history_source="ocean_annual"
+# 
+# file_gen_outdir=/work/cew/scratch/workflow-test/$history_source/
+# testing_outdir=/home/cew/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/
+# vars=("so")
+# ncks_cmd='ncks -d xh,532,546 -d yh,526,535 $ncksi -O $ncks_outdir/$ncks_outfile'
+# 
+# echo "calling make_test_data"
+# #make_test_data.sh $indir $infiles $history_source $ncks_outdir $split_nc_outdir $split_nc_vars $split_nc_filter $rename_indir $rename_outdir $rename_test_outdir $ncks_cmd
+# make_test_data.sh $indir $infiles $history_source $file_gen_outdir $testing_outdir "$vars" "$ncks_cmd"
+# echo "finished calling make_test_data"
 

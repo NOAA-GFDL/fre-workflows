@@ -63,7 +63,7 @@ function process_files {
             #This assumes that we will have a record dimension named time - but frankly, 
             #that's an assumption we're already making when we search for time_bnds
             n_time_vars=$(ncks --trd -m $file | grep "(Record coordinate is time)" | wc -l)
-            if [[ "${n_time_vars}" -ge "1" ]]; then
+            if [[ "${n_time_vars}" -le "1" ]]; then
                 is_static=1
             else
                 is_static=0
