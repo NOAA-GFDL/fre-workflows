@@ -40,7 +40,7 @@ variables:
 		:title = "cm5_c96_am5f7c1r0_b06_piC_galb_noiceinit_alb" ;
 		:grid_type = "regular" ;
 		:grid_tile = "N/A" ;
-		:history = "Sat Aug 23 13:43:25 2025: ncks -d xh,532,546 -d yh,526,535 -d xq,532,546 -d yq,526,535 /work/Carolyn.Whitlock/scratch//00010101.ocean_static.nc -O /work/Carolyn.Whitlock/scratch/ocean_subset/raw//00010101.ocean_static.nc" ;
+		:history = "Fri Aug 29 13:31:23 2025: ncks -d xh,532,546 -d yh,526,535 -d xq,532,546 -d yq,526,535 /work/Carolyn.Whitlock/scratch//00010101.ocean_static.nc -O /work/cew/scratch/workflow-test/ocean_static//ncks_out//00010101.ocean_static.nc" ;
 		:NCO = "netCDF Operators version 5.1.9 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
 data:
 

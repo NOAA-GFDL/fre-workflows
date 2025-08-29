@@ -4,53 +4,39 @@
 #assumes a fre-cli conda environment is active
 set -x
 #Comment/uncomment one of these sections
-######################################
-#timeseries case (need all 6 tiles)
-#also uncomment line 42
-indir=/work/cew/scratch/
-infiles=00010101.atmos_daily.*.nc
-history_source="atmos_daily"
-ncks_outdir=/work/cew/scratch/atmos_subset/raw/
+indir="$1"
+infiles="$2"
+history_source="$3"
+file_gen_outdir="$4"
+testing_outdir="$5"
+split_nc_vars="$6"
+ncks_cmd="$7"
 
-split_nc_outdir=/work/cew/scratch/atmos_subset/split-netcdf/
-split_nc_vars=("pr" "ps" "pv350K" "temp")
-split_nc_filter=/work/cew/scratch/atmos_subset/split-netcdf-filter/
+ncks_outdir=$file_gen_outdir/ncks_out/
 
-rename_indir=/home/$USER/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/input/${history_source}-native
-rename_outdir=/work/$USER/scratch/atmos_subset/${history_source}-native
-rename_test_outdir=/home/$USER/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/${history_source}-native
+split_nc_outdir=$file_gen_outdir/split-netcdf/
+split_nc_filter=$file_gen_outdir/split-netcdf-filter/
 
-# # ########################################
-# #static case (only one tile)
-# #also uncomment line 44
-# indir=/work/$USER/scratch/
-# infiles=00010101.ocean_static.nc
-# history_source="ocean_static"
-# ncks_outdir=/work/$USER/scratch/ocean_subset/raw/
-# 
-# split_nc_outdir=/work/$USER/scratch/ocean_subset/split-netcdf/
-# split_nc_vars=("Coriolis" "hfgeou" "wet" "wet_u" "wet_v")
-# split_nc_filter=/work/$USER/scratch/ocean_subset/split-netcdf-filter/
-# 
-# rename_indir=/home/$USER/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/input/${history_source}-native
-# rename_outdir=/work/$USER/scratch/ocean_subset/${history_source}-native/
-# rename_test_outdir=/home/$USER/Code/fre-workflows/app/rename-split-to-pp/tests/test-data/${history_source}-native
+rename_indir=$file_gen_outdir/input/${history_source}-native
+rename_outdir=$file_gen_outdir/orig-output/${history_source}-native
+
+echo "ncks_cmd from within make_test_data:"
+echo $ncks_cmd
 
 ################################################################################
 
-for d in $rename_indir $rename_outdir $rename_test_outdir; do
+test_dir=$testing_outdir/
+test_indir=$test_dir/input/${history_source}-native/
+test_orig_outdir=$test_dir/orig-output/${history_source}-native/
+
+
+################################################################################
+
+for d in $ncks_outdir $split_nc_outdir $split_nc_filter $rename_indir $rename_outdir $rename_test_outdir $test_indir $test_orig_outdir; do
   if ! [ -d $d ]; then
     mkdir -p $d
   fi
 done
-
-################################################################################
-
-test_dir=/home/$USER/Code/fre-workflows/app/rename-split-to-pp/tests/test-data
-test_indir=$test_dir/input/${history_source}-native/
-test_orig_outdir=$test_dir/orig-output/${history_source}-native/
-
-################################################################################
 
 #Cut down to a 14x9x6-month grid
 ncks_infiles=$(ls $indir/$infiles)
@@ -58,7 +44,8 @@ for ncksi in ${ncks_infiles[@]}; do
   echo $ncksi
   ncks_outfile=$(basename $ncksi)
   ##timeseries slice
-  ncks -d grid_xt,0,14 -d grid_yt,0,9 -d time,0,181 $ncksi -O $ncks_outdir/$ncks_outfile
+  echo ${ncks_cmd}
+  eval "${ncks_cmd}"
   ##static slice (ocean coords can't be over antarctica)
   #ncks -d xh,532,546 -d yh,526,535 -d xq,532,546 -d yq,526,535 $ncksi -O $ncks_outdir/$ncks_outfile
 done
