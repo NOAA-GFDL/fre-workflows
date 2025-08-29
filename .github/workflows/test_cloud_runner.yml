@@ -46,12 +46,12 @@ jobs:
       - name: Print pp-starter successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -60,12 +60,12 @@ jobs:
       - name: Print stage-history successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0./job/status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job/status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -74,12 +74,12 @@ jobs:
       - name: Print regrid-xy successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -88,12 +88,12 @@ jobs:
       - name: Print remap-pp-components successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -102,12 +102,12 @@ jobs:
       - name: Print make-timeavgs successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -116,12 +116,12 @@ jobs:
       - name: Print rename-split-to-pp successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -130,12 +130,12 @@ jobs:
       - name: Print split-netcdf successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
@@ -144,12 +144,12 @@ jobs:
       - name: Print combine-timeavgs successes or failures
         run: |
           # Successes 
-          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0./job.status
+          grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines 
               echo "No failures found"
@@ -161,9 +161,9 @@ jobs:
           grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status
 
           # Failures
-          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status
+          grep -q -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status
           if [ $? -eq 0 ]; then
-              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status
+              grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status
               exit 1
           elif [ $? -eq 1]; then # grep exist status = 1 when it completed successfully but did not find any matching lines
               echo "No failures found"
