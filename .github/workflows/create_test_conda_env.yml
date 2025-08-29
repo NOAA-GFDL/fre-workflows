@@ -40,9 +40,10 @@ jobs:
           pylint -v --fail-under 7.00 ./Jinja2Filters
 
       - name: make-timeseries pytest (guarded against failure)
-        continue-on-error: true
         run: |
-          pytest -vv -rx ./app/make-timeseries/test
+          cd ./app/make-timeseries
+          pytest -vv -rx ./test
+          cd -
 
       - name: PPANHandler pytest
         run: |
