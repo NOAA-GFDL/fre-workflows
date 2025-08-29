@@ -42,7 +42,7 @@ jobs:
       - name: make-timeseries pytest
         run: |
           cd app/make-timeseries
-          pytest -vv -rx ./app/make-timeseries/test
+          pytest -vv -rx ./test
           cd -
 
       - name: PPANHandler pytest
