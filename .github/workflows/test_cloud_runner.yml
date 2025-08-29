@@ -53,11 +53,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -66,20 +66,21 @@ jobs:
         run: |
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status)
-          exist_status_1=$?
+          exit_status_1=$?
 
           # Failures
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status)
-          exist_status_2=$?
+          exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
+
       - name: Print regrid-xy successes or failures
         run: |
           # Successes 
@@ -90,11 +91,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -109,11 +110,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -128,11 +129,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -147,11 +148,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
           exit_status=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -166,11 +167,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status)
           exit_status_2=$? 
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -185,11 +186,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
@@ -204,11 +205,11 @@ jobs:
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[0-3]/job.status)
           exit_status_2=$?
 
-          if [ $exist_status_1 -eq 0 ]; then
+          if [ $exit_status_1 -eq 0 ]; then
               echo $success
           fi
 
-          if [ exit_status_2 -eq 0 ];
+          if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure
           fi
