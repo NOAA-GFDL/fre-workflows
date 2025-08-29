@@ -14,12 +14,15 @@ from dateutil.relativedelta import relativedelta
 3) pytest t/test_make_timeseries.py
 """
 
+component_new_file='atmos_tracer.00501--00601-.average_DT.nc'
+freq, component = 'P2Y',' atmos_tracer'
+dir_tmp_in, new_dir =   '/tmp/pytest-of-Avery.Kiihne/pytest-107/test_make_timeseries0/in_dir', '/tmp/pytest-of-Avery.Kiihne/pytest-107/test_make_timeseries0/out_dir'
 
 def test_make_timeseries(capfd, tmp_path):
-    global dir_tmp_in, new_dir
-    global freq, component
-    global dir_tmp_out
-    global component_new_file
+    #global dir_tmp_in, new_dir
+    #global freq, component
+    #global dir_tmp_out
+    #global component_new_file
 
     TEST_DIR = Path(__file__).resolve().parents[0]
     DATA_DIR = Path(f'{TEST_DIR}/files')
