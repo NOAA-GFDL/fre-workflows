@@ -20,7 +20,6 @@ jobs:
           echo "Currently in:"
           cwd=$(pwd)
           echo $cwd
-
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
                       --bind /contrib/container-test/history:/mnt/history:ro
@@ -87,15 +86,19 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
+              exit 0
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print regrid-xy successes or failures
