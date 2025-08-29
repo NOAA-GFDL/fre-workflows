@@ -41,14 +41,14 @@ function process_timeseries {
                 is_tiled=""
             fi
 
-			files=()
-			# for tiled files, use tile1 for the time range comparisons
-			for file in $(ls *.$var?(.tile1).nc); do
-				date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
-				if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
-					files+=($file)
-				fi
-			done
+            files=()
+            # for tiled files, use tile1 for the time range comparisons
+            for file in $(ls *.$var?(.tile1).nc); do
+                date1=$(parse_date $(echo $file | cut -d. -f2 | cut -d- -f1))
+                if [[ $date1 > $begin || $date1 == $begin ]] && [[ $date1 < $end ]]; then
+                    files+=($file)
+                fi
+            done
 
             if (( ${#files[@]} != $expectedChunks )); then
                 # Not sure what to do here- this is unexpected to us but possibly expected by user
