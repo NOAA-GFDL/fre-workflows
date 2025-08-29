@@ -8,38 +8,37 @@ import os
 import subprocess
 from pathlib import Path
 
-# Paths for test data and app
+# constants
+VAR = "average_DT"
+FREQ = "P2Y"
+INPUT_CHUNK = "P2Y"
+OUTPUT_CHUNK = "P4Y"
+COMPONENT = "atmos_tracer"
+
+# Test data paths
 DATA_DIR = Path(__file__).parent / "files"
-DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
-DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
-DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
-DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
 APP_DIR = Path(__file__).parent.parent
+DATA_FILE_P1Y    = Path(f"{COMPONENT}.000501-000512.{VAR}.cdl")
+DATA_FILE_P2Y    = Path(f"{COMPONENT}.000601-000612.{VAR}.cdl")
+DATA_FILE_NC_P1Y = Path(f"{COMPONENT}.000501-000512.{VAR}.nc")
+DATA_FILE_NC_P2Y = Path(f"{COMPONENT}.000601-000612.{VAR}.nc")
 
 # Global test state (pytest discourages globals, but used here to mimic original logic)
 DIR_TMP_IN = None
 DIR_TMP_OUT = None
+COMPONENT_NEW_FILE = None
 NEW_DIR = None
 ROSE_DIR = None
-COMPONENT_NEW_FILE = None
-FREQ = None
-COMPONENT = None
 
 
 def test_make_timeseries(capfd, tmp_path):
     """Test creation of NetCDF files from CDL and merging with CDO."""
-    global DIR_TMP_IN, NEW_DIR, FREQ, COMPONENT, DIR_TMP_OUT, COMPONENT_NEW_FILE
-
-    # Test configuration
-    chunk = "P2Y"
-    FREQ = "P2Y"
-    var = "average_DT"
-    COMPONENT = "atmos_tracer"
-    files = []
+    global DIR_TMP_IN, NEW_DIR, DIR_TMP_OUT, COMPONENT_NEW_FILE
 
     # Create input directory structure
+    files = []
     DIR_TMP_IN = tmp_path / "in_dir"
-    din_check = DIR_TMP_IN / COMPONENT / FREQ / chunk
+    din_check = DIR_TMP_IN / COMPONENT / FREQ / INPUT_CHUNK
     os.makedirs(din_check, exist_ok=True)
 
     # Create output directory
@@ -78,7 +77,7 @@ def test_make_timeseries(capfd, tmp_path):
     end_point_din = str(din_check)
 
     # Output file name follows FRE convention
-    COMPONENT_NEW_FILE = f"{COMPONENT}.{init_date}-{end_date}.{var}.nc"
+    COMPONENT_NEW_FILE = f"{COMPONENT}.{init_date}-{end_date}.{VAR}.nc"
 
     # Merge time series using CDO
     input_files = f"{end_point_din}/{files[0]} {end_point_din}/{files[1]}"
@@ -95,12 +94,11 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
     """Test Rose app-run failure with incorrect component name."""
     global ROSE_DIR
     din_check = str(DIR_TMP_IN)
-    output_chunk = "P4Y"
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
     dout_check = str(dout_check)
 
-    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{output_chunk}"
+    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
     os.makedirs(ROSE_DIR, exist_ok=True)
 
     original_cwd = os.getcwd()
@@ -111,8 +109,8 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
             "-D", f"[env]inputDir={din_check}",
             "-D", "[env]begin=00050101T0000Z",
             "-D", f"[env]outputDir={dout_check}",
-            "-D", "[env]inputChunk=P2Y",
-            "-D", "[env]outputChunk=P4Y",
+            "-D", f"[env]inputChunk={INPUT_CHUNK}",
+            "-D", f"[env]outputChunk={OUTPUT_CHUNK}",
             "-D", "[env]component=atmos"  # Incorrect component, should fail
         ]
         sp = subprocess.run(ex, check=False)
@@ -126,12 +124,12 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
     """Test Rose app-run success with correct component and pp_stop."""
     global ROSE_DIR
     din_check = str(DIR_TMP_IN)
-    output_chunk = "P4Y"
+
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
     dout_check = str(dout_check)
 
-    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{output_chunk}"
+    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
     os.makedirs(ROSE_DIR, exist_ok=True)
 
     original_cwd = os.getcwd()
@@ -142,9 +140,9 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
             "-D", f"[env]inputDir={din_check}",
             "-D", "[env]begin=00050101T0000Z",
             "-D", f"[env]outputDir={dout_check}",
-            "-D", "[env]inputChunk=P2Y",
-            "-D", "[env]outputChunk=P4Y",
-            "-D", "[env]component=atmos_tracer",  # Correct component
+            "-D", f"[env]inputChunk={INPUT_CHUNK}",
+            "-D", f"[env]outputChunk={OUTPUT_CHUNK}",
+            "-D", f"[env]component={COMPONENT}",  # Correct component
             "-D", "[env]pp_stop=00070101T0000Z"   # Required parameter
         ]
         sp = subprocess.run(ex, check=True)
@@ -154,9 +152,8 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
     capfd.readouterr()  # Clear captured output
 
 
-def test_nccmp_make_timeseries(capfd, tmp_path):
+def test_nccmp_make_timeseries(capfd):
     """Compare output files from manual CDO and Rose app runs with nccmp."""
-    global NEW_DIR, COMPONENT_NEW_FILE, ROSE_DIR
     nccmp_ex = [
         "nccmp", "-d",
         f"{NEW_DIR}/{COMPONENT_NEW_FILE}",
