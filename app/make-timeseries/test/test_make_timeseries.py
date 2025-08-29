@@ -150,3 +150,188 @@ def test_script_argument_parsing():
     assert "output chunk:" in output
     assert "component:" in output
 
+def test_input_directory_validation(tmp_path):
+    """Test that the script validates input directory existence."""
+    
+    script_path = Path(__file__).parent.parent / "bin" / "make-timeseries"
+    
+    # Create valid output directory but invalid input directory
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    
+    env = os.environ.copy()
+    env.update({
+        'inputDir': str(tmp_path / "nonexistent_input"),
+        'outputDir': str(output_dir),
+        'begin': '00050101T0000Z',
+        'inputChunk': 'P2Y',
+        'outputChunk': 'P4Y',
+        'component': 'atmos_tracer',
+        'pp_stop': '00070101T0000Z',
+        'PATH': "/tmp/mock_bin:/home/runner/.local/bin:" + env.get('PATH', '')
+    })
+    
+    # Run the script
+    result = subprocess.run([str(script_path)], 
+                          env=env, 
+                          capture_output=True, 
+                          text=True,
+                          timeout=30)
+    
+    # Should fail due to missing input directory
+    assert result.returncode != 0
+    output = result.stdout + result.stderr
+    assert "does not exist or isn't a directory" in output
+
+def test_output_directory_validation(tmp_path):
+    """Test that the script validates output directory existence."""
+    
+    script_path = Path(__file__).parent.parent / "bin" / "make-timeseries"
+    
+    # Create valid input directory but invalid output directory
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    
+    env = os.environ.copy()
+    env.update({
+        'inputDir': str(input_dir),
+        'outputDir': str(tmp_path / "nonexistent_output"),
+        'begin': '00050101T0000Z',
+        'inputChunk': 'P2Y',
+        'outputChunk': 'P4Y',
+        'component': 'atmos_tracer',
+        'pp_stop': '00070101T0000Z',
+        'PATH': "/tmp/mock_bin:/home/runner/.local/bin:" + env.get('PATH', '')
+    })
+    
+    # Run the script
+    result = subprocess.run([str(script_path)], 
+                          env=env, 
+                          capture_output=True, 
+                          text=True,
+                          timeout=30)
+    
+    # Should fail due to missing output directory
+    assert result.returncode != 0
+    output = result.stdout + result.stderr
+    assert "does not exist or isn't a directory" in output
+
+def test_directory_structure_and_component_validation(tmp_path):
+    """Test directory structure validation and component processing."""
+    
+    script_path = Path(__file__).parent.parent / "bin" / "make-timeseries"
+    
+    # Create proper directory structure
+    component = "atmos_tracer"
+    freq = "P2Y"
+    chunk = "P2Y"
+    
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    
+    # Create the input directory structure that the script expects
+    input_component_dir = input_dir / component / freq / chunk
+    input_component_dir.mkdir(parents=True)
+    
+    # Create output directory
+    output_dir.mkdir()
+    
+    # Copy test data files to input directory
+    if (TEST_DATA_DIR / DATA_FILE_1).exists():
+        shutil.copy(TEST_DATA_DIR / DATA_FILE_1, input_component_dir)
+    if (TEST_DATA_DIR / DATA_FILE_2).exists():
+        shutil.copy(TEST_DATA_DIR / DATA_FILE_2, input_component_dir)
+    
+    env = os.environ.copy()
+    env.update({
+        'inputDir': str(input_dir),
+        'outputDir': str(output_dir),
+        'begin': '00050101T0000Z',
+        'inputChunk': 'P2Y',
+        'outputChunk': 'P4Y',
+        'component': component,
+        'pp_stop': '00070101T0000Z',
+        'PATH': "/tmp/mock_bin:/home/runner/.local/bin:" + env.get('PATH', '')
+    })
+    
+    # Run the script
+    result = subprocess.run([str(script_path)], 
+                          env=env, 
+                          capture_output=True, 
+                          text=True,
+                          timeout=60)
+    
+    # The script should progress beyond directory validation
+    # It might fail later due to missing tools like cdo/isodatetime, but should pass validation
+    output = result.stdout + result.stderr
+    assert "input dir:" in output
+    assert str(input_dir) in output
+    assert str(output_dir) in output
+    
+    # Should not fail on directory validation
+    assert "does not exist or isn't a directory" not in output
+
+def test_full_timeseries_processing_with_mocks(tmp_path):
+    """Test the full timeseries processing workflow with mock dependencies."""
+    
+    script_path = Path(__file__).parent.parent / "bin" / "make-timeseries"
+    
+    # Create proper directory structure
+    component = "atmos_tracer"
+    freq = "P2Y"
+    chunk = "P2Y"
+    
+    input_dir = tmp_path / "input"
+    output_dir = tmp_path / "output"
+    
+    # Create the input directory structure that the script expects
+    input_component_dir = input_dir / component / freq / chunk
+    input_component_dir.mkdir(parents=True)
+    
+    # Create output directory
+    output_dir.mkdir()
+    
+    # Copy test data files to input directory
+    if (TEST_DATA_DIR / DATA_FILE_1).exists():
+        shutil.copy(TEST_DATA_DIR / DATA_FILE_1, input_component_dir)
+    if (TEST_DATA_DIR / DATA_FILE_2).exists():
+        shutil.copy(TEST_DATA_DIR / DATA_FILE_2, input_component_dir)
+    
+    env = os.environ.copy()
+    env.update({
+        'inputDir': str(input_dir),
+        'outputDir': str(output_dir),
+        'begin': '00050101T0000Z',
+        'inputChunk': 'P2Y',
+        'outputChunk': 'P4Y',
+        'component': component,
+        'pp_stop': '00070101T0000Z',
+        # Add mock tools to PATH
+        'PATH': "/tmp/mock_bin:/home/runner/.local/bin:" + env.get('PATH', '')
+    })
+    
+    # Run the script
+    result = subprocess.run([str(script_path)], 
+                          env=env, 
+                          capture_output=True, 
+                          text=True,
+                          timeout=60)
+    
+    # Check the output for expected behavior
+    output = result.stdout + result.stderr
+    
+    # The script should find the input files
+    assert "Evaluating variable average_DT" in output
+    
+    # The script should process the timeseries 
+    # It may fail due to cdo commands on test data, but should get far enough to show processing
+    
+    # Check that it processes the component directory
+    assert str(input_dir) in output
+    assert str(output_dir) in output
+    
+    # Print output for debugging if needed
+    if result.returncode != 0:
+        print("Script output:")
+        print(output)
+

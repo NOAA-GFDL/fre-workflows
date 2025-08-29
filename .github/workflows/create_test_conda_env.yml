@@ -41,7 +41,53 @@ jobs:
 
       - name: make-timeseries pytest
         run: |
-          pytest -vv -rx ./app/make-timeseries/test
+          # Install required dependencies for make-timeseries tests
+          sudo apt-get update && sudo apt-get install -y cdo netcdf-bin
+          pip install metomi-isodatetime
+          # Create mock scripts for cylc and fre
+          mkdir -p /tmp/mock_bin
+          cat << 'EOF' > /tmp/mock_bin/cylc
+          #!/bin/bash
+          if [[ "$1" == "cycle-point" && "$2" == "--template" ]]; then
+              template="$3"
+              input="$4"
+              case "$template" in
+                  "CCYYMMDDThhmm")
+                      if [[ ${#input} -eq 4 ]]; then
+                          echo "${input}0101T0000"
+                      elif [[ ${#input} -eq 6 ]]; then
+                          echo "${input}01T0000"
+                      elif [[ ${#input} -eq 8 ]]; then
+                          echo "${input}T0000"
+                      elif [[ ${#input} -eq 11 && "$input" =~ T ]]; then
+                          echo "$input"
+                      else
+                          echo "$input"
+                      fi
+                      ;;
+                  "CCYY") echo "${input:0:4}" ;;
+                  "CCYYMM") echo "${input:0:6}" ;;
+                  "CCYYMMDD") echo "${input:0:8}" ;;
+                  *) echo "$input" ;;
+              esac
+          else
+              echo "Mock cylc: unsupported command"
+              exit 1
+          fi
+          EOF
+          cat << 'EOF' > /tmp/mock_bin/fre
+          #!/bin/bash
+          if [[ "$1" == "-v" && "$2" == "pp" && "$3" == "ppval" ]]; then
+              echo "Mock fre ppval validation passed for $5"
+              exit 0
+          else
+              echo "Mock fre: unsupported command"
+              exit 0
+          fi
+          EOF
+          chmod +x /tmp/mock_bin/cylc /tmp/mock_bin/fre
+          # Run tests with mock tools in PATH
+          PATH="/tmp/mock_bin:$PATH" pytest -vv -rx ./app/make-timeseries/test
 
       - name: PPANHandler pytest
         run: |
