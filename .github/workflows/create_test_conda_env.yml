@@ -41,9 +41,11 @@ jobs:
 
       - name: make-timeseries pytest
         run: |
-          cd app/make-timeseries
-          pytest -vv -rx ./test
-          cd -
+          pytest -vv -rx ./app/make-timeseries/test/test_make_timeseries.py
+
+      - name: make-timeseries pylint
+        run: |
+          pylint --fail-under 9.0 ./app/make-timeseries/test/test_make_timeseries.py
 
       - name: PPANHandler pytest
         run: |
