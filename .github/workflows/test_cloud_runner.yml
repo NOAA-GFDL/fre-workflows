@@ -48,6 +48,7 @@ jobs:
 
       - name: Print pp-starter successes or failures
         run: |
+          set +e
           # Successes
           grep -E -q "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
           exit_status_1=$?
