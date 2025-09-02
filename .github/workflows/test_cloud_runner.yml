@@ -63,15 +63,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print stage-history successes or failures
@@ -97,10 +100,9 @@ jobs:
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
-              exit 1
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
-              exit 0
           else
               echo "WARNING: error with grep execution"
               exit 2
@@ -123,15 +125,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print remap-pp-components successes or failures
@@ -151,15 +156,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print make-timeavgs successes or failures
@@ -179,15 +187,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print rename-split-to-pp successes or failures
@@ -207,15 +218,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print split-netcdf successes or failures
@@ -235,15 +249,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print combine-timeavgs successes or failures
@@ -263,15 +280,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
       - name: Print clean task successes or failures
@@ -291,15 +311,18 @@ jobs:
               echo "No succeeded tasks found"
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
               echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
           else
               echo "WARNING: error with grep execution"
+              exit 2
           fi
 
 ## Keep in here for now as a just in case reference ##
