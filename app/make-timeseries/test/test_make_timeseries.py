@@ -36,24 +36,27 @@ NEW_DIR = None
 ROSE_DIR = None
 
 
-def test_make_timeseries(capfd, tmp_path):
-    """Test creation of NetCDF files from CDL and merging with CDO."""
+def test_make_timeseries_comparison_output(capfd, tmp_path):
+    """Test creation of NetCDF files from CDL and merging with CDO.
+    Helps validate output from make-timeseries later."""
     global DIR_TMP_IN, NEW_DIR, DIR_TMP_OUT
 
-    # Create input directory structure
+    # assign these as globals for use in later steps
     DIR_TMP_IN = tmp_path / "in_dir"
+    DIR_TMP_OUT = tmp_path / "out_dir"
+
+    # Create input directory structure
     din_check = DIR_TMP_IN / COMPONENT / FREQ / INPUT_CHUNK
     os.makedirs(din_check, exist_ok=True)
 
     # Create output directory
-    DIR_TMP_OUT = tmp_path / "out_dir"
     DIR_TMP_OUT.mkdir()
     dout_check = str(DIR_TMP_OUT)
 
     # Convert CDL to NetCDF using ncgen
     target_path_1 = din_check / DATA_FILE_NC_1ST_YEAR
     ex = [
-        "ncgen", "-o", str(din_check / DATA_FILE_NC_1ST_YEAR), str(DATA_DIR / DATA_FILE_1ST_YEAR)
+        "ncgen", "-o", str(target_path_1), str(DATA_DIR / DATA_FILE_1ST_YEAR)
     ]
     sp = subprocess.run(ex, check=True)
     assert sp.returncode == 0, f"ncgen failed to create {DATA_FILE_NC_1ST_YEAR}"
@@ -63,7 +66,7 @@ def test_make_timeseries(capfd, tmp_path):
 
     target_path_2 = din_check / DATA_FILE_NC_2ND_YEAR
     ex = [
-        "ncgen", "-o", str(din_check / DATA_FILE_NC_2ND_YEAR), str(DATA_DIR / DATA_FILE_2ND_YEAR)
+        "ncgen", "-o", str(target_path_2), str(DATA_DIR / DATA_FILE_2ND_YEAR)
     ]
     sp = subprocess.run(ex, check=True)
     assert sp.returncode == 0, f"ncgen failed to create {DATA_FILE_NC_2ND_YEAR}"
@@ -71,12 +74,11 @@ def test_make_timeseries(capfd, tmp_path):
         f"Output file {DATA_FILE_NC_2ND_YEAR} was not created"
     )
 
-    # Extract date ranges from filenames
+    # Extract date ranges from filenames, assign global for later user
     NEW_DIR = dout_check
-    end_point_din = str(din_check)
 
     # Merge time series using CDO
-    input_files = f"{end_point_din}/{DATA_FILE_NC_1ST_YEAR} {end_point_din}/{DATA_FILE_NC_2ND_YEAR}"
+    input_files = f"{din_check}/{DATA_FILE_NC_1ST_YEAR} {din_check}/{DATA_FILE_NC_2ND_YEAR}"
     output_file = f"{dout_check}/{COMPONENT_NEW_FILE}"
     ex = [
         "cdo", "--history", "-O", "mergetime", input_files, output_file
@@ -90,12 +92,11 @@ def test_make_timeseries(capfd, tmp_path):
 def test_rose_failure_make_timeseries(capfd, tmp_path):
     """Test Rose app-run failure with incorrect component name."""
     global ROSE_DIR
-    din_check = str(DIR_TMP_IN)
+
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
-    dout_check = str(dout_check)
 
-    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    ROSE_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
     os.makedirs(ROSE_DIR, exist_ok=True)
 
     original_cwd = os.getcwd()
@@ -103,7 +104,7 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
     try:
         ex = [
             "rose", "app-run",
-            "-D", f"[env]inputDir={din_check}",
+            "-D", f"[env]inputDir={DIR_TMP_IN}",
             "-D", "[env]begin=00050101T0000Z",
             "-D", f"[env]outputDir={dout_check}",
             "-D", f"[env]inputChunk={INPUT_CHUNK}",
@@ -121,7 +122,6 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
 def test_rose_success_make_timeseries(capfd, tmp_path):
     """Test Rose app-run success with correct component and pp_stop."""
     global ROSE_DIR
-    din_check = str(DIR_TMP_IN)
 
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
@@ -135,7 +135,7 @@ def test_rose_success_make_timeseries(capfd, tmp_path):
     try:
         ex = [
             "rose", "app-run",
-            "-D", f"[env]inputDir={din_check}",
+            "-D", f"[env]inputDir={DIR_TMP_IN}",
             "-D", "[env]begin=00050101T0000Z",
             "-D", f"[env]outputDir={dout_check}",
             "-D", f"[env]inputChunk={INPUT_CHUNK}",
