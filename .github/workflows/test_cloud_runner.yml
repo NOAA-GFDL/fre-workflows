@@ -109,6 +109,7 @@ jobs:
           fi
 
       - name: Print regrid-xy successes or failures
+        continue-on-error: true
         run: |
           set +e
           # Successes 
