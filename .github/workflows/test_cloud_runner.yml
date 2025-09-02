@@ -50,15 +50,14 @@ jobs:
         run: |
           set +e
           # Successes
-          grep -E -q "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          grep -E -q "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
-              success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
               echo $success | sed 's/ /\n/g' #split string by spaces
           elif [ $exit_status_1 -eq 1 ]; then
               echo "No succeeded tasks found"
@@ -68,7 +67,6 @@ jobs:
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
-              failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
               echo $failure | sed 's/ /\n/g' #split string by spaces
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."
@@ -78,6 +76,7 @@ jobs:
 
       - name: Print stage-history successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[0-3]/job.status)
           exit_status_1=$?
@@ -109,6 +108,7 @@ jobs:
 
       - name: Print regrid-xy successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[0-3]/job.status)
           exit_status_1=$?
@@ -136,6 +136,7 @@ jobs:
 
       - name: Print remap-pp-components successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[0-3]/job.status)
           exit_status_1=$?
@@ -163,6 +164,7 @@ jobs:
 
       - name: Print make-timeavgs successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[0-3]/job.status)
           exit_status_1=$?
@@ -190,6 +192,7 @@ jobs:
 
       - name: Print rename-split-to-pp successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
           exit_status_2=$? 
@@ -217,6 +220,7 @@ jobs:
 
       - name: Print split-netcdf successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[0-3]/job.status)
           exit_status_1=$?
@@ -244,6 +248,7 @@ jobs:
 
       - name: Print combine-timeavgs successes or failures
         run: |
+          set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[0-3]/job.status)
           exit_status_1=$?
@@ -271,6 +276,7 @@ jobs:
 
       - name: Print clean task successes or failures
         run: |
+          set +e
           # Successes
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0./job.status)
           exit_status_1=$?

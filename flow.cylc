@@ -378,7 +378,6 @@
         # Increase time limit for staging jobs to 8 hours
         execution time limit = PT8H
         script = """
-            AHH
             set -euo pipefail
 
             #Stage the contents of a tarfile to PTMP
