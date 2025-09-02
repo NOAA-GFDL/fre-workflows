@@ -2,7 +2,10 @@ name: run_ppp
 on:
   pull_request:
     branches:
-      - main
+      - main  # triggers pipeline on pull requests to merge into main
+  push:
+    branches:
+      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -46,14 +49,15 @@ jobs:
       - name: Print pp-starter successes or failures
         run: |
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
+          grep -E -q "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
+          grep -E -q "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
+              success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
               echo $success | sed 's/ /\n/g' #split string by spaces
           elif [ $exit_status_1 -eq 1 ]; then
               echo "No succeeded tasks found"
@@ -63,6 +67,7 @@ jobs:
 
           if [ $exit_status_2 -eq 0 ]; then
               echo "Failures found"
+              failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[0-3]/job.status)
               echo $failure | sed 's/ /\n/g' #split string by spaces
           elif [ $exit_status_2 -eq 1 ]; then
               echo "No task failures found."

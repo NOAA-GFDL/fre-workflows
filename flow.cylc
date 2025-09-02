@@ -370,6 +370,7 @@
                 echo "Error: target ${targetFileResolved} is not ready"
                 exit 1
             fi
+        exit 0
         """
         [[[environment]]]
             targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
