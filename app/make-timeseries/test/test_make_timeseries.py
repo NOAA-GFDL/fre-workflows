@@ -32,14 +32,13 @@ COMPONENT_NEW_FILE = f"{COMPONENT}.{INIT_DATE}-{END_DATE}.{VAR}.nc"
 # Global test state (pytest discourages globals, but used here to mimic original logic)
 DIR_TMP_IN = None
 DIR_TMP_OUT = None
-NEW_DIR = None
 ROSE_DIR = None
 
 
 def test_make_timeseries_comparison_output(capfd, tmp_path):
     """Test creation of NetCDF files from CDL and merging with CDO.
     Helps validate output from make-timeseries later."""
-    global DIR_TMP_IN, NEW_DIR, DIR_TMP_OUT
+    global DIR_TMP_IN, DIR_TMP_OUT
 
     # assign these as globals for use in later steps
     DIR_TMP_IN = tmp_path / "in_dir"
@@ -74,9 +73,6 @@ def test_make_timeseries_comparison_output(capfd, tmp_path):
         f"Output file {DATA_FILE_NC_2ND_YEAR} was not created"
     )
 
-    # Extract date ranges from filenames, assign global for later user
-    NEW_DIR = dout_check
-
     # Merge time series using CDO
     input_files = f"{din_check}/{DATA_FILE_NC_1ST_YEAR} {din_check}/{DATA_FILE_NC_2ND_YEAR}"
     output_file = f"{dout_check}/{COMPONENT_NEW_FILE}"
@@ -91,13 +87,12 @@ def test_make_timeseries_comparison_output(capfd, tmp_path):
 
 def test_rose_failure_make_timeseries(capfd, tmp_path):
     """Test Rose app-run failure with incorrect component name."""
-    global ROSE_DIR
 
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
 
-    ROSE_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
-    os.makedirs(ROSE_DIR, exist_ok=True)
+    rose_dir = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    os.makedirs(rose_dir, exist_ok=True)
 
     original_cwd = os.getcwd()
     os.chdir(APP_DIR)
@@ -119,15 +114,14 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
     capfd.readouterr()  # Clear captured output
 
 
-def test_rose_success_make_timeseries(capfd, tmp_path):
+def test_success_make_timeseries(capfd, tmp_path):
     """Test Rose app-run success with correct component and pp_stop."""
     global ROSE_DIR
 
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
-    dout_check = str(dout_check)
 
-    ROSE_DIR = f"{tmp_path}/out_dir/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    ROSE_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
     os.makedirs(ROSE_DIR, exist_ok=True)
 
     original_cwd = os.getcwd()
@@ -154,7 +148,7 @@ def test_nccmp_make_timeseries(capfd):
     """Compare output files from manual CDO and Rose app runs with nccmp."""
     nccmp_ex = [
         "nccmp", "-d",
-        f"{NEW_DIR}/{COMPONENT_NEW_FILE}",
+        f"{DIR_TMP_OUT}/{COMPONENT_NEW_FILE}",
         f"{ROSE_DIR}/{COMPONENT_NEW_FILE}"
     ]
     sp = subprocess.run(nccmp_ex, check=True)
