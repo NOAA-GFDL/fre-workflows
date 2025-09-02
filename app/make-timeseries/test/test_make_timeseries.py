@@ -18,21 +18,23 @@ COMPONENT = "atmos_tracer"
 # Test data paths
 DATA_DIR = Path(__file__).parent / "files"
 APP_DIR = Path(__file__).parent.parent
+
 DATA_FILE_1ST_YEAR    = Path(f"{COMPONENT}.000501-000512.{VAR}.cdl")
 DATA_FILE_2ND_YEAR    = Path(f"{COMPONENT}.000601-000612.{VAR}.cdl")
-DATA_FILE_NC_1ST_YEAR = Path(f"{COMPONENT}.000501-000512.{VAR}.nc")
-DATA_FILE_NC_2ND_YEAR = Path(f"{COMPONENT}.000601-000612.{VAR}.nc")
-
-# Output file name follows FRE convention
 INIT_DATE = str(DATA_FILE_NC_1ST_YEAR)[13:19]
 END_DATE = str(DATA_FILE_NC_2ND_YEAR)[20:26]
-COMPONENT_NEW_FILE = f"{COMPONENT}.{INIT_DATE}-{END_DATE}.{VAR}.nc"
 
+DATA_FILE_NC_1ST_YEAR = Path(str(DATA_FILE_1ST_YEAR).replace('.cdl','.nc'))
+DATA_FILE_NC_2ND_YEAR = Path(str(DATA_FILE_2ND_YEAR).replace('.cdl','.nc'))
+
+# Output file name follows FRE convention
+
+COMPONENT_NEW_FILE = f"{COMPONENT}.{INIT_DATE}-{END_DATE}.{VAR}.nc"
 
 # Global test state (pytest discourages globals, but used here to mimic original logic)
 DIR_TMP_IN = None
 DIR_TMP_OUT = None
-ROSE_DIR = None
+GOOD_OUT_DIR = None
 
 
 def test_make_timeseries_comparison_output(capfd, tmp_path):
@@ -116,13 +118,13 @@ def test_rose_failure_make_timeseries(capfd, tmp_path):
 
 def test_success_make_timeseries(capfd, tmp_path):
     """Test Rose app-run success with correct component and pp_stop."""
-    global ROSE_DIR
+    global GOOD_OUT_DIR
 
     dout_check = tmp_path / "out_dir"
     dout_check.mkdir()
 
-    ROSE_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
-    os.makedirs(ROSE_DIR, exist_ok=True)
+    GOOD_OUT_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    os.makedirs(GOOD_OUT_DIR, exist_ok=True)
 
     original_cwd = os.getcwd()
     os.chdir(APP_DIR)
@@ -149,7 +151,7 @@ def test_nccmp_make_timeseries(capfd):
     nccmp_ex = [
         "nccmp", "-d",
         f"{DIR_TMP_OUT}/{COMPONENT_NEW_FILE}",
-        f"{ROSE_DIR}/{COMPONENT_NEW_FILE}"
+        f"{GOOD_OUT_DIR}/{COMPONENT_NEW_FILE}"
     ]
     sp = subprocess.run(nccmp_ex, check=True)
     assert sp.returncode == 0, "nccmp comparison failed"
