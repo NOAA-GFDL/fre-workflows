@@ -29,9 +29,7 @@ jobs:
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
 
-          singularity pull docker://gitlab.gfdl.noaa.gov:5050/fre/hpc-me/base-ppp-none-build:1
-          container_path=gitlab.gfdl.noaa.gov:5050/fre/hpc-me/base-ppp-none-build:1
-          #container_path=/contrib/container-test/ppp_8-22.sif
+          container_path=/contrib/container-test/ppp_8-22.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
