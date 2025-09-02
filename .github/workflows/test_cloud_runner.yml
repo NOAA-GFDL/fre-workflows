@@ -17,27 +17,26 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Run ppp-container
-        run: |
-          # Print pwd then run script
-          echo "Currently in:"
-          cwd=$(pwd)
-          echo $cwd
-          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
-                      --bind /contrib/container-test/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                      --bind /contrib/container-test"
-
-          container_path=/contrib/container-test/ppp_8-22.sif
-          runscript_path=${cwd}/for_gh_runner/runscript.sh
-
-          singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-
-          # Can potentially do this to get list of tasks
-          #task_list=$(cylc list test_pp__ptest__ttest)
-          #task1=$(echo $task_list | cut -d ' ' -f1) ....
-
+#      - name: Run ppp-container
+#        run: |
+#          # Print pwd then run script
+#          echo "Currently in:"
+#          cwd=$(pwd)
+#          echo $cwd
+#          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
+#          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
+#                      --bind /contrib/container-test/history:/mnt/history:ro
+#                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+#                      --bind /contrib/container-test"
+#
+#          container_path=/contrib/container-test/ppp_8-22.sif
+#          runscript_path=${cwd}/for_gh_runner/runscript.sh
+#
+#          singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
+#
+#          # Can potentially do this to get list of tasks
+#          #task_list=$(cylc list test_pp__ptest__ttest)
+#          #task1=$(echo $task_list | cut -d ' ' -f1) ....
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
@@ -207,11 +206,11 @@ jobs:
           set +e
           # Successes 
           success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
-          exit_status_2=$? 
+          exit_status_1=$? 
 
           # Failures
           failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[0-3]/job.status)
-          exit_status=$?
+          exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
               echo $success | sed 's/ /\n/g' #split string by spaces
