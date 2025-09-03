@@ -1,4 +1,7 @@
 #!/bin/bash
+# Enable extended globbing first, before any function definitions
+shopt -s extglob
+
 set -euo pipefail
 set -x
 
@@ -118,8 +121,6 @@ function process_timeseries {
 }
 
 source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
-
-shopt -s extglob
 
 echo Arguments:
 echo "    input dir: $inputDir"
