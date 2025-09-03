@@ -107,7 +107,7 @@ jobs:
               exit 2
           fi
 
-      - name: Print regrid-xy successes or failures
+      - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
           set +e
