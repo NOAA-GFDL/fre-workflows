@@ -221,8 +221,6 @@ def process_timeseries(args, expected_chunks: int, begin: str, end: str) -> bool
         print("ERROR: No input directories found!")
         return False
 
-    print(f"DEBUG: Found directories: {dirs}")
-
     for directory in dirs:
         path_parts = directory.split(os.sep)
         if len(path_parts) < 2:
@@ -231,16 +229,12 @@ def process_timeseries(args, expected_chunks: int, begin: str, end: str) -> bool
         freq = path_parts[0]
         chunk = path_parts[1]
 
-        print(f"DEBUG: Processing directory {directory}, freq={freq}, chunk={chunk}")
-
         # Skip if chunk doesn't match input chunk
         input_chunk = args.inputChunk
         if input_chunk == "P12M":
             input_chunk = "P1Y"
 
         if chunk != input_chunk:
-            print(f"DEBUG: Skipping {directory} - chunk {chunk}"
-                  f" doesn't match input chunk {input_chunk}")
             continue
 
         original_dir = os.getcwd()
@@ -250,14 +244,11 @@ def process_timeseries(args, expected_chunks: int, begin: str, end: str) -> bool
             # Get unique variables in this directory
             variables = set()
             nc_files = [f for f in os.listdir(".") if f.endswith(".nc")]
-            print(f"DEBUG: Found NC files: {nc_files}")
 
             for filename in nc_files:
                 parts = filename.split(".")
                 if len(parts) >= 3:
                     variables.add(parts[2])  # Variable is 3rd part
-
-            print(f"DEBUG: Found variables: {variables}")
 
             for var in sorted(variables):
                 print(f"Evaluating variable {var}")
@@ -266,7 +257,6 @@ def process_timeseries(args, expected_chunks: int, begin: str, end: str) -> bool
                 tile1_files = [f for f in nc_files
                               if f"{args.component}" in f and f".{var}.tile1.nc" in f]
                 is_tiled = len(tile1_files) > 0
-                print(f"DEBUG: Variable {var} is_tiled: {is_tiled}")
 
                 # Find files for this variable
                 files = []
@@ -283,10 +273,8 @@ def process_timeseries(args, expected_chunks: int, begin: str, end: str) -> bool
                                 if begin <= date1 < end:
                                     files.append(filename)
                             except (ValueError, RuntimeError) as e:
-                                print(f"DEBUG: Failed to parse date from {filename}: {e}")
+                                print(f"WARNING: Failed to parse date from {filename}: {e}")
                                 continue
-
-                print(f"DEBUG: Found {len(files)} files for variable {var}: {files}")
 
                 if len(files) != expected_chunks:
                     print(f"WARNING: Skipping {var} as unexpected number of chunks;"
