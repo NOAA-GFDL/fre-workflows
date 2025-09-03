@@ -7,6 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Sleep needed due to a race condition where cloud runner pipeline
+      # wanted to copy fre-workflows but did not have the permission to access
+      # .pyc files creates by running pytests
+      # Solution: start this pipeline after the test_cloud_runner.yml pipeline
+      #           starts to allow time for copying fre-workflows without a 
+      #           permission denied error
+      - name: Sleep
+        run: sleep 60
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
