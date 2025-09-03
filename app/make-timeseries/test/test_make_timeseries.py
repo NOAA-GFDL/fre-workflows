@@ -21,11 +21,12 @@ APP_DIR = Path(__file__).parent.parent
 
 DATA_FILE_1ST_YEAR    = Path(f"{COMPONENT}.000501-000512.{VAR}.cdl")
 DATA_FILE_2ND_YEAR    = Path(f"{COMPONENT}.000601-000612.{VAR}.cdl")
-INIT_DATE = str(DATA_FILE_NC_1ST_YEAR)[13:19]
-END_DATE = str(DATA_FILE_NC_2ND_YEAR)[20:26]
 
 DATA_FILE_NC_1ST_YEAR = Path(str(DATA_FILE_1ST_YEAR).replace('.cdl','.nc'))
 DATA_FILE_NC_2ND_YEAR = Path(str(DATA_FILE_2ND_YEAR).replace('.cdl','.nc'))
+
+INIT_DATE = str(DATA_FILE_NC_1ST_YEAR)[13:19]
+END_DATE = str(DATA_FILE_NC_2ND_YEAR)[20:26]
 
 # Output file name follows FRE convention
 
