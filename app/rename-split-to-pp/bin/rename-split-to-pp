@@ -243,6 +243,7 @@ echo "    use subdirs: ${use_subdirs:=}"
 echo Utilities:
 type cdo
 type ncdump
+#isodatetime is a cylc utility; cylc needs to be loaded
 type isodatetime
 
 # Verify input directory exists and is a directory

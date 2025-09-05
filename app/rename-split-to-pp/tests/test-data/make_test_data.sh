@@ -58,12 +58,14 @@ for var in ${split_nc_vars[@]}; do
   for f in $nc_filenames; do
     nc_basename=$(basename $f)
     cdl_filename=$(echo $nc_basename | sed -e s:.nc:.cdl:g)
+    #delete all coordinates attributes - needed for the bad metadata on the monthly river files
+    ncatted -O -a coordinates,,d,, $f
     ncdump $f > $rename_indir/$cdl_filename
   done
 done
 
 #call rename-split-to-pp on the split-netcdf output; dump all files to cdl
-python /home/cew/Code/fre-workflows/app/rename-split-to-pp/bin/rename_split_to_pp_wrapper.py $split_nc_filter $rename_outdir $history_source do_regrid=FALSE
+python /home/cew/Code/fre-workflows/app/rename-split-to-pp/bin/rename_split_to_pp_wrapper.py $split_nc_filter $rename_outdir $history_source do_regrid="False"
 for f in $(find $rename_outdir | grep ".nc"); do
   #$f has the directory structure of the output; remove $rename_output to get what the tool wrote
   nc_basename=$(echo $f | sed -e s:$rename_outdir::g)

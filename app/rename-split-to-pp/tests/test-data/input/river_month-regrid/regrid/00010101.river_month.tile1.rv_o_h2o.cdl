@@ -27,7 +27,6 @@ variables:
 		rv_o_h2o:long_name = "river outflow, h2o mass" ;
 		rv_o_h2o:cell_methods = "time: mean" ;
 		rv_o_h2o:time_avg_info = "average_T1,average_T2,average_DT" ;
-		rv_o_h2o:coordinates = "geolon_t geolat_t" ;
 	double time_bnds(time, nv) ;
 		time_bnds:long_name = "time axis boundaries" ;
 	double grid_xt(grid_xt) ;
@@ -53,7 +52,7 @@ variables:
 		:associated_files = "areacellr: 00010101.river_static_cmip.nc land_area: 00010101.river_static.nc" ;
 		:grid_type = "regular" ;
 		:grid_tile = "N/A" ;
-		:history = "Fri Aug 29 14:00:37 2025: ncks -d grid_xt,0,14 -d grid_yt,0,9 /work/cew/scratch//00010101.river_month.tile1.nc -O /work/cew/scratch/workflow-test/river_month//ncks_out//00010101.river_month.tile1.nc" ;
+		:history = "Fri Sep  5 12:38:46 2025: ncatted -O -a coordinates,,d,, /work/cew/scratch/workflow-test/river_month//split-netcdf//00010101.river_month.tile1.rv_o_h2o.nc\nFri Sep  5 12:38:28 2025: ncks -d grid_xt,0,14 -d grid_yt,0,9 /work/cew/scratch//00010101.river_month.tile1.nc -O /work/cew/scratch/workflow-test/river_month//ncks_out//00010101.river_month.tile1.nc" ;
 		:NCO = "netCDF Operators version 5.1.9 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
 data:
 

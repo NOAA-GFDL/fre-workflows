@@ -22,8 +22,8 @@ def call_rename_split_to_pp(inputDir, outputDir, history_source, do_regrid):
     if do_regrid == "True":
         print("do_regrid is set to True")
         os.environ["use_subdirs"] = "True"
-    #else:
-    #    os.environ["use_subdirs"] = "0"
+    else:
+       os.environ["use_subdirs"] = "False"
     #rename-split-to-pp is a bash script    
     ##and this file is currently located 3 directories up from the root of the repo
     thisloc = os.path.abspath(__file__)

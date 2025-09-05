@@ -66,7 +66,7 @@ echo "finished calling make_test_data"
 
 # ################################################################################
 #
-# #timeseries annual case (need all 6 tiles)
+# #timeseries annual case
 # indir=/work/cew/scratch/
 # infiles=00010101.ocean_annual.nc
 # history_source="ocean_annual"

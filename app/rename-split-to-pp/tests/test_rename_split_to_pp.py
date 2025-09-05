@@ -47,12 +47,33 @@ def test_rename_split_to_pp_setup():
     nc_exists = [osp.isfile(el) for el in nc_files]
     assert all(nc_exists)
     
+def test_rename_split_to_pp_multiply():
+  '''
+  Takes every file with 'tile1' in the name and make 5 new copies.
+  rename-split-to-pp needs 6 tile files - it throws an error if there are fewer -
+  but it's not checking on whether the tiles match up with each other, so we can
+  take one and copy it 5 times.
+  '''
+  nc_tile_files = []; t1 = 'tile1'; tile_patterns = ['tile2', 'tile3', 'tile4', 'tile5', 'tile6']
+  for path,subdirs,files in os.walk(TEST_DATA_DIR):
+    for name in files:
+      if name.endswith(".nc") and re.search(t1, name) is not None:
+        nc_tile_files.append(osp.join(path, name))
+  assert len(nc_tile_files) == 8 #2 tile cases (daily,mon) * input,orig_output *regrid,native
+  tp_files = []
+  for nct in nc_tile_files:
+    for tp in tile_patterns:
+      tp_file = re.sub(t1, tp, nct)
+      tp_files.append(tp_file)
+      os.link(nct, tp_file)
+  assert all([osp.isfile(el) for el in tp_files])
+    
 @pytest.mark.parametrize("hist_source,do_regrid,og_suffix", 
                           [ 
                           pytest.param("atmos_daily", False, "P1D/P6M/", id="day-native"),
                           pytest.param("atmos_daily", True, "P1D/P6M/", id="day-regrid"),
-                          pytest.param("river_month", False, "P1M/P1Y/", id="mon-native", marks=pytest.mark.xfail(reason='fix cdl parsing metadata')),
-                          pytest.param("river_month", True, "P1M/P1Y/", id="mon-regrid", marks=pytest.mark.xfail(reason='fix cdl parsing metadata')),
+                          pytest.param("river_month", False, "P1M/P1Y/", id="mon-native"),
+                          pytest.param("river_month", True, "P1M/P1Y/", id="mon-regrid"),
                           pytest.param("ocean_annual", False, "P1Y/P1Y/", id="year-native"),
                           pytest.param("ocean_annual", True, "P1Y/P1Y/", id="year-regrid"),
                           pytest.param("ocean_static", False, "P0Y/P0Y/", id="static-native"),
