@@ -164,7 +164,8 @@ function process_files {
         fi
 
         # If in subdir mode, preserve the subdir
-        if [[ $use_subdirs ]]; then
+        echo "using subdirs: $use_subdirs"
+        if [[ $use_subdirs == "True" ]]; then
             dir=$outputDir/$subdir/$label/$freq/$chunk
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
@@ -278,6 +279,7 @@ shopt -s extglob
 echo "use_subdirs:"
 echo $use_subdirs
 if [[ $use_subdirs == "True" ]]; then
+    echo "using subdirs"
     for subdir in $(ls); do
         pushd $subdir
         files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
@@ -297,6 +299,7 @@ if [[ $use_subdirs == "True" ]]; then
         popd
     done
 else
+    echo "not using subdirs"
     # target only the tile1 files for efficiency, at the cost of assuming there are 6
     files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
     echo $files

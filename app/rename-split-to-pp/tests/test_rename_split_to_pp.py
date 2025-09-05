@@ -47,29 +47,14 @@ def test_rename_split_to_pp_setup():
     nc_exists = [osp.isfile(el) for el in nc_files]
     assert all(nc_exists)
     
-
-# cases = {'ts_rg': [osp.join(INDIR, "atmos_daily-regrid"),   osp.join(OUTDIR,"atmos_daily-regrid"), osp.join(OG, "atmos_daily-regrid/regrid/atmos_daily/P1D/P6M/")], 
-#          'ts_nrg':  [osp.join(INDIR, "atmos_daily-native"), osp.join(OUTDIR,"atmos_daily-native"), osp.join(OG, "atmos_daily-native/atmos_daily/P1D/P6M/")],
-#          'st_rg': [osp.join(INDIR, "ocean_static-regrid"),  osp.join(OUTDIR,"ocean_static-regrid"), osp.join(OG, "ocean_static-regrid/regrid/ocean_static/P0Y/P0Y/")], 
-#          'st_nrg':  [osp.join(INDIR, "ocean_static-native"),osp.join(OUTDIR,"ocean_static-native"), osp.join(OG, "ocean_static-native/ocean_static/P0Y/P0Y/")],
-#          'f_bf':   [osp.join(INDIR, "fail_filenames"), osp.join(OUTDIR,"fail_filenames"), ""], 
-#          'f_nf':   [osp.join(INDIR, "fail_nofiles"),   osp.join(OUTDIR,"fail_nofiles"), ""]}
-#             
-# @pytest.mark.parametrize("inputDir,outputDir,hist_source,do_regrid,expected_dirpath", 
-#                         [ pytest.param(cases['ts_nrg'][0], cases['ts_nrg'][1], 'atmos_daily', "False", cases['ts_nrg'][2], id="ts_noregrid"),
-#                           pytest.param(cases['ts_rg'][0], cases['ts_rg'][1], 'atmos_daily', "True", cases['ts_rg'][2],id="ts_regrid"),
-#                           pytest.param(cases['st_nrg'][0], cases['st_nrg'][1], 'ocean_static', "False", cases['st_nrg'][2],id="static_noregrid"),
-#                           pytest.param(cases['st_rg'][0], cases['st_rg'][1], 'ocean_static', "True", cases['st_rg'][2], id="static_regrid"),
-#                           pytest.param(cases['f_bf'][0], cases['f_bf'][1], 'atmos_daily', "True", cases['f_bf'][2], id="fail_badfilename", marks=pytest.mark.xfail()),
-#                           pytest.param(cases['f_nf'][0], cases['f_nf'][1], 'atmos_daily', "False", cases['f_nf'][2], id="fail_noinput", marks=pytest.mark.xfail())
-#                          ])
 @pytest.mark.parametrize("hist_source,do_regrid,og_suffix", 
-                          [ pytest.param("atmos_daily", False, "P1D/P6M/", id="day-native"),
+                          [ 
+                          pytest.param("atmos_daily", False, "P1D/P6M/", id="day-native"),
                           pytest.param("atmos_daily", True, "P1D/P6M/", id="day-regrid"),
-                          # pytest.param("river_month", False, "P1D/P6M/", id="mon-native"),
-                          # pytest.param("river_month", True, "P1D/P6M/", id="mon-regrid"),
-                          # pytest.param("ocean_annual", False, "P1D/P6M/", id="year-native"),
-                          # pytest.param("ocean_annual", True, "P1D/P6M/", id="year-regrid"),
+                          pytest.param("river_month", False, "P1M/P1Y/", id="mon-native", marks=pytest.mark.xfail(reason='fix cdl parsing metadata')),
+                          pytest.param("river_month", True, "P1M/P1Y/", id="mon-regrid", marks=pytest.mark.xfail(reason='fix cdl parsing metadata')),
+                          pytest.param("ocean_annual", False, "P1Y/P1Y/", id="year-native"),
+                          pytest.param("ocean_annual", True, "P1Y/P1Y/", id="year-regrid"),
                           pytest.param("ocean_static", False, "P0Y/P0Y/", id="static-native"),
                           pytest.param("ocean_static", True, "P0Y/P0Y/", id="static-regrid"),
                           pytest.param("fail_filenames", False, "", id="fail-badfilename", marks=pytest.mark.xfail()),
@@ -85,13 +70,15 @@ def test_rename_split_to_pp_run(hist_source, do_regrid, og_suffix):
       inputDir (inputDir)  - location of your input files, output from split-netcdf
       outputDir (outputDir) - location to which to write your output files
       component (history_source) - VERY BADLY NAMED. What split-netcdf is calling the hist_source after the rewrite.
-      use_subdirs (do_regrid) - either set to 1 or unset. 1 is used for the regridding case. 
-    These tests operate under several test cases:
-      - sucess:
-        - timeseries, no regridding
-        - timeseries, regridding
-        - static file, no regridding
-        - static file, regridding
+      use_subdirs (do_regrid) - either set to 1 or unset. 1 is used for the regridding case.
+        * no longer set to 1 or unset, set to "True" or "False". Makes the if checks
+        more sensitive, but makes the setup/teardown of unsetting env variables easier.
+    These tests operate under 4 frequenckes with regridding/no regridding cases:
+      - success:
+        - daily regrid/native, multiple tiles
+        - monthly regird/native, multiple tiles (currently failing because of metadata)
+        - annual regrid/native
+        - static regrid/no regrid
       - failure:
         - files in input don't match naming convention, raises error TBD
         - no files in input dir, raises error TBD
@@ -116,6 +103,9 @@ def test_rename_split_to_pp_run(hist_source, do_regrid, og_suffix):
         dir_suffix = hist_source + "-regrid"
         origDir = osp.join(OG, dir_suffix, "regrid", hist_source, og_suffix)
     else:
+        #need to set in this branch b/c env variables aren't getting torn down - 
+        #otherwise the 'True' from prior run sticks around
+        os.environ["use_subdirs"] = "False"
         dir_suffix = hist_source + "-native"
         origDir = osp.join(OG, dir_suffix, hist_source, og_suffix)
     
@@ -135,21 +125,13 @@ def test_rename_split_to_pp_run(hist_source, do_regrid, og_suffix):
       #check for 2 things:
       #are there files at the output dir path
       #is there a file in output dir path for each file in orig-output
-      print(origDir)
       expected_files = [os.path.join(origDir, el) for el in os.listdir(origDir)]
       expected_files = [el for el in expected_files if el.endswith(".nc")]
-      print("OG: " + ",".join(expected_files))
-      print("OG_outdir: " + OUTDIR)
       out_files = [re.sub(OG, OUTDIR, el) for el in expected_files]
-      print("printing output files:")
-      print(" outfiles: " + ",".join(out_files))
       files_there = len(out_files) > 0
-      print("files_there " + str(files_there))
       if files_there:
         outdir = os.path.dirname(out_files[0])
-        print("outdir " + outdir)
         actual_out_files = [os.path.join(outdir,el) for el in os.listdir(outdir) if el.endswith(".nc")]
-        print(actual_out_files)
         out_files.sort()
         actual_out_files.sort()
         files_paired = all([el[0] == el[1] for el in zip(out_files, actual_out_files)])
