@@ -1,20 +1,22 @@
 # User-Specific settings
 
+All instructions provided are for a developer working on PPAN:
+
 ## User settings
 
-You have to have a file in your /home directory that looks like this: 
+Developers will need a file in their /home directory that looks like this: 
 
 ```
-> cat /home/Carolyn.Whitlock/.bash_profile
+> cat /home/First.Last/.bash_profile
 # this is essential Cylc configuration below
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
-We need this to run on ppan. Without a cylc binary in your $PATH variable, 
+We need this to run on PPAN. Without a cylc binary in your $PATH variable, 
 the initial setup of the workflow sever (check terminology) fails, and we can't
 edit the environment with a module load or similar until it's running.
 
-We'd like a longer-term solution by adding a link to the binary in one of the
-places that is already added to our $PATH, but that's in progress.
+> ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is
+being persued.
 
 
 ## Experiment settings
@@ -81,7 +83,7 @@ for cylc and the latest fre release:
 
 ```
 module load cylc
-module load fre/2025.03
+module load fre/2025.04
 ```
 
 This applies even if you're testing fre features as we describe later in this 
