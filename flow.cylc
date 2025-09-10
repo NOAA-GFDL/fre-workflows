@@ -887,14 +887,14 @@
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
-            source = $CYLC_TASK_PARAM_regrid
-	    yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+	    source = $CYLC_TASK_PARAM_regrid\
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
     {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid_static
-	    yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
     {% endif %}
 {% endif %}
 
