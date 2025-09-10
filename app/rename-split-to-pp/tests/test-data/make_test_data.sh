@@ -131,6 +131,10 @@ python /home/cew/Code/fre-workflows/app/rename-split-to-pp/bin/rename_split_to_p
 #timeseries regrid
 python /home/cew/Code/fre-workflows/app/rename-split-to-pp/bin/rename_split_to_pp_wrapper.py /work/cew/scratch/atmos_subset/split-netcdf-filter/ /work/Carolyn.Whitlock/scratch/atmos_subset/atmos_daily atmos_daily do_regrid=FALSE
 
-#static non-regrid
+#run the following commands to get rid of the excess cdl files - we only need tile1
+(fre-cli) bash-4.4$ find `pwd` | grep cdl | grep tile2 | xargs rm -rf
+(fre-cli) bash-4.4$ find `pwd` | grep cdl | grep tile3 | xargs rm -rf
+(fre-cli) bash-4.4$ find `pwd` | grep cdl | grep tile4 | xargs rm -rf
+(fre-cli) bash-4.4$ find `pwd` | grep cdl | grep tile5 | xargs rm -rf
+(fre-cli) bash-4.4$ find `pwd` | grep cdl | grep tile6 | xargs rm -rf
 
-#static regrid
