@@ -874,7 +874,7 @@
     [[REGRID-XY]]
         script = """
             fre --verbose app regrid \
-	        --yamlfile=$yaml_config \
+                --yamlfile=$yaml_config \
                 --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
                 --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
                 --work_dir=$CYLC_TASK_WORK_DIR \
