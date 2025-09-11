@@ -1,6 +1,5 @@
 #python wrapper for rename_split_to_pp
-#used for the pytest tests, intended to be replaced
-#once a full replacement for rename-split-to-pp exists
+#used for generating data
 
 import sys
 import os
@@ -24,10 +23,11 @@ def call_rename_split_to_pp(inputDir, outputDir, history_source, do_regrid):
         os.environ["use_subdirs"] = "True"
     else:
        os.environ["use_subdirs"] = "False"
-    #rename-split-to-pp is a bash script    
+    #rename-split-to-pp is a bash script in app/rename-split-to-pp/bin
+    #and this file is in app/rename-split-to-pp/tests/test-data/rename-split-to-pp-wrapper.py  
     ##and this file is currently located 3 directories up from the root of the repo
-    thisloc = os.path.abspath(__file__)
-    app_loc = os.path.dirname(thisloc) + "/rename-split-to-pp"
+    thisloc = os.path.abspath(__file__).split("/")
+    app_loc = "/".join(thisloc[:-3]) + "bin/rename-split-to-pp"
     print("calling rename-split-to-pp")
     out0 = subprocess.run(app_loc, capture_output=True)
     pprint.pp(out0.stdout.split(b"\n"), width=240)
