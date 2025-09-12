@@ -74,6 +74,11 @@ jobs:
         run: |
           # pytest unittests for remap-pp-components
           pytest -v -v -rx  ./app/combine-statics/tests
+          
+      - name: rename-split-to-pp pytest
+        continue-on-error: false
+        run: | 
+          pytest app/rename-split-to-pp/tests/test_rename_split_to_pp.py    
 
       - name: combine-statics pylint
         run: |
