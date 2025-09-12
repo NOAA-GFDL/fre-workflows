@@ -51,7 +51,6 @@ function process_files {
         # statics and files with one timestamp aren't handled well
         # cdo ntime reports 1 for statics, so need to use another call to distingush
         # the comparisons at line 54 and 59 are very sensitive to (( vs (
-        echo $timesteps
         if (( ${timesteps} == 1 )); then
             # one timestep can mean 2 things: either you have a static file 
             # (when frequency and chunksize are both 0)
@@ -165,7 +164,6 @@ function process_files {
 
         # If in subdir mode, preserve the subdir
         echo "using subdirs: $use_subdirs"
-        echo "use_subdir_switch: $use_subdir_switch"
         if (( $use_subdir_switch )); then
             dir=$outputDir/$subdir/$label/$freq/$chunk
 
@@ -279,8 +277,6 @@ cd $inputDir
 shopt -s extglob
 
 # Find and process the input files
-echo "use_subdirs:"
-echo $use_subdirs
 
 if [[ $use_subdirs == "True" ]]; then
     echo "using subdirs"
@@ -308,7 +304,6 @@ else
     use_subdir_switch=0
     # target only the tile1 files for efficiency, at the cost of assuming there are 6
     files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
-    echo $files
 
     # Exit if no input files are found
     if [[ $files =~ \* ]]; then

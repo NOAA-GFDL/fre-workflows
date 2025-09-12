@@ -78,7 +78,7 @@
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
-        
+
     [[DATA-CATALOG]]
         pre-script = module load fre/{{ FRE_VERSION }}
 
