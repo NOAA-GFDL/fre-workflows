@@ -23,11 +23,6 @@ INDIR = os.path.join(TEST_DATA_DIR, "input")
 OUTDIR = os.path.join(TEST_DATA_DIR, "output")
 OG = os.path.join(TEST_DATA_DIR, "orig-output")
 
-#RENAME_SPLIT_TO_PP = osp.join(ROOTDIR, "app/rename-split-to-pp/bin/rename_split_to_pp_wrapper.py")
-sys.path.append(os.path.join(ROOTDIR, "bin"))
-print(sys.path)
-from rename_split_to_pp_wrapper import call_rename_split_to_pp
-
 def test_rename_split_to_pp_setup():
     '''
     sets up the test files for the test cases
@@ -94,7 +89,7 @@ def test_rename_split_to_pp_run(hist_source, do_regrid, og_suffix):
       use_subdirs (do_regrid) - either set to 1 or unset. 1 is used for the regridding case.
         * no longer set to 1 or unset, set to "True" or "False". Makes the if checks
         more sensitive, but makes the setup/teardown of unsetting env variables easier.
-    These tests operate under 4 frequenckes with regridding/no regridding cases:
+    These tests operate under 4 frequencies with regridding/no regridding cases:
       - success:
         - daily regrid/native, multiple tiles
         - monthly regird/native, multiple tiles (currently failing because of metadata)

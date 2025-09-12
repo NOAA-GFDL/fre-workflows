@@ -687,6 +687,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             component = $CYLC_TASK_PARAM_native
+            use_subdirs = "False"
 {% endif %}
 
 {% if DO_REGRID %}
@@ -696,7 +697,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
+            use_subdirs = "True"
 {% endif %}
 
 {% if DO_NATIVE %}

@@ -9,7 +9,7 @@ set -x
 # Link each input file into a canonical directory structure
 function process_files {
     path="$1" #subdir or regular inputDir based on case
-    if [[ $use_subdirs ]]; then
+    if (( $use_subdir_switch )); then
         my_path=$(basename $path)/
     else
         my_path=
@@ -152,7 +152,7 @@ function process_files {
         fi
 
         if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-            if [[ $use_subdirs ]]; then
+            if [[ $use_subdir_switch ]]; then
                 data_lineage_in_path=$inputDir/$subdir
             else
                 data_lineage_in_path=$inputDir
@@ -165,7 +165,8 @@ function process_files {
 
         # If in subdir mode, preserve the subdir
         echo "using subdirs: $use_subdirs"
-        if [[ $use_subdirs == "True" ]]; then
+        echo "use_subdir_switch: $use_subdir_switch"
+        if (( $use_subdir_switch )); then
             dir=$outputDir/$subdir/$label/$freq/$chunk
 
             if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
@@ -279,8 +280,10 @@ shopt -s extglob
 # Find and process the input files
 echo "use_subdirs:"
 echo $use_subdirs
+
 if [[ $use_subdirs == "True" ]]; then
     echo "using subdirs"
+    use_subdir_switch=1
     for subdir in $(ls); do
         pushd $subdir
         files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
@@ -301,6 +304,7 @@ if [[ $use_subdirs == "True" ]]; then
     done
 else
     echo "not using subdirs"
+    use_subdir_switch=0
     # target only the tile1 files for efficiency, at the cost of assuming there are 6
     files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
     echo $files
