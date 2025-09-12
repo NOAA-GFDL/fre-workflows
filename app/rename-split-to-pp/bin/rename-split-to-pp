@@ -244,6 +244,7 @@ echo "    use subdirs: ${use_subdirs:=}"
 echo Utilities:
 type cdo
 type ncdump
+type nco
 #isodatetime is a cylc utility; cylc needs to be loaded
 type isodatetime
 
