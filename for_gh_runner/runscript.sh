@@ -29,7 +29,7 @@ fre --help
 
 #update fre-cli env to latest in main
 git clone https://github.com/NOAA-GFDL/fre-cli
-cd fre-cli && git checkout test_ppp_workflow && git log -n 5
+cd fre-cli && git checkout add-climo-wrapper && git log -n 5
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
