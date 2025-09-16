@@ -3,7 +3,7 @@ set -euo pipefail
 set -x
 
 #
-# use fre-python-tools generate_time_average module to average history files 
+# use fre app gen-time-averages module to average history files 
 #
 
 echo Arguments:
