@@ -1,0 +1,17 @@
+postprocess:
+  components:
+    ## regridded component
+    - type: "atmos"
+      sources:
+        - history_file: "atmos_monthly"
+      xyInterp: *PP_XYINTERP96
+      interpMethod: "conserve_order2"
+      inputRealm: 'atmos'
+      sourceGrid: 'cubedsphere'
+      postprocess_on: True
+
+    ## native component
+    - type: "atmos_scalar"
+      sources:
+        - history_file: "atmos_scalar"
+      postprocess_on: True
