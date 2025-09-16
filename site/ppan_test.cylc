@@ -36,8 +36,6 @@
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
-            # Uncomment to collect data for the data lineage tool
-            # EPMT_DATA_LINEAGE=1
 
     [[PP-STARTER]]
         env-script = """
