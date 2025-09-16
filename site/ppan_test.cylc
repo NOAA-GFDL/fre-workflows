@@ -147,7 +147,7 @@
         pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[COMBINE-TIMEAVGS]]
         pre-script = module load cdo nco && mkdir -p $outputDir
