@@ -32,7 +32,7 @@ fre --version
 
 #update fre-cli env to latest in main
 git clone https://github.com/NOAA-GFDL/fre-cli
-cd fre-cli && pip install . && git log --one-line
+cd fre-cli && pip install . && git log
 cd -
 fre -vv cmor --help
 fre -vv cmor run --help
