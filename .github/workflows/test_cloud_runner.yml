@@ -29,7 +29,7 @@ jobs:
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
 
-          container_path=/contrib/container-test/ppp_8-22.sif
+          container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
@@ -108,7 +108,7 @@ jobs:
           fi
 
       - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
-        continue-on-error: true
+        continue-on-error: false
         run: |
           set +e
           # Successes 
