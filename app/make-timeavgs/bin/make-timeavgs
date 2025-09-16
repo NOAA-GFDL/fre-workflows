@@ -126,7 +126,7 @@ for dir in ${dirs[@]}; do
         #cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
         which fre
         fre app --help
-        cmd="fre app generate-time-averages -p cdo -a $tool_args -i ${file} -o ${output_dir}/${newfile}"
+        cmd="fre -vv app gen-time-averages -p cdo -a $tool_args -i ${file} -o ${output_dir}/${newfile}"
         echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
