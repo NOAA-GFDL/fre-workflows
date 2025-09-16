@@ -108,7 +108,8 @@ fre_pp_steps () {
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
-    
+    export PATH=/mnt/.local/bin:$PATH
+    which fre 
     ## Configure the rose-suite and rose-app files for the workflow
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
     fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
