@@ -22,7 +22,14 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-#update fre-cli env?
+# these should look different from main result below
+which fre
+fre --version
+fre --help
+
+
+
+#exit 1
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
 
@@ -92,7 +99,16 @@ fre_pp_steps () {
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
-    
+    #update fre-cli env to latest in main
+    git clone --recursive https://github.com/NOAA-GFDL/fre-cli
+    cd fre-cli && git checkout add-climo-wrapper && git log -n 5
+    pip install .
+    export PATH=/mnt/.local/bin:$PATH
+    cd -
+    which fre
+    fre --help
+    fre app --help
+
     ## Configure the rose-suite and rose-app files for the workflow
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
     fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
