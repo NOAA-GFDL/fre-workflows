@@ -422,41 +422,6 @@
             fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
                 --date_string $(cylc cycle-point --template CCYYMMDD)
 
-            # Setup PYTHONPATH and io lists for the data lineage tool
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                export PYTHONPATH=$CYLC_WORKFLOW_RUN_DIR:$PYTHONPATH
-                export input_file_list=
-                export output_file_list=
-                echo "Set PYTHONPATH and created i/o lists"
-            fi
-
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-
-                start_time=$(date +%s)
-
-                for file in $(ls $outputDir); do
-                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.HashGen $outputDir/$file)
-                    export output_file_list="${output_file_list}$file $hash_val,"
-                    echo "[DATA LINEAGE] Added $file to output list with hash_val: $hash_val"
-                done
-
-                end_time=$(date +%s)
-                duration=$((end_time - start_time))
-                echo "Time spent hashing and creating the file list: $duration seconds"
-
-                epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
-                echo "[DATA LINEAGE] Annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-                if [ -n "$output_file_list" ]; then
-                    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
-                    epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
-                    echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-                fi
-            fi
-
             echo "Natural end of the history file staging"
             exit 0
         """
