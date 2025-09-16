@@ -23,24 +23,21 @@ conda deactivate
 conda activate /app/cylc-flow-tools
 
 # these should look different from main result below
-fre -vv cmor --help
-fre -vv cmor run --help
-fre -vv cmor yaml --help
-fre -vv cmor varlist --help
-fre -vv cmor find --help
+which fre
 fre --version
+
 
 #update fre-cli env to latest in main
 git clone https://github.com/NOAA-GFDL/fre-cli
-cd fre-cli && pip install . && git log -n 5
-cd -; git log -n 5
-fre -vv cmor --help
-fre -vv cmor run --help
-fre -vv cmor yaml --help
-fre -vv cmor varlist --help
-fre -vv cmor find --help
+cd fre-cli && git checkout add-climo-wrapper && git log -n 5
+pip install .
+export PATH=/mnt/.local/bin:$PATH
+cd -
+which fre
+fre app --help
 fre --version
-exit 1
+
+#exit 1
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
 
