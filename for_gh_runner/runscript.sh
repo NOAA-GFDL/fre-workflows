@@ -22,7 +22,15 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-#update fre-cli env?
+# these should look different from main result below
+fre -vv cmor --help
+fre -vv cmor run --help
+fre -vv cmor yaml --help
+fre -vv cmor varlist --help
+fre -vv cmor find --help
+fre --version
+
+#update fre-cli env to latest in main
 git clone https://github.com/NOAA-GFDL/fre-cli
 cd fre-cli && pip install .; cd -;
 fre -vv cmor --help
@@ -31,6 +39,7 @@ fre -vv cmor yaml --help
 fre -vv cmor varlist --help
 fre -vv cmor find --help
 fre --version
+git log -n 1
 exit 1
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
