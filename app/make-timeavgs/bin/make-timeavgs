@@ -14,7 +14,6 @@ echo "    interval: $interval"
 echo "    use subdirs: ${use_subdirs:=}"
 echo Utilities:
 type cylc
-type generate-time-averages
 
 
 
@@ -106,7 +105,7 @@ for dir in ${dirs[@]}; do
             output_dir=$outputDir/$component/$file_freq/$interval
         fi
         mkdir -p $output_dir
-        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
+        cmd="fre -vv app gen-time-averages -p cdo -a $tool_args -i ${file} -o ${output_dir}/${newfile}"
         echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
