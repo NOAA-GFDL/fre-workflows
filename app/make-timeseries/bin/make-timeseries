@@ -63,6 +63,13 @@ function process_timeseries {
             d1=$(echo ${files[0]} | cut -d. -f 2 | cut -d- -f 1)
             d2=$(echo ${files[-1]} | cut -d. -f 2 | cut -d- -f 2)
 
+            # If processing subdirectories, add the subdir (e.g. "1deg") above the component level
+            if [[ $use_subdirs ]]; then
+                newdir=$outputDir/$subdir/$component/$freq/$outputChunk
+            else
+                newdir=$outputDir/$component/$freq/$outputChunk
+            fi
+
             # create timeseries
             mkdir -p $newdir
             if [[ $is_tiled ]]; then
