@@ -32,7 +32,7 @@ jobs:
           container_path=/contrib/container-test/ppp_8-22.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
-          singularity exec --writable-tmpfs ${bind_paths} --fakeroot ${container_path} ${runscript_path}
+          singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
           # Can potentially do this to get list of tasks
           #task_list=$(cylc list test_pp__ptest__ttest)
