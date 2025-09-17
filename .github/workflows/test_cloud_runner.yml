@@ -36,7 +36,8 @@ jobs:
           echo "did it do stuff?"
           echo "current dir"
           pwd
-          #ls
+          echo "contents of current fre-wf dir"
+          ls
           echo "go into fre-cli" 
           cd fre-cli
           echo "contents of fre-cli"
