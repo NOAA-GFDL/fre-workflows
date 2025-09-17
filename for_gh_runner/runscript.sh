@@ -78,6 +78,8 @@ check_exit_status () {
 }
 
 fre_pp_steps () {
+    set -x
+
     # experiment cleaned if previously installed
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
