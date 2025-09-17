@@ -29,7 +29,7 @@ jobs:
           cd fre-cli
           git checkout ${{ github.event.inputs.fre-cli-working-branch }} 
           cd - 
-     - name: Run ppp-container
+      - name: Run ppp-container
         run: |
           # Print pwd then run script
           echo "Currently in:"
