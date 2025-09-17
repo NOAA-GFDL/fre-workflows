@@ -1,20 +1,10 @@
 name: fre-workflows
 channels:
-  - defaults
   - conda-forge
   - noaa-gfdl
 dependencies:
   - python
   - pip
   - noaa-gfdl::fre-cli
-  - pyyaml
-#  - click
-#  - pylint
-#  - jsonschema
-#  - noaa-gfdl::fre-nctools
-#  - conda-forge::cylc-flow>=8.2.0
-#  - conda-forge::cylc-rose
-#  - conda-forge::metomi-rose
-#  - conda-forge::cylc-uiserver
-#  - conda-forge::pytest
-#  - conda-forge::pytest-cov
+  - conda-forge::pyyaml
+  - conda-forge::nco

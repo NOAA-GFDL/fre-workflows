@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = 2025.02 %}
+{% set FRE_VERSION = 2025.04 %}
 
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
@@ -12,6 +12,13 @@
 {# sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.          #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
 {% set SITE = SITE %}
+
+{# Setting STALL_TIMEOUT here provides the ability to override the value if necessary #}
+{# A use case for overriding this value is exhibited in the fre-workflows pipeline test_cloud_runner.yaml #}
+{# In this pipeline, the stall timeout will be 0 in order for the workflow to immediately abort is stalled #}
+{% if STALL_TIMEOUT is not defined %}
+    {% set STALL_TIMEOUT = "P1W" %}
+{% endif %}
 
 {# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
 {% if ANALYSIS_START is not defined %}
@@ -46,7 +53,7 @@
     [[events]]
         # When the stall timeout is reached, a stalled workflow will exit
         # and remove the /xtmp working directory.
-        stall timeout = P1W
+        stall timeout = {{ STALL_TIMEOUT }}
 
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
@@ -124,133 +131,135 @@
         # Recurrence interval: every history-file segment
         #
         {{ HISTORY_SEGMENT }} = """
-{# Within a recurrence interval, task dependencies are specified with => (depends on), & (and), and | (or). #}
-{# Tasks in a dependency can be single tasks, task families (by convention, in all caps),           #}
-{# or "ensembles" expanded by the parameters above.                                                         #}
+            {# Within a recurrence interval, task dependencies are specified with => (depends on), & (and), and | (or). #}
+            {# Tasks in a dependency can be single tasks, task families (by convention, in all caps),           #}
+            {# or "ensembles" expanded by the parameters above.                                                         #}
 
-{# All tasks in the STAGE-HISTORY family (staging history and staging history-refined) are started #}
-{# once the pp-starter task succeeds.                                                              #}
-pp-starter => STAGE-HISTORY
+            {# All tasks in the STAGE-HISTORY family (staging history and staging history-refined) are started #}
+            {# once the pp-starter task succeeds.                                                              #}
+            pp-starter => STAGE-HISTORY
 
-{# Jinja is useful to include or exclude parts of the configuration. In this case, the lines between              #}
-{# if DO_REFINEDIAG and endif are used or not used, depending on the value of DO_REFINEDIAG (in rose-suite.conf). #}
-{# All template variables in rose-suite.conf are available as Jinja variables.                    #}
-{# If refineDiag generation is desired (DO_REFINEDIAG is True), then add these two task dependencies:         #}
-{# 1. All tasks in the REFINE-DIAG task family are started once the stage-history task succeeds.          #}
-{# 2. stage-history-refined task is started once all the refineDiag tasks succeed.                                #}
-{% if DO_REFINEDIAG %}
-stage-history => REFINE-DIAG
-REFINE-DIAG:succeed-all => stage-history-refined
-{% endif %}
+            {# Jinja is useful to include or exclude parts of the configuration. In this case, the lines between              #}
+            {# if DO_REFINEDIAG and endif are used or not used, depending on the value of DO_REFINEDIAG (in rose-suite.conf). #}
+            {# All template variables in rose-suite.conf are available as Jinja variables.                    #}
+            {# If refineDiag generation is desired (DO_REFINEDIAG is True), then add these two task dependencies:         #}
+            {# 1. All tasks in the REFINE-DIAG task family are started once the stage-history task succeeds.          #}
+            {# 2. stage-history-refined task is started once all the refineDiag tasks succeed.                                #}
+            {% if DO_REFINEDIAG %}
+            stage-history => REFINE-DIAG
+            REFINE-DIAG:succeed-all => stage-history-refined
+            {% endif %}
 
-{# If preAnalysis desired (vitals calculations is canonical case), #}
-{# start all PRE-ANALYSIS tasks when stage-history succeeds. #}
-{% if DO_PREANALYSIS %}
-stage-history => PRE-ANALYSIS
-{% endif %}
+            {# If preAnalysis desired (vitals calculations is canonical case), #}
+            {# start all PRE-ANALYSIS tasks when stage-history succeeds. #}
+            {% if DO_PREANALYSIS %}
+            stage-history => PRE-ANALYSIS
+            {% endif %}
 
-{# If task families are on the left side of the => then a qualifier must be used (e.g. :succeed-all)     #}
-{# The angle brackets define the "ensemble" axis, the task paramaters defined above.                     #}
-{# The next two lines set the major processing for the native and regrid  #}
-{# (horizontal regridding) lists of history files. #}
-{# Each history file to be regridded should be regridded once staging is done; then should be split and cataloged    #}
-{# (into a standard shards directory set by ISO8601 frequencies ).                       #}
-{# Each history file needed for native grid processing is similar, except skipping the regridding.         #}
-{% if DO_REGRID %}
-STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
-    {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid> => regrid-xy<regrid>
-    {% endif %}
-{% endif %}
+            {# If task families are on the left side of the => then a qualifier must be used (e.g. :succeed-all)     #}
+            {# The angle brackets define the "ensemble" axis, the task paramaters defined above.                     #}
+            {# The next two lines set the major processing for the native and regrid  #}
+            {# (horizontal regridding) lists of history files. #}
+            {# Each history file to be regridded should be regridded once staging is done; #}
+            {# then should be split and cataloged into a standard shards directory set by ISO8601 frequencies. #}
+            {# Each history file needed for native grid processing is similar, except skipping the regridding.         #}
+            {% if DO_REGRID %}
+            STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
+                {% if DO_ATMOS_PLEVEL_MASKING %}
+            STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid> => regrid-xy<regrid>
+                {% endif %}
+            {% endif %}
 
-{% if DO_NATIVE %}
-STAGE-HISTORY:succeed-all => split-netcdf-native<native> => rename-split-to-pp-native<native>
-    {% if DO_ATMOS_PLEVEL_MASKING %}
-STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<native>
-    {% endif %}
-{% endif %}
+            {% if DO_NATIVE %}
+            STAGE-HISTORY:succeed-all => split-netcdf-native<native> => rename-split-to-pp-native<native>
+                {% if DO_ATMOS_PLEVEL_MASKING %}
+            STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<native>
+                {% endif %}
+            {% endif %}
 
-{# If HISTORY_DIR_REFINED is set, then use the next 3 lines.              #}
-{# Regridding and splitting native history files should not start until the history-refined output is available.   #}
-{% if HISTORY_DIR_REFINED is defined %}
-    {% if DO_REGRID %}
-stage-history-refined => regrid-xy<regrid>
-    {% endif %}
-    {% if DO_NATIVE %}
-stage-history-refined => split-netcdf-native<native>
-    {% endif %}
-{% endif %}
+            {# If HISTORY_DIR_REFINED is set, then use the next 3 lines.              #}
+            {# Regridding and splitting native history files should not start until the history-refined output is available.   #}
+            {% if HISTORY_DIR_REFINED is defined %}
+                {% if DO_REGRID %}
+            stage-history-refined => regrid-xy<regrid>
+                {% endif %}
+                {% if DO_NATIVE %}
+            stage-history-refined => split-netcdf-native<native>
+                {% endif %}
+            {% endif %}
 
-{# If work-dir cleaning is desired, then remove what should now be safe to remove.                                 #}
-{# Once regridded history files are split, then the regridded history files can be removed.            #}
-{# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
-{% if CLEAN_WORK %}
-    {% if DO_REGRID %}
-regrid-xy<regrid>                 => clean-history-native
-split-netcdf-regrid<regrid>       => clean-history-regrid-xy
-rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
-    {% endif %}
-    {% if DO_NATIVE %}
-split-netcdf-native<native>       => clean-history-native
-rename-split-to-pp-native<native> => clean-split-native
-    {% endif %}
-{% endif %}
-"""
+            {# If work-dir cleaning is desired, then remove what should now be safe to remove.                                 #}
+            {# Once regridded history files are split, then the regridded history files can be removed.            #}
+            {# Once the split (regridded and native) files are cataloged, then the (not-cataloged) split files can be removed. #}
+            {% if CLEAN_WORK %}
+                {% if DO_REGRID %}
+            regrid-xy<regrid>                 => clean-history-native
+            split-netcdf-regrid<regrid>       => clean-history-regrid-xy
+            rename-split-to-pp-regrid<regrid> => clean-split-regrid-xy
+                {% endif %}
+                {% if DO_NATIVE %}
+            split-netcdf-native<native>       => clean-history-native
+            rename-split-to-pp-native<native> => clean-split-native
+                {% endif %}
+            {% endif %}
+        """
 
 
         #
         # Recurrence interval R1: run only once. useful for statics.
         #
         R1 = """
-{# The static processing is similar to the "every history segment" processing, #}
-{# except uses different history file lists. #}
-pp-starter => STAGE-HISTORY
+            {# The static processing is similar to the "every history segment" processing, #}
+            {# except uses different history file lists. #}
+            pp-starter => STAGE-HISTORY
 
-{% if DO_REGRID_STATIC %}
-STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static> => rename-split-to-pp-regrid<regrid_static>
-{% endif %}
+            {% if DO_REGRID_STATIC %}
+            STAGE-HISTORY:succeed-all => regrid-xy<regrid_static> => split-netcdf-regrid<regrid_static>
+                => rename-split-to-pp-regrid<regrid_static>
+            {% endif %}
 
-{% if DO_NATIVE_STATIC %}
-STAGE-HISTORY:succeed-all =>                             split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
-{% endif %}
+            {% if DO_NATIVE_STATIC %}
+            STAGE-HISTORY:succeed-all => split-netcdf-native<native_static> => rename-split-to-pp-native<native_static>
+            {% endif %}
 
-{# After cataloging the regridded and native statics, remap them to pp components as desired #}
-{% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
-rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-{% elif DO_NATIVE_STATIC %}
-rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
-{% elif DO_REGRID_STATIC %}
-rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
-{% endif %}
+            {# After cataloging the regridded and native statics, remap them to pp components as desired #}
+            {% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
+            rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static>
+                => remap-pp-components-static => combine-statics
+            {% elif DO_NATIVE_STATIC %}
+            rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+            {% elif DO_REGRID_STATIC %}
+            rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
+            {% endif %}
 
-{# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
-{% if HISTORY_DIR_REFINED is defined %}
-    {% if DO_REGRID_STATIC %}
-    stage-history-refined => regrid-xy<regrid_static>
-    {% endif %}
+            {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
+            {% if HISTORY_DIR_REFINED is defined %}
+                {% if DO_REGRID_STATIC %}
+            stage-history-refined => regrid-xy<regrid_static>
+                {% endif %}
 
-    {% if DO_NATIVE_STATIC %}
-    stage-history-refined => split-netcdf-native<native_static>
-    {% endif %}
-{% endif %}
+                {% if DO_NATIVE_STATIC %}
+            stage-history-refined => split-netcdf-native<native_static>
+                {% endif %}
+            {% endif %}
 
-{# If work-dir cleaning is set, then remove what should now be safe to remove. #}
-{% if CLEAN_WORK and DO_REGRID_STATIC %}
-    regrid-xy<regrid_static> => clean-history-native
-    split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
-    rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-    remap-pp-components-static => clean-shards-static
-    combine-statics => clean-pp-statics
-{% endif %}
+            {# If work-dir cleaning is set, then remove what should now be safe to remove. #}
+            {% if CLEAN_WORK and DO_REGRID_STATIC %}
+            regrid-xy<regrid_static> => clean-history-native
+            split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
+            rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
+            remap-pp-components-static => clean-shards-static
+            combine-statics => clean-pp-statics
+            {% endif %}
 
-{% if CLEAN_WORK and DO_NATIVE_STATIC %}
-    split-netcdf-native<native_static> => clean-history-native
-    rename-split-to-pp-native<native_static> => clean-split-native
-    remap-pp-components-static => clean-shards-static
-    combine-statics => clean-pp-statics
-{% endif %}
+            {% if CLEAN_WORK and DO_NATIVE_STATIC %}
+            split-netcdf-native<native_static> => clean-history-native
+            rename-split-to-pp-native<native_static> => clean-split-native
+            remap-pp-components-static => clean-shards-static
+            combine-statics => clean-pp-statics
+            {% endif %}
 
-"""
+        """
 
 {% for chunk in PP_CHUNKS | iter_chunks(HISTORY_SEGMENT, PP_START, PP_STOP) %}
     R1/{{ chunk.cycle_point }} = """
@@ -382,34 +391,25 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             type cylc
             #Verify history directory exists and is a directory
             if [[ ! -d $historyDir ]]; then
-                 echo "Error: Archive directory ${historyDir} does not exist or isnt a directory"
-                 exit 1
+                echo "Error: Archive directory ${historyDir} does not exist or isnt a directory"
+                exit 1
             fi
             #Verify history file exists
             file=$historyDir/$(cylc cycle-point --template CCYYMMDD).nc.tar
             if ls ${file}; then
-                 echo "Going to stage ${file} to PTMP"
+                echo "Going to stage ${file} to PTMP"
             else
-                 echo "Error: Could not locate ${file}"
-                 exit 1
+                echo "Error: Could not locate ${file}"
+                exit 1
             fi
             #We want to stage the history files to PTMP without transferring to VFTMP.
             #Calling hsmget on a file with wildcards that doesnt exist does this,
             #e.g. "dummy*" as below, but prints a warning
             if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
-                 echo "History files in ${file} have been staged to PTMP successfully"
+                echo "History files in ${file} have been staged to PTMP successfully"
             else
-                 echo "Error: Cant stage history files in ${file} to PTMP"
-                 exit 1
-            fi
-            #Data Integrity Checking:q
-            fre pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) --date_string $(cylc cycle-point --template CCYYMMDD)
-            # Setup PYTHONPATH and io lists for the data lineage tool
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
-                export input_file_list=
-                export output_file_list=
-                echo "Set PYTHONPATH and created i/o lists"
+                echo "Error: Cant stage history files in ${file} to PTMP"
+                exit 1
             fi
 
             # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
@@ -418,32 +418,9 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-
-                start_time=$(date +%s)
-
-                for file in $(ls $outputDir); do
-                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.HashGen $outputDir/$file)
-                    export output_file_list="${output_file_list}$file $hash_val,"
-                    echo "[DATA LINEAGE] Added $file to output list with hash_val: $hash_val"
-                done
-
-                end_time=$(date +%s)
-                duration=$((end_time - start_time))
-                echo "Time spent hashing and creating the file list: $duration seconds"
-
-                epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
-                echo "[DATA LINEAGE] Annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-                if [ -n "$output_file_list" ]; then
-                    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
-                    epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
-                    echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-                fi
-            fi
+            #Data Integrity Checking
+            fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
+                --date_string $(cylc cycle-point --template CCYYMMDD)
 
             echo "Natural end of the history file staging"
             exit 0
@@ -486,20 +463,20 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             use_subdirs = 1
     {% endif %}
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
-            [[[environment]]]
-                interval = {{ PP_CHUNK }}
+    [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
+        [[[environment]]]
+            interval = {{ PP_CHUNK }}
         {% if DO_NATIVE %}
-            [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK }}
-            [[make-timeavgs-native-{{ PP_CHUNK }}<native>]]
-                inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}, <native>
+    [[MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-NATIVE, MAKE-TIMEAVGS-{{ PP_CHUNK }}
+    [[make-timeavgs-native-{{ PP_CHUNK }}<native>]]
+        inherit = MAKE-TIMEAVGS-NATIVE-{{ PP_CHUNK }}, <native>
         {% endif %}
         {% if DO_REGRID %}
-            [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK }}
-            [[make-timeavgs-regrid-{{ PP_CHUNK }}<regrid>]]
-                inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}, <regrid>
+    [[MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}]]
+        inherit = MAKE-TIMEAVGS, MAKE-TIMEAVGS-REGRID, MAKE-TIMEAVGS-{{ PP_CHUNK }}
+    [[make-timeavgs-regrid-{{ PP_CHUNK }}<regrid>]]
+        inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}, <regrid>
         {% endif %}
     {% endfor %}
 {% endif %}
@@ -585,7 +562,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
 {% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
-    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] | replace(".", "_") %}
+    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] |
+        replace(".", "_") %}
     [[preAnalysis-{{ preanalysis_name }}]]
         inherit = PRE-ANALYSIS
         script = """
@@ -618,28 +596,38 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key split-netcdf
+
         [[[environment]]]
+            {# $date was used as an input arg in the earlier version of  #}
+            {# split-netcdf without getting referenced in the script itself. #}
+            {# I think it's a reference to an older script that got removed in #}
+            {# the first round of cylc rewrites; keeping it here in case #}
+            {# we turn out to need it during the user testing. #}
             date = $CYLC_TASK_CYCLE_POINT
 
 {% if DO_NATIVE %}
     [[SPLIT-NETCDF-NATIVE]]
         inherit = SPLIT-NETCDF
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
+        {# new arg for forcing split of all vars #}
+        script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
-            component = $CYLC_TASK_PARAM_native
+            history_file = $CYLC_TASK_PARAM_native
 {% endif %}
 
 {% if DO_REGRID %}
     [[SPLIT-NETCDF-REGRID]]
         inherit = SPLIT-NETCDF
+        {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
+        {# new arg for forcing split of all vars #}
+        script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
+            history_file = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
-            component = $CYLC_TASK_PARAM_regrid
 {% endif %}
 
 {% if DO_NATIVE %}
@@ -650,7 +638,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[split-netcdf-native<native_static>]]
         inherit = SPLIT-NETCDF-NATIVE, <native_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_native_static
+            history_file = $CYLC_TASK_PARAM_native_static
     {% endif %}
 {% endif %}
 
@@ -662,7 +650,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[split-netcdf-regrid<regrid_static>]]
         inherit = SPLIT-NETCDF-REGRID, <regrid_static>
         [[[environment]]]
-            component = $CYLC_TASK_PARAM_regrid_static
+            history_file = $CYLC_TASK_PARAM_regrid_static
     {% endif %}
 {% endif %}
 
@@ -677,6 +665,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             component = $CYLC_TASK_PARAM_native
+            use_subdirs = "False"
 {% endif %}
 
 {% if DO_REGRID %}
@@ -686,7 +675,7 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
+            use_subdirs = "True"
 {% endif %}
 
 {% if DO_NATIVE %}
@@ -713,10 +702,22 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 
     [[REMAP-PP-COMPONENTS]]
         # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key remap-pp-components
+        #script = rose-task-run --verbose --app-key remap-pp-components
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --ts-workaround=$dirTSWorkaround \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
-            yaml_config = {{ YAML }}
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
@@ -724,15 +725,15 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
-            dirTSWorkaround = 1
+            dirTSWorkaround = True
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
-            inherit = REMAP-PP-COMPONENTS-TS
-            [[[environment]]]
-                begin = $(cylc cycle-point)
-                currentChunk = {{ PP_CHUNK }}
-        [[remap-pp-components-ts-{{ PP_CHUNK }}<component>]]
-            inherit = REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}, <component>
+    [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
+        inherit = REMAP-PP-COMPONENTS-TS
+        [[[environment]]]
+            begin = $(cylc cycle-point)
+            currentChunk = {{ PP_CHUNK }}
+    [[remap-pp-components-ts-{{ PP_CHUNK }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}, <component>
     {% endfor %}
 
     [[REMAP-PP-COMPONENTS-AV]]
@@ -741,33 +742,32 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-
+            dirTSWorkaround = False
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
-            inherit = REMAP-PP-COMPONENTS-AV
-            [[[environment]]]
-                begin = $(cylc cycle-point)
-                currentChunk = {{ PP_CHUNK }}
-        [[remap-pp-components-av-{{ PP_CHUNK }}<component>]]
-            inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}, <component>
+    [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
+        inherit = REMAP-PP-COMPONENTS-AV
+        [[[environment]]]
+            begin = $(cylc cycle-point)
+            currentChunk = {{ PP_CHUNK }}
+    [[remap-pp-components-av-{{ PP_CHUNK }}<component>]]
+        inherit = REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}, <component>
     {% endfor %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
-    [[remap-pp-components-static]]
-        inherit = REMAP-PP-COMPONENTS-TS
+    [[remap-pp-components-static<component>]]
+        inherit = REMAP-PP-COMPONENTS-TS, <component>
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
-            components = {{ PP_COMPONENTS }}
             product = static
-            dirTSWorkaround = ""
+            dirTSWorkaround = False
 {% endif %}
 
     [[DATA-CATALOG]]
         script = data-catalog
-	[[[environment]]]
-	    PP_DIR = {{ PP_DIR }}
+        [[[environment]]]
+            PP_DIR = {{ PP_DIR }}
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
@@ -779,16 +779,16 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
             outputDir = {{ PP_DIR }}/$CYLC_TASK_PARAM_component/av
 
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[COMBINE-TIMEAVGS-{{ PP_CHUNK }}]]
-            inherit = COMBINE-TIMEAVGS
-            [[[environment]]]
-                inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-                currentChunk = {{ PP_CHUNK }}
-                end = $(cylc cycle-point --print-year --offset={{ PP_CHUNK | subtract_durations(HISTORY_SEGMENT) }})
-        [[combine-timeavgs-{{ PP_CHUNK }}<component>]]
-            inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK }}, <component>
-            [[[environment]]]
-                component = $CYLC_TASK_PARAM_component
+    [[COMBINE-TIMEAVGS-{{ PP_CHUNK }}]]
+        inherit = COMBINE-TIMEAVGS
+        [[[environment]]]
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
+            currentChunk = {{ PP_CHUNK }}
+            end = $(cylc cycle-point --print-year --offset={{ PP_CHUNK | subtract_durations(HISTORY_SEGMENT) }})
+    [[combine-timeavgs-{{ PP_CHUNK }}<component>]]
+        inherit = COMBINE-TIMEAVGS-{{ PP_CHUNK }}, <component>
+        [[[environment]]]
+            component = $CYLC_TASK_PARAM_component
     {% endfor %}
 {% endif %}
 
@@ -817,41 +817,44 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
 {% endif %}
 
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[MAKE-TIMESERIES-{{ PP_CHUNK }}]]
-            [[[environment]]]
-                begin = $(cylc cycle-point)
-                inputChunk = {{ HISTORY_SEGMENT }}
-                outputChunk = {{ PP_CHUNK }}
+    [[MAKE-TIMESERIES-{{ PP_CHUNK }}]]
+        [[[environment]]]
+            begin = $(cylc cycle-point)
+            inputChunk = {{ HISTORY_SEGMENT }}
+            outputChunk = {{ PP_CHUNK }}
         {% if DO_NATIVE %}
-            [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK }}
-            [[make-timeseries-native-{{ PP_CHUNK }}<native>]]
-                inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK }}, <native>
+    [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK }}]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-NATIVE, MAKE-TIMESERIES-{{ PP_CHUNK }}
+    [[make-timeseries-native-{{ PP_CHUNK }}<native>]]
+        inherit = MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK }}, <native>
         {% endif %}
         {% if DO_REGRID %}
-            [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK }}]]
-                inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK }}
-            [[make-timeseries-regrid-{{ PP_CHUNK }}<regrid>]]
-                inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK }}, <regrid>
+    [[MAKE-TIMESERIES-REGRID-{{ PP_CHUNK }}]]
+        inherit = MAKE-TIMESERIES, MAKE-TIMESERIES-REGRID, MAKE-TIMESERIES-{{ PP_CHUNK }}
+    [[make-timeseries-regrid-{{ PP_CHUNK }}<regrid>]]
+        inherit = MAKE-TIMESERIES-REGRID-{{ PP_CHUNK }}, <regrid>
         {% endif %}
     {% endfor %}
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = mkdir -p $outputDir
-        # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        script = rose-task-run --verbose --app-key regrid-xy
-        [[[environment]]]
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            begin = $CYLC_TASK_CYCLE_POINT
-            fregridRemapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            source = $CYLC_TASK_PARAM_regrid
-            gridSpec = {{ PP_GRID_SPEC }}
-            defaultxyInterp = {{ PP_DEFAULT_XYINTERP }}
+        script = """
+            fre --verbose app regrid \
+                --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
+                --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
+                --begin=$CYLC_TASK_CYCLE_POINT \
+                --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
+                --source=$source \
+                --grid_spec={{ PP_GRID_SPEC }} \
+                --tmp_dir=$CYLC_TASK_WORK_DIR \
+                --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
+        """
+        # there may be a race condition that causes the fast jobs to fail
+        execution retry delays = 2*PT5M
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
-
+        [[[environment]]]
+            source = $CYLC_TASK_PARAM_regrid
     {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
@@ -941,7 +944,8 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
     [[clean-shards-{{ HISTORY_SEGMENT }}]]
         inherit = CLEAN
         script = """
-            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/{{ HISTORY_SEGMENT }} \
+            $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/{{ HISTORY_SEGMENT }}"
             for dir in $dirs; do
                 if [[ -d $dir ]]; then
                     find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
@@ -952,25 +956,26 @@ rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combin
         """
 
     {% for PP_CHUNK in PP_CHUNKS %}
-        [[clean-shards-{{ PP_CHUNK }}]]
-            inherit = CLEAN
-            script = """
-                dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK }} $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK }}"
-                for dir in $dirs; do
-                    if [[ -d $dir ]]; then
-                        if [[ {{ PP_CHUNK }} == P1Y ]]; then
-                            find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
-                        else
-                            find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
-                        fi
+    [[clean-shards-{{ PP_CHUNK }}]]
+        inherit = CLEAN
+        script = """
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/*/native/*/*/{{ PP_CHUNK }} \
+            $CYLC_WORKFLOW_SHARE_DIR/shards/*/regrid-xy/*/*/*/{{ PP_CHUNK }}"
+            for dir in $dirs; do
+                if [[ -d $dir ]]; then
+                    if [[ {{ PP_CHUNK }} == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     else
-                        echo "Skipping '$dir' as it does not exist"
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
                     fi
-                done
-            """
+                else
+                    echo "Skipping '$dir' as it does not exist"
+                fi
+            done
+        """
 
-        [[clean-pp-timeavgs-{{ PP_CHUNK }}]]
-            inherit = CLEAN
+    [[clean-pp-timeavgs-{{ PP_CHUNK }}]]
+        inherit = CLEAN
             script = """
                 dirs=$CYLC_WORKFLOW_SHARE_DIR/pp/av/*/*/{{ PP_CHUNK }}
                 for dir in $dirs; do
