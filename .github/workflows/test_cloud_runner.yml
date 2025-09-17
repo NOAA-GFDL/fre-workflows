@@ -1,6 +1,14 @@
 name: test_cloud_runner
 on:
   workflow_dispatch:
+    inputs:
+      fre-cli-repo:
+        description: 'NOAA-GFDL/fre-cli'
+        required: true
+      fre-cli-branch:
+        description: 'fre-cli branch to check out'
+        required: true
+        default: 'main'
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -11,11 +19,12 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
       - name: Test workflow_dispatch
-        run: |
-          echo "it did the thing"
-          exit 1
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.fre-cli-repo }}
+          ref: ${{ github.event.inputs.fre-cli-branch }}
+          path: '/contrib/container-test'
       - name: Run ppp-container
         run: |
           # Print pwd then run script
