@@ -14,6 +14,7 @@ postprocess:
     pp_stop:                 *EXP_AMIP_END
     pp_grid_spec:            *GRID_SPEC96
   switches:
+    do_timeavgs:             True
     clean_work:              True
     do_refinediag:           False
     do_atmos_plevel_masking: False
