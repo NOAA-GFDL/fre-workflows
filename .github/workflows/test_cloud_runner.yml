@@ -26,9 +26,6 @@ jobs:
       - name: Check out fre-cli working branch
         uses: actions/checkout@v4
         with:
-          ## don't need whole https path
-          ## the actions expects the shorter version and will use the correct protocol and authenitication behind the scenes
-          ## placed/checked out in root
           repository: NOAA-GFDL/fre-cli
           ref: ${{ github.event.inputs.fre-cli-working-branch }}
 
