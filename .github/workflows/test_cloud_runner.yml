@@ -28,6 +28,7 @@ jobs:
       - name: check
         run: |
           echo "did it do stuff?"
+          echo "menial change"
           pwd
           ls fre-cli
           exit 1
