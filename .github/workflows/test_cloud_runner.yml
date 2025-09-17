@@ -31,20 +31,20 @@ jobs:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
-      - name: check
-        run: |
-          echo "did it do stuff?"
-          echo "current dir"
-          pwd
-          echo "contents of current fre-wf dir"
-          ls
-          echo "go into fre-cli" 
-          cd fre-cli
-          echo "contents of fre-cli"
-          ls
-          ls fre/mkmf
-          git branch
-          exit 1
+#      - name: check
+#        run: |
+#          echo "did it do stuff?"
+#          echo "current dir"
+#          pwd
+#          echo "contents of current fre-wf dir"
+#          ls
+#          echo "go into fre-cli" 
+#          cd fre-cli
+#          echo "contents of fre-cli"
+#          ls
+#          ls fre/mkmf
+#          git branch
+#          exit 1
       - name: Run ppp-container
         run: |
           # Print pwd then run script
