@@ -32,7 +32,7 @@ jobs:
       - name: check
         run: |
           echo "did it do stuff?"
-          echo "menial change"
+          echo "menial change ahhh "
           pwd
           ls fre-cli
           cd fre-cli
