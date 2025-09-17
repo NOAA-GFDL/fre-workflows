@@ -22,6 +22,9 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+which fre
+fre --version
+
 #update fre-cli env?
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
@@ -75,6 +78,8 @@ check_exit_status () {
 }
 
 fre_pp_steps () {
+    set -x
+
     # experiment cleaned if previously installed
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
@@ -92,25 +97,38 @@ fre_pp_steps () {
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
+
+    git clone --recursive -b add-climo-wrapper https://github.com/NOAA-GFDL/fre-cli
+    cd fre-cli
+    git status
+    pip install .
+    export PATH=/mnt/.local/bin:$PATH
+    cd -
+    which fre
+    fre app --help
     
     ## Configure the rose-suite and rose-app files for the workflow
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
     fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
-    ## Validate the configuration files
-    echo -e "\nRunning fre pp validate to validate rose-suite and rose-app configuration files for workflow ... "
-    fre -v pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validate, no kill"
-    check_exit_status "VALIDATE"
-
     # Install
     echo -e "\nRunning fre pp install to instal the workflow in ${HOME}/cylc-run/${name} ... "
     fre -v pp install -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "INSTALL"
 
+    ## Validate
+    echo -e "\nRunning cylc validate ... "
+    pwd
+    ls
+    cylc validate $name
+    check_exit_status "VALIDATE"
+
+
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
+    check_exit_status "PLAY"
 
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
