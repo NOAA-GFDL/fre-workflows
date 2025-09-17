@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   test-cloud:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v4
@@ -30,15 +30,18 @@ jobs:
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
-          path: './fre-cli-test/'
+          path: '/contrib/container-test/fre-cli-test/'
       - name: check
         run: |
           echo "did it do stuff?"
-          echo "menial change ahhh "
+          echo "current dir"
           pwd
-          #ls 
-          cd fre-cli-test
+          #ls
+          echo "go into fre-cli" 
+          cd /contrib/container-test/fre-cli-test/
+          echo "contents of fre-cli"
           ls
+          ls fre/mkmf
           git branch
           exit 1
       - name: Run ppp-container
