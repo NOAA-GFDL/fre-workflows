@@ -14,15 +14,12 @@ The top level directory structure groups source code and input files as follow:
 | File/directory                    | Purpose |
 | --------------                    | ------- |
 | ```Jinja2Filters```               | Collection of Python modules that preprocess the `flow.cylc` jinja template |
-| ```app/```                        | Collection of workflow applications that are called from `flow.cylc`  NOTE: These
-will become `fre-cli` tools in the future |
-| ```bin/```                        | Collection of scripts that are called from `flow.cylc`.  These scripts wrap
-calls to `fre-cli` and keep the `flow.cylc` file easy to read |
+| ```app/```                        | Collection of workflow applications that are called from `flow.cylc`  NOTE: These will become `fre-cli` tools in the future |
+| ```bin/```                        | Collection of scripts that are called from `flow.cylc`.  These scripts wrap calls to `fre-cli` and keep the `flow.cylc` file easy to read |
 | ```envs/```                       | Directory containing Conda environment yaml file for installing cylc |
 | ```lib/python/```                 | Collection of Python modules used to implement EPMT |
 | ```meta/```                       | Unused scripts.  To be removed in a future release. |
-| ```site/```                       | Directory containing site specific cylc tasks defined in <site>.cylc files which
-are included in `flow.cylc` |
+| ```site/```                       | Directory containing site specific cylc tasks defined in <site>.cylc files which are included in `flow.cylc` |
 | ```tests/```                      | Test scripts used in GitHub Actions CI workflows |
 | ```.cylcignore```                 | Files and directories to exclude during cylc-run installation  |
 | ```README.md```                   | This project's README file with documentation |
