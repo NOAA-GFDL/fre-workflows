@@ -23,10 +23,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Check out fre-cli
+      - name: Check out fre-cli working branch
         uses: actions/checkout@v4
         with:
-          repository: NOAA/GFDL/fre-cli  ## don't need whole https path; the actions expects the shorter version and will use the correct protocol and authenitication behind the scenes; placed/checked out in root
+          repository: NOAA-GFDL/fre-cli  ## don't need whole https path; the actions expects the shorter version and will use the correct protocol and authenitication behind the scenes; placed/checked out in root
           ref: ${{ github.event.inputs.fre-cli-working-branch }}
       - name: Run ppp-container
         run: |
