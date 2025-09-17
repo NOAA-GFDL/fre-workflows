@@ -863,6 +863,7 @@
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     else
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                    fi
                 else
                     echo "Skipping '$dir' as it does not exist"
                 fi
@@ -879,6 +880,7 @@
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
                     else
                         find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                    fi
                 else
                     echo "Skipping '$dir' as it does not exist"
                 fi
