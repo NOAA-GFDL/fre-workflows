@@ -22,6 +22,9 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+which fre
+fre --version
+
 #update fre-cli env?
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
@@ -99,8 +102,8 @@ fre_pp_steps () {
     check_exit_status "CONFIGURE-YAML"
 
     ## Validate the configuration files
-    echo -e "\nRunning fre pp validate to validate rose-suite and rose-app configuration files for workflow ... "
-    fre -v pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validate, no kill"
+    echo -e "\nRunning cylc validate ... "
+    cylc validate .
     check_exit_status "VALIDATE"
 
     # Install
@@ -111,6 +114,7 @@ fre_pp_steps () {
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
+    check_exit_status "PLAY"
 
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
