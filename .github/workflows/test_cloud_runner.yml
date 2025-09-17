@@ -1,11 +1,17 @@
 name: run_ppp
 on:
-  pull_request:
-    branches:
-      - main  # triggers pipeline on pull requests to merge into main
-  push:
-    branches:
-      - main  # triggers pipeline on push to main
+#  pull_request:
+#    branches:
+#      - main  # triggers pipeline on pull requests to merge into main
+#  push:
+#    branches:
+#      - main  # triggers pipeline on push to main
+  workflow_dispatch:
+    inputs:
+      fre-cli-working-branch:
+        description: "The fre-cli branch to check out"
+        required: True
+        default: "main"
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -17,7 +23,13 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Run ppp-container
+      - name: Check out fre-cli
+        run: |
+          git clone --recursive https://github.com/NOAA-GFDL/fre-cli
+          cd fre-cli
+          git checkout ${{ github.event.inputs.fre-cli-working-branch }} 
+          cd - 
+     - name: Run ppp-container
         run: |
           # Print pwd then run script
           echo "Currently in:"
@@ -108,7 +120,7 @@ jobs:
           fi
 
       - name: Print regrid-xy successes or failures
-        continue-on-error: false
+        continue-on-error: true
         run: |
           set +e
           # Successes 

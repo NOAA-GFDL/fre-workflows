@@ -22,17 +22,14 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-#update fre-cli env?
-#pip install --upgrade fre-cli
-#conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
-git clone --recursive https://github.com/NOAA-GFDL/fre-cli
+# update fre-cli env
 cd fre-cli
+git branch
 pip install .
-#export PATH=/mnt/.local/bin:$PATH
 cd -
 which fre
-fre --help
-fre app regrid --help
+#fre --help
+
 
 get_user_input () {
     # User input
@@ -52,9 +49,6 @@ get_user_input () {
     plat="ptest"
     targ="ttest"
     yamlfile="./for_gh_runner/yaml_workflow/model.yaml"
-
-    ##on cloud
-    #"/contrib/container-test/yaml_workflow/am5.yaml"
 
     name=${expname}__${plat}__${targ}
 }
