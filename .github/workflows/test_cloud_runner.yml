@@ -1,6 +1,14 @@
 name: test_cloud_runner
 on:
   workflow_dispatch:
+    fre-cli-working-branch:
+      description: "The fre-cli branch to check out"
+      required: true
+      default: "main"
+    fre-cli-path:
+      description:
+      required: true
+      default: "./fre-cli"
   pull_request:
     branches:
       - main  # triggers pipeline on pull requests to merge into main
@@ -22,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: NOAA-GFDL/fre-cli
+          path: ${{ github.event.inputs.fre-cli-path }}
           ref: ${{ github.event.inputs.fre-cli-working-branch }}
 
       - name: Run ppp-container
