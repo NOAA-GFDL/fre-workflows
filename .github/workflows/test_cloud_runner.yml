@@ -1,20 +1,12 @@
 name: test_cloud_runner
 on:
   workflow_dispatch:
-    fre-cli-working-branch:
-      description: "The fre-cli branch to check out"
-      required: true
-      default: "main"
-    fre-cli-path:
-      description:
-      required: true
-      default: "./fre-cli"
-  pull_request:
-    branches:
-      - main  # triggers pipeline on pull requests to merge into main
-  push:
-    branches:
-      - main  # triggers pipeline on push to main
+#  pull_request:
+#    branches:
+#      - main  # triggers pipeline on pull requests to merge into main
+#  push:
+#    branches:
+#      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -26,13 +18,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Check out fre-cli working branch
-        uses: actions/checkout@v4
-        with:
-          repository: NOAA-GFDL/fre-cli
-          path: ${{ github.event.inputs.fre-cli-path }}
-          ref: ${{ github.event.inputs.fre-cli-working-branch }}
-
+      - name: Test workflow_dispatch
+        run: |
+          echo "it did the thing"
+          exit 1
       - name: Run ppp-container
         run: |
           # Print pwd then run script
