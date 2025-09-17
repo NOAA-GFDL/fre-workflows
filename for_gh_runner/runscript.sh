@@ -33,7 +33,6 @@ cd -
 which fre
 fre --help
 fre app regrid --help
-exit 0
 
 get_user_input () {
     # User input
