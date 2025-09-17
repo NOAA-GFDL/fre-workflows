@@ -105,10 +105,11 @@ class Climatology(object):
         graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-        #if clean_work:
-        #    graph += f" => clean-shards-P{self.interval_years}Y & clean-pp-timeavgs-P{self.interval_years}Y\n"
-        #else:
-        #    graph += "\n"
+
+        if clean_work:
+            graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+            graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
+            graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
 
         graph += f"\"\"\"\n"
 
@@ -154,8 +155,8 @@ class Climatology(object):
 
         if clean_work:
             definitions += f"""
-    [[clean-shards-P{self.interval_years}Y]]
-        inherit = CLEAN-SHARDS
+    [[clean-shards-av-P{self.interval_years}Y]]
+        inherit = CLEAN-SHARDS-AV
         [[[environment]]]
             duration = P{self.interval_years}Y
     [[clean-pp-timeavgs-P{self.interval_years}Y]]

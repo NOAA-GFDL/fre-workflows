@@ -258,7 +258,7 @@ rename-split-to-pp-native<native>
         {% endif %}
 
         {% if CLEAN_WORK %}
-REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
+REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-ts-{{ chunk.chunk_size }}
         {% endif %}
         """
 
@@ -267,7 +267,7 @@ REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chu
         {% if CLEAN_WORK %}
             {% for segment in chunk.segments %}
         R1/{{ segment }} = """
-REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => clean-shards-{{ HISTORY_SEGMENT }}
+REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => clean-shards-ts-{{ HISTORY_SEGMENT }}
         """
             {% endfor %}
         {% endif %}
@@ -883,7 +883,8 @@ fre -vv app combine-time-averages \
         """
 {% endif %}
 
-    [[CLEAN-SHARDS]]
+    [[CLEAN]]
+    [[CLEAN-SHARDS-TS]]
         inherit = CLEAN
         script = """
             dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/ts/native/*/*/$duration $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy/*/*/*/$duration"
@@ -898,14 +899,29 @@ fre -vv app combine-time-averages \
                 fi
             done
         """
-    [[clean-shards-{{ HISTORY_SEGMENT }}]]
-        inherit = CLEAN-SHARDS
+    [[CLEAN-SHARDS-AV]]
+        inherit = CLEAN
+        script = """
+            dirs="$CYLC_WORKFLOW_SHARE_DIR/shards/av/native/*/*/$duration $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy/*/*/*/$duration"
+            for dir in $dirs; do
+                if [[ -d $dir ]]; then
+                    if [[ $duration == P1Y ]]; then
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*.nc" -print -delete
+                    else
+                        find $dir -type f -name "*.$(cylc cycle-point --template CCYY)*-*.nc" -print -delete
+                else
+                    echo "Skipping '$dir' as it does not exist"
+                fi
+            done
+        """
+    [[clean-shards-ts-{{ HISTORY_SEGMENT }}]]
+        inherit = CLEAN-SHARDS-TS
         [[[environment]]]
             duration = {{ HISTORY_SEGMENT }}
 
     {% for PP_CHUNK in PP_CHUNKS %}
-    [[clean-shards-{{ PP_CHUNK }}]]
-        inherit = CLEAN-SHARDS
+    [[clean-shards-ts-{{ PP_CHUNK }}]]
+        inherit = CLEAN-SHARDS-TS
         [[[environment]]]
             duration = {{ PP_CHUNK }}
     {% endfor %}
