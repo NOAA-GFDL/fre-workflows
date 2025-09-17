@@ -3,10 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       fre-cli-repo:
-        description: 'NOAA-GFDL/fre-cli'
+        description: 'NOAA-GFDL/fre-cli repo'
         required: true
+        type: choice
+        default: 'NOAA-GFDL/fre-cli'
+        options:
+          - NOAA-GFDL/fre-cli
       fre-cli-branch:
-        description: 'fre-cli branch to check out'
+        description: 'Input which fre-cli branch to check out'
         required: true
         default: 'main'
 
