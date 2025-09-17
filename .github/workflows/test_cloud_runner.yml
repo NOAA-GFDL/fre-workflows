@@ -3,10 +3,14 @@ on:
   workflow_dispatch:
     inputs:
       fre-cli-repo:
-        description: 'NOAA-GFDL/fre-cli'
+        description: 'NOAA-GFDL/fre-cli repo'
         required: true
+        type: choice
+        default: 'NOAA-GFDL/fre-cli'
+        options:
+          - 'NOAA-GFDL/fre-cli'
       fre-cli-branch:
-        description: 'fre-cli branch to check out'
+        description: 'Input which fre-cli branch to check out'
         required: true
         default: 'main'
 
@@ -17,7 +21,7 @@ concurrency:
 
 jobs:
   test-cloud:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Test workflow_dispatch
         uses: actions/checkout@v4
@@ -28,8 +32,11 @@ jobs:
       - name: check
         run: |
           echo "did it do stuff?"
+          echo "menial change"
           pwd
           ls fre-cli
+          cd fre-cli
+          git branch
           exit 1
       - name: Run ppp-container
         run: |
