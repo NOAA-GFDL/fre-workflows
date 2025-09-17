@@ -23,6 +23,8 @@ jobs:
   test-cloud:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
       - name: Test workflow_dispatch
         uses: actions/checkout@v4
         with:
