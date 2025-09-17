@@ -137,7 +137,7 @@ after checking it out with a fre pp checkout:
 > ls
 app/	       environment.yml	       etc/		       Jinja2Filters/  pytest.ini	     README-portability.md    site/
 bin/	       envs/		       flow.cylc	       lib/	       README-developers.md  README_using_fre-cli.md  tests/
-data_lineage/  ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose-suite.conf
+ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose-suite.conf
 > emacs site/ppan.cylc
 ```
 
