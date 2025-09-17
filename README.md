@@ -1,64 +1,60 @@
 # fre-workflows
 
-This repository holds code for defining GFDL's next-generation FRE (FMS Runtime Environment) cylc workflows.
-Currently, this repository only contains the `fre-cli` postprocessing workflow.  This documentation will be updated
-when more workflows are added to this repository.
+FRE-workflows is GFDL's next-generation FRE (FMS Runtime Environment) workflow engine with a cylc backend ([see
+cylc's user guide here](https://cylc.github.io/cylc-doc/stable/html/user-guide/index.html)).  FRE-workflows automates
+the process of git cloning model code, compiling the cloned model, submitting a batch job to GFDL's RDHPCS systems, and
+post-processing model output data. This new workflow relies on [`fre-cli`](https://github.com/NOAA-GFDL/fre-cli), the
+new FRE command-line interface.  Currently, this repository only contains the `fre-cli` postprocessing workflow.  This
+documentation will be updated when more workflows are added to this repository.
 
-For more information on cylc workflows please refer to
-[cylc's User Guide](https://cylc.github.io/cylc-doc/stable/html/user-guide/index.html)
+## What files are what
 
-## Where to find information
-
-For more information on cylc workflows please refer to
-[cylc's User Guide](https://cylc.github.io/cylc-doc/stable/html/user-guide/index.html)
-
-For more information regarding `fre pp` please refer to documentaton in the
-[`fre-cli` repository](https://github.com/NOAA-GFDL/fre-cli)
-
-## What the files are what
+The top level directory structure groups source code and input files as follow:
 
 | File/directory                    | Purpose |
 | --------------                    | ------- |
-| ```Jinja2Filters```               | Scripts that preprocess the `flow.cylc` file. |
-| ```app/```                        | Tools that are referenced in `flow.cylc` tasks.  These will all be ported to
-`fre-cli` in the future. |
-| ```bin/```                        | Contains scripts that are referenced in `flow.cylc` tasks.  These scripts wrap
-calls to `fre-cli` and keep the `flow.cylc` file easy to read. |
-| ```envs/```                       | Contains a Conda environment yaml file for installing cylc |
-| ```etc/refineDiag/```             |  |
-| ```generic-global-config/```      |  |
-| ```lib/python/```                 | Scripts used to implement EPMT |
+| ```Jinja2Filters```               | Collection of Python modules that preprocess the `flow.cylc` jinja template |
+| ```app/```                        | Collection of workflow applications that are called from `flow.cylc`  NOTE: These
+will become `fre-cli` tools in the future |
+| ```bin/```                        | Collection of scripts that are called from `flow.cylc`.  These scripts wrap
+calls to `fre-cli` and keep the `flow.cylc` file easy to read |
+| ```envs/```                       | Directory containing Conda environment yaml file for installing cylc |
+| ```lib/python/```                 | Collection of Python modules used to implement EPMT |
 | ```meta/```                       | Unused scripts.  To be removed in a future release. |
-| ```site/```                       | Contains site specific cylc tasks defined in <site>.cylc files. These files are
-included in `flow.cylc`|
-| ```tests/```                      | Test scripts used in GitHub Actions workflows. |
-| ```.cylcignore```                 | Files that `cylc install` will ignore when transferring files to the workflow
-directory.  |
-| ```README.md```                   | This project's README file with documentation. |
-| ```environment.yml```             | A Conda environment yaml file for installing `fre-workflows`. |
-| ```flow.cylc```                   | Defines a cylc workflow configuration for FRE Postprocessing. |
-| ```for-developers.md```           | Provides steps to run the postprocessing workflow for developers. |
-| ```frecli-instructions.md```      | Provides steps to trigger postprocesing via `fre-cli` commands. |
-| ```portability-instructions.md``` | 
-| ```pytest.ini```                  | The configuration file used by `pytest`. |
-| ```rose-suite.conf```             | A configuration file defining changeable parameters. |
-| ```user-instructions.md```        | Provides steps to run the postprocessing workflow. |
+| ```site/```                       | Directory containing site specific cylc tasks defined in <site>.cylc files which
+are included in `flow.cylc` |
+| ```tests/```                      | Test scripts used in GitHub Actions CI workflows |
+| ```.cylcignore```                 | Files and directories to exclude during cylc-run installation  |
+| ```README.md```                   | This project's README file with documentation |
+| ```environment.yml```             | Conda environment yaml file for installing `fre-workflows` |
+| ```flow.cylc```                   | Cylc workflow definition file containing configuration for FRE Postprocessing |
+| ```for-developers.md```           | Documentation providing steps to run the postprocessing workflow for developers |
+| ```frecli-instructions.md```      | Documentation providing steps to trigger postprocesing via `fre-cli` commands |
+| ```portability-instructions.md``` | Documentation describing the portable workflow |
+| ```pytest.ini```                  | Configuration file used by `pytest` |
+| ```rose-suite.conf```             | Configuration file defining changeable parameters |
+| ```user-instructions.md```        | Documentation providing steps to run the postprocessing workflow |
 
 ## User Instructions
 
-Please see [user-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/user-instructions.md) for instructions on how to run the postprocessing workflow as a general user at GFDL.
+Please see [user-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/user-instructions.md) for
+instructions on how to run the postprocessing workflow as a general user at GFDL.
 
 ## `fre-cli` Postprocessing Instructions
 
-Please see [frecli-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/frecli-instructions.md) for instructions on how to run the postprocessing using `fre-cli` commands at GFDL.
+Please see [frecli-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/frecli-instructions.md) for
+instructions on how to run the postprocessing using `fre-cli` commands at GFDL.
 
-## Instructions for Porting this Workflow Anywhere
+## How to Install
 
-Please see [portability-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/portability-instructions.md) for information regarding how to install the postprocessing workflow anywhere.
+Please see
+[portability-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/portability-instructions.md) for
+information regarding how to install the postprocessing workflow.
 
 ## Developer Instructions
 
-Please see [for-developers.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/for-developers.md) for instructions on how to run the postprocessing workflow as a workflow developer.
+Please see [for-developers.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/for-developers.md) for instructions
+on how to run the postprocessing workflow as a workflow developer.
 
 
 
