@@ -34,9 +34,9 @@ jobs:
           echo "did it do stuff?"
           echo "menial change ahhh "
           pwd
-          ls fre-cli
-          cd fre-cli
-          git branch
+          ls 
+          #cd fre-cli
+          #git branch
           exit 1
       - name: Run ppp-container
         run: |
