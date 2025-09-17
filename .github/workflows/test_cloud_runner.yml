@@ -30,7 +30,7 @@ jobs:
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
-          path: '/contrib/container-test/fre-cli-test/'
+          path: '/contrib/container-test'
       - name: check
         run: |
           echo "did it do stuff?"
@@ -38,7 +38,7 @@ jobs:
           pwd
           #ls
           echo "go into fre-cli" 
-          cd /contrib/container-test/fre-cli-test/
+          cd /contrib/container-test/fre-cli
           echo "contents of fre-cli"
           ls
           ls fre/mkmf
