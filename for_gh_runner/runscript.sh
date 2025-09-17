@@ -97,6 +97,15 @@ fre_pp_steps () {
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
+
+    git clone --recursive -b add-climo-wrapper https://github.com/NOAA-GFDL/fre-cli
+    cd fre-cli
+    git status
+    pip install .
+    export PATH=/mnt/.local/bin:$PATH
+    cd -
+    which fre
+    fre app --help
     
     ## Configure the rose-suite and rose-app files for the workflow
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
