@@ -22,14 +22,11 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-# update fre-cli env
+# update fre-cli env with specific branch development
 cd fre-cli
-git branch
 pip install .
+export PATH=/mnt/.local/bin:$PATH
 cd -
-which fre
-#fre --help
-
 
 get_user_input () {
     # User input
