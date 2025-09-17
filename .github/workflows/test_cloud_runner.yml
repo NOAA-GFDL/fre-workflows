@@ -30,7 +30,7 @@ jobs:
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
-          path: './'
+          path: './fre-cli'
       - name: check
         run: |
           echo "did it do stuff?"
