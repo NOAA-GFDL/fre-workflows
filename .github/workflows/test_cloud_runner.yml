@@ -1,11 +1,14 @@
-name: run_ppp
+name: test_cloud_runner
 on:
-  pull_request:
-    branches:
-      - main  # triggers pipeline on pull requests to merge into main
-  push:
-    branches:
-      - main  # triggers pipeline on push to main
+  workflow_dispatch:
+    inputs:
+      fre-cli-repo:
+        description: 'NOAA-GFDL/fre-cli'
+        required: true
+      fre-cli-branch:
+        description: 'fre-cli branch to check out'
+        required: true
+        default: 'main'
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -16,7 +19,18 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - name: Test workflow_dispatch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.fre-cli-repo }}
+          ref: ${{ github.event.inputs.fre-cli-branch }}
+          #path: '/contrib/container-test'
+      - name: check
+        run: |
+          echo "did it do stuff?"
+          pwd
+          ls fre-cli
+          exit 1
       - name: Run ppp-container
         run: |
           # Print pwd then run script
