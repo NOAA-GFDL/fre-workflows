@@ -25,6 +25,15 @@ conda activate /app/cylc-flow-tools
 #update fre-cli env?
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
+git clone --recursive https://github.com/NOAA-GFDL/fre-cli
+cd fre-cli
+pip install .
+#export PATH=/mnt/.local/bin:$PATH
+cd -
+which fre
+fre --help
+fre app regrid --help
+exit 0
 
 get_user_input () {
     # User input
