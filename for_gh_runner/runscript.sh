@@ -105,7 +105,8 @@ fre_pp_steps () {
 
     ## Validate the configuration files
     echo -e "\nRunning cylc validate ... "
-    cylc validate .
+    pwd
+    cylc validate $name
     check_exit_status "VALIDATE"
 
     # Install
