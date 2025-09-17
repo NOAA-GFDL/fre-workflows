@@ -1,12 +1,6 @@
 name: test_cloud_runner
 on:
   workflow_dispatch:
-#  pull_request:
-#    branches:
-#      - main  # triggers pipeline on pull requests to merge into main
-#  push:
-#    branches:
-#      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
