@@ -103,16 +103,18 @@ fre_pp_steps () {
     fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
-    ## Validate the configuration files
-    echo -e "\nRunning cylc validate ... "
-    pwd
-    cylc validate $name
-    check_exit_status "VALIDATE"
-
     # Install
     echo -e "\nRunning fre pp install to instal the workflow in ${HOME}/cylc-run/${name} ... "
     fre -v pp install -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "INSTALL"
+
+    ## Validate
+    echo -e "\nRunning cylc validate ... "
+    pwd
+    ls
+    cylc validate $name
+    check_exit_status "VALIDATE"
+
 
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
