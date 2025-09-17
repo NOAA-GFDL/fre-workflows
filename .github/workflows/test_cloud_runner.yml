@@ -6,6 +6,12 @@ on:
         description: "The fre-cli branch to check out"
         required: true
         default: "main"
+  pull_request:
+    branches:
+      - main  # triggers pipeline on pull requests to merge into main
+  push:
+    branches:
+      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -20,8 +26,12 @@ jobs:
       - name: Check out fre-cli working branch
         uses: actions/checkout@v4
         with:
+          ## don't need whole https path
+          ## the actions expects the shorter version and will use the correct protocol and authenitication behind the scenes
+          ## placed/checked out in root
           repository: NOAA-GFDL/fre-cli
           ref: ${{ github.event.inputs.fre-cli-working-branch }}
+
       - name: Run ppp-container
         run: |
           # Print pwd then run script
