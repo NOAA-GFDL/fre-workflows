@@ -10,7 +10,7 @@ on:
     inputs:
       fre-cli-working-branch:
         description: "The fre-cli branch to check out"
-        required: True
+        required: true
         default: "main"
 
 # cancel running jobs if theres a newer push
@@ -24,11 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check out fre-cli
-        run: |
-          git clone --recursive https://github.com/NOAA-GFDL/fre-cli
-          cd fre-cli
-          git checkout ${{ github.event.inputs.fre-cli-working-branch }} 
-          cd - 
+        uses: actions/checkout@v4
+        with:
+          repository: NOAA/GFDL/fre-cli  ## don't need whole https path; the actions expects the shorter version and will use the correct protocol and authenitication behind the scenes; placed/checked out in root
+          ref: ${{ github.event.inputs.fre-cli-working-branch }}
       - name: Run ppp-container
         run: |
           # Print pwd then run script
