@@ -13,6 +13,9 @@ on:
         description: 'Input which fre-cli branch to check out'
         required: true
         default: 'main'
+  push:
+    branches:
+      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -122,7 +125,7 @@ jobs:
               exit 2
           fi
 
-      - name: Print regrid-xy successes or failures
+      - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
           set +e
