@@ -1,11 +1,6 @@
 name: test_cloud_runner
 on:
   workflow_dispatch:
-    inputs:
-      fre-cli-working-branch:
-        description: "The fre-cli branch to check out"
-        required: true
-        default: "main"
   pull_request:
     branches:
       - main  # triggers pipeline on pull requests to merge into main
