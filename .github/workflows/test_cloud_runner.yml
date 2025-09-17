@@ -31,6 +31,7 @@ jobs:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
+          submodules: true
 #      - name: check
 #        run: |
 #          echo "did it do stuff?"
