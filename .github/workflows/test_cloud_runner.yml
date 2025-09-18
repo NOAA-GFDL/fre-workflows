@@ -21,23 +21,17 @@ concurrency:
 
 jobs:
   test-cloud:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
       - name: Test workflow_dispatch
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
-          #path: '/contrib/container-test'
-      - name: check
-        run: |
-          echo "did it do stuff?"
-          echo "menial change"
-          pwd
-          ls fre-cli
-          cd fre-cli
-          git branch
-          exit 1
+          path: './fre-cli'
+          submodules: true
       - name: Run ppp-container
         run: |
           # Print pwd then run script

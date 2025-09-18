@@ -25,6 +25,11 @@ conda activate /app/cylc-flow-tools
 #update fre-cli env?
 #pip install --upgrade fre-cli
 #conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
+cd fre-cli
+pip install .
+export PATH=/mnt/.local/bin:$PATH
+cd -
+fre app regrid --help
 
 get_user_input () {
     # User input
