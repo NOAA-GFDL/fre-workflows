@@ -839,23 +839,28 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         script = """
+            mkdir -p $outputDir
+            mkdir -p $remapDir
+            mkdir -p $workDir
             fre --verbose app regrid \
                 --yamlfile=$yaml_config \
-                --input_dir=$input_dir \
-                --output_dir=$output_dir \
-                --work_dir=$wortk_dir \
-                --remap_dir=$remap_dir \
+                --input_dir=$inputDir \
+                --output_dir=$outputDir \
+                --work_dir=$workDir \
+                --remap_dir=$remapDir \
                 --source=$source \
-                --input_date=$input_date
+                --input_date=$inputdate
+            rm -rf $workDir
         """
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = 2*PT5M
     [[[environment]]]
         yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
-        output_dir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-        input_dir = =$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-        remap_dir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-        input_date = $CYLC_TASK_CYCLE_POINT 
+        outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+        inputDir = =$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+        remapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
+        workDir = $CYLC_TASK_WORK_DIR
+        inputdate = $CYLC_TASK_CYCLE_POINT 
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
