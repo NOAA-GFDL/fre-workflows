@@ -721,7 +721,7 @@
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
-        [[[environment]]]
+        [[[environment]]]        
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
@@ -857,7 +857,7 @@
         [[[environment]]]
             yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            inputDir = =$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts 
             remapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
             workDir = $CYLC_TASK_WORK_DIR
             inputdate = $CYLC_TASK_CYCLE_POINT
