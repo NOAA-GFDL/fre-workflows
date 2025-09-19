@@ -841,26 +841,30 @@
         script = """
             fre --verbose app regrid \
                 --yamlfile=$yaml_config \
-                --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
-                --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
-                --work_dir=$CYLC_TASK_WORK_DIR \
-                --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
+                --input_dir=$input_dir \
+                --output_dir=$output_dir \
+                --work_dir=$wortk_dir \
+                --remap_dir=$remap_dir \
                 --source=$source \
-                --input_date=$CYLC_TASK_CYCLE_POINT \
+                --input_date=$input_date
         """
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = 2*PT5M
+    [[[environment]]]
+        yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+        output_dir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+        input_dir = =$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+        remap_dir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
+        input_date = $CYLC_TASK_CYCLE_POINT 
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
     {% if DO_REGRID_STATIC %}
     [[regrid-xy<regrid_static>]]
         inherit = REGRID-XY, <regrid_static>
         [[[environment]]]
             source = $CYLC_TASK_PARAM_regrid_static
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
     {% endif %}
 {% endif %}
 
