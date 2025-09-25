@@ -32,8 +32,12 @@ jobs:
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
           submodules: true
-#      - name: check
-#        run: |
+      - name: check output dir
+        id: set_path
+        run: |
+          echo "$github.run_id"
+          echo "$runner.name"
+          exit 1
 #          echo "did it do stuff?"
 #          echo "current dir"
 #          pwd
