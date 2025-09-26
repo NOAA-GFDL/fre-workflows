@@ -15,7 +15,7 @@
 
 ## Manual Pipeline Run Details
 
-The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes.
+The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run.
 
 To trigger the manual pipeline:
 1. Go to `Actions` tab
