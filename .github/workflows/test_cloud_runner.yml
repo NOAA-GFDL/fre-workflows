@@ -41,12 +41,16 @@ jobs:
           echo "Currently in:"
           cwd=$(pwd)
           echo $cwd
+
           # Set up output directory based on which runner picks up the job
           # This is to ensure there are no race conditions when accessing 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_folder=$(echo $cwd | cut -d/ -f3)
+
+          # workflow runner number
           wfrunner=${runner_folder: -1}
+
           output_dir=/contrib/container-test/ppp-setup-$wfrunner
           mkdir -p $output_dir
 
