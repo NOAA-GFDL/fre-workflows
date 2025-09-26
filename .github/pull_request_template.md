@@ -15,6 +15,8 @@
 
 ## Manual Pipeline Run Details
 
+The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes.
+
 To trigger the manual pipeline:
 1. Go to `Actions` tab
 2. Choose `test_cloud_runner` on left (you should see "This workflow has a workflow_dispatch event trigger.")
@@ -25,4 +27,5 @@ To trigger the manual pipeline:
 - [ ] No
 
 **Result of manual pipeline run:**
-<!-- Paste relevant logs, output, or a link to the workflow run here -->
+
+(Paste relevant logs, output, or a link to the workflow run here)
