@@ -1,8 +1,18 @@
-name: run_ppp
+name: test_cloud_runner
 on:
-  pull_request:
-    branches:
-      - main  # triggers pipeline on pull requests to merge into main
+  workflow_dispatch:
+    inputs:
+      fre-cli-repo:
+        description: 'NOAA-GFDL/fre-cli repo'
+        required: true
+        type: choice
+        default: 'NOAA-GFDL/fre-cli'
+        options:
+          - 'NOAA-GFDL/fre-cli'
+      fre-cli-branch:
+        description: 'Input which fre-cli branch to check out'
+        required: true
+        default: 'main'
   push:
     branches:
       - main  # triggers pipeline on push to main
@@ -16,7 +26,15 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+      - name: Checkout fre-cli
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.fre-cli-repo }}
+          ref: ${{ github.event.inputs.fre-cli-branch }}
+          path: './fre-cli'
+          submodules: true
       - name: Run ppp-container
         run: |
           # Print pwd then run script
@@ -29,7 +47,7 @@ jobs:
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
 
-          container_path=/contrib/container-test/ppp_8-22.sif
+          container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
