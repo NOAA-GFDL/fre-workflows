@@ -2,12 +2,12 @@
 
 FRE-workflows is GFDL's next-generation FRE (FMS Runtime Environment) workflow engine with a cylc backend ([see
 cylc's user guide here](https://cylc.github.io/cylc-doc/stable/html/user-guide/index.html)).  FRE-workflows automates
-the process of git cloning model code, compiling the cloned model, submitting a batch job to GFDL's RDHPCS systems, and
-post-processing model output data. This new workflow relies on [`fre-cli`](https://github.com/NOAA-GFDL/fre-cli), the
-new FRE command-line interface.  Currently, this repository only contains the `fre-cli` postprocessing workflow.  This
-documentation will be updated when more workflows are added to this repository.
+the process of cloning model code, model compilation, batch job submission to system resources, and post-processing
+model output. This new workflow relies on [`fre-cli`](https://github.com/NOAA-GFDL/fre-cli), the new FRE command-line
+interface.  Currently, this repository only contains the `fre-cli` postprocessing workflow.  This documentation will be
+updated when more workflows are added to this repository.
 
-## What files are what
+## Repository Table of Contents
 
 The top level directory structure groups source code and input files as follow:
 
@@ -39,8 +39,8 @@ instructions on how to run the postprocessing workflow as a general user at GFDL
 
 ## `fre-cli` Postprocessing Instructions
 
-Please see [frecli-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/frecli-instructions.md) for
-instructions on how to run the postprocessing using `fre-cli` commands at GFDL.
+Please see [FRE-cli](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme) for instructions on how to run the
+postprocessing using `fre-cli` commands at GFDL.
 
 ## How to Install
 
