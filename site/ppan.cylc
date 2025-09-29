@@ -77,7 +77,7 @@
         pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load fre/{{ FRE_VERSION }} gcp && mkdir -p $outputDir
+        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
 
     [[DATA-CATALOG]]
         pre-script = module load fre/{{ FRE_VERSION }}
