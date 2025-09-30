@@ -125,7 +125,7 @@ fre_pp_steps () {
     ## RUN
     echo -e "\nRunning the workflow with cylc play ... "
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
-    check_exit_status "PLAY"
+    #check_exit_status "PLAY" # if cylc play fails and this is not commented, log uploading does not work
 
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
