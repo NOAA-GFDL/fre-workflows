@@ -22,7 +22,6 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-
 git clone --recursive https://github.com/NOAA-GFDL/fre-cli
 cd fre-cli
 pip install .

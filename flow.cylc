@@ -721,7 +721,7 @@
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
-        [[[environment]]]        
+        [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
