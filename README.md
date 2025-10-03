@@ -42,19 +42,13 @@ instructions on how to run the postprocessing workflow as a general user at GFDL
 Please see [FRE-cli](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme) for instructions on how to run the
 postprocessing using `fre-cli` commands at GFDL.
 
-## How to Install
-
-Please see
-[portability-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/portability-instructions.md) for
-information regarding how to install the postprocessing workflow.
-
 ## Developer Instructions
 
 Please see [for-developers.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/for-developers.md) for instructions
 on how to run the postprocessing workflow as a workflow developer.
 
+## Containerized Post-Processing Instructions
 
-
-
-
-
+Please see
+[portability-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/portability-instructions.md) for
+information regarding how to install the postprocessing workflow.
