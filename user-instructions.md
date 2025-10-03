@@ -36,7 +36,7 @@ Key values include:
 - `SITE` set to "ppan" to submit jobs to PP/AN cluster
 - `HISTORY_DIR` directory path to your raw model output
 - `HISTORY_SEGMENT` amount of time covered by a single history file (ISO8601 datetime)
-- `PP_CHUNKS` amount of time covered by a single postprocessed file (ISO8601 datetime)
+- `PP_CHUNKS` list of time values covered by a single postprocessed file (ISO8601 datetime)
 - `PP_START` start of the desired postprocessing (ISO8601 datetime)
 - `PP_STOP` end of the desired postprocessing (ISO8601 datetime)
 - `PP_COMPONENTS` space-separated list of user-defined components, discussed in more detail below
@@ -80,7 +80,7 @@ HISTORY_DIR='/archive/Ian.Laflotte/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04
 HISTORY_SEGMENT='P1Y'
 
 PP_DIR='/archive/YOUR.USERNAME/fre/FMS2023.04_om5_20240410/ESM4.2JpiC_om5b04r1/gfdl.ncrc5-intel23-prod-openmp/pp'
-PP_CHUNK_A='P2Y'
+PP_CHUNKS=['P2Y']
 PP_COMPONENTS='atmos atmos_scalar land land_static'
 PP_START="00010101"
 PP_STOP="00020101"
