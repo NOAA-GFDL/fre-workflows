@@ -36,8 +36,7 @@ Key values include:
 - `SITE` set to "ppan" to submit jobs to PP/AN cluster
 - `HISTORY_DIR` directory path to your raw model output
 - `HISTORY_SEGMENT` amount of time covered by a single history file (ISO8601 datetime)
-- `PP_CHUNK_A` amount of time covered by a single postprocessed file (ISO8601 datetime)
-- `PP_CHUNK_B` secondary chunk size for postprocessed files, if desired (ISO8601 datetime)
+- `PP_CHUNKS` amount of time covered by a single postprocessed file (ISO8601 datetime)
 - `PP_START` start of the desired postprocessing (ISO8601 datetime)
 - `PP_STOP` end of the desired postprocessing (ISO8601 datetime)
 - `PP_COMPONENTS` space-separated list of user-defined components, discussed in more detail below
@@ -242,7 +241,7 @@ This creates a workflow directory in `~/cylc-run`.
 
 After successful installation, the workflow is launched with:
 ```
-cylc play fre-workflows/run1
+cylc play [workflow_id] 
 ```
 If on PP/AN, cylc launches a scheduler daemon on a `workflow1` server, via `ssh`, triggering the login banner to be printed.
 This daemon submits and runs jobs based on the task dependencies defined in `flow.cylc`.
@@ -260,7 +259,7 @@ it will shutdown in error after a period of time.
 `cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that can expose workflow
 and task information. The text-based GUI can be launched via:
 ```
-cylc tui fre-workflows/run1
+cylc tui [workflow_id]
 ```
 
 The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
@@ -270,8 +269,8 @@ cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 Then, navigate to one of the two links printed to screen in your web browser. If one just wants a quick look at the state of
 their workflow, the user-interfaces can be completely avoided by using the `workflow-state` command, two examples of which are:
 ```
-cylc workflow-state -v fre-workflows/run1                # show all jobs
-cylc workflow-state -v fre-workflows/run1 | grep failed  # show only failed ones
+cylc workflow-state -v [workflow_id]                # show all jobs
+cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
 
@@ -282,6 +281,6 @@ Various other `cylc` commands are useful for inspecting a running workflow. Try 
 more information on how to use these tools to your advantage!
 
 - `cylc scan` Lists running workflows
-- `cylc cat-log fre-workflows/run1` Show the scheduler log
+- `cylc cat-log [workflow_id]` Show the scheduler log
 - `cylc list` Lists all tasks
 - `cylc report-timings`
