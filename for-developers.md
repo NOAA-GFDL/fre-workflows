@@ -4,6 +4,8 @@
 
 2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
 
+3. [Guide](#guide)
+
 # Configuration Settings
 
 `fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on PPAN:
@@ -201,3 +203,36 @@ This should be generic to all sites, though we have not yet had a chance to run
 this outside of the lab (i.e. Gaea).
 
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
+
+# Developer Guide
+```
+# clone fre-workflows repository
+fre pp checkout -e [experiment name] -p [platform] -t [target]
+
+# create/confiugre the combined yaml file, rose-suite.conf, and any necessary rose-app.conf files
+fre pp configure-yaml -y [model yaml file] -e [experiment name] -p [platform] -t [target]
+
+## After the first two steps, users can edit:
+##   - ppan.cylc site file under ~/cylc-src/[workflow_id]/site/ppan.cylc
+##   - combined yaml file and rose-suite.conf file
+
+# validate the rose experiment configuration files
+fre pp validate -e [experiment name] -p [platform] -t [target]
+
+# install the experiment
+fre pp install -e [experiment name] -p [platform] -t [target]
+
+# run the experiment
+fre pp run -e [experiment name] -p [platform] -t [target]
+```
+
+If edits needs to be made for troubleshooting, users can edit files in the `~/cylc-src/[workflow_id]` directory and follow this clean up procedure:
+```
+# If the experiment needs to be stopped
+cylc stop --now [workflow_id]
+
+# clean cylc-run directory
+cylc clean [workflow_id]
+
+# From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
+```
