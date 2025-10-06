@@ -1,10 +1,10 @@
-# Developer guide
+# Developer Guide
 
 1. [Configuration Settings](#configuration-settings)
 
 2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
 
-3. [Guide](#guide)
+3. [Step-by-step guide](#guide)
 
 # Configuration Settings
 
@@ -204,7 +204,7 @@ this outside of the lab (i.e. Gaea).
 
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
 
-# Developer Guide
+# Guide
 ```
 # clone fre-workflows repository
 fre pp checkout -e [experiment name] -p [platform] -t [target]
