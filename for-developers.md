@@ -1,14 +1,14 @@
 # Developer guide
 
-1. [User-Specific Configuration Settings](#user-specific-settings)
+1. [Configuration Settings](#configuration-settings)
 
 2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
 
-# User-Specific settings
+# Configuration Settings
 
 `fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on PPAN:
 
-## User settings
+## Cylc User settings
 
 The path to the Cylc binary must be added to your `$PATH` environment variable first. This can be done by modifying your PATH in your bash_profile as follows:
 
@@ -18,7 +18,7 @@ The path to the Cylc binary must be added to your `$PATH` environment variable f
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
 
-We need this to run on PPAN. Without a cylc binary in your `$PATH` variable, the initial setup of the workflow sever (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
+We need this to run on PPAN. Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
 
 > ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is being persued.
 
@@ -117,22 +117,20 @@ most specific settings are prioritized over the least specific settings.
 
 The overall hierarchy looks something like this:
 
-highest priority---  `sites/$sitefile.cylc` > `flow.cylc` ---lowest priority
+highest priority---  `site/$sitefile.cylc` > `flow.cylc` ---lowest priority
 
 Prioritization does not mean that the settings in any file are ignored - but if
 the settings in two files disagree, cylc uses the setting value in the
-higher-priority file over the lower-priority one.
-
-We currently have pre-scripts defined for every step of the workflow in
-`site/$sitefile.cylc`, and that means **YOU NEED TO EDIT THERE**.
+higher-priority file over the lower-priority one. We currently have pre-scripts
+defined for every step of the workflow in `site/$sitefile.cylc`, and that means
+**YOU NEED TO EDIT THERE**.
 
 **For testing at the lab, that means you are editing site/ppan.cylc.**
-
 
 *Please note:* these steps may include changes that you do not want to include
 in your git history for safety's sake. To avoid adding these to your git
 history, you can edit the code in `~/cylc-src/$your_test_experiment` directly
-after checking it out with a `fre pp checkout`:
+after checking it out with the fre-cli subtool `fre pp checkout`:
 
 ```
 > fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
@@ -150,7 +148,6 @@ put any changes you want to be permanent in `~/cylc-src/$your_test_experiment` -
 but you probably do not want these changes to be permanent. This is a little bit
 risky - it can be hard to keep track of where your edits are taking place - but
 allows you to avoid awkward back-and-forth edits in your git history.
-
 
 How you edit `site/ppan.cylc` looks different depending on how far along in the
 development process the features that you are testing are:
@@ -202,6 +199,5 @@ try to load the conda environment.
 
 This should be generic to all sites, though we have not yet had a chance to run
 this outside of the lab (i.e. Gaea).
-
 
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
