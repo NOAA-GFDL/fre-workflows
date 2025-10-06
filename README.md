@@ -51,4 +51,4 @@ on how to run the postprocessing workflow as a workflow developer.
 
 Please see
 [portability-instructions.md](https://github.com/NOAA-GFDL/fre-workflows/blob/main/portability-instructions.md) for
-information regarding how to install the postprocessing workflow.
+information regarding how to run a containerized post-processing workflow.

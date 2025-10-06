@@ -26,7 +26,6 @@ a conda environment with `cylc-flow`, `cylc-rose`, and `metomi-rose` installed. 
 module load cylc
 ```
 
-
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 3. Fill in rose-suite configuration fields
 With your favorite text editor, open up `rose-suite.conf` and set variables to desired values. These values will be passed to
@@ -88,8 +87,6 @@ PP_DEFAULT_XYINTERP="360,180"
 PP_GRID_SPEC='/work/Ian.Laflotte/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar'
 ```
 
-
-
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 4. Create history file manifest (optional but highly recommended)
 For more complete validation of workflow settings, we create a manifest for our history file archives with
@@ -99,8 +96,6 @@ tar -tf /path/to/history/YYYYMMDD.nc.tar | grep -v "tile[2-6]" | sort > history-
 
 The `history-manifest` contains a list of source files contained within the targeted history files. This can be
 helpful for validating settings on a component-by-component basis in the next step(s).
-
-
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 5. Define your desired postprocessing components for `remap-pp-components`
@@ -147,7 +142,6 @@ to determine if a component involves static data. Statics will only be processed
 
 The setting for `PP_COMPONENTS` should reflect information in `app/remap-pp-components/rose-app.conf`. From our example, a
 good list that passes validation would be `PP_COMPONENTS=atmos atmos_scalar land land_static`.
-
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 6. Provide more specifics for `regrid-xy`
@@ -198,9 +192,6 @@ noting above:
 - `OutputGridType` is the grid label referenced in the `app/remap-pp-components/rose-app.conf` file.
 - `OutputGridLat` and `OutputGridLon` identify the target grid if `OutputGridType` is not specified
 
-
-
-
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 7. Validate your workflow configuration
 Rose can validate the configuration by checking the field values against a list of rules defined by the devlopers of this
@@ -215,13 +206,6 @@ any/all complaints. If `history-manifest` exists, `rose macro --validate` will r
 that are not present in the history tar file archives. Whether a missing file is a show-stopper or a toothless complaint is
 at the discretion of the user. If a source file is missing, consider reconfiguring the component definition(s), remove the
 source file from the component, or simply removing the component altogether.
-
-
-
-
-
-
-
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 8. Validate/Install/Run the configured workflow templates with `cylc`
@@ -246,11 +230,6 @@ cylc play [workflow_id]
 If on PP/AN, cylc launches a scheduler daemon on a `workflow1` server, via `ssh`, triggering the login banner to be printed.
 This daemon submits and runs jobs based on the task dependencies defined in `flow.cylc`.
 
-
-
-
-
-
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 9. Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
@@ -272,8 +251,6 @@ their workflow, the user-interfaces can be completely avoided by using the `work
 cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
-
-
 
 <!-- ______________________________________________________________________________________________________________________ -->
 ## 10. Inspect workflow progress with a terminal CLI

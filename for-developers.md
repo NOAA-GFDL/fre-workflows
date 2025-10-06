@@ -17,8 +17,7 @@ We need this to run on PPAN. Without a cylc binary in your $PATH variable,
 the initial setup of the workflow sever (check terminology) fails, and we cannot
 edit the environment with a module load or similar until it is running.
 
-> ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is
-being persued.
+> ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is being persued.
 
 
 ## Experiment settings
@@ -58,23 +57,21 @@ as variables. It's useful to make sure some of these are set to specific values
 for developer work:
 
 
-  postprocess:switches:clean_work
+  `postprocess:switches:clean_work`
 
-  *what it does:* Whether you clean up the contents of the intermediate directories
+  - *what it does:* Whether you clean up the contents of the intermediate directories
     produced by your experiment before going on to the next step - for example,
     removing the local history directory once you have all files split by
     split.netcdf
-  *value for production:*  True
-  *value for development:* False
-  *why:* It's a lot easier to debug what may have gone wrong with previous steps
+
+  - *value for production:*  True
+
+  - *value for development:* False
+
+  - *why:* It's a lot easier to debug what may have gone wrong with previous steps
    when you can refer to the actual files produced in those steps and selectively
    re-run. However, this is not necessary on a production run and the intermediate
    files take up a LOT of space.
-
-
-
-
-
 
 # Batch environment setup and fre-cli
 
@@ -115,7 +112,7 @@ layers of configuration - settings can be set in more than one place, and the
 most specific settings are prioritized over the least specific settings. The
 overall hierarchy looks something like this:
 
-highest priority---  sites/$sitefile.cylc > flow.cylc ---lowest priority
+highest priority---  `sites/$sitefile.cylc` > `flow.cylc` ---lowest priority
 
 Prioritization does not mean that the settings in any file are ignored - but if
 the settings in two files disagree, cylc goes with the setting value in the
