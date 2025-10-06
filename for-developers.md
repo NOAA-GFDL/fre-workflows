@@ -1,11 +1,16 @@
+# Developer guide
+
+1. [User-Specific Configuration Settings](#user-specific-settings)
+
+2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
+
 # User-Specific settings
 
 `fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on PPAN:
 
 ## User settings
 
-The path to the Cylc binary must be added to your $PATH environment variable first. This can be done by modifying
-your PATH in your bash_profile as follows:
+The path to the Cylc binary must be added to your `$PATH` environment variable first. This can be done by modifying your PATH in your bash_profile as follows:
 
 ```
 > cat /home/First.Last/.bash_profile
@@ -13,18 +18,20 @@ your PATH in your bash_profile as follows:
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
 
-We need this to run on PPAN. Without a cylc binary in your $PATH variable,
-the initial setup of the workflow sever (check terminology) fails, and we cannot
-edit the environment with a module load or similar until it is running.
+We need this to run on PPAN. Without a cylc binary in your `$PATH` variable, the initial setup of the workflow sever (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
 
 > ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is being persued.
 
 
 ## Experiment settings
 
-The current organization of the yaml has a bunch of experiment-wide settings in
-a file called settings.yaml:
+The current organization of the yaml files comprises of the model, settings, and post-processing configuration files, where the model yaml holds paths that point to the settings and post-processing yamls.
 
+For more information on the yaml framework, see [fre-cli's README and documentation on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#model-yaml).
+
+The `settings.yaml` contains necessary experiment-specific information. You'll see reference to some of the settings in this file throughout the workflow as variables.
+
+Example `settings.yaml`:
 
 ```
 > cat yaml_workflow/pp/settings.yaml:
@@ -52,10 +59,7 @@ postprocess:
     do_analysis_only:           False
 ```
 
-You'll see reference to some of the settings in this file throughout the workflow
-as variables. It's useful to make sure some of these are set to specific values
-for developer work:
-
+It's useful to make sure some of these are set to specific values for developer work:
 
   `postprocess:switches:clean_work`
 
@@ -99,7 +103,7 @@ batch environment. How you do this depends on how far along the development
 pipeline the features that you want to include in fre-cli are.
 
 To do this, you use the pre-script defined for each task. You can see an example
-of a pre-script in flow.cylc:
+of a pre-script in `flow.cylc`:
 
 ```
     [[RENAME-SPLIT-TO-PP]]
@@ -107,26 +111,28 @@ of a pre-script in flow.cylc:
         script = rose task-run --verbose --app-key rename-split-to-pp
 ```
 
-However, that's NOT where we want to put our edits. Cylc has hierarchical
+However, that's **NOT** where we want to put our edits. Cylc has hierarchical
 layers of configuration - settings can be set in more than one place, and the
-most specific settings are prioritized over the least specific settings. The
-overall hierarchy looks something like this:
+most specific settings are prioritized over the least specific settings.
+
+The overall hierarchy looks something like this:
 
 highest priority---  `sites/$sitefile.cylc` > `flow.cylc` ---lowest priority
 
 Prioritization does not mean that the settings in any file are ignored - but if
-the settings in two files disagree, cylc goes with the setting value in the
-higher-priority file over the lower-prioirty one.
+the settings in two files disagree, cylc uses the setting value in the
+higher-priority file over the lower-priority one.
 
 We currently have pre-scripts defined for every step of the workflow in
-sites/$sitefile.cylc, and that means YOU NEED TO EDIT THERE. For testing at the
-lab, that means you are editing site/ppan.cylc .
+`site/$sitefile.cylc`, and that means **YOU NEED TO EDIT THERE**.
+
+**For testing at the lab, that means you are editing site/ppan.cylc.**
 
 
 *Please note:* these steps may include changes that you do not want to include
 in your git history for safety's sake. To avoid adding these to your git
-history, you can edit the code in ~/cylc-src/$your_test_experiment directly
-after checking it out with a fre pp checkout:
+history, you can edit the code in `~/cylc-src/$your_test_experiment` directly
+after checking it out with a `fre pp checkout`:
 
 ```
 > fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
@@ -138,18 +144,18 @@ ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose
 > emacs site/ppan.cylc
 ```
 
-The code that cylc runs from in ~/cylc-run/$your_test_experiment is copied from
-~/cylc-src/$your_test_experiment , not re-cloned from git. It's a bad idea to
-put any changes you want to be permanent in ~/cylc-src/$your_test_experiment -
+The code that cylc runs from in `~/cylc-run/$your_test_experiment` is copied from
+`~/cylc-src/$your_test_experiment`, not re-cloned from git. It's a bad idea to
+put any changes you want to be permanent in `~/cylc-src/$your_test_experiment` -
 but you probably do not want these changes to be permanent. This is a little bit
 risky - it can be hard to keep track of where your edits are taking place - but
 allows you to avoid awkward back-and-forth edits in your git history.
 
 
-How you edit sites/ppan.cylc looks different depending on how far along in the
+How you edit `site/ppan.cylc` looks different depending on how far along in the
 development process the features that you are testing are:
 
-### Features in fre-cli are part of a release
+### Features in fre-cli that are part of a release
 
 If the features that you want to include are part of a fre release, you can
 load a fre module from the pre-script of your cylc task:
@@ -159,7 +165,7 @@ load a fre module from the pre-script of your cylc task:
         pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
 ```
 
-### Features in fre-cli are merged into main
+### Features in fre-cli that are merged into main
 
 If the features that you want to include are merged into main but not yet part
 of a fre release, you can use them by loading fre/test.
@@ -170,7 +176,7 @@ of a fre release, you can use them by loading fre/test.
 ```
 
 
-### Features in fre-cli are in a development branch
+### Features in fre-cli that are in a development branch
 
 If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that
