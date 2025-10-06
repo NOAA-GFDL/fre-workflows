@@ -206,6 +206,7 @@ For more information on conda environment setup for fre-cli, see [fre-cli's READ
 
 # Guide
 
+## Postprocess FMS history files
 To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps:
 ```
 # clone fre-workflows repository
@@ -239,7 +240,7 @@ cylc clean $your_test_experiment
 # From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
 
-### Inspect workflow progress with an interface (GUI or TUI)
+## Inspect workflow progress with an interface (GUI or TUI)
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
 it will shutdown in error after a period of time.
 
@@ -260,7 +261,7 @@ cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
-### Inspect workflow progress with a terminal CLI
+## Inspect workflow progress with a terminal CLI
 Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`, and `cylc <command> --help` for
 more information on how to use these tools to your advantage!
 
