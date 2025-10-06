@@ -4,7 +4,7 @@
 
 2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
 
-3. [Step-by-step guide](#guide)
+3. [Post-processing guide using fre-cli and cylc](#guide)
 
 # Configuration Settings
 
