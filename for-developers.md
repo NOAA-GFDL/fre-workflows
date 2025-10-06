@@ -233,8 +233,38 @@ If edits needs to be made for troubleshooting, users can edit files in the `~/cy
 # If the experiment needs to be stopped
 cylc stop --now $your_test_experiment
 
-# clean cylc-run directory
+# Removes the cylc-run directory and associated symlinks
 cylc clean $your_test_experiment
 
 # From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
+
+### Inspect workflow progress with an interface (GUI or TUI)
+The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
+it will shutdown in error after a period of time.
+
+`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that can expose workflow
+and task information. The text-based GUI can be launched via:
+```
+cylc tui [workflow_id]
+```
+
+The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
+```
+cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
+```
+Then, navigate to one of the two links printed to screen in your web browser. If one just wants a quick look at the state of
+their workflow, the user-interfaces can be completely avoided by using the `workflow-state` command, two examples of which are:
+```
+cylc workflow-state -v [workflow_id]                # show all jobs
+cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
+```
+
+### Inspect workflow progress with a terminal CLI
+Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`, and `cylc <command> --help` for
+more information on how to use these tools to your advantage!
+
+- `cylc scan` Lists running workflows
+- `cylc cat-log [workflow_id]` Show the scheduler log
+- `cylc list` Lists all tasks
+- `cylc report-timings`
