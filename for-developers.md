@@ -205,6 +205,8 @@ this outside of the lab (i.e. Gaea).
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
 
 # Guide
+
+To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps:
 ```
 # clone fre-workflows repository
 fre pp checkout -e [experiment name] -p [platform] -t [target]
