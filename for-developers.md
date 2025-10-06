@@ -213,7 +213,7 @@ fre pp checkout -e [experiment name] -p [platform] -t [target]
 fre pp configure-yaml -y [model yaml file] -e [experiment name] -p [platform] -t [target]
 
 ## After the first two steps, users can edit:
-##   - ppan.cylc site file under ~/cylc-src/[workflow_id]/site/ppan.cylc
+##   - ppan.cylc site file under ~/cylc-src/$your_test_experiment/site/ppan.cylc
 ##   - combined yaml file and rose-suite.conf file
 
 # validate the rose experiment configuration files
@@ -226,13 +226,13 @@ fre pp install -e [experiment name] -p [platform] -t [target]
 fre pp run -e [experiment name] -p [platform] -t [target]
 ```
 
-If edits needs to be made for troubleshooting, users can edit files in the `~/cylc-src/[workflow_id]` directory and follow this clean up procedure:
+If edits needs to be made for troubleshooting, users can edit files in the `~/cylc-src/$your_test_experiment` directory and follow this clean up procedure:
 ```
 # If the experiment needs to be stopped
-cylc stop --now [workflow_id]
+cylc stop --now $your_test_experiment
 
 # clean cylc-run directory
-cylc clean [workflow_id]
+cylc clean $your_test_experiment
 
 # From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
