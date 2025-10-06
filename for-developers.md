@@ -209,6 +209,10 @@ For more information on conda environment setup for fre-cli, see [fre-cli's READ
 ## Postprocess FMS history files
 To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps:
 ```
+# load modules
+module load cylc
+module load fre/2025.04
+
 # clone fre-workflows repository
 fre pp checkout -e [experiment name] -p [platform] -t [target]
 
