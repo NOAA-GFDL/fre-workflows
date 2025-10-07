@@ -1,0 +1,23 @@
+netcdf atmos_static_scalar_3.ck {
+dimensions:
+        lat = 4 ;
+        lon = 5 ;
+variables:
+        float ck(lat, lon) ;
+                ck:long_name = "vertical coordinate sigma value" ;
+                ck:units = "unit" ;
+                ck:missing_value = 1.e+20f ;
+                ck:_FillValue = 1.e+20f ;
+                ck:cell_methods = "time: point" ;
+        float lat(lat) ;
+        float lon(lon) ;
+data:
+  lat = 0, 1, 2, 3 ;
+  lon = 0, 1, 2, 3, 4 ;
+  ck =
+   1, 2, 3, 4, 5,
+   6, 7, 8, 9, 10,
+   11, 12, 13, 14, 15,
+   16, 17, 18, 19, 20 ;
+
+}

@@ -1,0 +1,365 @@
+name: test_cloud_runner
+on:
+  workflow_dispatch:
+    inputs:
+      fre-cli-repo:
+        description: 'NOAA-GFDL/fre-cli repo'
+        required: true
+        type: choice
+        default: 'NOAA-GFDL/fre-cli'
+        options:
+          - 'NOAA-GFDL/fre-cli'
+      fre-cli-branch:
+        description: 'Input which fre-cli branch to check out'
+        required: true
+        default: 'main'
+  push:
+    branches:
+      - main  # triggers pipeline on push to main
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-cloud:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+      - name: Checkout fre-cli
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.fre-cli-repo }}
+          ref: ${{ github.event.inputs.fre-cli-branch }}
+          path: './fre-cli'
+          submodules: true
+      - name: Run ppp-container
+        run: |
+          # Print pwd then run script
+          echo "Currently in:"
+          cwd=$(pwd)
+          echo $cwd
+          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
+          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
+                      --bind /contrib/container-test/history:/mnt/history:ro
+                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+                      --bind /contrib/container-test"
+
+          container_path=/contrib/container-test/ppp-wf.sif
+          runscript_path=${cwd}/for_gh_runner/runscript.sh
+
+          singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
+
+          # Can potentially do this to get list of tasks
+          #task_list=$(cylc list test_pp__ptest__ttest)
+          #task1=$(echo $task_list | cut -d ' ' -f1) ....
+
+      - name: Upload workflow-run log files
+        uses: actions/upload-artifact@v4
+        with:
+          name: fre-workflow-logs
+          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          if-no-files-found: error
+
+      - name: Print pp-starter successes or failures
+        run: |
+          set +e
+          # Successes
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print stage-history successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print remap-pp-components successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print make-timeavgs successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print rename-split-to-pp successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          exit_status_1=$? 
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print split-netcdf successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          exit_status_2=$? 
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print combine-timeavgs successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print clean task successes or failures
+        run: |
+          set +e
+          # Successes
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+## Keep in here for now as a just in case reference ##
+#      - name: Print any succeeded tasks
+#        run: |
+#          # List tasks that have succeeded (and completed) in the workflow
+#          grep -E ":succeeded.*completed" /contrib/container-test/ppp-setup/log.out
+#
+#      - name: Print any failed tasks
+#        run: |
+#          # Search for if there is an ERR status for any task
+#          if grep -q "failed/ERR" /contrib/container-test/ppp-setup/log.out; then
+#              echo "Task failures found: CHECK THE LOG FILES UPLOADED AS ARTIFACTS"
+#              grep "failed/ERR" /contrib/container-test/ppp-setup/log.out
+#              exit 1
+#          fi
+#
+#          echo "Workflow ran successfully"
+
+##To-do:
+# - figure out if container will be hosted on cloud or somehow pulled from registry
+# - examine behavior of runner in draft vs not draft mode

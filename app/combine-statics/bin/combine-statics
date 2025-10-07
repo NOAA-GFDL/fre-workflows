@@ -24,14 +24,6 @@ if [[ ! -d $outputDir ]]; then
     exit 1
 fi
 
-# Setup PYTHONPATH and io lists for the data lineage tool
-if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
-    export input_file_list=
-    export output_file_list=
-    echo "Set PYTHONPATH and created i/o lists"
-fi
-
 cd $inputDir
 
 for comp in $(ls); do
@@ -47,55 +39,8 @@ for comp in $(ls); do
 #        echo "$(ls $outputDir/$comp)"
 #    fi
 
-    if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-        data_lineage_in_dir=$inputDir/$comp/P0Y/P0Y
-        data_lineage_out_dir=$outputDir/$comp
-
-        start_time=$(date +%s)
-
-        for input_file in *; do 
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-            -m data_lineage.bloomfilter.HashGen $data_lineage_in_dir/$input_file)
-            export input_file_list="${input_file_list}$input_file $hash_val,"
-            echo "[DATA LINEAGE] Added $input_file to input list with hash_val: $hash_val"
-        done
-
-        hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-        -m data_lineage.bloomfilter.HashGen $data_lineage_out_dir/$comp.static.nc)
-        export output_file_list="${output_file_list}$comp.static.nc $hash_val,"
-        echo "[DATA LINEAGE] Added $comp.static.nc to output list with hash_val: $hash_val"
-
-        end_time=$(date +%s)
-        duration=$((end_time - start_time))
-        echo "Time spent hashing and creating both file lists: $duration seconds"
-    fi
-
     popd
 done
-
-if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-
-    epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$data_lineage_in_dir/"
-    echo "[DATA LINEAGE] Annotated $data_lineage_in_dir/ to EPMT_DATA_LINEAGE_IN_PATH"
-
-    epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$data_lineage_out_dir/"
-    echo "[DATA LINEAGE] Annotated $data_lineage_out_dir/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-    # Annotate to EPMT
-    if [ -n "$input_file_list" ]; then
-        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
-        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
-        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
-    fi
-
-    if [ -n "$output_file_list" ]; then
-        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
-        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
-        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-    fi
-fi
 
 echo Natural end of the static combining
 exit 0

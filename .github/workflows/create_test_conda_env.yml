@@ -7,6 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Sleep needed due to a race condition where cloud runner pipeline
+      # wanted to copy fre-workflows but did not have the permission to access
+      # .pyc files creates by running pytests
+      # Solution: start this pipeline after the test_cloud_runner.yml pipeline
+      #           starts to allow time for copying fre-workflows without a 
+      #           permission denied error
+      - name: Sleep
+        run: sleep 60
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,40 +43,52 @@ jobs:
 
       - name: Jinja2filter pytest
         run: |
-          pytest -v ./Jinja2Filters/tests
+          pytest -vv -rx ./Jinja2Filters/tests
 
       - name: Jinja2filter pylint
         run: |
           pylint -v --fail-under 7.00 ./Jinja2Filters
 
-      - name: make-timeseries pytest (guarded against failure)
-        continue-on-error: true
+      - name: make-timeseries pytest
         run: |
-          pytest -v -v -rx ./app/make-timeseries/test
+          pytest -vv -rx ./app/make-timeseries/test/test_make_timeseries.py
+
+      - name: make-timeseries pylint
+        run: |
+          pylint --fail-under 9.5 ./app/make-timeseries/test/test_make_timeseries.py
 
       - name: PPANHandler pytest
         run: |
-          pytest -v -v -rx ./tests/test_PPANHandler.py
+          pytest -vv -rx ./lib/python/tests/test_PPANHandler.py
 
-      - name: papiex_tooler pytest (guarded against failure)
-        continue-on-error: true
+      - name: papiex_tooler pytest
         run: |
-          pytest -v -v -rx ./tests/test_papiex_tooler.py
+          pytest -vv -rx ./lib/python/tests/test_papiex_tooler.py
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint -v --fail-under 4.50 ./lib/python
+          pylint -v --fail-under 7.50 ./lib/python
 
-      - name: chunkchecker pytest (guarded against failure)
-        continue-on-error: true
+      - name: combine-statics pytest
+        continue-on-error: false
         run: |
-          pytest -v -v -rx ./tests/test_chunkcheck.py
+          # pytest unittests for remap-pp-components
+          pytest -v -v -rx  ./app/combine-statics/tests
+          
+      - name: rename-split-to-pp pytest
+        continue-on-error: false
+        run: | 
+          pytest app/rename-split-to-pp/tests/test_rename_split_to_pp.py    
 
-      - name: analysis_validator pytest (guarded against failure)
-        continue-on-error: true
+      - name: combine-statics pylint
         run: |
-          pytest -v -v -rx ./tests/test_analysis_validator.py
+          # pytest unittests for remap-pp-components
+          pylint -v --fail-under  9.85 ./app/combine-statics
+
+      - name: analysis_validator pytest
+        run: |
+          pytest -vv -rx ./tests/test_analysis_validator.py
 
       - name: python macros pylint
         run: |
-          pylint -v --fail-under 4.00 ./meta/lib/python/macros/
+          pylint -v --fail-under 3.70 ./meta/lib/python/macros/

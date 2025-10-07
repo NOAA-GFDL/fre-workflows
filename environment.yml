@@ -7,3 +7,4 @@ dependencies:
   - pip
   - noaa-gfdl::fre-cli
   - conda-forge::pyyaml
+  - conda-forge::nco

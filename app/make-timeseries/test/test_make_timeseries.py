@@ -1,137 +1,159 @@
-from pathlib import Path
-import pytest
-import os, sys
-import subprocess
-import dateutil.parser
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+"""Unit tests for the FRE make-timeseries workflow.
 
-DATA_DIR  = Path("test-data")
-DATA_FILE_P1Y = Path("atmos_tracer.000501-000512.average_DT.cdl")
-DATA_FILE_P2Y = Path("atmos_tracer.000601-000612.average_DT.cdl")
-DATA_FILE_NC_P1Y = Path("atmos_tracer.000501-000512.average_DT.nc")
-DATA_FILE_NC_P2Y = Path("atmos_tracer.000601-000612.average_DT.nc")
-
-"""Usage on runnung this app test for make_timeseries is as follows:
-1) module load fre/test cylc cdo python/3.9
-2) cd make_timeseries
-3) pytest t/test_make_timeseries.py
+These tests verify creation and merging of NetCDF files from CDL sources, Rose app integration,
+and output comparison, using pytest, subprocess, and temporary directories.
 """
 
-def test_make_timeseries(capfd, tmp_path):
-   """This is a pytest compilation of routines.  Each of the test_* routines below will be called in the properly specified order.
-   First executes the creation of required directories and a *.nc files from *.cdl text files.
-   The tmp_path fixture which will provide a temporary directory unique to the test invocation, created in the base temporary directory.
-   The capfd fixture as input in all three subroutines allows access to stdout/stderr output created during test execution
-   Usage of command ncgen -o and then merge and remane the file via the proper cdo history command depends on the chunks given as input.
-   """
-   global dir_tmp_in, new_dir
-   global freq, component
-   global dir_tmp_out
-   global component_new_file
+import os
+import subprocess
+from pathlib import Path
 
-   begin_cycle_point= "00050101T0000Z"
-   chunk= "P2Y"
-   freq= "P2Y"
-   var= "average_DT"
-   component = "atmos_tracer"
-   files = []
+# constants
+VAR = "average_DT"
+FREQ = "P2Y"
+INPUT_CHUNK = "P2Y"
+OUTPUT_CHUNK = "P4Y"
+COMPONENT = "atmos_tracer"
 
-   dir_tmp_in = tmp_path / "in_dir"
-    
-   din_check = f'{tmp_path}/in_dir/{component}/{freq}/{chunk}'
-   os.makedirs( din_check, exist_ok = True )
+# Test data paths
+DATA_DIR = Path(__file__).parent / "files"
+APP_DIR = Path(__file__).parent.parent
 
-   dout_check = tmp_path / "out_dir"
-   dout_check.mkdir()
-   dout_check = str(dout_check)
+DATA_FILE_1ST_YEAR    = Path(f"{COMPONENT}.000501-000512.{VAR}.cdl")
+DATA_FILE_2ND_YEAR    = Path(f"{COMPONENT}.000601-000612.{VAR}.cdl")
 
-   ex = [ 'ncgen', '-o', din_check / DATA_FILE_NC_P1Y, DATA_DIR / DATA_FILE_P1Y ];
-   sp = subprocess.run( ex )
-   ex = [ 'ncgen', '-o', din_check / DATA_FILE_NC_P2Y, DATA_DIR / DATA_FILE_P2Y ];
-   sp = subprocess.run( ex )
+DATA_FILE_NC_1ST_YEAR = Path(str(DATA_FILE_1ST_YEAR).replace('.cdl','.nc'))
+DATA_FILE_NC_2ND_YEAR = Path(str(DATA_FILE_2ND_YEAR).replace('.cdl','.nc'))
 
-   first_cycle_date = str(DATA_FILE_NC_P1Y)[14:20]
+INIT_DATE = str(DATA_FILE_NC_1ST_YEAR)[13:19]
+END_DATE = str(DATA_FILE_NC_2ND_YEAR)[20:26]
 
-   files.append(str(DATA_FILE_NC_P1Y))
+# Output file name follows FRE convention
 
-   second_cycle_date = str(DATA_FILE_NC_P2Y)[14:20]    
-    
-   files.append(str(DATA_FILE_NC_P2Y))
+COMPONENT_NEW_FILE = f"{COMPONENT}.{INIT_DATE}-{END_DATE}.{VAR}.nc"
 
-   init_date=str(files[0])[13:19]
+# Global test state (pytest discourages globals, but used here to mimic original logic)
+DIR_TMP_IN = None
+DIR_TMP_OUT = None
+GOOD_OUT_DIR = None
 
-   end_date=str(files[1])[20:26]
 
-   new_dir = dout_check
-   end_point_din = str(din_check)
+def test_make_timeseries_comparison_output(capfd, tmp_path):
+    """Test creation of NetCDF files from CDL and merging with CDO.
+    Helps validate output from make-timeseries later."""
+    global DIR_TMP_IN, DIR_TMP_OUT
 
-   component_new_file = f'{component}.{init_date}-{end_date}.{var}.nc'
+    # assign these as globals for use in later steps
+    DIR_TMP_IN = tmp_path / "in_dir"
+    DIR_TMP_OUT = tmp_path / "out_dir"
 
-   ex = [ 'cdo', '--history', '-O', 'mergetime', f'{end_point_din}/{files[0]} {end_point_din}/{files[1]}', f'{dout_check}/{component_new_file}' ];
-   sp = subprocess.run( ex )
-   captured = capfd.readouterr()
+    # Create input directory structure
+    din_check = DIR_TMP_IN / COMPONENT / FREQ / INPUT_CHUNK
+    os.makedirs(din_check, exist_ok=True)
+
+    # Create output directory
+    DIR_TMP_OUT.mkdir()
+    dout_check = str(DIR_TMP_OUT)
+
+    # Convert CDL to NetCDF using ncgen
+    target_path_1 = din_check / DATA_FILE_NC_1ST_YEAR
+    ex = [
+        "ncgen", "-o", str(target_path_1), str(DATA_DIR / DATA_FILE_1ST_YEAR)
+    ]
+    sp = subprocess.run(ex, check=True)
+    assert sp.returncode == 0, f"ncgen failed to create {DATA_FILE_NC_1ST_YEAR}"
+    assert target_path_1.exists(), (
+        f"Output file {DATA_FILE_NC_1ST_YEAR} was not created"
+    )
+
+    target_path_2 = din_check / DATA_FILE_NC_2ND_YEAR
+    ex = [
+        "ncgen", "-o", str(target_path_2), str(DATA_DIR / DATA_FILE_2ND_YEAR)
+    ]
+    sp = subprocess.run(ex, check=True)
+    assert sp.returncode == 0, f"ncgen failed to create {DATA_FILE_NC_2ND_YEAR}"
+    assert target_path_2.exists(), (
+        f"Output file {DATA_FILE_NC_2ND_YEAR} was not created"
+    )
+
+    # Merge time series using CDO
+    input_files = f"{din_check}/{DATA_FILE_NC_1ST_YEAR} {din_check}/{DATA_FILE_NC_2ND_YEAR}"
+    output_file = f"{dout_check}/{COMPONENT_NEW_FILE}"
+    ex = [
+        "cdo", "--history", "-O", "mergetime", input_files, output_file
+    ]
+    sp = subprocess.run(ex, check=True)
+    assert sp.returncode == 0, "CDO mergetime failed"
+    assert Path(output_file).exists()
+    capfd.readouterr()  # Clear captured output
+
 
 def test_rose_failure_make_timeseries(capfd, tmp_path):
-   """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for failure of
-   merging and renaming a file with rose app as an invalid definition of the environment component.
-   """
-   din_check = str(dir_tmp_in)
-   global rose_dir
-   outputChunk = "P4Y"
-   dout_check = tmp_path / "out_dir"
-   dout_check.mkdir()
-   dout_check = str(dout_check)
+    """Test Rose app-run failure with incorrect component name."""
 
-   rose_dir = f'{tmp_path}/out_dir/{component}/{freq}/{outputChunk}'
-   os.makedirs( rose_dir, exist_ok = True )
+    dout_check = tmp_path / "out_dir"
+    dout_check.mkdir()
 
-   ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{din_check}',
-           '-D',  '[env]begin=00050101T0000Z',
-           '-D',  '[env]outputDir='f'{dout_check}',
-           '-D',  '[env]inputChunk=P2Y',
-           '-D',  '[env]outputChunk=P4Y',
-           '-D',  '[env]component=atmos'
-          ]
-   print (ex);
-   sp = subprocess.run( ex )
-   assert sp.returncode == 1
-   captured = capfd.readouterr()
+    rose_dir = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    os.makedirs(rose_dir, exist_ok=True)
 
-def test_rose_success_make_timeseries(capfd, tmp_path):
-   """This routine tests the FRE Canopy app make_timeseries by running rose command and checks for success of 
-   merging and renaming a file with rose app as the valid definitions and chunks are being called by the environment.
-   """
-   din_check = str(dir_tmp_in)
-   global rose_dir
-   outputChunk = "P4Y"
-   dout_check = tmp_path / "out_dir"
-   dout_check.mkdir()
-   dout_check = str(dout_check)
+    original_cwd = os.getcwd()
+    os.chdir(APP_DIR)
+    try:
+        ex = [
+            "rose", "app-run",
+            "-D", f"[env]inputDir={DIR_TMP_IN}",
+            "-D", "[env]begin=00050101T0000Z",
+            "-D", f"[env]outputDir={dout_check}",
+            "-D", f"[env]inputChunk={INPUT_CHUNK}",
+            "-D", f"[env]outputChunk={OUTPUT_CHUNK}",
+            "-D", "[env]component=atmos",  # Incorrect component, should fail
+            "-D", "[env]pp_stop=00070101T0000Z"   # Required parameter
+        ]
+        sp = subprocess.run(ex, check=False)
+        assert sp.returncode == 1, "Rose app-run should fail with wrong component"
+    finally:
+        os.chdir(original_cwd)
+    capfd.readouterr()  # Clear captured output
 
-   rose_dir = f'{tmp_path}/out_dir/{component}/{freq}/{outputChunk}'
-   os.makedirs( rose_dir, exist_ok = True )
 
-   ex = [ "rose", "app-run",
-           '-D',  '[env]inputDir='f'{din_check}',
-           '-D',  '[env]begin=00050101T0000Z',
-           '-D',  '[env]outputDir='f'{dout_check}',
-           '-D',  '[env]inputChunk=P2Y',
-           '-D',  '[env]outputChunk=P4Y',
-           '-D',  '[env]component=atmos_tracer'
-          ]
-   print (ex);
-   sp = subprocess.run( ex )
-   assert sp.returncode == 0
-   captured = capfd.readouterr()
+def test_success_make_timeseries(capfd, tmp_path):
+    """Test Rose app-run success with correct component and pp_stop."""
+    global GOOD_OUT_DIR
 
-def test_nccmp_make_timeseries(capfd, tmp_path):
-    """This subroutine tests by comparing the two files created by the two routines above described 
-    and making sure that the two new created renamed files are identical. Also, returns code equals zero if the comparison was successful.
-    """
-    nccmp= [ 'nccmp', '-d', f'{new_dir}/{component_new_file}', f'{rose_dir}/{component_new_file}' ]; 
-    sp = subprocess.run(nccmp)
-    assert sp.returncode == 0
-    captured = capfd.readouterr()
+    dout_check = tmp_path / "out_dir"
+    dout_check.mkdir()
 
+    GOOD_OUT_DIR = f"{dout_check}/{COMPONENT}/{FREQ}/{OUTPUT_CHUNK}"
+    os.makedirs(GOOD_OUT_DIR, exist_ok=True)
+
+    original_cwd = os.getcwd()
+    os.chdir(APP_DIR)
+    try:
+        ex = [
+            "rose", "app-run",
+            "-D", f"[env]inputDir={DIR_TMP_IN}",
+            "-D", "[env]begin=00050101T0000Z",
+            "-D", f"[env]outputDir={dout_check}",
+            "-D", f"[env]inputChunk={INPUT_CHUNK}",
+            "-D", f"[env]outputChunk={OUTPUT_CHUNK}",
+            "-D", f"[env]component={COMPONENT}",  # Correct component
+            "-D", "[env]pp_stop=00070101T0000Z"   # Required parameter
+        ]
+        sp = subprocess.run(ex, check=True)
+        assert sp.returncode == 0, "Rose app-run should succeed with correct setup"
+    finally:
+        os.chdir(original_cwd)
+    capfd.readouterr()  # Clear captured output
+
+
+def test_nccmp_make_timeseries(capfd):
+    """Compare output files from manual CDO and Rose app runs with nccmp."""
+    nccmp_ex = [
+        "nccmp", "-d",
+        f"{DIR_TMP_OUT}/{COMPONENT_NEW_FILE}",
+        f"{GOOD_OUT_DIR}/{COMPONENT_NEW_FILE}"
+    ]
+    sp = subprocess.run(nccmp_ex, check=True)
+    assert sp.returncode == 0, "nccmp comparison failed"
+    capfd.readouterr()  # Clear captured output
