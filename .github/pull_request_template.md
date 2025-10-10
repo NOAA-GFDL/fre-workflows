@@ -21,7 +21,9 @@ To trigger the manual pipeline:
 1. Go to `Actions` tab
 2. Choose `test_cloud_runner` on left (you should see "This workflow has a workflow_dispatch event trigger.")
 3. Click the dropdown "Run workflow":
+
     a. If trying to merge from a branch on fre-workflows - choose branch from the first drop down, leave the next 2 inputs blank, and choose the fre-cli branch to test
+
     b. If trying to merge from a fre-workflows fork - input the fork name (ex: [user]/fre-workflows), input the fork's branch name, and choose the fre-cli branch to test
 4. Click "Run workflow"
 
