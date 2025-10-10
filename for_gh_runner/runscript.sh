@@ -30,10 +30,6 @@ cd -
 which fre
 fre app regrid --help
 
-#update fre-cli env?
-#pip install --upgrade fre-cli
-#conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
-
 get_user_input () {
     # User input
     echo Please Enter Experiment Name:
