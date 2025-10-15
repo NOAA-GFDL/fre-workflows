@@ -8,10 +8,20 @@ postprocess:
       interpMethod: "conserve_order2"
       inputRealm: 'atmos'
       sourceGrid: 'cubedsphere'
-      postprocess_on: True
+      postprocess_on: False
+      climatology:
+      - frequency: yr
+        interval_years: 2
+      - frequency: mon
+        interval_years: 2
 
     ## native component
     - type: "atmos_scalar"
       sources:
         - history_file: "atmos_scalar"
       postprocess_on: True
+      climatology:
+      - frequency: yr
+        interval_years: 2
+      - frequency: mon
+        interval_years: 2
