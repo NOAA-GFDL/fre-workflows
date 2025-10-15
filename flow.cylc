@@ -225,11 +225,11 @@
             {# After cataloging the regridded and native statics, remap them to pp components as desired #}
             {% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
             rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static>
-                => remap-pp-components-static => combine-statics
+                => remap-pp-components-static<component> => combine-statics
             {% elif DO_NATIVE_STATIC %}
-            rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+            rename-split-to-pp-native<native_static> => remap-pp-components-static<component> => combine-statics
             {% elif DO_REGRID_STATIC %}
-            rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
+            rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
             {% endif %}
 
             {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
@@ -248,14 +248,14 @@
             regrid-xy<regrid_static> => clean-history-native
             split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
             rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-            remap-pp-components-static => clean-shards-static
+            remap-pp-components-static<component> => clean-shards-static
             combine-statics => clean-pp-statics
             {% endif %}
 
             {% if CLEAN_WORK and DO_NATIVE_STATIC %}
             split-netcdf-native<native_static> => clean-history-native
             rename-split-to-pp-native<native_static> => clean-split-native
-            remap-pp-components-static => clean-shards-static
+            remap-pp-components-static<component> => clean-shards-static
             combine-statics => clean-pp-statics
             {% endif %}
 
@@ -709,31 +709,28 @@
 {% endif %}
 
     [[REMAP-PP-COMPONENTS]]
-        # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        #script = rose-task-run --verbose --app-key remap-pp-components
-        script = """
-            fre --verbose app remap --input-dir=$inputDir \
-                                    --output-dir=$outputDir \
-                                    --begin-date=$begin \
-                                    --current-chunk=$currentChunk \
-                                    --product=$product \
-                                    --ts-workaround=$dirTSWorkaround \
-                                    --pp-component=$components \
-                                    --copy-tool=$COPY_TOOL \
-                                    --yaml-config=$yaml_config \
-                                    --ens-mem=${ens_mem:-""}
-        """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
             yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --ts-workaround \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
-            dirTSWorkaround = True
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -746,11 +743,21 @@
 
     [[REMAP-PP-COMPONENTS-AV]]
         inherit = REMAP-PP-COMPONENTS
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-            dirTSWorkaround = False
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-AV
@@ -763,13 +770,24 @@
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static<component>]]
-        inherit = REMAP-PP-COMPONENTS-TS, <component>
+        inherit = REMAP-PP-COMPONENTS, <component>
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             product = static
-            dirTSWorkaround = False
 {% endif %}
 
     [[DATA-CATALOG]]
