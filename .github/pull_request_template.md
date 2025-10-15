@@ -15,7 +15,7 @@
 
 ## Manual Pipeline Run Details
 
-The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run.
+The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run. The manually triggered workflow located [here](https://github.com/NOAA-GFDL/fre-workflows/actions/workflows/test_cloud_runner.yml).
 
 To trigger the manual pipeline:
 1. Go to `Actions` tab
