@@ -271,7 +271,7 @@
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 => make-timeavgs-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
         {% endif %}
@@ -284,26 +284,26 @@
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 => make-timeavgs-native-{{ chunk.chunk_size }}<native>
             {% endif %}
         {% endif %}
 
         {% if DO_REGRID %}
             {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
             {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
             {% endif %}
         {% endif %}
 
-        {% if DO_TIMEAVGS and not chunk.is_partial %}
+        {% if not chunk.is_partial %}
             remap-pp-components-av-{{ chunk.chunk_size }}<component> => combine-timeavgs-{{ chunk.chunk_size }}<component>
             {% if CLEAN_WORK %}
                 COMBINE-TIMEAVGS-{{ chunk.chunk_size }}:succeed-all => clean-pp-timeavgs-{{ chunk.chunk_size }}
@@ -312,7 +312,7 @@
 
         {% if CLEAN_WORK %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
             {% endif %}
         {% endif %}
@@ -326,7 +326,7 @@
         {% for segment in chunk.segments %}
             R1/{{ segment }} = """
                 REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% if DO_TIMEAVGS and not chunk.is_partial %}
+                {% if not chunk.is_partial %}
                     & REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
                 {% endif %}
                 => clean-shards-{{ HISTORY_SEGMENT }}
@@ -443,7 +443,7 @@
 
 {% endif %}
 
-{% if DO_TIMEAVGS %}
+
     [[MAKE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeavgs
@@ -479,7 +479,7 @@
         inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}, <regrid>
         {% endif %}
     {% endfor %}
-{% endif %}
+
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -797,7 +797,6 @@
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
-{% if DO_TIMEAVGS %}
     [[COMBINE-TIMEAVGS]]
         script = rose task-run --verbose --app-key combine-timeavgs
         [[[environment]]]
@@ -816,7 +815,6 @@
         [[[environment]]]
             component = $CYLC_TASK_PARAM_component
     {% endfor %}
-{% endif %}
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
