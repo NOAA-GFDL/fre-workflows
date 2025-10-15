@@ -192,12 +192,12 @@
 
     {% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
             rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static>
-                => remap-pp-components-static<component> => combine-statics
-            {% elif DO_NATIVE_STATIC %}
+            => remap-pp-components-static<component> => combine-statics
+    {% elif DO_NATIVE_STATIC %}
             rename-split-to-pp-native<native_static> => remap-pp-components-static<component> => combine-statics
-            {% elif DO_REGRID_STATIC %}
+    {% elif DO_REGRID_STATIC %}
             rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
-            {% endif %}
+    {% endif %}
 
     {% if HISTORY_DIR_REFINED is defined %}
         {% if DO_REGRID_STATIC %}
