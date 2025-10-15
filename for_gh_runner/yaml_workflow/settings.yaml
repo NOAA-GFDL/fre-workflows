@@ -17,7 +17,7 @@ postprocess:
     do_timeavgs:             True
     clean_work:              True
     do_refinediag:           False
-    do_atmos_plevel_masking: False
+    do_atmos_plevel_masking: True
     do_preanalysis:          False
     do_analysis:             False
     do_analysis_only:        False
