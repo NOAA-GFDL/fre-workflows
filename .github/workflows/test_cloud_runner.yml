@@ -3,12 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       fre-workflows-repo:
-        description: "If using fork: input FORK NAME (example: singhd789/fre-workflows). Leave empty if not using a fork."
+        description: "If using fork: Input fork name (example: singhd789/fre-workflows). Leave empty if not using a fork."
         required: false
         type: string
       fre-workflows-branch:
-        description: 'If on fork: BRANCH ON FORK'
+        description: 'If on fork: Input branch you are using on your fork.'
         required: false
+        default: 'main'
         type: string
       fre-cli-repo:
         description: 'NOAA-GFDL/fre-cli repo'
