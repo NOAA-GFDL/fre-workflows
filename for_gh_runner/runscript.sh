@@ -94,17 +94,17 @@ fre_pp_steps () {
     
     ## Configure the rose-suite and rose-app files for the workflow
     echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
-    fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
+    fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
     ## Validate the configuration files
     echo -e "\nRunning fre pp validate to validate rose-suite and rose-app configuration files for workflow ... "
-    fre -v pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validate, no kill"
+    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validate, no kill"
     check_exit_status "VALIDATE"
 
     # Install
     echo -e "\nRunning fre pp install to instal the workflow in ${HOME}/cylc-run/${name} ... "
-    fre -v pp install -e ${expname} -p ${plat} -t ${targ}
+    fre -vv pp install -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "INSTALL"
 
     ## RUN
@@ -113,9 +113,9 @@ fre_pp_steps () {
 
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
-    echo "" >> "mnt/log.out"
-    echo "" >> "mnt/log.out"
-    echo "" >> "mnt/log.out"
+    echo "" >> "/mnt/log.out"
+    echo "" >> "/mnt/log.out"
+    echo "" >> "/mnt/log.out"
     cylc workflow-state ${name} >> "/mnt/log.out"
     check_exit_status "Writing to log.out"
 }
