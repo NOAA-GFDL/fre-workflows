@@ -582,7 +582,7 @@
         script = """
             echo "component = ${component}"
             echo "trying to find files..."
-            find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \) || echo "finding files failed, guarding. probably no files found"
+            find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)
             for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
                 echo "running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
                 fre -vv app mask-atmos-plevel -i $file -o $file.masked -p $file
