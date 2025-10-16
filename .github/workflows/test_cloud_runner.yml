@@ -63,6 +63,26 @@ jobs:
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
+      - name: Print workflow summary
+        continue-on-error: true
+        run: |
+          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
+          echo "number of tasks launched: ${num_tasks}"
+          echo ""
+
+          echo "here's all the job directories with job scripts:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
+          echo ""
+
+          echo "here's all the job scripts for 1980 only:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
+          echo ""
+
+          echo "rose-suite conf for workflow:"
+          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
+          echo ""
+
+
       - name: Print pp-starter successes or failures
         run: |
           set +e
@@ -380,6 +400,10 @@ jobs:
 #          # List tasks that have succeeded (and completed) in the workflow
 #          grep -E ":succeeded.*completed" /contrib/container-test/ppp-setup/log.out
 #
+
+## maybe, all the printinig above should be continue-on-error for informational purposes
+## then, this task does the final determination if things ran right or wrong.
+## githubs auto-annotations for warnings etc are good are helping one figure out where to sniff around
 #      - name: Print any failed tasks
 #        run: |
 #          # Search for if there is an ERR status for any task
