@@ -61,7 +61,7 @@ postprocess:
     do_analysis_only:           False
 ```
 
-It's useful to make sure some of these are set to specific values for developer work:
+It's useful to make sure some of the yaml keys are set to specific values for developer work:
 
   ```
   postprocess:
@@ -69,19 +69,19 @@ It's useful to make sure some of these are set to specific values for developer 
       clean_work: True/False
   ```
 
-  - *what it does:* Whether you clean up the contents of the intermediate directories
-    produced by your experiment before going on to the next step - for example,
+  - *what it does:* Switch to clean or keep the contents of the intermediate directories
+    produced by your post-processing workflow run before going on to the next step - for example,
     removing the local history directory once you have all files split by
     split.netcdf
 
   - *value for production:*  True
 
+      - intermediate files take up a LOT of space if kept
+
   - *value for development:* False
 
-  - *why:* It's a lot easier to debug what may have gone wrong with previous steps
-   when you can refer to the actual files produced in those steps and selectively
-   re-run. However, this is not necessary on a production run and the intermediate
-   files take up a LOT of space.
+      - easier to debug errors if files are available
+
 
 # Batch environment setup and fre-cli
 
