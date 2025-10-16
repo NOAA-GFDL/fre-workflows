@@ -739,15 +739,15 @@
         inherit = REMAP-PP-COMPONENTS
         script = """
             fre -vv app remap --input-dir=$inputDir \
-                              --output-dir=$outputDir \
-                              --begin-date=$begin \
-                              --current-chunk=$currentChunk \
-                              --product=$product \
-                              --ts-workaround \
-                              --pp-component=$components \
-                              --copy-tool=$COPY_TOOL \
-                              --yaml-config=$yaml_config \
-                              --ens-mem=${ens_mem:-""}
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --ts-workaround \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
@@ -767,14 +767,14 @@
         inherit = REMAP-PP-COMPONENTS
         script = """
             fre -vv app remap --input-dir=$inputDir \
-                              --output-dir=$outputDir \
-                              --begin-date=$begin \
-                              --current-chunk=$currentChunk \
-                              --product=$product \
-                              --pp-component=$components \
-                              --copy-tool=$COPY_TOOL \
-                              --yaml-config=$yaml_config \
-                              --ens-mem=${ens_mem:-""}
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
@@ -795,14 +795,14 @@
         inherit = REMAP-PP-COMPONENTS, <component>
         script = """
             fre -vv app remap --input-dir=$inputDir \
-                              --output-dir=$outputDir \
-                              --begin-date=$begin \
-                              --current-chunk=$currentChunk \
-                              --product=$product \
-                              --pp-component=$components \
-                              --copy-tool=$COPY_TOOL \
-                              --yaml-config=$yaml_config \
-                              --ens-mem=${ens_mem:-""}
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
