@@ -8,11 +8,13 @@
 
 # Configuration Settings
 
-`fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on **PPAN**:
+`fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing
+on **PPAN**.
 
 ## Cylc User settings
 
-The path to the Cylc binary must be added to your `$PATH` environment variable first. This can be done by modifying your PATH in your bash_profile as follows:
+The path to the Cylc binary must be added to your `$PATH` environment variable first. This can be done
+by modifying your PATH in your bash_profile as follows:
 
 ```
 > cat /home/First.Last/.bash_profile
@@ -20,18 +22,22 @@ The path to the Cylc binary must be added to your `$PATH` environment variable f
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
 
-Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
-
+Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server fails, and we
+cannot edit the environment with a module load or similar until it is running.
 
 ## Experiment settings
 
-In regards to post-processing, the yaml framework consists of the model, settings, and post-processing yaml files. 
+In regards to post-processing, the yaml framework consists of the model, settings, and post-processing
+yaml files. 
 
-    - model yaml: contains yaml anchors (i.e. variables that can be used throughout the yaml framework) and paths that point to the settings and post-processing yaml giles
-    - settings yaml: experiment-specific settings and switches; can also define more exeriment-specific yaml anchors
+    - model yaml: contains yaml anchors (i.e. variables that can be used throughout the yaml framework)
+                  and paths that point to the settings and post-processing yaml giles
+    - settings yaml: experiment-specific settings and switches; can also define more exeriment-specific
+                     yaml anchors
     - post-processing yaml: information about the components to be post-processed
 
-It's helpful to be familiar with information in the `settings.yaml` as switches and settings can help developers for debugging purposes.
+It's helpful to be familiar with information in the `settings.yaml` as switches and settings can help
+developers for debugging purposes.
 
 Example `settings.yaml`:
 
@@ -87,9 +93,9 @@ For more information on the yaml framework, see [fre-cli's README and documentat
 # Batch environment setup and fre-cli
 
 ## Local environment setup
-Currently we do NOT recommend running fre-workflows experiments using the
-developer conda environments. Instead, we recommend using the gfdl modulefiles
-for cylc and the latest fre release:
+Currently, we HIGHLY recommend using the gfdl modulefiles for cylc and the latest
+fre release instead of developer conda environments, as different cylc versions
+may cause more confusion when debugging:
 
 ```
 module load cylc
@@ -103,11 +109,10 @@ standardized enough that you can use the lab-standard modules, which is going to
 eliminate a possible source of error in your environment setup.
 
 ## Remote environment setup
-The slurm jobs that cylc submits are run from a bare environment, not a copy of
-the local environment you submitted the jobs from. This means that if you want to
-invoke fre-cli tools from within fre-workflows, you need to add fre-cli to the
-batch environment. How you do this depends on how far along the development
-pipeline the features that you want to include in fre-cli are.
+Each slurm job that cylc submits is run from a bare environment; even if the jobs were 
+submitted in a local environment, it will not be used within the workflow. Thus, if you
+want to invoke fre-cli tools from within a fre-workflows task, you need to add fre-cli
+to the batch environment.
 
 To do this, you use the pre-script defined for each task. You can see an example
 of a pre-script in `flow.cylc`:
@@ -238,7 +243,9 @@ fre pp install -e [experiment name] -p [platform] -t [target]
 fre pp run -e [experiment name] -p [platform] -t [target]
 ```
 
-If edits needs to be made for troubleshooting, users can edit files in the `~/cylc-src/$your_test_experiment` directory and follow this clean up procedure:
+If edits needs to be made for troubleshooting, users can edit files in the `
+~/cylc-src/$your_test_experiment` directory and follow this clean up procedure:
+
 ```
 # If the experiment needs to be stopped
 cylc stop --now $your_test_experiment
@@ -250,11 +257,12 @@ cylc clean $your_test_experiment
 ```
 
 ## Inspect workflow progress with an interface (GUI or TUI)
-The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow may stall, in which case
-it will shutdown in error after a period of time.
+The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow
+may stall, in which case it will shutdown in error after a period of time.
 
-`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that can expose workflow
-and task information. The text-based GUI can be launched via:
+`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI
+commands that can expose workflow and task information. The text-based GUI can be
+launched via:
 ```
 cylc tui [workflow_id]
 ```
@@ -263,16 +271,19 @@ The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
 ```
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 ```
-Then, navigate to one of the two links printed to screen in your web browser. If one just wants a quick look at the state of
-their workflow, the user-interfaces can be completely avoided by using the `workflow-state` command, two examples of which are:
+Then, navigate to one of the two links printed to screen in your web browser.
+If one just wants a quick look at the state of their workflow, the user-interfaces
+can be completely avoided by using the `workflow-state` command, two examples of which are:
+
 ```
 cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
 ## Inspect workflow progress with a terminal CLI
-Various other `cylc` commands are useful for inspecting a running workflow. Try `cylc help`, and `cylc <command> --help` for
-more information on how to use these tools to your advantage!
+Various other `cylc` commands are useful for inspecting a running workflow.
+Try `cylc help`, and `cylc <command> --help` for more information on how to
+use these tools to your advantage!
 
 - `cylc scan` Lists running workflows
 - `cylc cat-log [workflow_id]` Show the scheduler log
