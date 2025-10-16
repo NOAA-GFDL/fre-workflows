@@ -8,7 +8,7 @@
 
 # Configuration Settings
 
-`fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on PPAN:
+`fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing on **PPAN**:
 
 ## Cylc User settings
 
@@ -20,18 +20,18 @@ The path to the Cylc binary must be added to your `$PATH` environment variable f
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
 
-We need this to run on PPAN. Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
-
-> ** _NOTE:_** Adding a link to the cylc binary in a directory that is default in user's $PATH is desired, this is being persued.
+Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server (check terminology) fails, and we cannot edit the environment with a module load or similar until it is running.
 
 
 ## Experiment settings
 
-The current organization of the yaml files comprises of the model, settings, and post-processing configuration files, where the model yaml holds paths that point to the settings and post-processing yamls.
+In regards to post-processing, the yaml framework consists of the model, settings, and post-processing yaml files. 
 
-For more information on the yaml framework, see [fre-cli's README and documentation on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#model-yaml).
+    - model yaml: contains yaml anchors (i.e. variables that can be used throughout the yaml framework) and paths that point to the settings and post-processing yaml giles
+    - settings yaml: experiment-specific settings and switches; can also define more exeriment-specific yaml anchors
+    - post-processing yaml: information about the components to be post-processed
 
-The `settings.yaml` contains necessary experiment-specific information. You'll see reference to some of the settings in this file throughout the workflow as variables.
+It's helpful to be familiar with information in the `settings.yaml` as switches and settings can help developers for debugging purposes.
 
 Example `settings.yaml`:
 
@@ -61,7 +61,7 @@ postprocess:
     do_analysis_only:           False
 ```
 
-It's useful to make sure some of the yaml keys are set to specific values for developer work:
+For developers, you can set some of the yaml keys, such as `clean_work`, to specific values:
 
   ```
   postprocess:
@@ -82,6 +82,7 @@ It's useful to make sure some of the yaml keys are set to specific values for de
 
       - easier to debug errors if files are available
 
+For more information on the yaml framework, see [fre-cli's README and documentation on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#model-yaml).
 
 # Batch environment setup and fre-cli
 
