@@ -580,13 +580,20 @@
 
     [[MASK-ATMOS-PLEVEL]]
         script = """
+            echo "component = ${component}"
+            echo "trying to find files..."
+            find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \) || echo "finding files failed, guarding. probably no files found"
             for file in $(find . -maxdepth 1 \( -name "*.$component.nc" -o -name "*.$component.*.nc" \)); do
-                fre app mask-atmos-plevel -i $file -o $file.masked -p $file
+                echo "running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
+                fre -vv app mask-atmos-plevel -i $file -o $file.masked -p $file
+                echo "done running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
                 if [[ -f $file.masked ]]; then
+                    echo "renaming ${file}.masked..."
                     mv -f $file.masked $file
-                    echo "Updated '$file'"
+                    echo "renamed to ${file}"
                 fi
             done
+            echo "mask-atmos-plevel task done for ${component}"
         """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
