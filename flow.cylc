@@ -899,8 +899,9 @@
                 --tmp_dir=$CYLC_TASK_WORK_DIR \
                 --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
         """
+        # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail
-        execution retry delays = 2*PT5M
+        execution retry delays = 1*PT1M
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
