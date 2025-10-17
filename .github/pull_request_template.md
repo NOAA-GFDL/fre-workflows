@@ -18,7 +18,7 @@
 The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run.
 
 To trigger the manual pipeline:
-1. Follow this link to the `test_cloud_runner` actions tab: https://github.com/NOAA-GFDL/fre-workflows/actions/workflows/test_cloud_runner.yml
+1. Follow the link to the `test_cloud_runner` actions tab [here](https://github.com/NOAA-GFDL/fre-workflows/actions/workflows/test_cloud_runner.yml)
     - you should see "This workflow has a workflow_dispatch event trigger"
     
 3. Click the dropdown "Run workflow":
