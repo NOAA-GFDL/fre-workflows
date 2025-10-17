@@ -584,17 +584,21 @@
         script = """
             set -euo pipefail
             echo "component = ${component}"
+
+            echo "changing dir to ${inputDir}"
+            cd $inputDir
+
             echo "trying to find files..."
             files=$(find . -maxdepth 1 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files = ${files}"
+            echo "files at depth 1 = ${files}"
             echo ""
 
             files_depth2=$(find . -maxdepth 2 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files = ${files_depth2}"
+            echo "files at depth 2 = ${files_depth2}"
             echo ""
 
             files_depth3=$(find . -maxdepth 3 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files = ${files_depth3}"
+            echo "files at depth 3= ${files_depth3}"
             echo ""
 
             echo "trying to loop over files: ${files}"
