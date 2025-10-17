@@ -1,0 +1,22 @@
+# directories shared across tools
+directories:
+  history_dir:        "/archive/Mikyung.Lee/am5/am5f10d9r0/c96L65_am5f10d9r0_amip/gfdl.ncrc5-intel23-classic-prod-openmp/history"
+  pp_dir:             !join [/archive/$USER/, *FRE_STEM, /, pp]
+#  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
+  ptmp_dir:           "/xtmp/$USER/ptmp"
+
+postprocess:
+  settings:
+    history_segment:         "P1Y"
+    site:                    "ppan"
+    pp_chunks:               [*PP_CHUNK96]
+    pp_start:                *EXP_AMIP_START
+    pp_stop:                 *EXP_AMIP_END
+    pp_grid_spec:            *GRID_SPEC96
+  switches:
+    clean_work:              True
+    do_refinediag:           False
+    do_atmos_plevel_masking: True
+    do_preanalysis:          False
+    do_analysis:             False
+    do_analysis_only:        False
