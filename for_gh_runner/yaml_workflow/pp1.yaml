@@ -11,7 +11,17 @@ postprocess:
       postprocess_on: True
 
     ## native component
+    # Ian note: this is trivially a native component, there's only a time-axis
     - type: "atmos_scalar"
       sources:
         - history_file: "atmos_scalar"
+      postprocess_on: True
+
+    - type: "atmos_month_cmip"
+      sources:
+        - history_file: "atmos_month_cmip"
+      xyInterp: *PP_XYINTERP96
+      interpMethod: "conserve_order2"
+      inputRealm: 'atmos'
+      sourceGrid: 'cubedsphere'
       postprocess_on: True
