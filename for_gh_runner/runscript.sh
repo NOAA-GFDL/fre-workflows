@@ -23,13 +23,10 @@ conda deactivate
 conda activate /app/cylc-flow-tools
 
 # update fre-cli env with specific branch development
-git clone --recursive https://github.com/NOAA-GFDL/fre-cli
 cd fre-cli
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
-which fre
-fre app regrid --help
 
 get_user_input () {
     # User input
