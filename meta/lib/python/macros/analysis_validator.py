@@ -31,10 +31,11 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
         # informed by # https://stackoverflow.com/questions/715417/converting-from-a-string-to-boolean-in-python
         do_analysis = config.get_value(['template variables', 'DO_ANALYSIS']).lower() in ('true')
         do_analysis_only = config.get_value(['template variables', 'DO_ANALYSIS_ONLY']).lower() in ('true')
-        
-        if all([ not do_analysis, not do_analysis_only]):
-            self.add_report('template variables', 'DO_ANALYSIS', 'False', 'Not doing analysis. Moving on.')
-            return self.reports
+
+        # this is not an error condition, this is a "i do not want analysis" and so should not error anything
+        #if all([ not do_analysis, not do_analysis_only]):
+            #self.add_report('template variables', 'DO_ANALYSIS', 'False', 'Not doing analysis. Moving on.')
+            #return self.reports
 
         if do_analysis_only and not do_analysis:
             self.add_report(
