@@ -590,21 +590,13 @@
 
             echo "trying to find files..."
             files=$(find . -maxdepth 1 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files at depth 1 = ${files}"
-            echo ""
-
-            files_depth2=$(find . -maxdepth 2 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files at depth 2 = ${files_depth2}"
-            echo ""
-
-            files_depth3=$(find . -maxdepth 3 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
-            echo "files at depth 3= ${files_depth3}"
+            echo "found files at depth 1 = ${files}"
             echo ""
 
             echo "trying to loop over files: ${files}"
             for file in $files; do
                 echo "running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
-                fre -vv app mask-atmos-plevel -i $file -o $file.masked -p $file
+                fre -vv app mask-atmos-plevel --warn-no-ps -i $file -o $file.masked -p $file
                 echo "done running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
                 if [[ -f $file.masked ]]; then
                     echo "renaming ${file}.masked..."
