@@ -22,14 +22,13 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-#update fre-cli env?
-#pip install --upgrade fre-cli
-#conda env update -f ./for_gh_runner/cylc-flow-tools.yaml
+# update fre-cli env with specific branch development
 cd fre-cli
+pwd 
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
-fre app regrid --help
+fre app --help
 
 get_user_input () {
     # User input
@@ -49,9 +48,6 @@ get_user_input () {
     plat="ptest"
     targ="ttest"
     yamlfile="./for_gh_runner/yaml_workflow/model.yaml"
-
-    ##on cloud
-    #"/contrib/container-test/yaml_workflow/am5.yaml"
 
     name=${expname}__${plat}__${targ}
 }

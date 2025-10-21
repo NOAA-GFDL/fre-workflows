@@ -2,6 +2,15 @@ name: test_cloud_runner
 on:
   workflow_dispatch:
     inputs:
+      fre-workflows-repo:
+        description: "If using fork: Input fork name (example: singhd789/fre-workflows). Leave empty if not using a fork."
+        required: false
+        type: string
+      fre-workflows-branch:
+        description: 'If on fork: Input branch you are using on your fork.'
+        required: false
+        default: 'main'
+        type: string
       fre-cli-repo:
         description: 'NOAA-GFDL/fre-cli repo'
         required: true
@@ -13,6 +22,10 @@ on:
         description: 'Input which fre-cli branch to check out'
         required: true
         default: 'main'
+        type: string
+  push:
+    branches:
+      - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -23,9 +36,16 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      - name: Checkout current repository
+      - name: Checkout fre-workflows fork if specified
+        if: ${{ github.event.inputs.fre-workflows-repo != ''}}
         uses: actions/checkout@v4
-      - name: Test workflow_dispatch
+        with:
+          repository: ${{ github.event.inputs.fre-workflows-repo }}
+          ref: ${{ github.event.inputs.fre-workflows-branch }}
+      - name: Checkout fre-workflows repository if no fork specified
+        if: ${{ github.event.inputs.fre-workflows-repo == ''}}
+        uses: actions/checkout@v4
+      - name: Checkout fre-cli
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
@@ -38,13 +58,26 @@ jobs:
           echo "Currently in:"
           cwd=$(pwd)
           echo $cwd
-          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
-                      --bind /contrib/container-test/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                      --bind /contrib/container-test"
 
-          container_path=/contrib/container-test/ppp_8-22.sif
+          # Set up output directory based on which runner picks up the job
+          # This is to ensure there are no race conditions when accessing 
+          # the setup/output folder mounted to /mnt if there are multiple
+          # runners.
+          runner_folder=$(echo $cwd | cut -d/ -f3)
+          # workflow runner number
+          wfrunner=${runner_folder: -1}
+          
+          output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+          mkdir -p $output_dir
+          
+          # Set up binds and required paths
+          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
+          bind_paths="--bind $output_dir/:/mnt:rw
+                      --bind /contrib2/c96L65/history:/mnt/history:ro
+                      --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+                      --bind /contrib/dana-container-test"
+
+          container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
@@ -57,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fre-workflow-logs
-          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          path: /contrib/dana-container-test/ppp-setup*/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
       - name: Print pp-starter successes or failures
