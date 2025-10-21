@@ -66,10 +66,11 @@ jobs:
           runner_folder=$(echo $cwd | cut -d/ -f3)
           # workflow runner number
           wfrunner=${runner_folder: -1}
-          output_dir=/contrib/dana-container-test/ppp-setup-$wfrunner
-          mkdir -p $output_dir
-          # Set up binds and required paths
           
+          output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+          mkdir -p $output_dir
+          
+          # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind $output_dir/:/mnt:rw
                       --bind /contrib2/c96L65/history:/mnt/history:ro
@@ -89,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fre-workflow-logs
-          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          path: /contrib/dana-container-test/ppp-setup*/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
       - name: Print pp-starter successes or failures
