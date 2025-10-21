@@ -71,14 +71,15 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
         #print(history_files_by_comp)
         #print(regrid_label_by_comp)
 
+        #### THESE ARE ALL SET ELSEWHERE NOW, DEPRECATE ROSE /ian 
         # Requested components (PP_COMPONENTS) in rose-suite.conf must exist in remap-pp-component's app config
         # If they don't, add suitable errors
         requested_comps_str = config.get_value(['template variables', 'PP_COMPONENTS'])
         if requested_comps_str is None:
-            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
+            #self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
             return self.reports
         if requested_comps_str == "":
-            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
+            #self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
             return self.reports
 
         requested_comps = requested_comps_str.strip('"\'').split(' ')
