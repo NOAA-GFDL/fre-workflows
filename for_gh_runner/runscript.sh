@@ -24,6 +24,7 @@ conda activate /app/cylc-flow-tools
 
 # update fre-cli env with specific branch development
 cd fre-cli
+pwd 
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
