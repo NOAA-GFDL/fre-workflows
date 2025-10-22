@@ -938,9 +938,7 @@
 {% if DO_REGRID %}
     [[clean-history-regrid-xy]]
         inherit = CLEAN
-        script = """
-            rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-        """
+        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy"
 {% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
