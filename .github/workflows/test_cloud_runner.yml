@@ -90,7 +90,7 @@ jobs:
           echo "here's all the job directories with job scripts:"
           ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
           echo ""
-.github/workflows/test_cloud_runner.yml
+
           echo "here's all the job scripts for 1980 only:"
           ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
           echo ""
