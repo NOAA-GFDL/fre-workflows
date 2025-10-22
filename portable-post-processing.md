@@ -1,9 +1,9 @@
 # Portable Post-Processing
 Post-processing workflows are normally run on PP/AN, hence packaages and modules used to run the workflow are specific to the PP/AN system. In order to extend post-processing capabilities to other systems, cylc, GFDL's fre-cli, and a few other packages were containerized.
 
-This containerization uses a conda environment that includes everything needed for the post-processing workflow to run, along with a runscript to proceed through the fre-cli post-processing steps. These are encapsulated in a Dockerfile. The team then uses podman, in conjunction with the Dockerfile, to build the container image and save it as a local tar image, and apptainer to convert the tar image to a singularity image file (sif).
+The team uses podman, in conjunction with the Dockerfile, to build the container image and save it as a local tar image, and apptainer to convert the tar image to a singularity image file (sif). This container uses a conda environment that includes everything needed for the post-processing workflow to run which can be activated in a runscript. The runscript then proceeds to follow the fre-cli post-processing steps. 
 
-For more information on the build, requirements, and running, see [here](https://github.com/NOAA-GFDL/HPC-ME/blob/main/ppp/README.md).
+For more information on the container build, workflow requirements, and running, see [here](https://github.com/NOAA-GFDL/HPC-ME/blob/main/ppp/README.md).
 
 ## Workflow Configuration
 For the portable post-processing workflow, the same configuration files are used: 
@@ -103,3 +103,4 @@ style s4 text-align:left                                                        
 style G  text-align:left                                                                                                                                               style f4 text-align:left
 style DG text-align:left 
 ```
+As long as required data files are accessible and there is ample storage for the post-processing workflow output, the container can be used to run post-processing.
