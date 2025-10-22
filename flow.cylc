@@ -857,9 +857,6 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         script = """
-            mkdir -p $outputDir
-            mkdir -p $remapDir
-            mkdir -p $workDir
             fre --verbose app regrid \
                 --yamlfile=$yaml_config \
                 --input_dir=$inputDir \
@@ -868,7 +865,7 @@
                 --remap_dir=$remapDir \
                 --source=$source \
                 --input_date=$inputdate
-            rm -rf $workDir
+            rm -rf $work_dir
         """
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = 2*PT5M
@@ -941,7 +938,9 @@
 {% if DO_REGRID %}
     [[clean-history-regrid-xy]]
         inherit = CLEAN
-        script = "rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy"
+        script = """
+            rm -rf $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+        """
 {% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
