@@ -58,8 +58,22 @@ jobs:
           echo "Currently in:"
           cwd=$(pwd)
           echo $cwd
+
+          # Set up output directory based on which runner picks up the job
+          # This is to ensure there are no race conditions when accessing 
+          # the setup/output folder mounted to /mnt if there are multiple
+          # runners.
+          runner_folder=$(echo $cwd | cut -d/ -f3)
+
+          # workflow runner number
+          wfrunner=${runner_folder: -1}
+
+          output_dir=/contrib/container-test/ppp-setup-$wfrunner
+          mkdir -p $output_dir
+
+          # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
+          bind_paths="--bind $output_dir/:/mnt:rw
                       --bind /contrib/container-test/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
