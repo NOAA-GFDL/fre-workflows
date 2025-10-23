@@ -73,12 +73,10 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
 
         # Requested components (PP_COMPONENTS) in rose-suite.conf must exist in remap-pp-component's app config
         # If they don't, add suitable errors
+        # this is set in flow.cylc via yamls now
         requested_comps_str = config.get_value(['template variables', 'PP_COMPONENTS'])
-        if requested_comps_str is None:
-            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
-            return self.reports
-        if requested_comps_str == "":
-            self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
+        if requested_comps_str is None or request_coms_str == "":
+            #self.add_report("template variables", "PP_COMPONENTS", requested_comps_str, "Required and not set")
             return self.reports
 
         requested_comps = requested_comps_str.strip('"\'').split(' ')
@@ -86,7 +84,8 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
             if comp in available_comps:
                 pass
             else:
-                self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), f"Requested component '{comp}' is not defined in {path_to_conf}")
+                self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), 
+                                f"Requested component '{comp}' is not defined in {path_to_conf}")
 
         # Regridded history files specified in remap-pp-component's config must also exist in regrid-xy's config,
         # and the label must be consistent
@@ -118,7 +117,8 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
                         elif "regrid-xy/" + output_grid_type == regrid_label_by_comp[comp]:
                             success_flag = True
                 if not success_flag:
-                    self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), f"Requested component '{comp}' uses history file '{history_file}' with regridding label '{regrid_label_by_comp[comp]}', but this was not found in app/regrid-xy/rose-app.conf")
+                    self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"'), 
+                                    f"Requested component '{comp}' uses history file '{history_file}' with regridding label '{regrid_label_by_comp[comp]}', but this was not found in app/regrid-xy/rose-app.conf")
 
         # If history-manifest exists, report on history files used that are missing from inputs
         if history_files:
@@ -127,7 +127,8 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
                     if history_file in history_files:
                         pass
                     else:
-                        self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"\''), f"Requested component '{comp}' uses history file '{history_file}', but it does not exist in 'history-manifest'")
+                        self.add_report("template variables", "PP_COMPONENTS", config.get_value(['template variables', 'PP_COMPONENTS']).strip('"\''), 
+                                        f"Requested component '{comp}' uses history file '{history_file}', but it does not exist in 'history-manifest'")
         else:
             print("Skipping history file check as 'history-manifest' does not exist")
 
