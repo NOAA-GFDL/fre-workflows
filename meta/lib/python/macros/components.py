@@ -75,7 +75,7 @@ class ComponentChecker(metomi.rose.macro.MacroBase):
 
         # this is set in flow.cylc via yamls now
         requested_comps_str = config.get_value(['template variables', 'PP_COMPONENTS'])
-        if requested_comps_str is None or request_coms_str == "":
+        if requested_comps_str in [None, ""]:
             #self.add_report("template variables", "PP_COMPONENTS", requested_comps_str,
             #                "Required and not set")
             return self.reports
