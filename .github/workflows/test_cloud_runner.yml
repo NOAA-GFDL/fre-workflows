@@ -163,7 +163,7 @@ jobs:
           fi
 
       - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
-        continue-on-error: false
+        continue-on-error: true
         run: |
           set +e
           # Successes 
