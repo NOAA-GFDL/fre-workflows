@@ -27,13 +27,13 @@
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
 
-#{% if DO_TIMEAVGS %}
+
     [[MAKE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
 
     [[COMBINE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
-#{% endif %}
+
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
