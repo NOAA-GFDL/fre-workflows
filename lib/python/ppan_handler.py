@@ -2,14 +2,12 @@
 
 from pathlib import Path
 from subprocess import DEVNULL
-
 import shlex
+from typing import Tuple
 
 from cylc.flow.job_runner_handlers.slurm import SLURMHandler
 from cylc.flow.cylc_subproc import procopen
 
-import typing
-from typing import Tuple
 
 class PPANHandler(SLURMHandler):
     ''' major differences from inherited SLURMHandler class:
@@ -122,16 +120,17 @@ class PPANHandler(SLURMHandler):
                     out = '(ppan_handler) attempting import from tool_ops_w_papiex ...\n'
                     from tool_ops_w_papiex import tool_ops_w_papiex
 
-            except:
-                err = f'(ppan_handler) error, tool_ops_w_papiex import issues. __name__={__name__}\n'
+            except Exception as exc:
+                err = f'(ppan_handler) ERROR tool_ops_w_papiex import issue. name={__name__}\n ' + \
+                      'exc is: ' + str(exc)
                 return (1, out, err)
 
             try:
                 tool_ops_w_papiex(
                     fin_name=job_file_path,
                     fms_modulefiles=None)
-            except:
-                err = '(ppan_handler) error, papiex ops tooler did not work.\n'
+            except Exception as exc:
+                err = '(ppan_handler) ERROR papiex ops tooler did not work.\n exc is: ' + str(exc)
                 return (1, out, err)
 
             # this should be handled inside tool_ops_w_papiex TODO
@@ -141,8 +140,9 @@ class PPANHandler(SLURMHandler):
             try:
                 assert all( [ Path(job_file_path).exists(),
                               Path(job_file_path+'.notags').exists() ] )
-            except:
-                err = '(ppan_handler) error, one of the job files does not exist.\n'
+            except Exception as exc:
+                err = '(ppan_handler) ERROR one of the job files does not exist.\n exc is: ' + \
+                      str(exc)
                 return (1, out, err)
         #----------------------
 
@@ -167,7 +167,7 @@ class PPANHandler(SLURMHandler):
             # filename of the executable when it raises an OSError.
             if not exc.filename:
                 exc.filename = command[0]
-            err = '(ppan_handler) OSError thrown, procopen call.\n'
+            err = '(ppan_handler) OSError thrown, procopen call.\n exc is: ' + str(exc)
             return (1, out, err)
 
         # grab return code, stdout, stderr from proc
@@ -176,7 +176,7 @@ class PPANHandler(SLURMHandler):
                 f.decode() for f in proc.communicate(proc_stdin_value) )
             ret_code = proc.wait()
         except OSError as exc:
-            err = 'problem getting output from job-submission proc.\n'
+            err = 'problem getting output from job-submission proc.\n exc is: ' + str(exc)
             ret_code = 1
 
         return (ret_code, out, err)
