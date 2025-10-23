@@ -892,7 +892,7 @@
                 --remap_dir=$remapDir \
                 --source=$source \
                 --input_date=$inputdate
-            rm -rf $workDir
+            #rm -rf $work_dir
         """
         # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail

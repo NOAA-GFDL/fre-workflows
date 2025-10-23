@@ -96,6 +96,9 @@
             module load fre/{{ FRE_VERSION }}
             module load fre-nctools/2024.05
             which fregrid
+            mkdir -p $outputDir
+            mkdir -p $remapDir
+            mkdir -p $workDir
         """
 {% endif %}
 

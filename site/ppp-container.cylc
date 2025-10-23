@@ -35,7 +35,12 @@
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
-        pre-script = which fregrid
+        pre-script = """
+            which fregrid
+            mkdir -p $outputDir
+            mkdir -p $remapDir
+            mkdir -p $workDir
+        """
 {% endif %}
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
