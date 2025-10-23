@@ -52,23 +52,6 @@ jobs:
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
           submodules: true
-  
-      - name: Print workflow summary
-        continue-on-error: true
-        run: |
-          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
-          echo "number of tasks launched: ${num_tasks}"
-          echo ""
-
-          echo "here's all the job directories with job scripts:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
-          echo ""
-
-          echo "here's all the job scripts for 1980 only:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
-          echo ""
-
-          echo "rose-suite conf for workflow:"
 
       - name: Run ppp-container
         run: |
@@ -97,6 +80,25 @@ jobs:
           name: fre-workflow-logs
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
+
+      - name: Print workflow summary
+        continue-on-error: true
+        run: |
+          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
+          echo "number of tasks launched: ${num_tasks}"
+          echo ""
+
+          echo "here's all the job directories with job scripts:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
+          echo ""
+
+          echo "here's all the job scripts for 1980 only:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
+          echo ""
+
+          echo "rose-suite conf for workflow:"
+          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
+          echo ""
 
       - name: Print pp-starter successes or failures
         run: |
