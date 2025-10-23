@@ -881,18 +881,15 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         script = """
-            mkdir -p $outputDir
-            mkdir -p $remapDir
-            mkdir -p $workDir
             fre -vv app regrid \
-                --yamlfile=$yaml_config \
-                --input_dir=$inputDir \
-                --output_dir=$outputDir \
-                --work_dir=$workDir \
-                --remap_dir=$remapDir \
+                --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
+                --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
+                --begin=$CYLC_TASK_CYCLE_POINT \
+                --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
                 --source=$source \
-                --input_date=$inputdate
-            rm -rf $workDir
+                --grid_spec={{ PP_GRID_SPEC }} \
+                --tmp_dir=$CYLC_TASK_WORK_DIR \
+                --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
         """
         # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail

@@ -33,11 +33,6 @@
     [[COMBINE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
 
-{% if DO_REGRID %}
-    [[REGRID-XY]]
-        pre-script = which fregrid
-{% endif %}
-
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = mkdir -p $outputDir
