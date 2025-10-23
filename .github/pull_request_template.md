@@ -14,6 +14,15 @@
 - [ ] No print statements; all user-facing info uses logging module
 
 ## Manual Pipeline Run Details
+**Was the manual pipeline (`test_cloud_runner`) triggered for this PR?**
+- [ ] Yes
+- [ ] No
+
+**Result of manual pipeline run:**
+
+(Paste relevant logs, output, or a link to the workflow run here)
+
+**How to trigger the manual pipeline:**
 
 The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run.
 
@@ -29,11 +38,3 @@ To trigger the manual pipeline:
 4. Click "Run workflow"
 
 Note: you may need to reload the page to see your running workflow. 
-
-**Was the manual pipeline (`test_cloud_runner`) triggered for this PR?**
-- [ ] Yes
-- [ ] No
-
-**Result of manual pipeline run:**
-
-(Paste relevant logs, output, or a link to the workflow run here)

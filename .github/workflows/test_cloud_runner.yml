@@ -52,6 +52,17 @@ jobs:
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
           submodules: true
+      - name: Display fre-workflow and fre-cli repos and branches
+        run: |
+          # fre-workflows repo and branch
+          echo "fre-workflows repo: $(git remote -v)"
+          echo "fre-workflows branch: $(git branch)"
+          
+          # fre-cli repo and branch
+          cd fre-cli
+          echo "fre-cli repo: $(git remote -v)"
+          echo "fre-cli branch: $(git branch)"
+          cd -
       - name: Run ppp-container
         run: |
           # Print pwd then run script
@@ -60,7 +71,7 @@ jobs:
           echo $cwd
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
-                      --bind /contrib/container-test/history:/mnt/history:ro
+                      --bind /contrib2/c96L65/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
 
@@ -79,6 +90,25 @@ jobs:
           name: fre-workflow-logs
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
+
+      - name: Print workflow summary
+        continue-on-error: true
+        run: |
+          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
+          echo "number of tasks launched: ${num_tasks}"
+          echo ""
+
+          echo "here's all the job directories with job scripts:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
+          echo ""
+
+          echo "here's all the job scripts for 1980 only:"
+          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
+          echo ""
+
+          echo "rose-suite conf for workflow:"
+          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
+          echo ""
 
       - name: Print pp-starter successes or failures
         run: |
