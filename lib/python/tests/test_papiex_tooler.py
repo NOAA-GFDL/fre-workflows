@@ -75,8 +75,8 @@ def test_tagging_a_simple_failing_command():
         Path(test_script_targ).unlink()
 
     # call the routine
-    tool_ops_w_papiex(fin_name = control_script_targ,
-                      fms_modulefiles = None)
+    tool_ops_w_papiex(fin_name = control_script_targ)
+
 
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()
@@ -171,8 +171,8 @@ def test_rose_task_run_for_diff():
         Path(test_script_targ).unlink()
 
     # call the routine
-    tool_ops_w_papiex(fin_name = control_script_targ,
-                      fms_modulefiles = None)
+    tool_ops_w_papiex(fin_name = control_script_targ)
+
 
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()
@@ -225,8 +225,8 @@ def test_pp_starter_for_no_diff():
         Path(test_script_targ).unlink()
 
     # call the routine
-    tool_ops_w_papiex(fin_name = control_script_targ,
-                      fms_modulefiles = None)
+    tool_ops_w_papiex(fin_name = control_script_targ)
+
 
     # check that output files were created as we expect
     assert Path(test_script_targ).exists()

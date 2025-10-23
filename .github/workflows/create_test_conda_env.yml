@@ -68,7 +68,7 @@ jobs:
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint -v --fail-under 7.50 ./lib/python
+          pylint -v --fail-under 8.0 ./lib/python
 
       - name: combine-statics pytest
         continue-on-error: false

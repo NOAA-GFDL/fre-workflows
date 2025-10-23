@@ -42,6 +42,9 @@ def test_submit():
                                    submit_opts = submit_opts,
                                    dry_run = True, tool_ops = True)
 
+    print(ret_code)
+    print(ret_out)
+    print(ret_err)
     # check what the function returns
     assert all ( [ ret_code == 0,
                    ret_out  == "HELLO\n",

@@ -8,7 +8,7 @@ https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
 # should we rename some things? e.g. tool_ops_w_papiex --> papiex_ops_tooler ?
 # typing/type hints?
 import re
-import pathlib as pl
+
 
 try:
     if any([ 'lib.python'  in __name__ ,
@@ -19,13 +19,13 @@ try:
         #print('(tool_ops_w_papiex) attempting import from papiex_ops ... \n')
         from papiex_ops import op_list
 except:
-    print(f'(tool_ops_w_papiex) error! op_list import issues.')
+    print('(tool_ops_w_papiex) error! op_list import issues.')
 
 def test_import():
     ''' for testing import of module via pytest only '''
     return 0
 
-def tool_ops_w_papiex(fin_name, fms_modulefiles):
+def tool_ops_w_papiex(fin_name):
     ''' parses a job bash-script assembled by script, tags operations of interest.
     accomplished by setting/unsetting PAPIEX_TAGS env var around operation of interest,
     referred to as a caliper approach.
@@ -209,7 +209,7 @@ def annotate_metadata(): #TODO 7
     #   script.append('endif')
 
 if __name__=='__main__':
-    tool_ops_w_papiex('FOO',None)
+    tool_ops_w_papiex('FOO')
 
     ###### local testing/debugging, ONE script input to test on.
     ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
