@@ -22,6 +22,11 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+ls /mnt/.local/lib/python3.11/site-packages/~re-cli || echo "bad command"
+ls /mnt/.local/lib/python3.11/site-packages/\~re-cli || echo "bad command"
+rm -rf /mnt/.local/lib/python3.11/site-packages/~re-cli || echo "bad command"
+rm -rf /mnt/.local/lib/python3.11/site-packages/\~re-cli || echo "bad command"
+
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
