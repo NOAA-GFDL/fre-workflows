@@ -13,17 +13,15 @@ on **PPAN**.
 
 ## Cylc User settings
 
-The path to the Cylc binary must be added to your `$PATH` environment variable first. This can be done
-by modifying your PATH in your bash_profile as follows:
+The path to the Cylc binary must be added to your `$PATH` environment variable first. Without the cylc binary,
+the initial setup of the workflow server fails. This can be done by modifying your PATH in your bash_profile
+as follows:
 
 ```
 > cat /home/First.Last/.bash_profile
 # this is essential Cylc configuration below
 export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
 ```
-
-Without a cylc binary in your `$PATH` variable, the initial setup of the workflow server fails, and we
-cannot edit the environment with a module load or similar until it is running.
 
 ## Experiment settings
 
@@ -32,7 +30,7 @@ yaml files.
 
     - model yaml: contains yaml anchors (i.e. variables that can be used throughout the yaml framework)
                   and paths that point to the settings and post-processing yaml giles
-    - settings yaml: experiment-specific settings and switches; can also define more exeriment-specific
+    - settings yaml: experiment-specific settings and switches; can also define more experiment-specific
                      yaml anchors
     - post-processing yaml: information about the components to be post-processed
 
@@ -90,29 +88,34 @@ For developers, you can set some of the yaml keys, such as `clean_work`, to spec
 
 For more information on the yaml framework, see [fre-cli's README and documentation on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#model-yaml).
 
-# Batch environment setup and fre-cli
+# Batch environment setup and fre-cli for testing workflow changes
 
 ## Local environment setup
-Currently, we HIGHLY recommend using the gfdl modulefiles for cylc and the latest
-fre release instead of developer conda environments, as different cylc versions
-may cause more confusion when debugging:
+Currently, when submitting/testing a pp workflow, we HIGHLY recommend using the gfdl
+modulefiles for cylc and fre instead of developer conda environments, as different cylc
+and fre-cli versions may cause more confusion when debugging:
 
 ```
 module load cylc
 module load fre/2025.04
 ```
 
-This applies even if you're testing fre features as we describe later in this
-document; generally, the changes you are testing are changes meant to run in the
-batch jobs, not as part of the submission process. The submission process is
-standardized enough that you can use the lab-standard modules, which is going to
-eliminate a possible source of error in your environment setup.
+Generally, edits pertaining to the workflow or fre-cli tool usage in the workflow are code
+changes meant to run through the cylc created batch job scripts, submitted by the cylc scheduler.
+
+Even if you are developing and testing a fre-cli tool for use in the workflow in a local conda environment,
+the workflow itself, should still be submitted using the modulefiles to eliminate any possible sources of error
+in your environment setup.
+
+In this submission process via `fre pp run`, the platform passed on the command line determines the job
+runner. For PP/AN platforms, the job scripts are submitted through slurm. On other sites, scripts are
+submitted as background jobs.
 
 ## Remote environment setup
-Each slurm job that cylc submits is run from a bare environment; even if the jobs were 
-submitted in a local environment, it will not be used within the workflow. Thus, if you
-want to invoke fre-cli tools from within a fre-workflows task, you need to add fre-cli
-to the batch environment.
+Each slurm job that cylc submits is run from a bare environment. If the jobs were 
+submitted in a local conda environment, that environment will not be used within the
+workflow. Thus, if you want to invoke fre-cli tools from within a fre-workflows task,
+you need to add fre-cli to the batch environment.
 
 To do this, you use the pre-script defined for each task. You can see an example
 of a pre-script in `flow.cylc`:
@@ -123,7 +126,7 @@ of a pre-script in `flow.cylc`:
         script = rose task-run --verbose --app-key rename-split-to-pp
 ```
 
-However, that's **NOT** where we want to put our edits. Cylc has hierarchical
+However, the `flow.cylc` is **NOT** where we want to put our edits. Cylc has hierarchical
 layers of configuration - settings can be set in more than one place, and the
 most specific settings are prioritized over the least specific settings.
 
@@ -134,15 +137,14 @@ highest priority---  `site/[sitefile].cylc` > `flow.cylc` ---lowest priority
 Prioritization does not mean that the settings in any file are ignored - but if
 the settings in two files disagree, cylc uses the setting value in the
 higher-priority file over the lower-priority one. We currently have pre-scripts
-defined for every step of the workflow in `site/[sitefile].cylc`, and that means
-**YOU NEED TO EDIT THERE**.
+defined for every step of the workflow in `site/[sitefile].cylc` - **DEVELOPERS SHOULD EDIT HERE**.
 
-**For testing at the lab, that means you are editing site/ppan.cylc.**
+**For testing at the lab, site/ppan.cylc should be edited.**
 
 *Please note:* these steps may include changes that you do not want to include
 in your git history for safety's sake. To avoid adding these to your git
-history, you can edit the code in `~/cylc-src/[your_test_experiment_workflow_id]` directly
-after checking it out with the fre-cli subtool `fre pp checkout`:
+history, you can edit the code in `~/cylc-src/[your_test_experiment_workflow_id]`
+directly after checking it out with the fre-cli subtool `fre pp checkout`:
 
 ```
 > fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
@@ -155,19 +157,19 @@ ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose
 ```
 
 The code that cylc runs from in `~/cylc-run/[your_test_experiment_workflow_id]` is copied from
-`~/cylc-src/[your_test_experiment_workflow_id]`, not re-cloned from git. It's a bad idea to
-put any changes you want to be permanent in `~/cylc-src/[your_test_experiment_workflow_id]` -
-but you probably do not want these changes to be permanent. This is a little bit
-risky - it can be hard to keep track of where your edits are taking place - but
+`~/cylc-src/[your_test_experiment_workflow_id]`, not re-cloned from git. It is not advisable to
+put any changes you want to be permanent in `~/cylc-src/[your_test_experiment_workflow_id]`. This
+is a little bit risky - it can be hard to keep track of where your edits are taking place, but
 allows you to avoid awkward back-and-forth edits in your git history.
 
-How you edit `site/ppan.cylc` looks different depending on how far along in the
-development process the features that you are testing are:
+How you edit `site/ppan.cylc` for the environment you would like to use might look different
+depending on the developmental progress of the features you wish to test:
 
 ### Features in fre-cli that are part of a release
 
 If the features that you want to include are part of a fre release, you can
-load a fre module from the pre-script of your cylc task:
+load a fre module from the pre-script of your cylc task (if not already specified
+in the `[[root]]` section of the site file - this section is "inherited" by all tasks):
 
 ```
     [[SPLIT-NETCDF]]
@@ -243,15 +245,16 @@ fre pp install -e [experiment name] -p [platform] -t [target]
 fre pp run -e [experiment name] -p [platform] -t [target]
 ```
 
-If edits needs to be made for troubleshooting, users can edit files in the `
-~/cylc-src/$your_test_experiment` directory and follow this clean up procedure:
+If further edits needs to be made for troubleshooting, users can edit files in the
+`~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up
+procedure:
 
 ```
 # If the experiment needs to be stopped
-cylc stop --now $your_test_experiment
+cylc stop --now [your_test_experiment_workflow_id]
 
 # Removes the cylc-run directory and associated symlinks
-cylc clean $your_test_experiment
+cylc clean [your_test_experiment_workflow_id]
 
 # From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
