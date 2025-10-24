@@ -118,9 +118,8 @@ fre_pp_steps () {
 
     # Put log in output file
     cylc cat-log ${name} > "/mnt/log.out"
-    echo "" >> "/mnt/log.out"
-    echo "" >> "/mnt/log.out"
-    echo "" >> "/mnt/log.out"
+    echo -e "\n\n\n" >> "/mnt/log.out"
+
     cylc workflow-state ${name} >> "/mnt/log.out"
     check_exit_status "Writing to log.out"
 }
