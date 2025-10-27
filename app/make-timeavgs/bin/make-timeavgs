@@ -3,7 +3,7 @@ set -euo pipefail
 set -x
 
 #
-# use fre-python-tools generate_time_average module to average history files 
+# use fre app gen-time-averages module to average history files 
 #
 
 echo Arguments:
@@ -14,15 +14,8 @@ echo "    interval: $interval"
 echo "    use subdirs: ${use_subdirs:=}"
 echo Utilities:
 type cylc
-type generate-time-averages
 
-# Setup PYTHONPATH and io lists for the data lineage tool
-if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-    export PYTHONPATH=$CYLC_SUITE_DEF_PATH:$PYTHONPATH
-    export input_file_list=
-    export output_file_list=
-    echo "Set PYTHONPATH and created i/o lists"
-fi
+
 
 #this probably shouldnt be a substitute for a proper "find" command...
 echo ""
@@ -80,18 +73,7 @@ for dir in ${dirs[@]}; do
         # and include only one year if a one-year interval
         basename=$(basename $file)
 
-        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
-            
-            input_dir_path=$(dirname $file)
 
-            epmt annotate EPMT_DATA_LINEAGE_IN_PATH="$input_dir_path/"
-            echo "[DATA LINEAGE] Annotated $input_dir_path/ to EPMT_DATA_LINEAGE_IN_PATH"
-
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-            -m data_lineage.bloomfilter.HashGen $file)
-            export input_file_list="${input_file_list}$basename $hash_val,"
-            echo "[DATA LINEAGE] Added $basename to input list with hash_val: $hash_val"
-        fi
 
         date1=$(echo $basename | cut -d. -f2 | cut -d- -f1)
         date2=$(echo $basename | cut -d. -f2 | cut -d- -f2)
@@ -123,7 +105,7 @@ for dir in ${dirs[@]}; do
             output_dir=$outputDir/$component/$file_freq/$interval
         fi
         mkdir -p $output_dir
-        cmd="generate-time-averages -p cdo -a $tool_args ${file} ${output_dir}/$newfile"
+        cmd="fre -vv app gen-time-averages -p cdo -a $tool_args -i ${file} -o ${output_dir}/${newfile}"
         echo "---DEBUG--- to run: $cmd"
 		
 		if ! $cmd; then
@@ -131,37 +113,12 @@ for dir in ${dirs[@]}; do
             exit $?
         fi
 
-        if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
-            epmt annotate EPMT_DATA_LINEAGE_OUT_PATH="$output_dir/"
-            echo "[DATA LINEAGE] Annotated $output_dir/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-            hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-            -m data_lineage.bloomfilter.HashGen $output_dir/$newfile)
-            export output_file_list="${output_file_list}$newfile $hash_val,"
-            echo "[DATA LINEAGE] Added $newfile to output list with hash_val: $hash_val"
-        fi
 
 	done
 	
 done
 
-if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" = "1" ]; then
 
-    # Annotate to EPMT
-    if [ -n "$input_file_list" ]; then
-        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-        -m data_lineage.bloomfilter.StringCompression "${input_file_list}")
-        epmt -v annotate EPMT_DATA_LINEAGE_IN="${compressed_bytes%*,}"
-        echo "[DATA LINEAGE] Annotated input files to EPMT_LINEAGE_IN"
-    fi
-
-    if [ -n "$output_file_list" ]; then
-        compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-        -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
-        epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
-        echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-    fi
-fi
 
 exit 0
