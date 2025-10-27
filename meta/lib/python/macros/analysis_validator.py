@@ -94,24 +94,29 @@ class Analysis_Validator(metomi.rose.macro.MacroBase):
                     report_dict[item]=report_val
                     self.add_report( 'template variables','app/analysis/rose-app.conf', item+"/"+val,
                                      "Required and not set")
+                    
             # Validation: Check if the paths to the analysis scripts exist referring rose-app.conf in app/analysis.
             #             Scripts may either exist in FRE_ANANALYSIS_HOME or in file/ within the analysis app or absolute paths
             #             script could include arguments so take the first "word"
-            ascript = config_node.get_value(keys=[item, "script" ]).split().pop(0)
+            ascript = config_node.get_value(keys=[item, 
+                                                  "script" ]).split().pop(0)
             if ascript is not None:
+
                 # check if its readable
-                if ascript is not None:
-                    if os.access(ascript, os.R_OK):
-                        pass
-                    #when its in FRE_ANALYSIS_HOME
-                    elif ascript.startswith("$FRE_ANALYSIS_HOME"):
-                        if fre_analysis_home is None:
-                            fre_analysis_home = "$FRE_ANALYSIS_HOME"
-                        ascript = ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home.strip('"\''))
-                    else:
-                        #in file/
-                        analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
-                        ascript = analysis_file_suffix + os.path.basename(ascript)
+                if os.access(ascript, os.R_OK):
+                    pass
+
+                #when its in FRE_ANALYSIS_HOME
+                elif ascript.startswith("$FRE_ANALYSIS_HOME"):
+                    if fre_analysis_home is None:
+                        fre_analysis_home = "$FRE_ANALYSIS_HOME"
+                    ascript = ascript.replace("$FRE_ANALYSIS_HOME", fre_analysis_home.strip('"\''))
+
+                #in file/
+                else:
+                    analysis_file_suffix = os.path.dirname(os.path.abspath(__file__)) + '/../../../../app/analysis/file/'
+                    ascript = analysis_file_suffix + os.path.basename(ascript)
+
                 if os.access(ascript, os.R_OK):
                     pass
                 else:
