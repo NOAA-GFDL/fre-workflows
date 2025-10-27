@@ -22,11 +22,6 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-ls /mnt/.local/lib/python3.11/site-packages/~re-cli || echo "bad command"
-ls /mnt/.local/lib/python3.11/site-packages/\~re-cli || echo "bad command"
-rm -rf /mnt/.local/lib/python3.11/site-packages/~re-cli || echo "bad command"
-rm -rf /mnt/.local/lib/python3.11/site-packages/\~re-cli || echo "bad command"
-
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
@@ -88,9 +83,10 @@ fre_pp_steps () {
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
-    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
     rm -rf /mnt/cylc-src/${name}
     mkdir -p /mnt/cylc-src/${name}
+
+    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
     cp -r ./* /mnt/cylc-src/${name}
     check_exit_status "MOCK CHECKOUT (cp)"
 
@@ -129,6 +125,7 @@ main () {
 
     # Set user-input
     get_user_input
+
     #Create directories needed for post-processing
     create_dirs
 
