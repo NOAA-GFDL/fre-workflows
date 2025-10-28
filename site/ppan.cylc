@@ -10,17 +10,12 @@
         execution time limit = PT4H
         platform = ppan
         [[[events]]]
-            mail events = startup shutdown aborted timeout stalled inactivity
+            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
-
-    [[STAGE-HISTORY]]
-        pre-script = """
-            module load gcp/2.3 hsm/1.3.0
-        """
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -75,7 +70,7 @@
         pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[DATA-CATALOG]]
         pre-script = module load fre/{{ FRE_VERSION }}
@@ -93,8 +88,6 @@
     [[REGRID-XY]]
         execution time limit = P1D
         pre-script = """
-            module load fre/{{ FRE_VERSION }}
-            module load fre-nctools/2024.05
             which fregrid
         """
 {% endif %}
