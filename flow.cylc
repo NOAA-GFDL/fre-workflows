@@ -906,7 +906,7 @@
         """
         # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail
-        execution retry delays = PT1M
+#        execution retry delays = PT1M
         [[[environment]]]
             yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
