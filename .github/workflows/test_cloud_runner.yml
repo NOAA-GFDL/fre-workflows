@@ -92,7 +92,6 @@ jobs:
           if-no-files-found: error
 
       - name: Print workflow summary
-        continue-on-error: true
         run: |
           num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
           echo "number of tasks launched: ${num_tasks}"
@@ -172,8 +171,7 @@ jobs:
               exit 2
           fi
 
-      - name: Print regrid-xy successes or failures (STEP CONTINUES ON FAILURE)
-        continue-on-error: false
+      - name: Print regrid-xy successes or failures
         run: |
           set +e
           # Successes 
@@ -297,15 +295,15 @@ jobs:
               exit 2
           fi
 
-      - name: Print rename-split-to-pp successes or failures
+      - name: Print split-netcdf successes or failures
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
-          exit_status_1=$? 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -328,16 +326,16 @@ jobs:
               exit 2
           fi
 
-      - name: Print split-netcdf successes or failures
+      - name: Print rename-split-to-pp successes or failures
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
-          exit_status_2=$? 
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
               echo $success | sed 's/ /\n/g' #split string by spaces
