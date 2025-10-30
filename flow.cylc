@@ -472,7 +472,8 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
+            use_subdirs = 0
+            #use_subdirs = 1
     {% endif %}
     {% for PP_CHUNK in PP_CHUNKS %}
     [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
@@ -664,7 +665,6 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             history_file = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
 {% endif %}
 
 {% if DO_NATIVE %}
@@ -712,7 +712,8 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = "True"
+            use_subdirs = "False"
+            #use_subdirs = "True"
 {% endif %}
 
 {% if DO_NATIVE %}
@@ -866,7 +867,8 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 1
+            use_subdirs = 0
+            #use_subdirs = 1
 {% endif %}
 
     {% for PP_CHUNK in PP_CHUNKS %}
