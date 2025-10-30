@@ -219,7 +219,7 @@ For more information on conda environment setup for fre-cli, see [fre-cli's READ
 # Guide
 
 ## Postprocess FMS history files
-To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps here[insert link].
+To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
 
 NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the `ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file, and the rose-suite.conf files. 
 
