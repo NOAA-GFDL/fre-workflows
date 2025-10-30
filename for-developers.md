@@ -219,31 +219,9 @@ For more information on conda environment setup for fre-cli, see [fre-cli's READ
 # Guide
 
 ## Postprocess FMS history files
-To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps:
-```
-# load modules
-module load cylc
-module load fre/2025.04
+To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps here[insert link].
 
-# clone fre-workflows repository
-fre pp checkout -e [experiment name] -p [platform] -t [target]
-
-# create/confiugre the combined yaml file, rose-suite.conf, and any necessary rose-app.conf files
-fre pp configure-yaml -y [model yaml file] -e [experiment name] -p [platform] -t [target]
-
-## After the first two steps, users can edit:
-##   - ppan.cylc site file under ~/cylc-src/$your_test_experiment/site/ppan.cylc
-##   - combined yaml file and rose-suite.conf file
-
-# validate the rose experiment configuration files
-fre pp validate -e [experiment name] -p [platform] -t [target]
-
-# install the experiment
-fre pp install -e [experiment name] -p [platform] -t [target]
-
-# run the experiment
-fre pp run -e [experiment name] -p [platform] -t [target]
-```
+NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the `ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file, and the rose-suite.conf files. 
 
 If further edits needs to be made for troubleshooting, users can edit files in the
 `~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up
