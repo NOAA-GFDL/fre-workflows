@@ -472,8 +472,8 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 0
-            #use_subdirs = 1
+            use_subdirs = 1
+            #use_subdirs = 0
     {% endif %}
     {% for PP_CHUNK in PP_CHUNKS %}
     [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
@@ -867,8 +867,8 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = 0
-            #use_subdirs = 1
+            use_subdirs = 1
+            #use_subdirs = 0
 {% endif %}
 
     {% for PP_CHUNK in PP_CHUNKS %}
