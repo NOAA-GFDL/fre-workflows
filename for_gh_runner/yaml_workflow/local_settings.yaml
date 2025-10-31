@@ -1,18 +1,18 @@
 # directories shared across tools
 directories:
-  history_dir:        "/mnt/history"
-  pp_dir:             "/mnt/pp"
+  history_dir:        "/work/$USER/test_cloud_runner_history_files"
+  pp_dir:             !join [/work/$USER/test_cloud_runner_scratch_dir, *FRE_STEM, /, pp]
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
-  ptmp_dir:           "/mnt/ptmp"
+  ptmp_dir:           "/xtmp/$USER/ptmp"
 
 postprocess:
   settings:
     history_segment:         "P1Y"
-    site:                    "ppp-container"
+    site:                    "ppan"
     pp_chunks:               [*PP_CHUNK96]
     pp_start:                *EXP_AMIP_START
     pp_stop:                 *EXP_AMIP_END
-    pp_grid_spec:            *GRID_SPEC96
+    pp_grid_spec:            *GRID_SPEC96_LOCAL
   switches:
     clean_work:              True
     do_refinediag:           False
