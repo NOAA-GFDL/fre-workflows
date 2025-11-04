@@ -11,16 +11,7 @@ postprocessing repo. this file is strictly data.
 #    end of a line, or the end of a string, i think... see
 #    https://stackoverflow.com/questions/16519744
 
-# not all ops currently covered- improve. #TODO 1
-
-# op dictionary definitions
-cp = {'op_name'       : 'cp',
-      'op_instance'   : 0,
-      's_string'      : r'[\s?|^]cp(?:\s+|$)',
-      'r_string'      : 'export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp ',
-      'r_string_w_if' : '{ export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp ',
-      'r_string_rose' : None
-}
+### specialized data movement operations
 dmget = {'op_name'       : 'dmget',
           'op_instance'   : 0,
           's_string'      : r'[\s?|^]dmget(?:\s+|$)',
@@ -34,13 +25,6 @@ dmput = {'op_name'       : 'dmput',
           'r_string'      : 'export PAPIEX_TAGS="op:dmput;op_instance:OP_INSTANCE"; dmput ',
           'r_string_w_if' : '{ export PAPIEX_TAGS="op:dmput;op_instance:OP_INSTANCE"; dmput ',
           'r_string_rose' : None
-}
-fregrid = {'op_name'      : 'fregrid',
-          'op_instance'  : 0,
-          's_string'     : r'[\s?|^]regrid-xy(?:\s+|$)',
-          'r_string'     : None,
-          'r_string_w_if': None,
-          'r_string_rose': 'export PAPIEX_TAGS="op:fregrid;op_instance:OP_INSTANCE"; ',
 }
 hsmget = {'op_name'       : 'hsmget',
           'op_instance'   : 0,
@@ -63,47 +47,21 @@ gcp = {'op_name'       : 'gcp',
        'r_string_w_if' : '{ export PAPIEX_TAGS="op:gcp;op_instance:OP_INSTANCE"; gcp ',
        'r_string_rose' : None
 }
+
+### typical data movement operations
+cp = {'op_name'       : 'cp',
+      'op_instance'   : 0,
+      's_string'      : r'[\s?|^]cp(?:\s+|$)',
+      'r_string'      : 'export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp ',
+      'r_string_w_if' : '{ export PAPIEX_TAGS="op:cp;op_instance:OP_INSTANCE"; cp ',
+      'r_string_rose' : None
+}
 mv = {'op_name'       : 'mv',
       'op_instance'   : 0,
       's_string'      : r'[\s?|^]mv(?:\s+|$)',
       'r_string'      : 'export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE"; mv ',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:mv;op_instance:OP_INSTANCE"; mv ',
       'r_string_rose' : None
-}
-#ncatted = {'op_name'     : 'ncatted',
-#           'op_instance' : 0,
-#           's_string'    : None,
-#           'r_string'    : 'export PAPIEX_TAGS="op:ncatted;op_instance:OP_INSTANCE";',
-#           'r_string_w_if' : None,
-#           'r_string_rose' : None
-#}
-#nccopy = {'op_name'     : 'nccopy',
-#.         'op_instance' : 0,
-#          's_string'    : None,
-#          'r_string'    : 'export PAPIEX_TAGS="op:nccopy;op_instance:OP_INSTANCE";',
-#          'r_string_w_if' : None,
-#          'r_string_rose' : None
-#}
-#ncks = {'op_name'     : 'ncks',
-#.       'op_instance' : 0,
-#        's_string'    : None,
-#        'r_string'    : 'export PAPIEX_TAGS="op:ncks;op_instance:OP_INSTANCE";',
-#        'r_string_w_if' : None,
-#        'r_string_rose' : None
-#}
-#ncrcat = {'op_name'     : 'ncrcat',
-#          'op_instance' : 0,
-#          's_string'    : None,
-#          'r_string'    : 'export PAPIEX_TAGS="op:ncrcat;op_instance:OP_INSTANCE";',
-#          'r_string_w_if' : None,
-#          'r_string_rose' : None
-#}
-plevel = {'op_name'      : 'plevel',
-          'op_instance'  : 0,
-          's_string'     : r'[\s?|^]mask-atmos-plevel(?:\s+|$)',
-          'r_string'     : None,
-          'r_string_w_if': None,
-          'r_string_rose': 'export PAPIEX_TAGS="op:plevel;op_instance:OP_INSTANCE"; ',
 }
 rm = {'op_name'       : 'rm',
       'op_instance'   : 0,
@@ -112,13 +70,6 @@ rm = {'op_name'       : 'rm',
       'r_string_w_if' : '{ export PAPIEX_TAGS="op:rm;op_instance:OP_INSTANCE"; rm ',
       'r_string_rose' : None
 }
-#splitvars = {'op_name'     : 'splitvars',
-#             'op_instance' : 0,
-#             's_string'    : None,
-#             'r_string'    : 'export PAPIEX_TAGS="op:splitvars;op_instance:OP_INSTANCE";',
-#             'r_string_w_if' : None,
-#             'r_string_rose' : None
-#}
 tar = {'op_name'       : 'tar',
        'op_instance'   : 0,
        's_string'      : r'[\s?|^]tar(?:\s+|$)',
@@ -126,6 +77,26 @@ tar = {'op_name'       : 'tar',
        'r_string_w_if' : '{ export PAPIEX_TAGS="op:tar;op_instance:OP_INSTANCE"; tar ',
        'r_string_rose' : None
 }
+
+
+### legacy calls
+## from FRE-bronx
+fregrid = {'op_name'      : 'fregrid',
+          'op_instance'  : 0,
+          's_string'     : r'[\s?|^]regrid-xy(?:\s+|$)',
+          'r_string'     : None,
+          'r_string_w_if': None,
+          'r_string_rose': 'export PAPIEX_TAGS="op:fregrid;op_instance:OP_INSTANCE"; ',
+}
+plevel = {'op_name'      : 'plevel',
+          'op_instance'  : 0,
+          's_string'     : r'[\s?|^]mask-atmos-plevel(?:\s+|$)',
+          'r_string'     : None,
+          'r_string_w_if': None,
+          'r_string_rose': 'export PAPIEX_TAGS="op:plevel;op_instance:OP_INSTANCE"; ',
+}
+
+## from app/
 timavg = {'op_name'       : 'timavg',
           'op_instance'   : 0,
           's_string'      : r'[\s?|^]make-timeavgs(?:\s+|$)',
@@ -140,35 +111,74 @@ timser = {'op_name'       : 'timser',
           'r_string_w_if' : None,
           'r_string_rose' : 'export PAPIEX_TAGS="op:timser;op_instance:OP_INSTANCE"; '
 }
-#untar = {'op_name'       : 'untar',
-#         'op_instance'   : 0,
-#         's_string'      : None,
-#         'r_string'      : 'export PAPIEX_TAGS="op:untar;op_instance:OP_INSTANCE";',
-#         'r_string_w_if' : None,
-#         'r_string_rose' : None
-#}
+
+
+
+### fre calls
+## fre analysis
+## fre app
+regrid = {'op_name'      : 'regrid',
+          'op_instance'  : 0,
+          's_string'     : r'[\s?|^]fre -vv app regrid (?:\s+|$)',
+          'r_string'     : None,
+          'r_string_w_if': None,
+          'r_string_rose': 'export PAPIEX_TAGS="op:regrid;op_instance:OP_INSTANCE"; ',
+}
+maskatm = {'op_name'      : 'maskatm',
+          'op_instance'  : 0,
+          's_string'     : r'[\s?|^]fre -vv app mask-atmos-plevel(?:\s+|$)',
+          'r_string'     : None,
+          'r_string_w_if': None,
+          'r_string_rose': 'export PAPIEX_TAGS="op:plevel;op_instance:OP_INSTANCE"; ',
+}
+## fre catalog
+## fre cmor
+## fre list
+## fre make
+## fre pp
+## fre run
+## fre yamltools
 
 # list of all op dictionaries shown above
 op_list = [
-    cp,
-#    dmput,
-#    dmget,
-#    fregrid,
+### specialized data movement operations
+    dmget,
+    dmput,
     hsmget,
     hsmput,
     gcp,
+### typical data movement operations
+    cp,
     mv,
-#    ncatted,
-#    nccopy,
-#    ncks,
-#    ncrcat,
-    plevel,
     rm,
-#    splitvars,
     tar,
-    timavg,
-    timser#,
-#    untar
+### legacy calls
+## from FRE-bronx
+#    fregrid,
+#    plevel,
+#    list_ncvars, # add TODO
+## from app/
+#    combtimavgs, # add TODO
+#    combstatics, # add TODO
+    timavg, # doublecheck TODO
+    timser, # doublecheck TODO
+### fre calls
+## fre analysis
+## fre app
+#    regrid, # add TODO
+#    maskatm, # add TODO
+#    remap, # add TODO
+## fre catalog
+#    catalog, # add TODO
+## fre cmor
+## fre list
+## fre make
+## fre pp
+#    histval, # add TODO
+#    splitncwrap, # add TODO
+#    renamesplit2pp, # add TODO
+## fre run
+## fre yamltools
 ]
 
 # for metadata annotations.
