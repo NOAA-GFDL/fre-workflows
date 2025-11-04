@@ -155,7 +155,7 @@ op_list = [
 ### legacy calls
 ## from FRE-bronx
 #    fregrid,
-#    plevel,
+    plevel,
 #    list_ncvars, # add TODO
 ## from app/
 #    combtimavgs, # add TODO
