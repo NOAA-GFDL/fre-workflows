@@ -27,25 +27,25 @@ jobs:
           # $CONDA is an env var pointing to root of miniconda dir
           echo $CONDA/bin >> $GITHUB_PATH
 
-     - name: Configure Conda
-       run: |
-         echo "removing conda default channels, appending open-source ones"
-         conda config --append channels conda-forge
-         conda config --append channels noaa-gfdl
-         conda config --remove channels defaults
-
-         echo "setting strict channel priority"
-         conda config --set channel_priority strict
-
-         echo "printing conda config just in case"
-         conda config --show
-
-     - name: Update Conda and Channel Package Indices
-       run: |
-         echo "updating conda and package channel indices for conda-forge, noaa-gfdl"
-         conda update -y conda
-         conda update -y --all --override-channels -c conda-forge
-         conda update -y --all --override-channels -c noaa-gfdl
+      - name: Configure Conda
+        run: |
+          echo "removing conda default channels, appending open-source ones"
+          conda config --append channels conda-forge
+          conda config --append channels noaa-gfdl
+          conda config --remove channels defaults
+      
+          echo "setting strict channel priority"
+          conda config --set channel_priority strict
+      
+          echo "printing conda config just in case"
+          conda config --show
+      
+      - name: Update Conda and Channel Package Indices
+        run: |
+          echo "updating conda and package channel indices for conda-forge, noaa-gfdl"
+          conda update -y conda
+          conda update -y --all --override-channels -c conda-forge
+          conda update -y --all --override-channels -c noaa-gfdl
 
       - name: Create fre-workflows environment
         run: |
