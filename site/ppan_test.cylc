@@ -19,12 +19,6 @@
             && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
         """
 
-
-[platforms]
-    [[ppan_test]]
-	    job runner = ppan_handler
-
-
 [runtime]
     [[root]]
         init-script = """
@@ -47,7 +41,6 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[events]]]
-            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
