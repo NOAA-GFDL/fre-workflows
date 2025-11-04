@@ -30,7 +30,7 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[events]]]
-            mail events = startup shutdown aborted timeout stalled inactivity
+            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
@@ -128,7 +128,7 @@
         pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
-        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[DATA-CATALOG]]
         env-script = """
@@ -154,8 +154,6 @@
     [[REGRID-XY]]
         execution time limit = P1D
         pre-script = """
-            module load fre/{{ FRE_VERSION }}
-            module load fre-nctools/2024.05
             which fregrid
         """
 {% endif %}
@@ -199,6 +197,18 @@
         pre-script = module load cdo && mkdir -p $outputDir
 {% endif %}
 
+    [[ANALYSIS]]
+        env-script = """
+            {{ EPMT_PREAMBLE }}
+            epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
+                exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
+                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+            {{ EPMT_POSTAMBLE }}
+        """
+        pre-script = """
+            module load gcp
+        """
 
 {% set PP_COMPONENTS_LIST = PP_COMPONENTS.split(' ') %}
 {% for COMPONENT in PP_COMPONENTS_LIST %}
@@ -276,8 +286,3 @@
         {% endfor %}
     {% endif %}
 {% endif %}
-
-    [[ANALYSIS]]
-        pre-script = """
-            module load gcp
-        """
