@@ -9,6 +9,23 @@
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
 {% endset %}
 
+
+[scheduler]
+    [[events]]
+        shutdown handlers = """
+            mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        """
+
+
+[platforms]
+    [[ppan_test]]
+	    job runner = ppan_handler
+
+
+[runtime]
     [[root]]
         init-script = """
             module load fre/{{ FRE_VERSION }}
