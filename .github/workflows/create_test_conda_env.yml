@@ -27,6 +27,26 @@ jobs:
           # $CONDA is an env var pointing to root of miniconda dir
           echo $CONDA/bin >> $GITHUB_PATH
 
+     - name: Configure Conda
+       run: |
+         echo "removing conda default channels, appending open-source ones"
+         conda config --append channels conda-forge
+         conda config --append channels noaa-gfdl
+         conda config --remove channels defaults
+
+         echo "setting strict channel priority"
+         conda config --set channel_priority strict
+
+         echo "printing conda config just in case"
+         conda config --show
+
+     - name: Update Conda and Channel Package Indices
+       run: |
+         echo "updating conda and package channel indices for conda-forge, noaa-gfdl"
+         conda update -y conda
+         conda update -y --all --override-channels -c conda-forge
+         conda update -y --all --override-channels -c noaa-gfdl
+
       - name: Create fre-workflows environment
         run: |
           # create environment containing all dependencies
@@ -37,10 +57,17 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
+      - name: cylc lint workflow files
         run: |
-          # lint .cylc workflow files
           cylc lint -v
+
+      - name: analysis_validator pytest
+        run: |
+          pytest -vv -rx ./tests/test_analysis_validator.py
+
+      - name: analysis_validator pylint
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./tests/test_analysis_validator.py
 
       - name: Jinja2filter pytest
         run: |
@@ -48,48 +75,40 @@ jobs:
 
       - name: Jinja2filter pylint
         run: |
-          pylint -v --fail-under 7.00 ./Jinja2Filters
-
-      - name: make-timeseries pytest
-        run: |
-          pytest -vv -rx ./app/make-timeseries/test/test_make_timeseries.py
-
-      - name: make-timeseries pylint
-        run: |
-          pylint --fail-under 9.0 ./app/make-timeseries/test/test_make_timeseries.py
+          pylint -v --rcfile ./pylintrc --fail-under 7.5 ./Jinja2Filters
 
       - name: PPANHandler pytest
         run: |
-          pytest -vv -rx ./lib/python/tests/test_PPANHandler.py
-
-      - name: papiex_tooler pytest
-        run: |
-          pytest -vv -rx ./lib/python/tests/test_papiex_tooler.py
+          pytest -vv -rx ./lib/python/tests
 
       - name: papiex_ops and tool_ops_w_papiex pylint
         run: |
-          pylint -v --fail-under 8.0 ./lib/python
-
-      - name: combine-statics pytest
-        continue-on-error: false
-        run: |
-          # pytest unittests for remap-pp-components
-          pytest -v -v -rx  ./app/combine-statics/tests
-          
-      - name: rename-split-to-pp pytest
-        continue-on-error: false
-        run: | 
-          pytest app/rename-split-to-pp/tests/test_rename_split_to_pp.py    
-
-      - name: combine-statics pylint
-        run: |
-          # pytest unittests for remap-pp-components
-          pylint -v --fail-under  9.85 ./app/combine-statics
-
-      - name: analysis_validator pytest
-        run: |
-          pytest -vv -rx ./tests/test_analysis_validator.py
+          pylint -v --rcfile ./pylintrc --fail-under 8.4 ./lib/python
 
       - name: python macros pylint
         run: |
-          pylint -v --fail-under 3.70 ./meta/lib/python/macros/
+          pylint -v --rcfile ./pylintrc --fail-under 7.0 ./meta/lib/python/macros/
+
+      - name: make-timeseries pytest
+        run: |
+          pytest -vv -rx ./app/make-timeseries/test
+
+      - name: make-timeseries pylint
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 9.7 ./app/make-timeseries
+
+      - name: combine-statics pytest
+        run: |
+          pytest -vv -rx  ./app/combine-statics/tests
+          
+      - name: combine-statics pylint
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 10.0 ./app/combine-statics
+
+      - name: rename-split-to-pp pytest
+        run: |
+          pytest -vv -rx app/rename-split-to-pp/tests
+
+      - name: rename-split-to-pp pytest
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
