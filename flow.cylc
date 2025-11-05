@@ -225,11 +225,11 @@
             {# After cataloging the regridded and native statics, remap them to pp components as desired #}
             {% if DO_NATIVE_STATIC and DO_REGRID_STATIC %}
             rename-split-to-pp-regrid<regrid_static> & rename-split-to-pp-native<native_static>
-                => remap-pp-components-static => combine-statics
+                => remap-pp-components-static<component> => combine-statics
             {% elif DO_NATIVE_STATIC %}
-            rename-split-to-pp-native<native_static> => remap-pp-components-static => combine-statics
+            rename-split-to-pp-native<native_static> => remap-pp-components-static<component> => combine-statics
             {% elif DO_REGRID_STATIC %}
-            rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static => combine-statics
+            rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
             {% endif %}
 
             {# Similarly, if the history-refined is used, then don't process until the history-refined staging is done. #}
@@ -248,14 +248,14 @@
             regrid-xy<regrid_static> => clean-history-native
             split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
             rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
-            remap-pp-components-static => clean-shards-static
+            remap-pp-components-static<component> => clean-shards-static
             combine-statics => clean-pp-statics
             {% endif %}
 
             {% if CLEAN_WORK and DO_NATIVE_STATIC %}
             split-netcdf-native<native_static> => clean-history-native
             rename-split-to-pp-native<native_static> => clean-split-native
-            remap-pp-components-static => clean-shards-static
+            remap-pp-components-static<component> => clean-shards-static
             combine-statics => clean-pp-statics
             {% endif %}
 
@@ -271,7 +271,7 @@
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 => make-timeavgs-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
         {% endif %}
@@ -284,26 +284,26 @@
             {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 => make-timeavgs-native-{{ chunk.chunk_size }}<native>
             {% endif %}
         {% endif %}
 
         {% if DO_REGRID %}
             {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
             {% endif %}
         {% endif %}
 
         {% if DO_NATIVE %}
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'av', YAML, HISTORY_SEGMENT) }}
             {% endif %}
         {% endif %}
 
-        {% if DO_TIMEAVGS and not chunk.is_partial %}
+        {% if not chunk.is_partial %}
             remap-pp-components-av-{{ chunk.chunk_size }}<component> => combine-timeavgs-{{ chunk.chunk_size }}<component>
             {% if CLEAN_WORK %}
                 COMBINE-TIMEAVGS-{{ chunk.chunk_size }}:succeed-all => clean-pp-timeavgs-{{ chunk.chunk_size }}
@@ -312,7 +312,7 @@
 
         {% if CLEAN_WORK %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
-            {% if DO_TIMEAVGS and not chunk.is_partial %}
+            {% if not chunk.is_partial %}
                 REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}:succeed-all => clean-shards-{{ chunk.chunk_size }}
             {% endif %}
         {% endif %}
@@ -326,7 +326,7 @@
         {% for segment in chunk.segments %}
             R1/{{ segment }} = """
                 REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                {% if DO_TIMEAVGS and not chunk.is_partial %}
+                {% if not chunk.is_partial %}
                     & REMAP-PP-COMPONENTS-AV-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
                 {% endif %}
                 => clean-shards-{{ HISTORY_SEGMENT }}
@@ -422,41 +422,6 @@
             fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
                 --date_string $(cylc cycle-point --template CCYYMMDD)
 
-            # Setup PYTHONPATH and io lists for the data lineage tool
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                export PYTHONPATH=$CYLC_WORKFLOW_RUN_DIR:$PYTHONPATH
-                export input_file_list=
-                export output_file_list=
-                echo "Set PYTHONPATH and created i/o lists"
-            fi
-
-            if [ ! -z "${EPMT_DATA_LINEAGE+x}" ] && [ "$EPMT_DATA_LINEAGE" == "1" ]; then
-                outputDir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-
-                start_time=$(date +%s)
-
-                for file in $(ls $outputDir); do
-                    hash_val=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.HashGen $outputDir/$file)
-                    export output_file_list="${output_file_list}$file $hash_val,"
-                    echo "[DATA LINEAGE] Added $file to output list with hash_val: $hash_val"
-                done
-
-                end_time=$(date +%s)
-                duration=$((end_time - start_time))
-                echo "Time spent hashing and creating the file list: $duration seconds"
-
-                epmt -v annotate EPMT_DATA_LINEAGE_OUT_PATH="$outputDir/"
-                echo "[DATA LINEAGE] Annotated $outputDir/ to EPMT_DATA_LINEAGE_OUT_PATH"
-
-                if [ -n "$output_file_list" ]; then
-                    compressed_bytes=$(/home/Cole.Harvey/.conda/envs/bloom-filter-env/bin/python \
-                    -m data_lineage.bloomfilter.StringCompression "${output_file_list}")
-                    epmt -v annotate EPMT_DATA_LINEAGE_OUT="${compressed_bytes%*,}"
-                    echo "[DATA LINEAGE] Annotated output files to EPMT_LINEAGE_OUT"
-                fi
-            fi
-
             echo "Natural end of the history file staging"
             exit 0
         """
@@ -478,7 +443,7 @@
 
 {% endif %}
 
-{% if DO_TIMEAVGS %}
+
     [[MAKE-TIMEAVGS]]
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key make-timeavgs
@@ -514,7 +479,7 @@
         inherit = MAKE-TIMEAVGS-REGRID-{{ PP_CHUNK }}, <regrid>
         {% endif %}
     {% endfor %}
-{% endif %}
+
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -736,31 +701,28 @@
 {% endif %}
 
     [[REMAP-PP-COMPONENTS]]
-        # 'rose task-run' should work, but does not in the fre-cli conda environment (activated by this task)
-        #script = rose-task-run --verbose --app-key remap-pp-components
-        script = """
-            fre --verbose app remap --input-dir=$inputDir \
-                                    --output-dir=$outputDir \
-                                    --begin-date=$begin \
-                                    --current-chunk=$currentChunk \
-                                    --product=$product \
-                                    --ts-workaround=$dirTSWorkaround \
-                                    --pp-component=$components \
-                                    --copy-tool=$COPY_TOOL \
-                                    --yaml-config=$yaml_config \
-                                    --ens-mem=${ens_mem:-""}
-        """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
             yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --ts-workaround \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = {{ PP_DIR }}
             product = ts
-            dirTSWorkaround = True
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-TS
@@ -773,11 +735,21 @@
 
     [[REMAP-PP-COMPONENTS-AV]]
         inherit = REMAP-PP-COMPONENTS
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-            dirTSWorkaround = False
     {% for PP_CHUNK in PP_CHUNKS %}
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-AV
@@ -790,13 +762,24 @@
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[remap-pp-components-static<component>]]
-        inherit = REMAP-PP-COMPONENTS-TS, <component>
+        inherit = REMAP-PP-COMPONENTS, <component>
+        script = """
+            fre --verbose app remap --input-dir=$inputDir \
+                                    --output-dir=$outputDir \
+                                    --begin-date=$begin \
+                                    --current-chunk=$currentChunk \
+                                    --product=$product \
+                                    --pp-component=$components \
+                                    --copy-tool=$COPY_TOOL \
+                                    --yaml-config=$yaml_config \
+                                    --ens-mem=${ens_mem:-""}
+        """
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
             currentChunk = P0Y
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             product = static
-            dirTSWorkaround = False
 {% endif %}
 
     [[DATA-CATALOG]]
@@ -806,7 +789,7 @@
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
-{% if DO_TIMEAVGS %}
+
     [[COMBINE-TIMEAVGS]]
         script = rose task-run --verbose --app-key combine-timeavgs
         [[[environment]]]
@@ -825,7 +808,7 @@
         [[[environment]]]
             component = $CYLC_TASK_PARAM_component
     {% endfor %}
-{% endif %}
+
 
     [[MAKE-TIMESERIES]]
         pre-script = mkdir -p $outputDir
