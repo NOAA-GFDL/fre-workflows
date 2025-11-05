@@ -74,7 +74,7 @@ def tool_ops_w_papiex(fin_name):
         has_op=False
         for op in op_list:
             if re.search(op['s_string'], line) is not None:
-                #print(f"found op={op['op_name']} \n {line}")
+                print(f"found op={op['op_name']} \n {line}")
                 has_op=True
                 op_found=op
                 break
@@ -94,6 +94,8 @@ def tool_ops_w_papiex(fin_name):
         elif re.search('rose task-run ', line) is not None:
             #print(f'found rose task-run statement')
             is_rose_task_run=True
+        else:
+            print('neither a rose task nor a bash if statement. typical shell line.')
 
         # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
         if is_bashif:
@@ -110,13 +112,16 @@ def tool_ops_w_papiex(fin_name):
             line = op_found['r_string_rose'] + line + '; unset PAPIEX_TAGS;'
         else:
             # if no logic, tool in the usual way.
-            #print(f"op_found={op_found['op_name']}")
-            #print(f'line=\n{line}')
+            print(f"op_found={op_found['op_name']}")
+            print(f'(before) line = \n{line}')
             if op_found['r_string'] is None:
                 continue
+            #            line = op_found['r_string'] + line + '; unset PAPIEX_TAGS'
             line = line.replace( op_found['op_name']+' ',
                                  op_found['r_string'])
             line += '; unset PAPIEX_TAGS;'
+            print(f'(after) line = \n{line}')
+
 
         ### Refine the PAPIEX_TAGS for a particular operation ###
         # is the op a retry? If so, mark as such via tag and OP_INSTANCE
@@ -136,7 +141,7 @@ def tool_ops_w_papiex(fin_name):
 
         this_op = this_op.group(1)
         for op in op_list:
-            if this_op == op['op_name']:
+            if this_op == op['op_tag']:
                 op['op_instance'] += 1
                 line = line.replace( "OP_INSTANCE",
                                      str(op['op_instance'] ) + retry)
@@ -209,11 +214,9 @@ def annotate_metadata(): #TODO 7
     #   script.append('endif')
 
 if __name__=='__main__':
-    tool_ops_w_papiex('FOO')
+    #tool_ops_w_papiex('FOO')
+    tool_ops_w_papiex('/home/Ian.Laflotte/cylc-run/test_pp_locally__ptest__ttest/log/job/19800101T0000Z/mask-atmos-plevel_atmos_scalar/01/job')
 
     ###### local testing/debugging, ONE script input to test on.
-    ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
-    #infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
+    #infile='lib/python/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
     #test_papiex_tooling(infile)
-    ##### local testing/debugging, MANY input scripts to test on.
-    #many_tests_papiex_tooling(200000)

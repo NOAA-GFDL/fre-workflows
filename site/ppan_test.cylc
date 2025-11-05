@@ -22,10 +22,14 @@
 [runtime]
     [[root]]
         init-script = """
-            module load fre/{{ FRE_VERSION }}
             module load epmt
             module list
             epmt check
+
+            module load fre/{{ FRE_VERSION }}
+
+            ### this is temporary and will be removed
+            export PATH=/home/inl/conda/envs/fre-cli/bin:$PATH
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
@@ -79,7 +83,6 @@
         pre-script = """
             env
             set -x
-            module load gcp
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -129,10 +132,10 @@
 {% endif %}
 
     [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[REMAP-PP-COMPONENTS]]
         pre-script = mkdir -p $outputDir
@@ -146,16 +149,15 @@
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load fre/{{ FRE_VERSION }}
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[MAKE-TIMEAVGS]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
     [[COMBINE-TIMEAVGS]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
@@ -201,7 +203,7 @@
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 {% endif %}
 
     [[ANALYSIS]]
@@ -212,9 +214,6 @@
                 exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
-        """
-        pre-script = """
-            module load gcp
         """
 
 {% set PP_COMPONENTS_LIST = PP_COMPONENTS.split(' ') %}
