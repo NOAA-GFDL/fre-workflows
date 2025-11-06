@@ -1,4 +1,7 @@
-'''a custom-made SLURMHandler specifically for GFDL\'s PP/AN resource'''
+'''
+a custom-made job_runner_handler, named SLURMHandler 
+it's specifically for working with cylc, and GFDL's PPAN/slurm
+'''
 
 from pathlib import Path
 from subprocess import DEVNULL
@@ -10,7 +13,8 @@ from cylc.flow.cylc_subproc import procopen
 
 
 class PPANHandler(SLURMHandler):
-    ''' major differences from inherited SLURMHandler class:
+    '''
+    major differences from inherited SLURMHandler class:
     1) class method for submit() is defined- it has enough flexibility to
     allow us to parse the job script the way we want.
     2) SUBMIT_CMD_TMPL set to None- this is to prevent
@@ -44,7 +48,8 @@ class PPANHandler(SLURMHandler):
                submit_opts: dict,
                dry_run: bool = False,
                tool_ops: bool = True )  -> Tuple[int, str, str]:
-        """Submit a job.
+        """
+        Submit a job.
 
         Submit a job and return an instance of the Popen object for the
         submission. This handler inherits from SLURMHandler, and is
