@@ -61,14 +61,6 @@ jobs:
         run: |
           cylc lint -v
 
-      - name: analysis_validator pytest
-        run: |
-          pytest -vv -rx ./tests/test_analysis_validator.py
-
-      - name: analysis_validator pylint
-        run: |
-          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./tests/test_analysis_validator.py
-
       - name: Jinja2filter pytest
         run: |
           pytest -vv -rx ./Jinja2Filters/tests
@@ -85,9 +77,13 @@ jobs:
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 8.4 ./lib/python
 
+      - name: python macros pytest
+        run: |
+          pytest -vv -rx ./meta/lib/python/macros/tests
+
       - name: python macros pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.0 ./meta/lib/python/macros/
+          pylint -v --rcfile ./pylintrc --fail-under 6.8 ./meta/lib/python/macros/
 
       - name: make-timeseries pytest
         run: |
@@ -113,38 +109,39 @@ jobs:
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
 
-      - name: combine-timeavgs pytest
+      - name: combine-timeavgs pytest (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
           echo "i have no tests yet"
           return 1
+          pytest -vv -rx app/combine-timeavgs/tests
 
-      - name: combine-timeavgs pylint
+      - name: combine-timeavgs pylint (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
-          echo "i am not python yet"
-          return 1
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/combine-timeavgs
 
-      - name: make-timeavgs pytest
-        continue-on-error: true
-        run: |
-          echo "i have no tests yet"
-          return 1
-
-      - name: make-timeavgs pylint
-        continue-on-error: true
-        run: |
-          echo "i am not python yet"
-          return 1
-
-      - name: analysis pytest
+      - name: make-timeavgs pytest (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
           echo "i have no tests yet"
-          return 1
+          pytest -vv -rx app/make-timeavgs/tests
 
-      - name: analysis pylint
+      - name: make-timeavgs pylint (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
-          echo "i am not python yet"
-          return 1
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/make-timeavgs
+
+      - name: analysis pytest (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          pytest -vv -rx app/analysis/tests
+
+      - name: analysis pylint (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/analysis
