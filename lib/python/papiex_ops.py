@@ -53,6 +53,14 @@ tar = {'op_name'       : 'tar',
 
 
 ### from app/
+combstatics = {'op_name'       : 'combine-statics',
+              'op_tag'        : 'combstatics',
+              'op_instance'   : 0,
+}
+combtimavg = {'op_name'       : 'combine-timeavgs',
+              'op_tag'        : 'combtimavg',
+              'op_instance'   : 0,
+}
 timavg = {'op_name'       : 'make-timeavgs',
           'op_tag'        : 'timavg',
           'op_instance'   : 0,
@@ -60,6 +68,10 @@ timavg = {'op_name'       : 'make-timeavgs',
 timser = {'op_name'       : 'make-timeseries',
           'op_tag'        : 'timser',
           'op_instance'   : 0,
+}
+renamesplittopp = {'op_name'       : 'rename-split-to-pp',
+                   'op_tag'        : 'renamesplittopp',
+                   'op_instance'   : 0,
 }
 
 
