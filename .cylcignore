@@ -1,3 +1,10 @@
-environment.yml
-notes
+.git
+.github
+.gitignore
+LICENSE
 README.md
+environment.yml
+for-developers.md
+portable-post-processing.md
+pylintrc
+pytest.ini
