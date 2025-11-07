@@ -28,9 +28,9 @@ on:
       - main  # triggers pipeline on push to main
 
 # cancel running jobs if theres a newer push
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.ref }}
+#  cancel-in-progress: true
 
 jobs:
   test-cloud:
