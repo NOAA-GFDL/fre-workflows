@@ -77,11 +77,11 @@ jobs:
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 7.5 ./Jinja2Filters
 
-      - name: PPANHandler pytest
+      - name: lib/python PPANHandler, tool_ops_w_papiex pytest
         run: |
           pytest -vv -rx ./lib/python/tests
 
-      - name: papiex_ops and tool_ops_w_papiex pylint
+      - name: lib/python PPANHandler, tool_ops_w_papiex pytest
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 8.4 ./lib/python
 
@@ -109,6 +109,42 @@ jobs:
         run: |
           pytest -vv -rx app/rename-split-to-pp/tests
 
-      - name: rename-split-to-pp pytest
+      - name: rename-split-to-pp pylint
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
+
+      - name: combine-timeavgs pytest
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          return 1
+
+      - name: combine-timeavgs pylint
+        continue-on-error: true
+        run: |
+          echo "i am not python yet"
+          return 1
+
+      - name: make-timeavgs pytest
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          return 1
+
+      - name: make-timeavgs pylint
+        continue-on-error: true
+        run: |
+          echo "i am not python yet"
+          return 1
+
+      - name: analysis pytest
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          return 1
+
+      - name: analysis pylint
+        continue-on-error: true
+        run: |
+          echo "i am not python yet"
+          return 1
