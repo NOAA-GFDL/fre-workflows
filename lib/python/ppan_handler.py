@@ -29,16 +29,20 @@ class PPANHandler(SLURMHandler):
     # set to None, just in case.
     SUBMIT_CMD_TMPL = None
 
-    # internal canary/coal mine function for tests
     @classmethod
     def test_import(cls) -> int:
+        '''
+        internal canary/coal mine function for tests
+        '''
         return 0
 
-    # internal canary/coal mine test for tests
     @classmethod
     def test_tool_ops_import(cls) -> int:
-        from .tool_ops_w_papiex import test_import
-        return test_import()
+        '''
+        internal canary/coal mine function for tests
+        '''
+        from .tool_ops_w_papiex import test_import as test_import_ # pylint: disable=import-outside-toplevel
+        return test_import_()
 
     # for submitting a job to SLURM via subprocess call
     @classmethod
@@ -119,12 +123,12 @@ class PPANHandler(SLURMHandler):
                 if any([ 'lib.python.' in __name__ ,
                          'tests.test_' in __name__  ]) :
                     out = '(ppan_handler) attempting RELATIVE import from .tool_ops_w_papiex ...\n'
-                    from .tool_ops_w_papiex import tool_ops_w_papiex
+                    from .tool_ops_w_papiex import tool_ops_w_papiex # pylint: disable=import-outside-toplevel
                 else:
                     out = '(ppan_handler) attempting import from tool_ops_w_papiex ...\n'
-                    from tool_ops_w_papiex import tool_ops_w_papiex
+                    from tool_ops_w_papiex import tool_ops_w_papiex # pylint: disable=import-outside-toplevel
 
-            except Exception as exc:
+            except ImportError as exc:
                 err = f'(ppan_handler) ERROR tool_ops_w_papiex import issue. name={__name__}\n ' + \
                       'exc is: ' + str(exc)
                 return (1, out, err)
@@ -132,7 +136,7 @@ class PPANHandler(SLURMHandler):
             try:
                 tool_ops_w_papiex(fin_name=job_file_path)
 
-            except Exception as exc:
+            except SystemError as exc:
                 err = '(ppan_handler) ERROR papiex ops tooler did not work.\n exc is: ' + str(exc)
                 return (1, out, err)
 
@@ -143,7 +147,7 @@ class PPANHandler(SLURMHandler):
             try:
                 assert all( [ Path(job_file_path).exists(),
                               Path(job_file_path+'.notags').exists() ] )
-            except Exception as exc:
+            except FileNotFoundError as exc:
                 err = '(ppan_handler) ERROR one of the job files does not exist.\n exc is: ' + \
                       str(exc)
                 return (1, out, err)
