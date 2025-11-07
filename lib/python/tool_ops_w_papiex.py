@@ -31,13 +31,15 @@ try:
         from .papiex_ops import op_list
     else:
         logger.info('attempting ABSOLUTE import of papiex_ops ...')
-        from papiex_ops import op_list
+        from papiex_ops import op_list # pylint: disable=import-error
 except Exception as exc:
     logger.error('error! op_list import issues.')
     raise ImportError('could not find and/or import papiex_ops') from exc
 
 def test_import():
-    ''' for testing import of module via pytest only '''
+    '''
+    for testing import of module via pytest only
+    '''
     return 0
 
 def log_assign_append( msg: str,
@@ -263,9 +265,11 @@ def tool_ops_w_papiex( fin_name: str ) -> None:
 
 
 def annotate_metadata(): #TODO 7
-    ''' parses a job bash-script assembled by script, annotating metadata of interest.
+    '''
+    parses a job bash-script assembled by script, annotating metadata of interest.
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
-    parsing the job script for metadata of interest. '''
+    parsing the job script for metadata of interest.
+    '''
     raise NotImplementedError()
 
     ## Reset the EPMT_JOB_TAGS root
