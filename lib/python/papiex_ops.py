@@ -12,66 +12,70 @@ postprocessing repo. this file is strictly data.
 #    https://stackoverflow.com/questions/16519744
 
 ### specialized data movement operations
-dmget = {'op_name'       : 'dmget',
-         'op_tag'        : 'dmget',
-         'op_instance'   : 0,
-}
-dmput = {'op_name'       : 'dmput',
-         'op_tag'        : 'dmput',
-         'op_instance'   : 0,
-}
-hsmget = {'op_name'       : 'hsmget',
-          'op_tag'        : 'hsmget',
+dmget = { 'op_name'       : 'dmget',
+          'op_tag'        : 'dmget',
           'op_instance'   : 0,
 }
-hsmput = {'op_name'       : 'hsmput',
-          'op_tag'        : 'hsmput',
+dmput = { 'op_name'       : 'dmput',
+          'op_tag'        : 'dmput',
           'op_instance'   : 0,
 }
-gcp = {'op_name'       : 'gcp',
-       'op_tag'        : 'gcp',
-       'op_instance'   : 0,
+hsmget = { 'op_name'       : 'hsmget',
+           'op_tag'        : 'hsmget',
+           'op_instance'   : 0,
+}
+hsmput = { 'op_name'       : 'hsmput',
+           'op_tag'        : 'hsmput',
+           'op_instance'   : 0,
+}
+gcp = { 'op_name'       : 'gcp',
+        'op_tag'        : 'gcp',
+        'op_instance'   : 0,
 }
 
 ### typical data movement operations
-cp = {'op_name'       : 'cp',
-      'op_tag'        : 'cp',
-      'op_instance'   : 0,
-}
-mv = {'op_name'       : 'mv',
-      'op_tag'        : 'mv',
-      'op_instance'   : 0,
-}
-rm = {'op_name'       : 'rm',
-      'op_tag'        : 'rm',
-      'op_instance'   : 0,
-}
-tar = {'op_name'       : 'tar',
-       'op_tag'        : 'tar',
+cp = { 'op_name'       : 'cp',
+       'op_tag'        : 'cp',
        'op_instance'   : 0,
+}
+mv = { 'op_name'       : 'mv',
+       'op_tag'        : 'mv',
+       'op_instance'   : 0,
+}
+rm = { 'op_name'       : 'rm',
+       'op_tag'        : 'rm',
+       'op_instance'   : 0,
+}
+tar = { 'op_name'       : 'tar',
+        'op_tag'        : 'tar',
+        'op_instance'   : 0,
+}
+find = { 'op_name'       : 'find',
+         'op_tag'        : 'find',
+         'op_instance'   : 0,
 }
 
 
 ### from app/
-combstatics = {'op_name'       : 'combine-statics',
-              'op_tag'        : 'combstatics',
-              'op_instance'   : 0,
+combstatics = { 'op_name'       : 'combine-statics',
+               'op_tag'        : 'combstatics',
+               'op_instance'   : 0,
 }
-combtimavg = {'op_name'       : 'combine-timeavgs',
-              'op_tag'        : 'combtimavg',
-              'op_instance'   : 0,
+combtimavgs = { 'op_name'       : 'combine-timeavgs',
+               'op_tag'        : 'combtimavgs',
+               'op_instance'   : 0,
 }
-timavg = {'op_name'       : 'make-timeavgs',
-          'op_tag'        : 'timavg',
-          'op_instance'   : 0,
+timavg = { 'op_name'       : 'make-timeavgs',
+           'op_tag'        : 'timavg',
+           'op_instance'   : 0,
 }
-timser = {'op_name'       : 'make-timeseries',
-          'op_tag'        : 'timser',
-          'op_instance'   : 0,
+timser = { 'op_name'       : 'make-timeseries',
+           'op_tag'        : 'timser',
+           'op_instance'   : 0,
 }
-renamesplittopp = {'op_name'       : 'rename-split-to-pp',
-                   'op_tag'        : 'renamesplittopp',
-                   'op_instance'   : 0,
+renamesplittopp = { 'op_name'       : 'rename-split-to-pp',
+                    'op_tag'        : 'renamesplittopp',
+                    'op_instance'   : 0,
 }
 
 
@@ -79,52 +83,57 @@ renamesplittopp = {'op_name'       : 'rename-split-to-pp',
 ### fre calls
 ## fre analysis
 ## fre app
-regrid = {'op_name'      : 'fre -vv app regrid',
-          'op_tag'       : 'regrid',
-          'op_instance'  : 0,
-}
-remap = {'op_name'      : 'fre -vv app remap',
-          'op_tag'       : 'remap',
-          'op_instance'  : 0,
-}
-maskatm = {'op_name'      : 'fre -vv app mask-atmos-plevel',
-           'op_tag'       : 'maskatm',
+regrid = { 'op_name'      : 'fre -vv app regrid',
+           'op_tag'       : 'regrid',
            'op_instance'  : 0,
 }
-histval = {'op_name'      : 'fre -vv pp histval',
-           'op_tag'       : 'histval',
+remap = { 'op_name'      : 'fre -vv app remap',
+           'op_tag'       : 'remap',
            'op_instance'  : 0,
+}
+maskatm = { 'op_name'      : 'fre -vv app mask-atmos-plevel',
+            'op_tag'       : 'maskatm',
+            'op_instance'  : 0,
 }
 ## fre catalog
 ## fre cmor
 ## fre list
 ## fre make
 ## fre pp
-splitncwrap = {'op_name'      : 'fre -vv pp split-netcdf-wrapper',
-               'op_tag'       : 'splitncwrap',
-               'op_instance'  : 0,
+histval = { 'op_name'      : 'fre -vv pp histval',
+            'op_tag'       : 'histval',
+            'op_instance'  : 0,
+}
+splitncwrap = { 'op_name'      : 'fre -vv pp split-netcdf-wrapper',
+                'op_tag'       : 'splitncwrap',
+                'op_instance'  : 0,
 }
 
 ## fre run
 ## fre yamltools
 
 ### from FRE-bronx
-fregrid = {'op_name'      : 'fregrid',
-           'op_tag'       : 'fregrid',
+fregrid = { 'op_name'      : 'fregrid',
+            'op_tag'       : 'fregrid',
+            'op_instance'  : 0,
+}
+plevel = { 'op_name'      : 'mask-atmos-plevel',
+           'op_tag'       : 'plevel',
            'op_instance'  : 0,
 }
-plevel = {'op_name'      : 'mask-atmos-plevel',
-          'op_tag'       : 'plevel',
-          'op_instance'  : 0,
+listncvars= { 'op_name'      : 'list_ncvars.csh',
+              'op_tag'       : 'listncvars',
+              'op_instance'  : 0,
 }
 
 # list of all op dictionaries shown above
 op_list = [
 ## from app/
-#    combtimavgs, # add TODO
-#    combstatics, # add TODO
-    timavg, # doublecheck TODO
-    timser, # doublecheck TODO
+    combtimavgs,
+    combstatics,
+    timavg,
+    timser,
+    renamesplittopp,
 ### fre calls
 ## fre analysis
 ## fre app
@@ -153,11 +162,12 @@ op_list = [
     mv,
     rm,
     tar,
+    find,
 ### legacy calls
 ## from FRE-bronx
     fregrid,
     plevel,
-#    list_ncvars, # add TODO
+    listncvars,
 ]
 
 # for metadata annotations.
