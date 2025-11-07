@@ -17,8 +17,8 @@ logger.warning('tool_ops_w_papiex imported successfully. logger set. configuring
 
 FORMAT = "[%(levelname)5s:%(filename)24s:%(funcName)20s] %(message)s"
 #logging.basicConfig(level = logging.WARNING,
-#logging.basicConfig(level = logging.INFO,
-logging.basicConfig(level = logging.DEBUG,
+#logging.basicConfig(level = logging.DEBUG,
+logging.basicConfig(level = logging.INFO,
                     format = FORMAT,
                     filename = None,
                     encoding = 'utf-8' )
