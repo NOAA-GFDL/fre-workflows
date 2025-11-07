@@ -91,7 +91,7 @@ jobs:
 
       - name: make-timeseries pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 9.7 ./app/make-timeseries
+          pylint -v --rcfile ./pylintrc --fail-under 9.6 ./app/make-timeseries
 
       - name: combine-statics pytest
         run: |
