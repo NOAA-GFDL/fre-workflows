@@ -75,7 +75,7 @@ jobs:
 
       - name: lib/python pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.9 ./lib/python
+          pylint -v --rcfile ./pylintrc --fail-under 9.9 ./lib/python
 
       - name: python macros pytest
         run: |
