@@ -4,13 +4,12 @@ it's specifically for working with cylc, and GFDL's PPAN/slurm
 '''
 
 from pathlib import Path
-from subprocess import DEVNULL
 import shlex
+from subprocess import DEVNULL
 from typing import Tuple
 
 from cylc.flow.job_runner_handlers.slurm import SLURMHandler
 from cylc.flow.cylc_subproc import procopen
-
 
 class PPANHandler(SLURMHandler):
     '''

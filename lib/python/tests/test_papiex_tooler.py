@@ -1,12 +1,12 @@
-''' tests for PP/AN specific ops-tooling of job scripts for PAPIEX'''
+'''
+tests for PP/AN specific ops-tooling of job scripts for PAPIEX
+'''
 
 import difflib as dl
 import filecmp as fc
 
 from subprocess import Popen, PIPE, DEVNULL
 from pathlib import Path
-
-import pytest
 
 from lib.python.tool_ops_w_papiex import tool_ops_w_papiex
 
@@ -15,22 +15,28 @@ AM5_ROSE_TASK = 'lib/python/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-
 PP_STARTER_TASK = 'lib/python/tests/test_files_papiex_tooler/test_pp-starter'
 
 def test_import():
-    ''' check that tool_ops_w_papiex functions can be imported '''
+    '''
+    check that tool_ops_w_papiex functions can be imported
+    '''
     from lib.python.tool_ops_w_papiex import test_import
     assert test_import() == 0
 
 
 def test_import_papiex_ops():
-    ''' check that op list data can be imported '''
+    '''
+    check that op list data can be imported
+    '''
     import lib.python.papiex_ops as ops
     assert all( [ ops.op_list is not None,
                      len(ops.op_list) > 0  ] )
 
 
 def test_running_a_simple_failing_command():
-    ''' run a simple script that fails in a control manner and make sure it fails in the intended manner.
-    the failure should occur with an exit code of 0 by design.'''
-    
+    '''
+    run a simple script that fails in a control manner and make sure it fails in the intended manner.
+    the failure should occur with an exit code of 0 by design.
+    '''
+
     control_script_targ = SIMPLE_FAILING_BASH
     assert Path(control_script_targ).exists() #quick check
 
@@ -50,7 +56,7 @@ def test_running_a_simple_failing_command():
     control_out, control_err = None, None
     control_ret_code = None
     try:
-        # output is byte-code, have to decode 
+        # output is byte-code, have to decode
         control_out, control_err = (
             f.decode() for f in control_proc.communicate(DEVNULL) )
         control_ret_code = control_proc.wait()
@@ -62,11 +68,13 @@ def test_running_a_simple_failing_command():
     except OSError as exc:
         print('problem getting output from control proc')
         assert False
-        
+
 
 def test_tagging_a_simple_failing_command():
-    ''' check that setting/unsetting PAPIEX_TAGS around an op will not affect the outcome of the previous
-    failing script.'''
+    '''
+    check that setting/unsetting PAPIEX_TAGS around an op will not affect the outcome of the previous
+    failing script.
+    '''
     # if we're testing over and over and '.notags' version exists,
     # clobber the tagged version and replace it with '.notags' version
     control_script_targ = SIMPLE_FAILING_BASH
@@ -94,7 +102,7 @@ def test_tagging_a_simple_failing_command():
         assert False
 
     try:
-        # output is byte-code, have to decode 
+        # output is byte-code, have to decode
         out, err = (
             f.decode() for f in test_proc.communicate(DEVNULL) )
         ret_code = test_proc.wait()
@@ -110,9 +118,11 @@ def test_tagging_a_simple_failing_command():
 
 
 def test_check_simple_failing_command_for_diff():
-    ''' check the simple_failing_command script for differences after the
+    '''
+    check the simple_failing_command script for differences after the
     prev test, which could in theory succeed if tool_ops_w_papiex copies
-    the script but without adding tooling.'''
+    the script but without adding tooling.
+    '''
 
     control_script_targ = SIMPLE_FAILING_BASH
     assert Path(control_script_targ).exists() #quick check
@@ -160,7 +170,9 @@ def test_check_simple_failing_command_for_diff():
 
 
 def test_rose_task_run_for_diff():
-    ''' check that a rose-app-run call gets tagged appropriately '''
+    '''
+    check that a rose-app-run call gets tagged appropriately
+    '''
     control_script_targ = AM5_ROSE_TASK
     assert Path(control_script_targ).exists() #quick check
 
@@ -214,7 +226,9 @@ def test_rose_task_run_for_diff():
 
 
 def test_pp_starter_for_no_diff():
-    ''' make sure a pp-starter task doesnt get tagged '''
+    '''
+    make sure a pp-starter task doesnt get tagged
+    '''
     control_script_targ = PP_STARTER_TASK
     assert Path(control_script_targ).exists()
 
