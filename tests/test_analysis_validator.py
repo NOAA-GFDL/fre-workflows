@@ -13,4 +13,4 @@ def test_skip_analysis_validator():
    config=config_node.set(keys=['template variables','DO_ANALYSIS_ONLY'], value='False')
    output = validator.validate(config=config,
                                meta_config=None)
-   assert ("Not doing analysis. Moving on." in str(output) )
+   assert [] == output

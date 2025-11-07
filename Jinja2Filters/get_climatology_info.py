@@ -257,7 +257,12 @@ def get_climatology_info(experiment_yaml, info_type):
         clean_work: Boolean, whether to clean work directories
     """
     logger.debug("get_climatology_info: starting")
-    
+
+    # define valid info types
+    valid_types = ["task-graph", "task-definitions"]
+    if info_type not in valid_types:
+        raise ValueError(f"Invalid information type: {info_type}. Valid types include task-graph or task-definitions")
+ 
     with open(experiment_yaml) as file_:
         yaml_ = safe_load(file_)
 
@@ -270,7 +275,6 @@ def get_climatology_info(experiment_yaml, info_type):
         elif info_type == "task-definitions":
             logger.debug("about to return definitions")
             return task_definitions(yaml_, clean_work)
-        raise ValueError(f"Invalid information type: {info_type}.")
 
 # example for interactive testing
 #print(get_climatology_info('ESM4.5_candidateA.yaml', 'task-definitions'))

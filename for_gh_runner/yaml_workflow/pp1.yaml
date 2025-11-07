@@ -3,7 +3,7 @@ postprocess:
     ## regridded component
     - type: "atmos"
       sources:
-        - history_file: "atmos_monthly"
+        - history_file: "atmos_month"
       xyInterp: *PP_XYINTERP96
       interpMethod: "conserve_order2"
       inputRealm: 'atmos'
