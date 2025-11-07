@@ -63,16 +63,18 @@ def op_is_in_line( op_name: str,
     re_search_result = re.search(op_s_string, line)
     if re_search_result is None:
         return False
-#    else: # proabbly cant make this work in this function, since it needs to be OK with an if 'execute stuff';
-#        left_of_op_stuff = line[0:re_search_result.span()[0]]
-#        logger.debug('left_of_op_stuff = %s', left_of_op_stuff)
-#        if left_of_op_stuff != '' and not left_of_op_stuff.isspace():#not line[0:re_search_result.span()[0]].isspace():
-#            # check to the left of the part that contained the op_name. might be something e.g. 'which fregrid'
-#            return False
     logger.info("found op = %s in line = \n %s", op_name, line)
     logger.debug("regex search string was: %s", op_s_string)
     return True
 
+def check_op_in_typical_line_again( line: str,
+                                    op_name: str ) -> bool:
+    '''
+    given a line with op_name in it, split it in half where op_name was, pick the left half,
+    and make sure it's whitespace or empty
+    '''
+    left_side_of_line = line.split(op_name)[0]
+    return left_side_of_line.isspace() or left_side_of_line == ''
 
 def look_for_ops( op_list_in: list[dict],
                   line: str ) -> dict:
@@ -191,24 +193,17 @@ def tool_ops_w_papiex( fin_name: str ) -> None:
         if any([ re.search('if ', line)   is not None,
                  re.search('elif ', line) is not None ]):
             logger.debug('line with op is an if (or elif) statement in bash')
-            if op_found['r_string_w_if'] is None:
-                prevline = log_assign_append('skip, no replacement string for bash-if/elif case: ', line, script)
-                continue
             is_bashif = True
 
         elif re.search('rose task-run ', line) is not None:
             logger.debug('line with op is a rose task-run line')
-            if op_found['r_string_rose'] is None:
-                prevline = log_assign_append('skip, no replacement string for rose case: ', line, script)
-                continue
             is_rose_task_run = True
 
         else:
             logger.debug('neither a rose task nor a bash if statement. typical shell line.')
-            if op_found['r_string'] is None:
-                prevline = log_assign_append('skip, no replacement string for other case: ', line, script)
+            if not check_op_in_typical_line_again(line, op_found['op_name']):
+                prevline = log_assign_append('skip, this line likely isn\'t a call to the op: ', line, script)
                 continue
-
 
         logger.debug('now editing the line accordingly to type of line')
         if is_bashif:
