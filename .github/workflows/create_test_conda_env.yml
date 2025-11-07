@@ -73,9 +73,9 @@ jobs:
         run: |
           pytest -vv -rx ./lib/python/tests
 
-      - name: lib/python PPANHandler, tool_ops_w_papiex pytest
+      - name: lib/python PPANHandler, tool_ops_w_papiex pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 8.4 ./lib/python
+          pylint -v --rcfile ./pylintrc --fail-under 9.0 ./lib/python
 
       - name: python macros pytest
         run: |
