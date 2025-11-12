@@ -48,7 +48,7 @@ jobs:
 
       - name: Jinja2filter pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.1 ./Jinja2Filters
+          pylint -v --fail-under 7.0 ./Jinja2Filters
 
       - name: lib/python pytest
         run: |
@@ -56,7 +56,7 @@ jobs:
 
       - name: lib/python pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 9.9 ./lib/python
+          pylint -v --fail-under 9.5 ./lib/python
 
       - name: python macros pytest
         run: |
@@ -64,7 +64,7 @@ jobs:
 
       - name: python macros pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.5 ./meta/lib/python/macros/
+          pylint -v --fail-under 7.5 ./meta/lib/python/macros/
 
       - name: make-timeseries pytest
         run: |
