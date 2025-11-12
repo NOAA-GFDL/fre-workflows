@@ -595,7 +595,7 @@
 
             echo "trying to loop over files: ${files}"
             for file in $files; do
-                echo "running fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
+                echo "running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
                 fre -vv app mask-atmos-plevel --warn-no-ps -i $file -o $file.masked -p $file
                 echo "done running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
                 if [[ -f $file.masked ]]; then
