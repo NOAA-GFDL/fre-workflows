@@ -50,14 +50,15 @@ echo "CLEANING UP OLD RUN DIR IF FOUND"
 if [ -d /home/$USER/cylc-run/$workflow_dir_name ]; then
 	echo "run dir found, cylc stop first"
 	cylc stop --now --now ${workflow_dir_name}
-
+	
 	echo "cylc clean next"
 	cylc clean $workflow_dir_name
 
-	echo "run dir found, REMOVING OLD cylc-run"
+	echo "src dir found, REMOVING OLD cylc-src"
 	rm -rf /home/$USER/cylc-src/$workflow_dir_name
 fi
 
+sleep 30s
 
 #echo ""
 #echo ""
@@ -89,6 +90,18 @@ fre -vv pp configure-yaml -y $yaml $string
 if [ $? -ne 0 ] ; then
     echo "*****************"
     echo "ERROR CONFIGURING YAML"
+	return 1
+fi
+
+echo ""
+echo ""
+echo "*****************"
+echo "VALIDATING"
+echo "fre -vv pp validate $string"
+fre -vv pp validate $string
+if [ $? -ne 0 ] ; then
+    echo "*****************"
+    echo "ERROR VALIDATING"
 	return 1
 fi
 
