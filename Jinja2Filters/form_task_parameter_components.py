@@ -1,28 +1,35 @@
+'''
+Jinja2 filter for generating components and cylc task-parameters in the form of lists for use by
+epmt annotations in the workflow template flow.cylc
+'''
+
 import re
 import os
 import metomi.rose.config
 
 def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
-    """Form a dictionary with task-parameters as keys and their corresponding 
-    component(s) as a list. The dict is based on the grid type (regrid or native), 
-    time dependence (static or temporal) and the desired/requested components. 
+    """
+    Form a dictionary with task-parameters as keys and their corresponding
+    component(s) as a list. The dict is based on the grid type (regrid or native),
+    time dependence (static or temporal) and the desired/requested components.
 
     it also depends on configuration information within app/remap-pp-componenets/rose-suite.conf
-    which defines what source files (task parameters) are desired given specific componenets. 
+    which defines what source files (task parameters) are desired given specific componenets.
 
     Arguments:
         grid_type (str): One of: native or regrid-xy
         temporal_type (str): One of: temporal or static
         pp_component (list of str): all, or a space-separated list
     """
-    
+
     pp_components = pp_components_str.split()
-    
-    path_to_conf = os.path.dirname(os.path.abspath(__file__)) + '/../app/remap-pp-components/rose-app.conf'
+
+    path_to_this_file = os.path.abspath(__file__)
+    path_to_conf = os.path.dirname(path_to_this_file) + '/../app/remap-pp-components/rose-app.conf'
     node = metomi.rose.config.load(path_to_conf)
-    
+
     results = {}
-    regex_pp_comp = re.compile('^\w+')
+    regex_pp_comp = re.compile(r'^\w+')
 
     for key, sub_node in node.walk():
 
@@ -32,7 +39,7 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
 
         # skip env and command key
         item = key[0]
-        if item == "env" or item == "command":
+        if item in ['env', 'command']:
             continue
         comp = regex_pp_comp.match(item).group()
 
@@ -42,9 +49,9 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
 
         # skip if grid type is not desired
         # some grid types (i.e. regrid-xy) have subtypes (i.e. 1deg, 2deg)
-        # in remap-pp-components/rose-app.conf the grid type and subgrid is specified as "regrid-xy/1deg" (e.g.).
+        # in remap-pp-components/rose-app.conf, grid-type/subgrid specified as "regrid-xy/1deg"
         # So we will strip off after the slash and the remainder is the grid type
-        candidate_grid_type = re.sub('\/.*', '', node.get_value(keys=[item, 'grid']))
+        candidate_grid_type = re.sub(r'\/.*', '', node.get_value(keys=[item, 'grid']))
         if candidate_grid_type != grid_type:
             continue
 
@@ -60,7 +67,7 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
         if temporal_type == "static":
             if freq is not None and 'P0Y' not in freq:
                 continue
-        elif (temporal_type == "temporal"):
+        elif temporal_type == "temporal":
             if freq is not None and 'P0Y' in freq:
                 continue
         else:
@@ -81,7 +88,7 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
                 results[source] = ' '.join(other_comps)
                 if __name__=="__main__":
                     print(f'results[{source}]={results[source]}')
-                
+
     return results
 
 
@@ -91,6 +98,6 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
 #grid_type='regrid-xy'
 #temporal_type='temporal'
 #pp_components_str="atmos atmos_cmip"
-#print(f"\nform_task_parameter_components({grid_type}, {temporal_type}, {pp_components_str}) \n yields...")
-#print(form_task_parameter_components(grid_type=grid_type, temporal_type=temporal_type, pp_components_str=pp_components_str))
-
+#print(form_task_parameter_components(grid_type=grid_type,
+#                                     temporal_type=temporal_type,
+#                                     pp_components_str=pp_components_str))
