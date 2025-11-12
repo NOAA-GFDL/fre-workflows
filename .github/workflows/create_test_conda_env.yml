@@ -48,7 +48,19 @@ jobs:
 
       - name: Jinja2filter pylint
         run: |
-          pylint -v --fail-under 7.00 ./Jinja2Filters
+          pylint -v --fail-under 7.0 ./Jinja2Filters
+
+      - name: lib/python pytest
+        run: |
+          pytest -vv -rx ./lib/python/tests
+
+      - name: lib/python pylint
+        run: |
+          pylint -v --fail-under 9.4 ./lib/python
+
+      - name: python macros pylint
+        run: |
+          pylint -v --fail-under 6.4 ./meta/lib/python/macros/
 
       - name: make-timeseries pytest
         run: |
@@ -57,18 +69,6 @@ jobs:
       - name: make-timeseries pylint
         run: |
           pylint --fail-under 9.0 ./app/make-timeseries/test/test_make_timeseries.py
-
-      - name: PPANHandler pytest
-        run: |
-          pytest -vv -rx ./lib/python/tests/test_PPANHandler.py
-
-      - name: papiex_tooler pytest
-        run: |
-          pytest -vv -rx ./lib/python/tests/test_papiex_tooler.py
-
-      - name: papiex_ops and tool_ops_w_papiex pylint
-        run: |
-          pylint -v --fail-under 8.0 ./lib/python
 
       - name: combine-statics pytest
         continue-on-error: false
@@ -89,7 +89,3 @@ jobs:
       - name: analysis_validator pytest
         run: |
           pytest -vv -rx ./tests/test_analysis_validator.py
-
-      - name: python macros pylint
-        run: |
-          pylint -v --fail-under 3.70 ./meta/lib/python/macros/
