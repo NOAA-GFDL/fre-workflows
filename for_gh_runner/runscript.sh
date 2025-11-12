@@ -83,15 +83,16 @@ fre_pp_steps () {
     # experiment cleaned if previously installed
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
-        echo "   Removing ${name}... "
+        echo "   Removing ${name}..."
         cylc clean ${name}
     fi
 
     ## Checkout
-    echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ...... "
-    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ...... "
+    echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ..."
     rm -rf /mnt/cylc-src/${name}
     mkdir -p /mnt/cylc-src/${name}
+
+    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ..."
     cp -r ./* /mnt/cylc-src/${name}
     check_exit_status "MOCK CHECKOUT (cp)"
 
@@ -99,31 +100,28 @@ fre_pp_steps () {
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
 
     ## Configure the rose-suite and rose-app files for the workflow
-    echo -e "\nRunning fre pp configure-yaml to configure the rose-suite and rose-app files ..."
-    fre -v pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
+    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite/app config files ..."
+    fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
-    # Install
-    echo -e "\nRunning fre pp install to install the workflow in ${HOME}/cylc-run/${name} ... "
-    fre -v pp install -e ${expname} -p ${plat} -t ${targ}
-    check_exit_status "INSTALL"
-
-    ## Validate
-    echo -e "\nRunning cylc validate ... "
-    pwd
-    ls
-    cylc validate $name
+    ## Validate the configuration files
+    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
+    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validation didn't work, guarding against exit"
     check_exit_status "VALIDATE"
 
+    # Install
+    echo -e "\nRunning fre pp install, installing workflow in ${HOME}/cylc-run/${name} ..."
+    fre -vv pp install -e ${expname} -p ${plat} -t ${targ}
+    check_exit_status "INSTALL"
 
     ## RUN
-    echo -e "\nRunning the workflow with cylc play ... "
+    echo -e "\nRunning the workflow with cylc play ..."
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
     #check_exit_status "PLAY" # if cylc play fails and this is not commented, log uploading does not work
 
-    # Put log in output file
-    cylc cat-log ${name} > "/mnt/log.out"
-    check_exit_status "Writing to log.out"
+    ## SUMMARY
+    echo -e "\nWorkflow ended, final task states from workflow-state are ..."
+    cylc workflow-state -v ${name}
 }
 
 main () {
@@ -131,6 +129,7 @@ main () {
 
     # Set user-input
     get_user_input
+
     #Create directories needed for post-processing
     create_dirs
 

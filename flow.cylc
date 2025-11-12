@@ -3,6 +3,8 @@
 {# fre version should be programatically set, not hard-coded. #}
 {% set FRE_VERSION = 2025.04 %}
 
+{# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
+
 {# things written between hash and single braces is a Jinja comment. #}
 {# Jinja code between single braces is run.                          #}
 {# Jinja code with two braces is printed.                            #}
@@ -365,7 +367,7 @@
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
             #Data Integrity Checking
-            fre -v pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
+            fre -vv pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
                 --date_string $(cylc cycle-point --template CCYYMMDD)
 
             echo "Natural end of the history file staging"
@@ -501,7 +503,31 @@
 {% endif %}
 
     [[MASK-ATMOS-PLEVEL]]
-        script = rose task-run --verbose --app-key mask-atmos-plevel
+        script = """
+            set -euo pipefail
+            echo "component = ${component}"
+
+            echo "changing dir to ${inputDir}"
+            cd $inputDir
+
+            echo "trying to find files..."
+            files=$(find . -maxdepth 1 \( -name "*.${component}.nc" -o -name "*.${component}.*.nc" \))
+            echo "found files at depth 1 = ${files}"
+            echo ""
+
+            echo "trying to loop over files: ${files}"
+            for file in $files; do
+                echo "running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
+                fre -vv app mask-atmos-plevel --warn-no-ps -i $file -o $file.masked -p $file
+                echo "done running: fre -vv app mask-atmos-plevel -i ${file} -o ${file}.masked -p ${file}"
+                if [[ -f $file.masked ]]; then
+                    echo "renaming ${file}.masked..."
+                    mv -f $file.masked $file
+                    echo "renamed to ${file}"
+                fi
+            done
+            echo "mask-atmos-plevel task done for ${component}"
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
 {% if DO_NATIVE %}
@@ -532,7 +558,7 @@
         inherit = SPLIT-NETCDF
         {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
         {# new arg for forcing split of all vars #}
-        script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
+        script = fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
@@ -544,7 +570,7 @@
         inherit = SPLIT-NETCDF
         {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
         {# new arg for forcing split of all vars #}
-        script = fre pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
+        script = fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
@@ -630,16 +656,16 @@
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
         script = """
-            fre --verbose app remap --input-dir=$inputDir \
-                                    --output-dir=$outputDir \
-                                    --begin-date=$begin \
-                                    --current-chunk=$currentChunk \
-                                    --product=$product \
-                                    --ts-workaround \
-                                    --pp-component=$components \
-                                    --copy-tool=$COPY_TOOL \
-                                    --yaml-config=$yaml_config \
-                                    --ens-mem=${ens_mem:-""}
+            fre -vv app remap --input-dir=$inputDir \
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --ts-workaround \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
@@ -659,15 +685,15 @@
     [[REMAP-PP-COMPONENTS-AV]]
         inherit = REMAP-PP-COMPONENTS
         script = """
-            fre --verbose app remap --input-dir=$inputDir \
-                                    --output-dir=$outputDir \
-                                    --begin-date=$begin \
-                                    --current-chunk=$currentChunk \
-                                    --product=$product \
-                                    --pp-component=$components \
-                                    --copy-tool=$COPY_TOOL \
-                                    --yaml-config=$yaml_config \
-                                    --ens-mem=${ens_mem:-""}
+            fre -vv app remap --input-dir=$inputDir \
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
@@ -687,15 +713,15 @@
     [[remap-pp-components-static<component>]]
         inherit = REMAP-PP-COMPONENTS, <component>
         script = """
-            fre --verbose app remap --input-dir=$inputDir \
-                                    --output-dir=$outputDir \
-                                    --begin-date=$begin \
-                                    --current-chunk=$currentChunk \
-                                    --product=$product \
-                                    --pp-component=$components \
-                                    --copy-tool=$COPY_TOOL \
-                                    --yaml-config=$yaml_config \
-                                    --ens-mem=${ens_mem:-""}
+            fre -vv app remap --input-dir=$inputDir \
+                                --output-dir=$outputDir \
+                                --begin-date=$begin \
+                                --current-chunk=$currentChunk \
+                                --product=$product \
+                                --pp-component=$components \
+                                --copy-tool=$COPY_TOOL \
+                                --yaml-config=$yaml_config \
+                                --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
             begin = $CYLC_TASK_CYCLE_POINT
@@ -775,7 +801,7 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         script = """
-            fre --verbose app regrid \
+            fre -vv app regrid \
                 --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
                 --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
                 --begin=$CYLC_TASK_CYCLE_POINT \
@@ -785,8 +811,17 @@
                 --tmp_dir=$CYLC_TASK_WORK_DIR \
                 --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
         """
+        # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail
-        execution retry delays = 2*PT5M
+        execution retry delays = PT1M
+        [[[environment]]]
+            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            remapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
+            workDir = $CYLC_TASK_WORK_DIR
+            inputdate = $CYLC_TASK_CYCLE_POINT
+
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
         [[[environment]]]
