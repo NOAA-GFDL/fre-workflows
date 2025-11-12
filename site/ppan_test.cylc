@@ -45,7 +45,6 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[events]]]
-            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
