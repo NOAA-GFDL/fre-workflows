@@ -75,6 +75,8 @@ jobs:
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_folder=$(echo $cwd | cut -d/ -f3)
+          echo "runner folder: $runner_folder"
+          
           output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
           mkdir -p $output_dir
 
@@ -82,6 +84,7 @@ jobs:
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
           echo "OUTPUT_DIR: $output_dir"
           exit 1
+          
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind $output_dir/:/mnt:rw
