@@ -69,15 +69,16 @@ jobs:
           # This is to ensure there are no race conditions when accessing 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_folder=$(echo $cwd | cut -d/ -f4)
-          echo "runner folder: $runner_folder"
+#          runner_folder=$(echo $cwd | cut -d/ -f4)
+          echo "runner folder: $RUNNER_NAME"  #github has this available??
           
-          output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+          output_dir=/contrib/dana-container-test/ppp-setup-$RUNNER_NAME
           mkdir -p $output_dir
 
           ## Write environment variable to GITHUB_ENV to make it accessible for other steps
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
           echo "OUTPUT DIR: $output_dir"
+          exit 1
           
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
