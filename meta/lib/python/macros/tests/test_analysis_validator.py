@@ -8,7 +8,7 @@ from meta.lib.python.macros.analysis_validator import Analysis_Validator # pylin
 
 def test_skip_analysis_validator():
     '''
-    checks that analysis validation passes no analysis is requested. 
+    checks that analysis validation passes when no analysis is requested. 
     
     passing here means an empty list, i.e. no "reports"
     '''

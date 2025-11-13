@@ -414,7 +414,7 @@
             fi
 
             # We want to stage the history files to PTMP without transferring to VFTMP.
-            # Calling hsmget on a file with wildcards that doesnt exist does this,
+            # Calling hsmget on a file with wildcards that doesn't exist does this,
             # e.g. "dummy*" as below, but prints a warning
             echo "    calling hsmget, staging files to PTMP without touching VFTMP"
             if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
@@ -424,7 +424,7 @@
                 exit 1
             fi
 
-            echo "    Linking staged files to to ${CYLC_WORKFLOW_SHARE_DIR}"
+            echo "    Linking staged files to ${CYLC_WORKFLOW_SHARE_DIR}"
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
