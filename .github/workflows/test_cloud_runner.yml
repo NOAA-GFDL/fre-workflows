@@ -77,7 +77,6 @@ jobs:
           ## Write environment variable to GITHUB_ENV to make it accessible for other steps
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
           echo "OUTPUT DIR: $output_dir"
-          exit 1
           
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
