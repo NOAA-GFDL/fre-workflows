@@ -74,7 +74,7 @@ jobs:
           # This is to ensure there are no race conditions when accessing 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_folder=$(echo $cwd | cut -d/ -f3)
+          runner_folder=$(echo $cwd | cut -d/ -f4)
           echo "runner folder: $runner_folder"
           
           output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
