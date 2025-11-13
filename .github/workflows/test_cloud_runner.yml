@@ -71,7 +71,7 @@ jobs:
           # runners.
           runner_folder=$(echo $cwd | cut -d/ -f4)
           
-          output_dir=/contrib/dana-container-test/ppp-setup-$RUNNER_NAME
+          output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
           mkdir -p $output_dir
 
           ## Write environment variable to GITHUB_ENV to make it accessible for other steps
