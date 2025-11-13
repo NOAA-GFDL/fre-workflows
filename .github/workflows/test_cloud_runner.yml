@@ -78,7 +78,7 @@ jobs:
           output_dir=/contrib/container-test/ppp-setup-$runner_folder
           mkdir -p $output_dir
 
-          # Write environment variable to GITHUB_ENV to make it accessible for other steps
+          ## Write environment variable to GITHUB_ENV to make it accessible for other steps
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
 
           # Set up binds and required paths
