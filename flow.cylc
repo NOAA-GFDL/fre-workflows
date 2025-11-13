@@ -357,14 +357,18 @@
             echo Arguments:
             echo "    INFO: trigger: $targetFile"
             echo "    INFO: cycle point: $CYLC_TASK_CYCLE_POINT"
-            # Resolve the date strings: YYYY, MM, DD, HH
+
+            echo "    Resolving date strings: YYYY, MM, DD, HH"
             IFS='-' read YYYY MM DD << DATES
             $(cylc cycle-point --template CCYY-MM-DD)
             DATES
+
+            echo "    Resolving target file"
             HH=$(cylc cycle-point --template hh)
             targetFileResolved=$(echo $targetFile | sed -e "s/YYYY/$YYYY/g" -e "s/MM/$MM/g" -e "s/DD/$DD/g" -e "s/HH/$HH/g")
             echo "    trigger (date expanded): $targetFileResolved"
-            # Look for target file
+
+            echo "Looking for resolved target file"
             if ls $targetFileResolved; then
                 echo "Target ${targetFileResolved} is ready"
                 exit 0
@@ -382,7 +386,7 @@
         script = """
             set -euo pipefail
 
-            #Stage the contents of a tarfile to PTMP
+            # Stage the contents of a tarfile to PTMP
             echo Arguments:
             echo "    history dir: $historyDir"
             echo "    ptmp dir: $ptmpDir"
@@ -391,22 +395,28 @@
             echo Utilities:
             type hsmget
             type cylc
-            #Verify history directory exists and is a directory
+
+            echo "    Verifying history directory exists: ${historyDir}"
             if [[ ! -d $historyDir ]]; then
                 echo "Error: Archive directory ${historyDir} does not exist or isnt a directory"
                 exit 1
             fi
-            #Verify history file exists
+
+            echo "    Resolving history file..."
             file=$historyDir/$(cylc cycle-point --template CCYYMMDD).nc.tar
+
+            echo "    Looking for resolved file: ${file}"
             if ls ${file}; then
                 echo "Going to stage ${file} to PTMP"
             else
                 echo "Error: Could not locate ${file}"
                 exit 1
             fi
-            #We want to stage the history files to PTMP without transferring to VFTMP.
-            #Calling hsmget on a file with wildcards that doesnt exist does this,
-            #e.g. "dummy*" as below, but prints a warning
+
+            # We want to stage the history files to PTMP without transferring to VFTMP.
+            # Calling hsmget on a file with wildcards that doesn't exist does this,
+            # e.g. "dummy*" as below, but prints a warning
+            echo "    calling hsmget, staging files to PTMP without touching VFTMP"
             if hsmget -v -t -a $historyDir -p $ptmpDir$historyDir -w $TMPDIR$historyDir $(basename -s .tar $file)/dummy\*; then
                 echo "History files in ${file} have been staged to PTMP successfully"
             else
@@ -414,13 +424,13 @@
                 exit 1
             fi
 
-            # Finally, link these files to $CYLC_WORKFLOW_SHARE_DIR
+            echo "    Linking staged files to ${CYLC_WORKFLOW_SHARE_DIR}"
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
-            #Data Integrity Checking
+            echo "    checking data integrity with fre pp histval..."
             fre -vv pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
                 --date_string $(cylc cycle-point --template CCYYMMDD)
 

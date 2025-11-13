@@ -100,7 +100,7 @@ fre_pp_steps () {
 
     ## Validate the configuration files
     echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
-    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ} || echo "validation didn't work, guarding against exit"
+    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "VALIDATE"
 
     # Install
