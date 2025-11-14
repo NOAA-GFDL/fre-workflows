@@ -96,7 +96,7 @@ jobs:
 
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind $output_dir/:/mnt:rw
+          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
                       --bind /contrib2/c96L65/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
