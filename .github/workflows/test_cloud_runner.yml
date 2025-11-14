@@ -69,11 +69,14 @@ jobs:
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_folder=$(echo ${PWD} | cut -d/ -f4)
-          
+
+          # If we have mulitple runners - bind paths will also need to be in cases as we need
+          # different history files to access each time.
+          # when accessing the same location - the workflow kind of hangs and takes a while to run 
           case "$runner_folder" in
               *"-1")
                   # Create the output directory associated with the runner that picked up the job
-                  output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+                  output_dir=/contrib/container-test/ppp-setup-$runner_folder
                   mkdir -p $output_dir
                   
                   # Write environment variable to GITHUB_ENV to make it accessible for other steps
@@ -82,7 +85,7 @@ jobs:
               ;;
               *"-2")
                   # Create the output directory associated with the runner that picked up the job
-                  output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+                  output_dir=/contrib/container-test/ppp-setup-$runner_folder
                   mkdir -p $output_dir
                   
                   # Write environment variable to GITHUB_ENV to make it accessible for other steps
@@ -92,14 +95,11 @@ jobs:
           esac
 
           # Set up binds and required paths
-          # If we have mulitple runners - this will need to be in cases as we need different history
-          # files to access each time.
-          # when accessing the same location - the workflow kind of hangs and takes a while to run
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind $output_dir/:/mnt:rw
-                      --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
-                      --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                      --bind /contrib/dana-container-test"
+                      --bind /contrib2/c96L65/history:/mnt/history:ro
+                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+                      --bind /contrib/container-test"
           container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${PWD}/for_gh_runner/runscript.sh
 
