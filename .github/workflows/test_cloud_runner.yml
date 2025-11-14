@@ -62,13 +62,13 @@ jobs:
         run: |
           # Print pwd then run script
           echo "Currently in:"
-          echo $pwd
+          echo ${PWD}
 
           # Set up output directory based on which runner picks up the job
           # This is to ensure there are no race conditions when accessing 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_folder=$(echo $pwd | cut -d/ -f4)
+          runner_folder=$(echo ${PWD} | cut -d/ -f4)
           
           case "$runner_folder" in
               *"-1")
@@ -102,13 +102,9 @@ jobs:
           exit 1
 
           container_path=/contrib/container-test/ppp-wf.sif
-          runscript_path=${pwd}/for_gh_runner/runscript.sh
+          runscript_path=${PWD}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-
-          # Can potentially do this to get list of tasks
-          #task_list=$(cylc list test_pp__ptest__ttest)
-          #task1=$(echo $task_list | cut -d ' ' -f1) ....
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
