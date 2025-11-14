@@ -61,8 +61,7 @@ jobs:
       - name: Run ppp-container
         run: |
           # Print pwd then run script
-          echo "Currently in:"
-          echo ${PWD}
+          echo "Currently in: ${PWD}"
 
           # Set up output directory based on which runner picks up the job
           # This is to ensure there are no access issues when using 
