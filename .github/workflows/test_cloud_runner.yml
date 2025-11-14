@@ -79,23 +79,27 @@ jobs:
           echo "OUTPUT DIR: $output_dir"
 
           # Set up binds and required paths
-          if "-1" in runner_folder:
+#          if "-1" in runner_folder:
+          case "$runner_folder" in
+            *"-1")
               echo "runner folder 1"
               gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
               bind_paths="--bind $output_dir/:/mnt:rw
                           --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
                           --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                           --bind /contrib/dana-container-test"
-              exit 1
-          elif "-2" in runner_folder:
+              exit 1;;
+#          elif "-2" in runner_folder:
+            *"-2")
               echo "in runner_folder 2"
               gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
               bind_paths="--bind $output_dir/:/mnt:rw
                           --bind /contrib2/c96L65/history:/mnt/history:ro
                           --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                           --bind /contrib/dana-container-test"
-              exit 1
-              
+              exit 1;;
+            esac
+
           container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
