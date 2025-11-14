@@ -100,8 +100,6 @@ jobs:
                       --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
                       --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/dana-container-test"
-          exit 1
-
           container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${PWD}/for_gh_runner/runscript.sh
 
