@@ -86,6 +86,7 @@ jobs:
                   --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
                   --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                   --bind /contrib/dana-container-test"
+                  echo $bind_paths
                   exit 1
               ;;
               *"-2")
@@ -95,6 +96,7 @@ jobs:
                   --bind /contrib2/c96L65/history:/mnt/history:ro
                   --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                   --bind /contrib/dana-container-test"
+                  echo $bind_paths
                   exit 1
               ;;
           esac
