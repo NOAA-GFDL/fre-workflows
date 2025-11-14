@@ -62,47 +62,47 @@ jobs:
         run: |
           # Print pwd then run script
           echo "Currently in:"
-          cwd=$(pwd)
-          echo $cwd
+          echo $pwd
 
           # Set up output directory based on which runner picks up the job
           # This is to ensure there are no race conditions when accessing 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_folder=$(echo $cwd | cut -d/ -f4)
+          runner_folder=$(echo $pwd | cut -d/ -f4)
           
-          output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
-          mkdir -p $output_dir
-
-          ## Write environment variable to GITHUB_ENV to make it accessible for other steps
-          echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
-          echo "OUTPUT DIR: $output_dir"
-          # Set up binds and required paths
           case "$runner_folder" in
               *"-1")
-                  echo "runner folder 1"
-                  gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-                  bind_paths="--bind $output_dir/:/mnt:rw
-                  --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
-                  --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                  --bind /contrib/dana-container-test"
-                  echo $bind_paths
-                  exit 1
+                  # Create the output directory associated with the runner that picked up the job
+                  output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+                  mkdir -p $output_dir
+                  
+                  # Write environment variable to GITHUB_ENV to make it accessible for other steps
+                  echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+                  echo "OUTPUT DIR: $output_dir"
               ;;
               *"-2")
                   echo "in runner_folder 2"
-                  gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-                  bind_paths="--bind $output_dir/:/mnt:rw
-                  --bind /contrib2/c96L65/history:/mnt/history:ro
-                  --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                  --bind /contrib/dana-container-test"
-                  echo $bind_paths
-                  exit 1
+                  # Create the output directory associated with the runner that picked up the job
+                  output_dir=/contrib/dana-container-test/ppp-setup-$runner_folder
+                  mkdir -p $output_dir
+                  
+                  # Write environment variable to GITHUB_ENV to make it accessible for other steps
+                  echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+                  echo "OUTPUT DIR: $output_dir"
               ;;
           esac
 
+          # Set up binds and required paths
+          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
+          bind_paths="--bind $output_dir/:/mnt:rw
+                      --bind /contrib2/c96L65_TEST/history:/mnt/history:ro
+                      --bind /contrib/dana-container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+                      --bind /contrib/dana-container-test"
+          echo $bind_paths
+          exit 1
+
           container_path=/contrib/container-test/ppp-wf.sif
-          runscript_path=${cwd}/for_gh_runner/runscript.sh
+          runscript_path=${pwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
