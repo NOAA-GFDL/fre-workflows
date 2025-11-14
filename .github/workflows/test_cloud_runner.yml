@@ -27,11 +27,6 @@ on:
     branches:
       - main  # triggers pipeline on push to main
 
-# cancel running jobs if theres a newer push
-#concurrency:
-#  group: ${{ github.workflow }}-${{ github.ref }}
-#  cancel-in-progress: true
-
 jobs:
   test-cloud:
     runs-on: self-hosted
@@ -67,19 +62,37 @@ jobs:
         run: |
           # Print pwd then run script
           echo "Currently in:"
-          cwd=$(pwd)
-          echo $cwd
+          echo ${PWD}
 
           # Set up output directory based on which runner picks up the job
-          # This is to ensure there are no race conditions when accessing 
+          # This is to ensure there are no access issues when using 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_folder=$(echo $cwd | cut -d/ -f3)
-          output_dir=/contrib/container-test/ppp-setup-$runner_folder
-          mkdir -p $output_dir
+          runner_folder=$(echo ${PWD} | cut -d/ -f4)
 
-          # Write environment variable to GITHUB_ENV to make it accessible for other steps
-          echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+          # If we have mulitple runners - bind paths will also need to be in cases as we need
+          # different history files to access each time.
+          # when accessing the same location - the workflow kind of hangs and takes a while to run 
+          case "$runner_folder" in
+              *"-1")
+                  # Create the output directory associated with the runner that picked up the job
+                  output_dir=/contrib/container-test/ppp-setup-$runner_folder
+                  mkdir -p $output_dir
+                  
+                  # Write environment variable to GITHUB_ENV to make it accessible for other steps
+                  echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+                  echo "OUTPUT DIR: $output_dir"
+              ;;
+              *"-2")
+                  # Create the output directory associated with the runner that picked up the job
+                  output_dir=/contrib/container-test/ppp-setup-$runner_folder
+                  mkdir -p $output_dir
+                  
+                  # Write environment variable to GITHUB_ENV to make it accessible for other steps
+                  echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+                  echo "OUTPUT DIR: $output_dir"
+              ;;
+          esac
 
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
@@ -87,15 +100,10 @@ jobs:
                       --bind /contrib2/c96L65/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
-
           container_path=/contrib/container-test/ppp-wf.sif
-          runscript_path=${cwd}/for_gh_runner/runscript.sh
+          runscript_path=${PWD}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-
-          # Can potentially do this to get list of tasks
-          #task_list=$(cylc list test_pp__ptest__ttest)
-          #task1=$(echo $task_list | cut -d ' ' -f1) ....
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
@@ -221,11 +229,11 @@ jobs:
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
