@@ -92,7 +92,7 @@ jobs:
           esac
 
           # Set up binds and required paths
-          # If we ave mulitple runners - this will need to be in cases as we need different history
+          # If we have mulitple runners - this will need to be in cases as we need different history
           # files to access each time.
           # when accessing the same location - the workflow kind of hangs and takes a while to run
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
