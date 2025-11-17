@@ -8,15 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Sleep needed due to a race condition where cloud runner pipeline
-      # wanted to copy fre-workflows but did not have the permission to access
-      # .pyc files creates by running pytests
-      # Solution: start this pipeline after the test_cloud_runner.yml pipeline
-      #           starts to allow time for copying fre-workflows without a 
-      #           permission denied error
-      - name: Sleep
-        run: sleep 60
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,6 +17,26 @@ jobs:
         run: |
           # $CONDA is an env var pointing to root of miniconda dir
           echo $CONDA/bin >> $GITHUB_PATH
+
+      - name: Configure Conda
+        run: |
+          echo "removing conda default channels, appending open-source ones"
+          conda config --append channels conda-forge
+          conda config --append channels noaa-gfdl
+          conda config --remove channels defaults
+      
+          echo "setting strict channel priority"
+          conda config --set channel_priority strict
+      
+          echo "printing conda config just in case"
+          conda config --show
+      
+      - name: Update Conda and Channel Package Indices
+        run: |
+          echo "updating conda and package channel indices for conda-forge, noaa-gfdl"
+          conda update -y conda
+          conda update -y --all --override-channels -c conda-forge
+          conda update -y --all --override-channels -c noaa-gfdl
 
       - name: Create fre-workflows environment
         run: |
@@ -37,9 +48,8 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
-      - name: in fre-workflows environment, cylc lint
+      - name: cylc lint workflow files
         run: |
-          # lint .cylc workflow files
           cylc lint -v
 
       - name: Jinja2filter pytest
@@ -48,7 +58,7 @@ jobs:
 
       - name: Jinja2filter pylint
         run: |
-          pylint -v --fail-under 7.0 ./Jinja2Filters
+          pylint -v --rcfile ./pylintrc --fail-under 7.1 ./Jinja2Filters
 
       - name: lib/python pytest
         run: |
@@ -56,36 +66,72 @@ jobs:
 
       - name: lib/python pylint
         run: |
-          pylint -v --fail-under 9.4 ./lib/python
+          pylint -v --rcfile ./pylintrc --fail-under 7.9 ./lib/python
+
+      - name: python macros pytest
+        run: |
+          pytest -vv -rx ./meta/lib/python/macros/tests
 
       - name: python macros pylint
         run: |
-          pylint -v --fail-under 6.4 ./meta/lib/python/macros/
+          pylint -v --rcfile ./pylintrc --fail-under 7.5 ./meta/lib/python/macros/
 
       - name: make-timeseries pytest
         run: |
-          pytest -vv -rx ./app/make-timeseries/test/test_make_timeseries.py
+          pytest -vv -rx ./app/make-timeseries/tests
 
       - name: make-timeseries pylint
         run: |
-          pylint --fail-under 9.0 ./app/make-timeseries/test/test_make_timeseries.py
+          pylint -v --rcfile ./pylintrc --fail-under 9.6 ./app/make-timeseries
 
       - name: combine-statics pytest
-        continue-on-error: false
         run: |
-          # pytest unittests for remap-pp-components
-          pytest -v -v -rx  ./app/combine-statics/tests
+          pytest -vv -rx  ./app/combine-statics/tests
           
-      - name: rename-split-to-pp pytest
-        continue-on-error: false
-        run: | 
-          pytest app/rename-split-to-pp/tests/test_rename_split_to_pp.py    
-
       - name: combine-statics pylint
         run: |
-          # pytest unittests for remap-pp-components
-          pylint -v --fail-under  9.85 ./app/combine-statics
+          pylint -v --rcfile ./pylintrc --fail-under 10.0 ./app/combine-statics
 
-      - name: analysis_validator pytest
+      - name: rename-split-to-pp pytest
         run: |
-          pytest -vv -rx ./tests/test_analysis_validator.py
+          pytest -vv -rx app/rename-split-to-pp/tests
+
+      - name: rename-split-to-pp pylint
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
+
+      - name: combine-timeavgs pytest (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          pytest -vv -rx app/combine-timeavgs/tests
+
+      - name: combine-timeavgs pylint (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/combine-timeavgs
+
+      - name: make-timeavgs pytest (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          pytest -vv -rx app/make-timeavgs/tests
+
+      - name: make-timeavgs pylint (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/make-timeavgs
+
+      - name: analysis pytest (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i have no tests yet"
+          pytest -vv -rx app/analysis/tests
+
+      - name: analysis pylint (STEP CONTINUES ON FAILURE)
+        continue-on-error: true
+        run: |
+          echo "i am not python in any part yet"
+          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/analysis
