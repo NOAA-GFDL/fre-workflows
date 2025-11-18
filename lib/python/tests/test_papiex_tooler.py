@@ -7,7 +7,7 @@ import filecmp as fc
 from pathlib import Path
 from subprocess import Popen, PIPE, DEVNULL
 
-from lib.python.tool_ops_w_papiex import test_import as _test_import_
+from lib.python.tool_ops_w_papiex import check_import as _check_import_
 from lib.python.tool_ops_w_papiex import tool_ops_w_papiex
 from lib.python import papiex_ops as ops
 
@@ -19,7 +19,7 @@ def test_import():
     '''
     check that tool_ops_w_papiex functions can be imported
     '''
-    assert _test_import_() == 0
+    assert _check_import_() == 0
 
 
 def test_import_papiex_ops():

@@ -16,7 +16,7 @@ def test_import():
     test_handler=PPANHandler()
 
     assert test_handler is not None
-    assert test_handler.test_import() == 0
+    assert test_handler.check_import() == 0
 
 
 def test_tool_ops_import_in_handler():
@@ -24,7 +24,7 @@ def test_tool_ops_import_in_handler():
     test_handler=PPANHandler()
 
     assert test_handler is not None
-    assert test_handler.test_tool_ops_import() == 0
+    assert test_handler.check_tool_ops_import() == 0
 
 def test_submit():
     ''' check ppan_handler submit behavior with dry_run=True '''

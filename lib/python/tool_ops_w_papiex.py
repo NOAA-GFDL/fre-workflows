@@ -36,7 +36,7 @@ except Exception as exc:
     logger.error('error! op_list import issues.')
     raise ImportError('could not find and/or import papiex_ops') from exc
 
-def test_import():
+def check_import():
     '''
     for testing import of module via pytest only
     '''
