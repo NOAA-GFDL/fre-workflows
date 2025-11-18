@@ -144,7 +144,7 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;\
+                exp_target:{{ TARGET }};exp_component:data-catalog;exp_component_source:PLACE_HOLDER;\
                 exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
