@@ -12,11 +12,13 @@
 
 [scheduler]
     [[events]]
+        startup handlers = """
+            mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        """
         shutdown handlers = """
             mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
-            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s \
-            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
-            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
         """
 
 [runtime]
