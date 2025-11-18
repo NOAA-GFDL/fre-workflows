@@ -13,8 +13,8 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
     component(s) as a list. The dict is based on the grid type (regrid or native),
     time dependence (static or temporal) and the desired/requested components.
 
-    it also depends on configuration information within app/remap-pp-componenets/rose-suite.conf
-    which defines what source files (task parameters) are desired given specific componenets.
+    it also depends on configuration information within app/remap-pp-components/rose-suite.conf
+    which defines what source files (task parameters) are desired given specific components.
 
     Arguments:
         grid_type (str): One of: native or regrid-xy
@@ -73,18 +73,17 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
         else:
             raise Exception("Unknown temporal type:", temporal_type)
 
-        relevant_comps=[]
-        relevant_comps.append(key[0])
+        relevant_comp = key[0]
         sources = node.get_value(keys=[item, 'sources']).split()
         for source in sources:
             if source not in results:
-                results[source] = relevant_comps[0]
+                results[source] = relevant_comp
             else:
                 other_comps=results[source].split(' ')
                 if __name__=="__main__":
                     print(f'other_comps={other_comps}')
 
-                other_comps.append(relevant_comps[0])
+                other_comps.append(relevant_comp)
                 results[source] = ' '.join(other_comps)
                 if __name__=="__main__":
                     print(f'results[{source}]={results[source]}')

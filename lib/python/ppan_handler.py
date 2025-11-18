@@ -136,7 +136,7 @@ class PPANHandler(SLURMHandler):
             try:
                 tool_ops_w_papiex(fin_name=job_file_path)
 
-            except SystemError as exc:
+            except Exception as exc:
                 err = '(ppan_handler) ERROR papiex ops tooler did not work.\n exc is: ' + str(exc)
                 return (1, out, err)
 

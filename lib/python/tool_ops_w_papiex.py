@@ -13,7 +13,7 @@ import logging
 import re
 
 logger = logging.getLogger(__name__)
-logger.warning('tool_ops_w_papiex imported successfully. logger set. configuring logger.')
+logger.debug('tool_ops_w_papiex imported successfully. logger set. configuring logger.')
 
 FORMAT = "[%(levelname)5s:%(filename)24s:%(funcName)20s] %(message)s"
 #logging.basicConfig(level = logging.WARNING,
