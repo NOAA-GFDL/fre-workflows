@@ -31,8 +31,8 @@
             module load fre/{{ FRE_VERSION }}
             module load hsm/1.3.0
 
-            ### this is temporary and will be removed
-            export PATH=/home/inl/conda/envs/fre-cli/bin:$PATH
+            #### if one wants to use their own conda environment, edit the PATH and uncomment below like so:
+            #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
