@@ -10,17 +10,15 @@ fi
 # cylc config -d > /home/$USER/.cylc/flow/global.cylc
 
 ## then, within that global.cylc i had to change the ssh command field from gsissh to ssh
-## i also commented out 'cylc path', but it doesn't do anything in the first place since use login shell = True
+## for the future, we should use 'cylc path', but it doesn't do anything if use login shell = True
 
-
-## i needed these in my ~/.bash_profile
+## i needed the following in my ~/.bash_profile
 #echo "(~/.bash_profile) export LANG=C.UTF-8"
 #export LANG=C.UTF-8
+#echo "(~/.bash_profile) PATH was: $PATH"
 #export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
-
-## path to my virtual env fre-cli was necessary too
 #export PATH=/home/inl/conda/envs/fre-cli/bin:$PATH
-#echo "PATH is now: $PATH"
+#echo "(~/.bash_profile) PATH now: $PATH"
 
 # 0 to run the workflow. 1 to do everything except run it.
 dry_run=0
@@ -33,6 +31,10 @@ yaml="for_gh_runner/yaml_workflow/model.yaml"
 
 workflow_dir_name="${expt}__${platform}__${target}"
 echo "workflow_dir_name = $workflow_dir_name"
+
+if [ ! -d /home/$USER/cylc-src ]; then
+    mkdir --parents /home/$USER/cylc-src
+fi
 
 cylc_src_dir_name=/home/$USER/cylc-src/$workflow_dir_name
 echo "cylc_src_dir_name = $cylc_src_dir_name"
@@ -51,8 +53,9 @@ if [ -d $cylc_run_dir_name ]; then
     echo "run dir found, cylc stop first, we may have recently ran a previous version"
     cylc stop --now --now ${workflow_dir_name}
 
-    echo "cylc clean to remove the run directory products correctly"
+    echo "cylc clean to remove the run directory products correctly. sleep for 10s after."
     cylc clean $workflow_dir_name
+    sleep 10s
 fi
 
 echo ""
@@ -60,11 +63,10 @@ echo ""
 echo "*****************"
 echo "CLEANING UP PREV SRC DIR, IF FOUND"
 if [ -d $cylc_src_dir_name ]; then
-    echo "src dir found, REMOVING OLD cylc-src"
+    echo "src dir found, REMOVING OLD cylc-src. sleep for 10s after."
     rm -rf $cylc_src_dir_name
+    sleep 10s
 fi
-
-sleep 30s
 
 #echo ""
 #echo ""

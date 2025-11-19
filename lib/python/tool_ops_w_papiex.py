@@ -130,7 +130,7 @@ def get_new_bash_line( line: str,
     logger.debug('other case, before, line = \n %s', line)
     line = line.replace( op_found['op_name'] + ' ',
                          'export PAPIEX_TAGS="op:' + op_found['op_tag'] + \
-                         ';op_instance:OP_INSTANCE"; ' + op_found['op_name'] )
+                         ';op_instance:OP_INSTANCE"; ' + op_found['op_name'] + ' ' )
     line += '; unset PAPIEX_TAGS;'
     logger.info('other case, after, line = \n %s', line)
 
