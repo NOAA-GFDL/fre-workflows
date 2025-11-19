@@ -5,7 +5,7 @@ if [ $(basename $PWD) != 'fre-workflows' ]; then
     return 1
 fi
 
-## preammble, i needed to make sure my global.cylc was more in-line with the cylc in /usr/local/bin
+## preamble, i needed to make sure my global.cylc was more in-line with the cylc in /usr/local/bin
 ## i did that be doing the following:
 # cylc config -d > /home/$USER/.cylc/flow/global.cylc
 
@@ -131,10 +131,10 @@ echo "*****************"
 echo "RUNNING"
 if [ $dry_run -eq 1 ] ; then
     echo "dry_run, no cylc play!"
-    echo "would have run: cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $name"
+    echo "would have run: cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $workflow_dir_name"
     return 0
 fi
-echo "cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $name"
+echo "cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $workflow_dir_name"
 cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT10S"' $workflow_dir_name
 #echo "fre -vv pp run $ept_arg_string"
 #fre -vv pp run $ept_arg_string

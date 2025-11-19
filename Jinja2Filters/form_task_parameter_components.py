@@ -19,7 +19,7 @@ def form_task_parameter_components(grid_type, temporal_type, pp_components_str):
     Arguments:
         grid_type (str): One of: native or regrid-xy
         temporal_type (str): One of: temporal or static
-        pp_component (list of str): all, or a space-separated list
+        pp_components_str (str): all, or a space-separated list
     """
 
     pp_components = pp_components_str.split()
