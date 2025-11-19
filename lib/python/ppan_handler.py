@@ -7,6 +7,9 @@ Since the doc does not contain an example this entailed, the codebase of cylc it
 particularly instructive to read the functions, comments, docstrings etc. within the following files
     cylc/flow/job_runner_mgr.py
     cylc/flow/cylc_subproc.py
+    cylc/flow/job_runner_handlers/documentation.py
+    cylc/flow/job_runner_handlers/slurm.py
+    cylc/flow/job_runner_handlers/background.py
 '''
 
 from pathlib import Path
