@@ -5,33 +5,44 @@ if [ $(basename $PWD) != 'fre-workflows' ]; then
     return 1
 fi
 
-## preamble, i needed to make sure my global.cylc was more in-line with the cylc in /usr/local/bin
-## i did that be doing the following:
+###  preamble, i needed to make sure my global.cylc was more in-line with the cylc in /usr/local/bin
+###  I was able to grab the default global configuration and pipe it to my own file to edit:
+#
+# module load cylc
 # cylc config -d > /home/$USER/.cylc/flow/global.cylc
+#
 
-## then, within that global.cylc i had to change the ssh command field from gsissh to ssh
-## for the future, we should use 'cylc path', but it doesn't do anything if use login shell = True
+###  then, within /home/$USER/.cylc/flow/global.cylc, change the 'ssh command' field from 'gsissh' to 'ssh'
 
-## i needed the following in my ~/.bash_profile
-#echo "(~/.bash_profile) export LANG=C.UTF-8"
-#export LANG=C.UTF-8
-#echo "(~/.bash_profile) PATH was: $PATH"
-#export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
-#export PATH=/home/inl/conda/envs/fre-cli/bin:$PATH
-#echo "(~/.bash_profile) PATH now: $PATH"
+###  then, add the following to your ~/.bash_profile to avoid annoying UTF-8 encoding errors
+#
+# echo "(~/.bash_profile) export LANG=C.UTF-8"
+# export LANG=C.UTF-8
+#
+
+###  if one wants to use their own conda environment to run this and test fre-cli/fre-workflows
+###  development together add the following as well to your ~/.bash_profile to remove /usr/local/bin
+###  from PATH to avoid cylc version clashing
+#
+# echo "(~/.bash_profile) PATH was: $PATH"
+# export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
+# export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
+# echo "(~/.bash_profile) PATH now: $PATH"
+#
 
 # 0 to run the workflow. 1 to do everything except run it.
 dry_run=0
 echo "dry_run=$dry_run"
 
+# there shouldn't be a strong need to change any of this
+yaml="for_gh_runner/yaml_workflow/model.yaml"
 expt="test_pp_locally"
 platform="ptest"
 target="ttest"
-yaml="for_gh_runner/yaml_workflow/model.yaml"
-
 workflow_dir_name="${expt}__${platform}__${target}"
 echo "workflow_dir_name = $workflow_dir_name"
 
+# if this doesn't exist, the mock check out won't work
 if [ ! -d /home/$USER/cylc-src ]; then
     mkdir --parents /home/$USER/cylc-src
 fi
@@ -44,6 +55,7 @@ echo "cylc_run_dir_name = $cylc_run_dir_name"
 
 ept_arg_string="-e $expt -p $platform -t $target"
 echo "e/p/t arg string is $ept_arg_string"
+
 
 echo ""
 echo ""
@@ -58,6 +70,7 @@ if [ -d $cylc_run_dir_name ]; then
     sleep 10s
 fi
 
+
 echo ""
 echo ""
 echo "*****************"
@@ -68,6 +81,7 @@ if [ -d $cylc_src_dir_name ]; then
     sleep 10s
 fi
 
+
 #echo ""
 #echo ""
 #echo "*****************"
@@ -76,6 +90,7 @@ fi
 #if [ $? -ne 0 ] ; then
 #    echo "ERROR CHECKING OUT"
 #fi
+
 
 echo ""
 echo ""
@@ -89,6 +104,7 @@ if [ $? -ne 0 ] ; then
     return 1
 fi
 
+
 echo ""
 echo ""
 echo "*****************"
@@ -100,6 +116,7 @@ if [ $? -ne 0 ] ; then
     echo "ERROR CONFIGURING YAML"
     return 1
 fi
+
 
 echo ""
 echo ""
@@ -113,6 +130,7 @@ if [ $? -ne 0 ] ; then
     return 1
 fi
 
+
 echo ""
 echo ""
 echo "*****************"
@@ -125,6 +143,7 @@ if [ $? -ne 0 ] ; then
     return 1
 fi
 
+
 if [ $dry_run -eq 1 ] ; then
 	echo ""
 	echo ""
@@ -134,6 +153,7 @@ if [ $dry_run -eq 1 ] ; then
     echo "would have run: cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $workflow_dir_name"
     return 0
 fi
+
 
 echo ""
 echo ""
