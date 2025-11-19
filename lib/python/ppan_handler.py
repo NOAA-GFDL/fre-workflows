@@ -129,7 +129,7 @@ class PPANHandler(SLURMHandler):
             out = "(ppan_handler) sanity checking that job scripts were created as expected."
             if not all( [ Path( job_file_path ).exists(),
                           Path( f'{job_file_path}.tags' ).exists() ] ):
-                err = '(ppan_handler) ERROR a job file does not exist:\n {job_file_path} \n {job_file_path}.tags'
+                err = f'(ppan_handler) ERROR a job file does not exist:\n {job_file_path} \n {job_file_path}.tags'
                 return (1, out, err)
 
             # move job to job.notags
@@ -142,7 +142,7 @@ class PPANHandler(SLURMHandler):
             out = "(ppan_handler) sanity checking that job scripts were renamed as expected."
             if not all( [ Path( job_file_path ).exists(),
                           Path( f'{job_file_path}.notags' ).exists() ] ):
-                err = '(ppan_handler) ERROR a job file does not exist:\n {job_file_path} \n {job_file_path}.notags'
+                err = f'(ppan_handler) ERROR a job file does not exist:\n {job_file_path} \n {job_file_path}.notags'
                 return (1, out, err)
 
         # helps prevent code-injection attacks, ';' and other chars for issuing multiple commands won't get parsed

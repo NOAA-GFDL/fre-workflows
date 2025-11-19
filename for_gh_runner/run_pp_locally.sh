@@ -125,15 +125,20 @@ if [ $? -ne 0 ] ; then
     return 1
 fi
 
-echo ""
-echo ""
-echo "*****************"
-echo "RUNNING"
 if [ $dry_run -eq 1 ] ; then
+	echo ""
+	echo ""
+	echo "*****************"
+	echo "DRY-RUNNING"
     echo "dry_run, no cylc play!"
     echo "would have run: cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $workflow_dir_name"
     return 0
 fi
+
+echo ""
+echo ""
+echo "*****************"
+echo "RUNNING"
 echo "cylc play --no-detach --debug -s 'STALL_TIMEOUT=\"PT0S\"' $workflow_dir_name"
 cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT10S"' $workflow_dir_name
 #echo "fre -vv pp run $ept_arg_string"
@@ -147,6 +152,7 @@ fi
 #echo ""
 #echo ""
 #echo "*****************"
-#echo "cylc workflow-state every 5 seconds"
+#echo "WORKFLOW-STATE"
+#echo "watch -n 5 'cylc workflow-state -v $workflow_dir_name'"
 #watch -n 5 'cylc workflow-state -v test_pp_locally__ptest__ttest'
 

@@ -29,6 +29,7 @@
             epmt check
 
             module load fre/{{ FRE_VERSION }}
+            module load hsm/1.3.0
 
             ### this is temporary and will be removed
             export PATH=/home/inl/conda/envs/fre-cli/bin:$PATH
