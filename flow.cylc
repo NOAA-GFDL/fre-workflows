@@ -839,6 +839,7 @@
 
     [[COMBINE-TIMEAVGS]]
         script = """
+            echo "i am slow for some reason right now"
             mkdir -p $outputDir
             rose task-run --verbose --app-key combine-timeavgs
         """
