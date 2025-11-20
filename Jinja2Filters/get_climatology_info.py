@@ -67,10 +67,12 @@ class Climatology(object):
         else:
             grid = "regrid"
 
-        graph = f"P{self.interval_years}Y = \"\"\"\n"
+        # Use pp_chunk recurrence to ensure source tasks exist at all required cycle points
+        graph = f"P{self.pp_chunk.years}Y = \"\"\"\n"
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
+        
         for index, source in enumerate(self.sources):
             count = 0
             while count < chunks_per_interval:
@@ -102,6 +104,8 @@ class Climatology(object):
             #            graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
             #        count += 1
             #    graph += "\n"
+        # Climatology tasks run at the same cycle points as the dependencies (no offset)
+        # They will naturally run at pp_chunk intervals, processing interval_years of data
         graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
