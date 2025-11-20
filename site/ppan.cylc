@@ -93,9 +93,6 @@
         """
 {% endif %}
 
-    [[CLEAN]]
-        pre-script = "set -x"
-
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
         pre-script = module load cdo

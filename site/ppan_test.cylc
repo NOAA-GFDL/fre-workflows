@@ -159,7 +159,6 @@
                 pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = "set -x"
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]

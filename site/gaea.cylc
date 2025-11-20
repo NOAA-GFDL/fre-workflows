@@ -8,6 +8,7 @@
     [[root]]
         init-script = """
             module load fre/{{ FRE_VERSION }}
+            module load gcp/2.3
             module list
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -24,81 +25,26 @@
             COPY_TOOL=gcp
 
     [[STAGE-HISTORY]]
-        pre-script = module load gcp hsm/1.3.0 fre/{{ FRE_VERSION }}
-
-{% if DO_REFINEDIAG or DO_PREANALYSIS %}
-    [[PRE-ANALYSIS]]
-        pre-script = """
-            env
-            set -x
-            module load gcp
-            mkdir -p $work $tempCache $refineDiagDir
-            cd $work/$hsmdate
-            ls
-        """
-{% endif %}
-
-{% if DO_REFINEDIAG %}
-    [[REFINE-DIAG]]
-        post-script = """
-            cd $refineDiagDir
-            if ls *nc; then
-                refinedCount=$(ls -1 *nc | wc -l)
-            else
-                refinedCount=0
-            fi
-            if [[ $refinedCount > 0 ]]; then
-                for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
-                done
-            else
-                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
-                exit 1
-            fi
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
-                mv -f * $TMPDIR/modify_refineDiag
-                mv -f $TMPDIR/modify_refineDiag/* .
-                rm -rf $TMPDIR/modify_refineDiag
-            fi
-        """
-{% endif %}
-
-    [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = module load hsm/1.3.0
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load cray-hdf5 cray-netcdf cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[REMAP-PP-COMPONENTS]]
-        pre-script = module load fre/{{ FRE_VERSION }} gcp fre-nctools && mkdir -p $outputDir
+        pre-script = module load cray-hdf5 cray-netcdf cdo nco
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
+        pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = module load cdo nco
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
+        execution time limit = P1D
         pre-script = """
-            module load fre/{{ FRE_VERSION }}
-            module load fre-nctools/2023.01.02 nco
+            module load fre-nctools/2024.05
         """
-        [[[environment]]]
-            TMPDIR = $CYLC_TASK_WORK_DIR
 {% endif %}
-
-    [[CLEAN]]
-        pre-script = "set -x"
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo
 {% endif %}
