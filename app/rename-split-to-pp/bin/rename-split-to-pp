@@ -48,7 +48,7 @@ function process_files {
         fi
 
         # Check for static
-        if ncdump -h $file | grep "${var}(" | grep time; then
+        if ncdump -h $file | grep "\b${var}(" | grep time; then
             timesteps=$(cdo ntime $file 2> /dev/null)
             is_static=0
         else
