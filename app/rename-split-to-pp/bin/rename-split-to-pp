@@ -47,7 +47,15 @@ function process_files {
             continue
         fi
 
-        timesteps=$(cdo ntime $file 2> /dev/null)
+        # Check for static
+        if ncdump -h $file | grep "${var}(" | grep time; then
+            timesteps=$(cdo ntime $file 2> /dev/null)
+            is_static=0
+        else
+            is_static=1
+            timesteps=1
+        fi
+
         # statics and files with one timestamp aren't handled well
         # cdo ntime reports 1 for statics, so need to use another call to distingush
         # the comparisons at line 54 and 59 are very sensitive to (( vs (
@@ -61,13 +69,6 @@ function process_files {
             #this should be 0 or 1; for a timeseries file, this will be greater than 1.
             #This assumes that we will have a record dimension named time - but frankly, 
             #that's an assumption we're already making when we search for time_bnds
-            n_time_vars=$(ncks --trd -m $file | grep "(Record coordinate is time)" | wc -l)
-            if [[ "${n_time_vars}" -le "1" ]]; then
-                is_static=1
-            else
-                is_static=0
-            fi
-            #if (( $(cdo ndate $file 2> /dev/null) == 0 )); then
             if [ $is_static == 1 ]; then
                 #this is the static case - you do not have a second timestep so this is 0
                 freq=P0Y
