@@ -122,7 +122,8 @@ postprocess:
     
     # When history_segment != pp_chunk, should use make-timeseries
     assert "make-timeseries-native-P1Y_ocean" in graph
-    assert "rename-split-to-pp-native_ocean" not in " => climo" and graph
+    # Verify that rename-split-to-pp is not directly connected to climo
+    assert "rename-split-to-pp-native_ocean => climo" not in graph
     
     # Should still use P1Y recurrence
     assert "P1Y = \"\"\"" in graph
