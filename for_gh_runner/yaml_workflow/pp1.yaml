@@ -8,7 +8,7 @@ postprocess:
       interpMethod: "conserve_order2"
       inputRealm: 'atmos'
       sourceGrid: 'cubedsphere'
-      postprocess_on: False
+      postprocess_on: True
       climatology:
       - frequency: yr
         interval_years: 2
