@@ -1,13 +1,15 @@
 
     [[root]]
         init-script = """
-            # stock
+            # stock fre-cli
             module load fre/{{ FRE_VERSION }}
-            # for using a custom user fre-cli
+            # custom user fre-cli
             #module load conda
             #conda activate newtest
+            #which fre
+
+            module load gcp/2.3
             module list
-            which fre
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
@@ -98,8 +100,3 @@
     [[combine-statics]]
         pre-script = module load cdo
 {% endif %}
-
-    [[ANALYSIS]]
-        pre-script = """
-            module load gcp
-        """
