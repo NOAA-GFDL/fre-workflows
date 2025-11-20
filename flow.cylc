@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = 2025.04 %}
+{% set FRE_VERSION = "2025.test" %}
 
 {# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
 
@@ -457,8 +457,10 @@
 
 
     [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key make-timeavgs
+        script = """
+            mkdir -p $outputDir
+            rose task-run --verbose --app-key make-timeavgs
+        """
     {% if DO_NATIVE %}
     [[MAKE-TIMEAVGS-NATIVE]]
         [[[environment]]]
@@ -646,7 +648,10 @@
         inherit = SPLIT-NETCDF
         {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
         {# new arg for forcing split of all vars #}
-        script = fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
+        script = """
+            mkdir -p $outputDir
+            fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
@@ -658,7 +663,10 @@
         inherit = SPLIT-NETCDF
         {# 2025-05-13: removing -c $component -y $YAML until $CYLC_TASK_PARAM_component cycling figured out; #}
         {# new arg for forcing split of all vars #}
-        script = fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
+        script = """
+            mkdir -p $outputDir
+            fre -vv pp split-netcdf-wrapper -i $inputDir -o $outputDir -s $history_file --split-all-vars --use-subdirs
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
@@ -691,8 +699,10 @@
 {% endif %}
 
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key rename-split-to-pp
+        script = """
+            mkdir -p $outputDir
+            rose task-run --verbose --app-key rename-split-to-pp
+        """
 
 {% if DO_NATIVE %}
     [[RENAME-SPLIT-TO-PP-NATIVE]]
@@ -744,6 +754,7 @@
     [[REMAP-PP-COMPONENTS-TS]]
         inherit = REMAP-PP-COMPONENTS
         script = """
+            mkdir -p $outputDir
             fre -vv app remap --input-dir=$inputDir \
                                 --output-dir=$outputDir \
                                 --begin-date=$begin \
@@ -772,6 +783,7 @@
     [[REMAP-PP-COMPONENTS-AV]]
         inherit = REMAP-PP-COMPONENTS
         script = """
+            mkdir -p $outputDir
             fre -vv app remap --input-dir=$inputDir \
                                 --output-dir=$outputDir \
                                 --begin-date=$begin \
@@ -826,7 +838,10 @@
         inherit = DATA-CATALOG
 
     [[COMBINE-TIMEAVGS]]
-        script = rose task-run --verbose --app-key combine-timeavgs
+        script = """
+            mkdir -p $outputDir
+            rose task-run --verbose --app-key combine-timeavgs
+        """
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
             outputDir = {{ PP_DIR }}/$CYLC_TASK_PARAM_component/av
@@ -845,8 +860,10 @@
     {% endfor %}
 
     [[MAKE-TIMESERIES]]
-        pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key make-timeseries
+        script = """
+            mkdir -p $outputDir
+            rose task-run --verbose --app-key make-timeseries
+        """
         [[[environment]]]
             fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
             pp_stop = {{ PP_STOP }}
@@ -891,26 +908,27 @@
 {% if DO_REGRID %}
     [[REGRID-XY]]
         script = """
+            mkdir -p $outputDir $remapDir
+
             fre -vv app regrid \
-                --input_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native \
-                --output_dir=$CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy \
-                --begin=$CYLC_TASK_CYCLE_POINT \
-                --remap_dir=$CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files \
+                --yamlfile=$yaml_config \
+                --input_dir=$inputDir \
+                --output_dir=$outputDir \
+                --work_dir=$workDir \
+                --remap_dir=$remapDir \
                 --source=$source \
-                --grid_spec={{ PP_GRID_SPEC }} \
-                --tmp_dir=$CYLC_TASK_WORK_DIR \
-                --rose_config=$CYLC_WORKFLOW_RUN_DIR/app/regrid-xy/rose-app.conf
+                --input_date=$inputDate
         """
         # set back to longer when it works TEMP / TODO
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = PT1M
         [[[environment]]]
             yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
-            inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
-            remapDir = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            workDir = $CYLC_TASK_WORK_DIR
-            inputdate = $CYLC_TASK_CYCLE_POINT
+            inputDir    = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
+            outputDir   = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
+            remapDir    = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
+            workDir     = $CYLC_TASK_WORK_DIR
+            inputDate   = $CYLC_TASK_CYCLE_POINT
 
     [[regrid-xy<regrid>]]
         inherit = REGRID-XY, <regrid>
@@ -926,8 +944,10 @@
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
-        pre-script = mkdir -p $outputDir
-        script = rose task-run --verbose --app-key combine-statics
+        script = """
+            mkdir -p $outputDir
+            rose task-run --verbose --app-key combine-statics
+        """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
             outputDir = {{ PP_DIR }}

@@ -1,8 +1,13 @@
 
     [[root]]
         init-script = """
+            # stock
             module load fre/{{ FRE_VERSION }}
+            # for using a custom user fre-cli
+            #module load conda
+            #conda activate newtest
             module list
+            which fre
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}
@@ -68,31 +73,20 @@
         """
 {% endif %}
 
-    [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[REMAP-PP-COMPONENTS]]
-        pre-script = mkdir -p $outputDir
-
-    [[DATA-CATALOG]]
-        pre-script = module load fre/{{ FRE_VERSION }}
+        pre-script = module load netcdf-c cdo nco
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[MAKE-TIMEAVGS]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = module load cdo nco
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
         execution time limit = P1D
         pre-script = """
+            module load fre-nctools/2024.05.01
             which fregrid
         """
 {% endif %}
@@ -102,7 +96,7 @@
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo
 {% endif %}
 
     [[ANALYSIS]]
