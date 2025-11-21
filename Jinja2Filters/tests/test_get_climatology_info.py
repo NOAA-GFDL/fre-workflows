@@ -46,8 +46,8 @@ postprocess:
     assert "P2Y = \"\"\"" in graph, "Graph should use P2Y recurrence matching interval_years"
     assert "P1Y = \"\"\"" not in graph, "Graph should not use P1Y recurrence"
 
-    # Verify dependencies use negative offsets to look back in time
-    assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[-P1Y]" in graph
+    # Verify dependencies use positive offsets to look ahead for additional data
+    assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
 
     print("✓ Climatology graph correctly uses interval_years recurrence")
@@ -90,11 +90,11 @@ postprocess:
     assert "P5Y = \"\"\"" in graph
     assert "P1Y = \"\"\"" not in graph
 
-    # Verify negative offsets for 5-year interval with 1-year chunks (0, -1, -2, -3, -4)
-    assert "[-P1Y]" in graph
-    assert "[-P2Y]" in graph
-    assert "[-P3Y]" in graph
-    assert "[-P4Y]" in graph
+    # Verify positive offsets for 5-year interval with 1-year chunks (0, 1, 2, 3, 4)
+    assert "[P1Y]" in graph
+    assert "[P2Y]" in graph
+    assert "[P3Y]" in graph
+    assert "[P4Y]" in graph
 
     print("✓ Climatology with multiple sources correctly structured")
 

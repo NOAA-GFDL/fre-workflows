@@ -88,9 +88,9 @@ class Climatology(object):
                 else:
                     offset = count * self.pp_chunk
                     if self.pp_chunk == history_segment:
-                        graph += f" & rename-split-to-pp-{grid}_{source}[-{offset}]"
+                        graph += f" & rename-split-to-pp-{grid}_{source}[{offset}]"
                     else:
-                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[-{offset}]"
+                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
                 count += 1
             graph += "\n"
             #if clean_work:
