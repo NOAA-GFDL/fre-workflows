@@ -93,6 +93,9 @@ def check_task_status(
     matching_files = glob.glob(status_file_pattern)
     if not matching_files:
         logger.warning("No job.status files found matching pattern: %s", status_file_pattern)
+        logger.warning("No succeeded tasks found for pattern: %s", task_pattern)
+        logger.info("No task failures found for pattern: %s", task_pattern)
+        return 0
 
     # Check for successes
     try:
@@ -106,8 +109,9 @@ def check_task_status(
 
         if success_exit_code == 0:
             # Found successes
-            # grep outputs one match per line when searching multiple files
-            # Split by newlines (equivalent to original shell script's sed 's/ /\n/g')
+            # grep outputs one match per line when searching multiple files.
+            # The original shell script's sed was working around bash word-splitting;
+            # subprocess.run() captures output correctly, so we just split by newlines.
             success_lines = success_result.stdout.strip().split('\n')
             for line in success_lines:
                 if line:
@@ -143,8 +147,9 @@ def check_task_status(
         if failure_exit_code == 0:
             # Found failures
             logger.error("Failures found for pattern: %s", task_pattern)
-            # grep outputs one match per line when searching multiple files
-            # Split by newlines (equivalent to original shell script's sed 's/ /\n/g')
+            # grep outputs one match per line when searching multiple files.
+            # The original shell script's sed was working around bash word-splitting;
+            # subprocess.run() captures output correctly, so we just split by newlines.
             failure_lines = failure_result.stdout.strip().split('\n')
             for line in failure_lines:
                 if line:
