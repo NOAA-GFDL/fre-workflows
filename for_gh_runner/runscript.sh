@@ -24,7 +24,6 @@ conda activate /app/cylc-flow-tools
 
 # update fre-cli env with specific branch development
 cd fre-cli
-git checkout add-climo-wrapper
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
@@ -117,7 +116,6 @@ fre_pp_steps () {
     ## RUN
     echo -e "\nRunning the workflow with cylc play ..."
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
-    #check_exit_status "PLAY" # if cylc play fails and this is not commented, log uploading does not work
 
     ## SUMMARY
     echo -e "\nWorkflow ended, final task states from workflow-state are ..."
