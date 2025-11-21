@@ -24,7 +24,7 @@ def sort_pp_chunks(unsorted_strings):
     durations = []
     for s in unsorted_strings:
         durations.append(duration_parser.parse(s))
-    return(sorted(durations, reverse=True))
+    return sorted(durations, reverse=True)
 
 def lookup_source_for_component(yaml_, component):
     """Return list of history files associated with a pp component"""
@@ -33,7 +33,7 @@ def lookup_source_for_component(yaml_, component):
         if item["type"] == component:
             for source in item["sources"]:
                 sources.append(source["history_file"])
-    return(sources)
+    return sources
 
 class Climatology(object):
     def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid):
@@ -56,7 +56,8 @@ class Climatology(object):
         self.sources = sources
         self.grid = grid
 
-        logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}', pp_chunk='{pp_chunk}', sources={sources}, grid='{grid}'")
+        logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}'")
+        logger.debug(f"pp_chunk='{pp_chunk}', sources={sources}, grid='{grid}'")
 
     def graph(self, history_segment, clean_work):
         """Generate the cylc task graph string for the climatology.
@@ -72,7 +73,7 @@ class Climatology(object):
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
-        
+
         for index, source in enumerate(self.sources):
             count = 0
             while count < chunks_per_interval:
@@ -109,13 +110,13 @@ class Climatology(object):
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
 
-        graph += f"\"\"\"\n"
+        graph += "\"\"\"\n"
 
         return graph
-    
+
     def get_task_names(self):
         """Return the names of the climatology tasks for dependency tracking.
-        
+
         Returns:
             Dictionary with task names for each stage (climo, remap, combine)
         """
@@ -207,7 +208,8 @@ def task_generator(yaml_):
                 try:
                     pp_chunk
                 except UnboundLocalError:
-                    raise Exception(f"Unsupported climatology configuration: Interval in years '{interval_years}' is not a multiple of any pp chunk {pp_chunks}")
+                    raise Exception(f"Unsupported climatology configuration: Interval in years '{interval_years}'"
+                                    f" is not a multiple of any pp chunk {pp_chunks}")
 
 
                 if "xyInterp" in component:
@@ -255,7 +257,7 @@ def task_graphs(yaml_, history_segment, clean_work):
     """
     logger.debug("About to generate all task graphs")
     graph = ""
-    
+
     # Collect task names only if we need them for clean dependencies
     if clean_work:
         all_task_names = []
@@ -265,49 +267,49 @@ def task_graphs(yaml_, history_segment, clean_work):
     else:
         for script_info in task_generator(yaml_):
             graph += script_info.graph(history_segment, clean_work)
-    
+
     # Add consolidated clean dependencies after all climo tasks
     if clean_work and all_task_names:
         # Group tasks by pp_chunk and interval_years for clean operations
         pp_chunks_to_clean = set()
         interval_years_to_clean = set()
-        
+
         for task_info in all_task_names:
             pp_chunks_to_clean.add(task_info['pp_chunk_years'])
             interval_years_to_clean.add(task_info['interval_years'])
-        
+
         # For each unique pp_chunk, create a clean dependency that waits for ALL climo tasks
         for pp_chunk_years in pp_chunks_to_clean:
-            graph += f"\n# Clean shards after ALL climatology tasks complete\n"
+            graph += "\n# Clean shards after ALL climatology tasks complete\n"
             graph += f"P{pp_chunk_years}Y = \"\"\"\n"
-            
+
             # Collect all climo tasks that use this pp_chunk
             climo_tasks = [task['climo'] for task in all_task_names if task['pp_chunk_years'] == pp_chunk_years]
             if climo_tasks:
                 graph += "    " + " & ".join(climo_tasks)
                 graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
-            
-            graph += f"\"\"\"\n"
-        
+
+            graph += "\"\"\"\n"
+
         # For each unique interval_years, create clean dependencies for av and pp
         for interval_years in interval_years_to_clean:
-            graph += f"\n# Clean averages and pp after ALL climatology tasks complete\n"
+            graph += "\n# Clean averages and pp after ALL climatology tasks complete\n"
             graph += f"P{interval_years}Y = \"\"\"\n"
-            
+
             # Collect all remap and combine tasks for this interval
             remap_tasks = [task['remap'] for task in all_task_names if task['interval_years'] == interval_years]
             combine_tasks = [task['combine'] for task in all_task_names if task['interval_years'] == interval_years]
-            
+
             if remap_tasks:
                 graph += "    " + " & ".join(remap_tasks)
                 graph += f" => clean-shards-av-P{interval_years}Y\n"
-            
+
             if combine_tasks:
                 graph += "    " + " & ".join(combine_tasks)
                 graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
-            
-            graph += f"\"\"\"\n"
-    
+
+            graph += "\"\"\"\n"
+
     logger.debug("Finished generating all task graphs")
     return graph
 
@@ -325,7 +327,7 @@ def get_climatology_info(experiment_yaml, info_type):
     valid_types = ["task-graph", "task-definitions"]
     if info_type not in valid_types:
         raise ValueError(f"Invalid information type: {info_type}. Valid types include task-graph or task-definitions")
- 
+
     with open(experiment_yaml) as file_:
         yaml_ = safe_load(file_)
 

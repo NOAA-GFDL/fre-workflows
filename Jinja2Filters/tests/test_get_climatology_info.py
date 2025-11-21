@@ -1,4 +1,6 @@
-"""Tests for get_climatology_info module"""
+"""
+Tests for get_climatology_info module
+"""
 import sys
 from pathlib import Path
 
@@ -48,7 +50,7 @@ postprocess:
     # Verify dependencies use positive offsets to look ahead for additional data
     assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
-    
+
     # Verify clean dependencies are also present (since clean_work=True)
     # Clean tasks use P1Y (pp_chunk) recurrence and wait for all climo tasks
     assert "climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph
@@ -194,7 +196,7 @@ postprocess:
             if all(task in line for task in expected_tasks):
                 clean_line_found = True
                 break
-    
+
     assert clean_line_found, "Clean task should wait for ALL climo tasks: " + ", ".join(expected_tasks)
 
     print("✓ Clean tasks correctly wait for all climatology tasks")
