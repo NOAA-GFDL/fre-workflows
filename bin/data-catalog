@@ -22,7 +22,7 @@ function fre_catalog_builder () {
     # while `fre catalog builder` is running.
 
     TIMESTAMP=`date +%T.%N`
-    fre catalog builder $* $PP_DIR $PP_DIR/catalog
+    fre catalog build $* $PP_DIR $PP_DIR/catalog
     touch -d $TIMESTAMP $CATALOG_CSV
 }
 
