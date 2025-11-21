@@ -9,20 +9,37 @@
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
 {% endset %}
 
+
+[scheduler]
+    [[events]]
+        startup handlers = """
+            mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        """
+        shutdown handlers = """
+            mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
+        """
+
+[runtime]
     [[root]]
         init-script = """
-            module load fre/{{ FRE_VERSION }}
-            module load gcp/2.3
             module load epmt
             module list
             epmt check
+
+            module load fre/{{ FRE_VERSION }}
+            module load hsm/1.3.0
+
+            #### if one wants to use their own conda environment, edit the PATH and uncomment below like so:
+            #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -31,7 +48,6 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[events]]]
-            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
@@ -43,8 +59,8 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:pp-starter;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
     [[STAGE-HISTORY]]
@@ -52,12 +68,9 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
-        """
-        pre-script = """
-            module load gcp/2.3 hsm/1.3.0
         """
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
@@ -66,14 +79,13 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         pre-script = """
             env
             set -x
-            module load gcp
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -87,8 +99,8 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:refineDiag;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         post-script = """
@@ -129,9 +141,9 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:data-catalog;exp_component_source:PLACE_HOLDER;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
 
@@ -155,8 +167,8 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:clean;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
 
@@ -166,11 +178,11 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:combine-statics;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 {% endif %}
 
     [[ANALYSIS]]
@@ -178,8 +190,8 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
 
@@ -190,8 +202,7 @@
     {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:{{ COMPONENT }};exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
     {{ EPMT_POSTAMBLE }}
         """
@@ -205,8 +216,7 @@
         {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:{{ REGRID_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
         {{ EPMT_POSTAMBLE }}
         """
@@ -220,8 +230,7 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:{{ REGRID_STATIC_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
@@ -237,8 +246,7 @@
         {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:{{ NATIVE_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
         {{ EPMT_POSTAMBLE }}
         """
@@ -251,8 +259,7 @@
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
                 exp_target:{{ TARGET }};exp_component:{{ NATIVE_STATIC_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """

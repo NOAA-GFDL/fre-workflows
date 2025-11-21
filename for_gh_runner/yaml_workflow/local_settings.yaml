@@ -1,7 +1,10 @@
 # directories shared across tools
 directories:
-  history_dir:        "/work/$USER/test_cloud_runner_history_files"
+#  history_dir:        "/work/$USER/test_cloud_runner_history_files"
+#  history_dir:        "/archive/$USER/test_cloud_runner_history_files"
+  history_dir:        "/archive/inl/test_cloud_runner_history_files"
   pp_dir:             !join [/work/$USER/test_cloud_runner_scratch_dir/, *FRE_STEM, /, pp]
+
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:           "/xtmp/$USER/ptmp"
 
