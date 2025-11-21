@@ -3,9 +3,10 @@
         init-script = """
             # stock fre-cli
             module load fre/{{ FRE_VERSION }}
+
             # custom user fre-cli
             #module load conda
-            #conda activate newtest
+            #conda activate user-fre-cli
             #which fre
 
             module load gcp/2.3
