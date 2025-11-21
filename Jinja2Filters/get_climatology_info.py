@@ -290,7 +290,7 @@ def task_graphs(yaml_, history_segment, clean_work):
             if climo_tasks:
                 # Wait for all climo tasks AND all remap tasks across all cycles
                 # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + ":succeed-all & ".join(climo_tasks) + ":succeed-all"
+                graph += "    " + " & ".join(f"{task}:succeed-all" for task in climo_tasks)
                 graph += f" & REMAP-PP-COMPONENTS-TS-P{pp_chunk_years}Y:succeed-all"
                 graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
 
@@ -308,12 +308,12 @@ def task_graphs(yaml_, history_segment, clean_work):
 
             if remap_tasks:
                 # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + ":succeed-all & ".join(remap_tasks) + ":succeed-all"
+                graph += "    " + " & ".join(f"{task}:succeed-all" for task in remap_tasks)
                 graph += f" => clean-shards-av-P{interval_years}Y\n"
 
             if combine_tasks:
                 # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + ":succeed-all & ".join(combine_tasks) + ":succeed-all"
+                graph += "    " + " & ".join(f"{task}:succeed-all" for task in combine_tasks)
                 graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
 
             graph += "\"\"\"\n"
