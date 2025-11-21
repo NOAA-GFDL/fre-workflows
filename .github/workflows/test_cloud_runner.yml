@@ -203,8 +203,7 @@ jobs:
               exit 2
           fi
 
-      - name: Print data-catalog-final (CONTINUES ON FAILURE)
-        continue-on-error: true
+      - name: Print data-catalog-final
         run: |
           set +e
           # Successes 
@@ -297,37 +296,6 @@ jobs:
               exit 2
           fi
 
-#      - name: Print make-timeavgs successes or failures
-#        run: |
-#          set +e
-#          # Successes 
-#          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[1-3]/job.status)
-#          exit_status_1=$?
-#
-#          # Failures
-#          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/make-timeavgs*/0[1-3]/job.status)
-#          exit_status_2=$?
-#
-#          if [ $exit_status_1 -eq 0 ]; then
-#              echo $success | sed 's/ /\n/g' #split string by spaces
-#          elif [ $exit_status_1 -eq 1 ]; then
-#              echo "No succeeded tasks found"
-#          else
-#              echo "WARNING: error with grep execution"
-#              exit 2
-#          fi
-#
-#          if [ $exit_status_2 -eq 0 ]; then
-#              echo "Failures found"
-#              echo $failure | sed 's/ /\n/g' #split string by spaces
-#              exit 1   #exit with error
-#          elif [ $exit_status_2 -eq 1 ]; then
-#              echo "No task failures found."
-#          else
-#              echo "WARNING: error with grep execution"
-#              exit 2
-#          fi
-
       - name: Print rename-split-to-pp successes or failures
         run: |
           set +e
@@ -389,37 +357,6 @@ jobs:
               echo "WARNING: error with grep execution"
               exit 2
           fi
-
-#      - name: Print combine-timeavgs successes or failures
-#        run: |
-#          set +e
-#          # Successes 
-#          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[1-3]/job.status)
-#          exit_status_1=$?
-#
-#          # Failures
-#          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-timeavgs*/0[1-3]/job.status)
-#          exit_status_2=$?
-#
-#          if [ $exit_status_1 -eq 0 ]; then
-#              echo $success | sed 's/ /\n/g' #split string by spaces
-#          elif [ $exit_status_1 -eq 1 ]; then
-#              echo "No succeeded tasks found"
-#          else
-#              echo "WARNING: error with grep execution"
-#              exit 2
-#          fi
-#
-#          if [ $exit_status_2 -eq 0 ]; then
-#              echo "Failures found"
-#              echo $failure | sed 's/ /\n/g' #split string by spaces
-#              exit 1   #exit with error
-#          elif [ $exit_status_2 -eq 1 ]; then
-#              echo "No task failures found."
-#          else
-#              echo "WARNING: error with grep execution"
-#              exit 2
-#          fi
 
       - name: Print climotology time average successes or failures
         run: |
