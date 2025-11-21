@@ -110,12 +110,34 @@ class Climatology(object):
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
 
-        if clean_work:
-            graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-            graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
-            graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
-
         graph += f"\"\"\"\n"
+
+        # Clean tasks should use correct dependency offsets to ensure they wait for the right climo task.
+        # For a P2Y interval with P1Y chunks, climo at 1980 processes 1980-1981 data.
+        # So clean-shards at both 1980 and 1981 should depend on the climo at 1980.
+        # We achieve this by creating separate recurrence patterns for each offset within the interval:
+        #   P2Y = "climo => clean-shards"           # 1980, 1982, 1984, ... (no offset)
+        #   P2Y/+P1Y = "climo[-P1Y] => clean-shards"  # 1981, 1983, 1985, ... (offset -P1Y)
+        if clean_work:
+            chunks_per_interval = int(self.interval_years / self.pp_chunk.years)
+            for offset_index in range(chunks_per_interval):
+                offset = offset_index * self.pp_chunk
+                
+                # Create recurrence pattern
+                if offset_index == 0:
+                    # First cycle point in each interval - no offset in recurrence or dependency
+                    recurrence = f"P{self.interval_years}Y"
+                    offset_str = ""
+                else:
+                    # Subsequent cycle points - offset recurrence start, and offset dependency backwards
+                    recurrence = f"P{self.interval_years}Y/+{offset}"
+                    offset_str = f"[-{offset}]"
+                
+                graph += f"{recurrence} = \"\"\"\n"
+                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}{offset_str}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}{offset_str}   => clean-shards-av-P{self.interval_years}Y\n"
+                graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}{offset_str} => clean-pp-timeavgs-P{self.interval_years}Y\n"
+                graph += f"\"\"\"\n"
 
         return graph
 

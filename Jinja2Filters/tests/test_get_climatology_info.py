@@ -42,15 +42,22 @@ postprocess:
 
     graph = task_graphs(yaml_, history_segment, clean_work)
 
-    # Verify that the graph uses P1Y (pp_chunk) recurrence, not P2Y (interval_years)
+    # Verify that the graph uses P1Y (pp_chunk) recurrence for climo tasks
     assert "P1Y = \"\"\"" in graph, "Graph should use P1Y recurrence matching pp_chunk"
-    assert "P2Y = \"\"\"" not in graph, "Graph should not use P2Y recurrence"
-
+    
+    # Verify clean tasks use P2Y recurrence with proper offsets
+    assert "P2Y = \"\"\"" in graph, "Graph should use P2Y recurrence for clean tasks"
+    assert "P2Y/+P1Y = \"\"\"" in graph, "Graph should use offset P2Y recurrence for clean tasks"
+    
     # Verify dependencies are correctly structured
     assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
+    
+    # Verify clean-shards dependencies with offsets
+    assert "climo-mon-P2Y_atmos_month         => clean-shards-ts-P1Y" in graph
+    assert "climo-mon-P2Y_atmos_month[-P1Y]         => clean-shards-ts-P1Y" in graph
 
-    print("✓ Climatology graph correctly uses pp_chunk recurrence")
+    print("✓ Climatology graph correctly uses pp_chunk recurrence and clean tasks use proper offsets")
 
 
 def test_climatology_with_multiple_sources():
