@@ -55,6 +55,11 @@ jobs:
       - name: Display fre-workflow and fre-cli repos and branches
         run: |
           # fre-workflows repo and branch
+          # Checkout and test earliest copilot attempt that ian didnt run correctly myself
+          git checkout f6d604e9595d284e8ec4298e5efa709d7f5fe6ac
+          
+          #Checkout and test next version after that ian didnt run correctly himself 
+          #git checkout 0d45635b7480f8ad36ff5df06156500f10f3c460 
           echo "fre-workflows repo: $(git remote -v)"
           echo "fre-workflows branch: $(git branch)"
 
