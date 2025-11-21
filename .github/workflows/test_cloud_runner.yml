@@ -45,6 +45,8 @@ jobs:
       - name: Checkout fre-workflows repository if no fork specified
         if: ${{ github.event.inputs.fre-workflows-repo == ''}}
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Checkout fre-cli
         uses: actions/checkout@v4
         with:
