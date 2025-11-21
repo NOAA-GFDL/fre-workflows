@@ -24,26 +24,21 @@ conda activate /app/cylc-flow-tools
 
 # update fre-cli env with specific branch development
 cd fre-cli
-git checkout add-climo-wrapper
 pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
 
 get_user_input () {
-    # User input
     echo Please Enter Experiment Name:
     echo "Experiment name: test_pp"
 
     echo Please Enter Platform:
-#    read -r plat
     echo "Platform: ptest"
 
     echo Please Enter Target:
-#    read -r targ
     echo "Target: ttest"
 
     echo Please Enter Path to model yaml file:
-#    read -r yamlfile
     echo "Model yaml: ./for_gh_runner/yaml_workflow/model.yaml"
 
     expname="test_pp"
@@ -55,7 +50,7 @@ get_user_input () {
 }
 
 create_dirs () {
-    # Create necessary paths used in workflow
+    echo "Creating necessary paths used in workflow"
     paths=("${HOME}/pp" "${HOME}/ptmp" "${HOME}/temp")
 
     for p in ${paths[@]}; do
@@ -80,7 +75,7 @@ check_exit_status () {
 fre_pp_steps () {
     set -x
 
-    # experiment cleaned if previously installed
+    echo "experiment cleaning, if it was previously installed"
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Removing ${name}..."
