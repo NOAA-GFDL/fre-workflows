@@ -185,11 +185,17 @@ postprocess:
     assert "climo-yr-P2Y_atmos_scalar" in graph
 
     # Verify clean dependency requires ALL climo tasks
-    # The clean task should have all climo tasks as dependencies
-    assert "climo-yr-P2Y_atmos_month & climo-mon-P2Y_atmos_month & climo-yr-P2Y_atmos_scalar => clean-shards-ts-P1Y" in graph or \
-           "climo-yr-P2Y_atmos_scalar & climo-yr-P2Y_atmos_month & climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph or \
-           "climo-mon-P2Y_atmos_month & climo-yr-P2Y_atmos_month & climo-yr-P2Y_atmos_scalar => clean-shards-ts-P1Y" in graph, \
-           "Clean task should wait for ALL climo tasks"
+    # Extract the clean dependency line and check all tasks are present
+    expected_tasks = ["climo-yr-P2Y_atmos_month", "climo-mon-P2Y_atmos_month", "climo-yr-P2Y_atmos_scalar"]
+    clean_line_found = False
+    for line in graph.split('\n'):
+        if "=> clean-shards-ts-P1Y" in line:
+            # Check that all expected tasks appear in the dependency line
+            if all(task in line for task in expected_tasks):
+                clean_line_found = True
+                break
+    
+    assert clean_line_found, "Clean task should wait for ALL climo tasks: " + ", ".join(expected_tasks)
 
     print("✓ Clean tasks correctly wait for all climatology tasks")
 

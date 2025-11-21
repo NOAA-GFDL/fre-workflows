@@ -255,12 +255,16 @@ def task_graphs(yaml_, history_segment, clean_work):
     """
     logger.debug("About to generate all task graphs")
     graph = ""
-    all_task_names = []
     
-    for script_info in task_generator(yaml_):
-        graph += script_info.graph(history_segment, clean_work)
-        if clean_work:
+    # Collect task names only if we need them for clean dependencies
+    if clean_work:
+        all_task_names = []
+        for script_info in task_generator(yaml_):
+            graph += script_info.graph(history_segment, clean_work)
             all_task_names.append(script_info.get_task_names())
+    else:
+        for script_info in task_generator(yaml_):
+            graph += script_info.graph(history_segment, clean_work)
     
     # Add consolidated clean dependencies after all climo tasks
     if clean_work and all_task_names:
