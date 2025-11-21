@@ -107,7 +107,16 @@ class Climatology(object):
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
 
         if clean_work:
-            graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+            # Climo task must complete before clean tasks run for all chunks it depends on
+            # Add dependencies for each chunk offset to prevent premature cleanup
+            count = 0
+            while count < chunks_per_interval:
+                if count == 0:
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                else:
+                    offset = count * self.pp_chunk
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y[{offset}]\n"
+                count += 1
             graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
             graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
 

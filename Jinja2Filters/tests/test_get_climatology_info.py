@@ -129,8 +129,51 @@ postprocess:
     print("✓ Climatology correctly uses make-timeseries dependencies")
 
 
+def test_climatology_clean_task_dependencies():
+    """Test that clean tasks wait for all climatology chunks"""
+    yaml_content = """
+postprocess:
+  components:
+    - type: "atmos_month"
+      sources:
+        - history_file: "atmos_month"
+      xyInterp: "180,288"
+      interpMethod: "conserve_order2"
+      inputRealm: 'atmos'
+      sourceGrid: 'cubedsphere'
+      postprocess_on: True
+      climatology:
+      - frequency: mon
+        interval_years: 2
+        
+  settings:
+    history_segment: "P1Y"
+    pp_chunks: ["P1Y"]
+    
+  switches:
+    clean_work: True
+"""
+    yaml_ = safe_load(yaml_content)
+    history_segment = duration_parser.parse(yaml_["postprocess"]["settings"]["history_segment"])
+    clean_work = yaml_["postprocess"]["switches"]["clean_work"]
+    
+    graph = task_graphs(yaml_, history_segment, clean_work)
+    
+    # Verify that climo triggers clean at current cycle and all offset cycles
+    # For P2Y climatology with P1Y chunks, we have 2 chunks (0, P1Y)
+    assert "climo-mon-P2Y_atmos_month         => clean-shards-ts-P1Y\n" in graph
+    assert "climo-mon-P2Y_atmos_month         => clean-shards-ts-P1Y[P1Y]\n" in graph
+    
+    # Verify other clean tasks are still present
+    assert "remap-climo-mon-P2Y_atmos_month   => clean-shards-av-P2Y" in graph
+    assert "combine-climo-mon-P2Y_atmos_month => clean-pp-timeavgs-P2Y" in graph
+    
+    print("✓ Clean task dependencies correctly prevent premature cleanup")
+
+
 if __name__ == "__main__":
     test_climatology_graph_uses_interval_years_recurrence()
     test_climatology_with_multiple_sources()
     test_climatology_make_timeseries_dependency()
+    test_climatology_clean_task_dependencies()
     print("\nAll tests passed!")
