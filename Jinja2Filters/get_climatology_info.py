@@ -67,8 +67,8 @@ class Climatology(object):
         else:
             grid = "regrid"
 
-        # Use pp_chunk recurrence to ensure source tasks exist at all required cycle points
-        graph = f"P{self.pp_chunk.years}Y = \"\"\"\n"
+        # Use interval_years recurrence to create climo tasks only when enough data is available
+        graph = f"P{self.interval_years}Y = \"\"\"\n"
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
@@ -88,9 +88,9 @@ class Climatology(object):
                 else:
                     offset = count * self.pp_chunk
                     if self.pp_chunk == history_segment:
-                        graph += f" & rename-split-to-pp-{grid}_{source}[{offset}]"
+                        graph += f" & rename-split-to-pp-{grid}_{source}[-{offset}]"
                     else:
-                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
+                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[-{offset}]"
                 count += 1
             graph += "\n"
             #if clean_work:
@@ -104,8 +104,7 @@ class Climatology(object):
             #            graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
             #        count += 1
             #    graph += "\n"
-        # Climatology tasks run at the same cycle points as the dependencies (no offset)
-        # They will naturally run at pp_chunk intervals, processing interval_years of data
+        # Climatology tasks run at interval_years intervals, processing interval_years of data
         graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
