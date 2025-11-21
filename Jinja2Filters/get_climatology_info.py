@@ -235,7 +235,7 @@ def task_definitions(yaml_, clean_work):
         yaml_: Dictionary experiment yaml.
 
     Returns:
-        String containing the task defintions.
+        String containing the task definitions.
     """
     logger.debug("About to generate all task definitions")
     
@@ -247,7 +247,7 @@ def task_definitions(yaml_, clean_work):
         # Family for all climatology remap tasks
     [[COMBINE-CLIMO-TASKS]]
         # Family for all climatology combine tasks
-"""
+    """
     
     for script_info in task_generator(yaml_):
         definitions += script_info.definition(clean_work)
