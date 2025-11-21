@@ -70,8 +70,10 @@ class Climatology(object):
         # Use pp_chunk recurrence to ensure source tasks exist at all required cycle points
         graph = f"P{self.pp_chunk.years}Y = \"\"\"\n"
 
+        # Calculate how many pp_chunks fit in one interval
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
+        chunks_per_interval = int(chunks_per_interval)
         
         for index, source in enumerate(self.sources):
             count = 0
@@ -119,8 +121,9 @@ class Climatology(object):
         #   P2Y = "climo => clean-shards"           # 1980, 1982, 1984, ... (no offset)
         #   P2Y/+P1Y = "climo[-P1Y] => clean-shards"  # 1981, 1983, 1985, ... (offset -P1Y)
         if clean_work:
-            chunks_per_interval = int(self.interval_years / self.pp_chunk.years)
             for offset_index in range(chunks_per_interval):
+                # Calculate offset as a duration (metomi.isodatetime duration object)
+                # Multiplying an integer by a duration object produces a new duration
                 offset = offset_index * self.pp_chunk
                 
                 # Create recurrence pattern
