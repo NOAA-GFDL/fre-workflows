@@ -279,14 +279,17 @@ def task_graphs(yaml_, history_segment, clean_work):
             interval_years_to_clean.add(task_info['interval_years'])
 
         # For each unique pp_chunk, create a clean dependency that waits for ALL climo tasks
+        # AND all remap tasks (since climo tasks depend on remap outputs)
         for pp_chunk_years in pp_chunks_to_clean:
-            graph += "\n# Clean shards after ALL climatology tasks complete\n"
+            graph += "\n# Clean shards after ALL climatology AND remap tasks complete\n"
             graph += f"P{pp_chunk_years}Y = \"\"\"\n"
 
             # Collect all climo tasks that use this pp_chunk
             climo_tasks = [task['climo'] for task in all_task_names if task['pp_chunk_years'] == pp_chunk_years]
             if climo_tasks:
+                # Wait for all climo tasks AND all remap tasks across all cycles
                 graph += "    " + " & ".join(climo_tasks)
+                graph += f" & REMAP-PP-COMPONENTS-TS-P{pp_chunk_years}Y:succeed-all"
                 graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
 
             graph += "\"\"\"\n"
@@ -313,6 +316,26 @@ def task_graphs(yaml_, history_segment, clean_work):
     logger.debug("Finished generating all task graphs")
     return graph
 
+def has_climatology(experiment_yaml):
+    """Check if climatology is configured in the experiment yaml
+    
+    Args:
+        experiment_yaml: Path to the experiment yaml file.
+        
+    Returns:
+        Boolean indicating if any component has climatology configured
+    """
+    with open(experiment_yaml) as file_:
+        yaml_ = safe_load(file_)
+        
+        for component in yaml_["postprocess"]["components"]:
+            if not component.get('postprocess_on', False):
+                continue
+            if 'climatology' in component and component['climatology']:
+                return True
+        
+        return False
+
 def get_climatology_info(experiment_yaml, info_type):
     """Return requested climatology information from the experiment yaml
 
@@ -324,9 +347,12 @@ def get_climatology_info(experiment_yaml, info_type):
     logger.debug("get_climatology_info: starting")
 
     # define valid info types
-    valid_types = ["task-graph", "task-definitions"]
+    valid_types = ["task-graph", "task-definitions", "has-climatology"]
     if info_type not in valid_types:
-        raise ValueError(f"Invalid information type: {info_type}. Valid types include task-graph or task-definitions")
+        raise ValueError(f"Invalid information type: {info_type}. Valid types include task-graph, task-definitions, or has-climatology")
+
+    if info_type == "has-climatology":
+        return has_climatology(experiment_yaml)
 
     with open(experiment_yaml) as file_:
         yaml_ = safe_load(file_)

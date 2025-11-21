@@ -36,6 +36,9 @@
 {# Retrieve active pp components from the yaml #}
 {% set PP_COMPONENTS = YAML | get_components %}
 
+{# Check if climatology is configured #}
+{% set HAS_CLIMATOLOGY = YAML | get_climatology_info('has-climatology') %}
+
 [meta]
     title = "Postprocessing Example 1"
     description = """
@@ -261,14 +264,18 @@
             {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
         {% endif %}
 
-        {% if CLEAN_WORK %}
+        {% if CLEAN_WORK and not HAS_CLIMATOLOGY %}
+            {# Only trigger clean from remap tasks if there's no climatology #}
+            {# When climatology exists, it will handle the clean dependencies #}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-ts-{{ chunk.chunk_size }}
         {% endif %}
         """
 
         R1/$ = REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => data-catalog-final
 
-        {% if CLEAN_WORK %}
+        {% if CLEAN_WORK and not HAS_CLIMATOLOGY %}
+            {# Only trigger clean from remap tasks if there's no climatology #}
+            {# When climatology exists, it will handle the clean dependencies #}
             {% for segment in chunk.segments %}
                 R1/{{ segment }} = """
                     REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all

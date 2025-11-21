@@ -186,20 +186,65 @@ postprocess:
     assert "climo-mon-P2Y_atmos_month" in graph
     assert "climo-yr-P2Y_atmos_scalar" in graph
 
-    # Verify clean dependency requires ALL climo tasks
+    # Verify clean dependency requires ALL climo tasks AND remap tasks
     # Extract the clean dependency line and check all tasks are present
     expected_tasks = ["climo-yr-P2Y_atmos_month", "climo-mon-P2Y_atmos_month", "climo-yr-P2Y_atmos_scalar"]
     clean_line_found = False
+    remap_dependency_found = False
     for line in graph.split('\n'):
         if "=> clean-shards-ts-P1Y" in line:
             # Check that all expected tasks appear in the dependency line
             if all(task in line for task in expected_tasks):
                 clean_line_found = True
+                # Also check for remap task dependency
+                if "REMAP-PP-COMPONENTS-TS-P1Y:succeed-all" in line:
+                    remap_dependency_found = True
                 break
 
     assert clean_line_found, "Clean task should wait for ALL climo tasks: " + ", ".join(expected_tasks)
+    assert remap_dependency_found, "Clean task should also wait for all REMAP-PP-COMPONENTS-TS tasks"
 
-    print("✓ Clean tasks correctly wait for all climatology tasks")
+    print("✓ Clean tasks correctly wait for all climatology tasks AND remap tasks")
+
+
+def test_has_climatology_detection():
+    """
+    Test that has_climatology correctly detects climatology configuration
+    """
+    from get_climatology_info import has_climatology
+    import tempfile
+    import os
+    
+    # Test with climatology
+    yaml_with_climo = """
+postprocess:
+  components:
+    - type: "atmos"
+      postprocess_on: True
+      climatology:
+      - frequency: yr
+        interval_years: 2
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        f.write(yaml_with_climo)
+        f.flush()
+        assert has_climatology(f.name) == True, "Should detect climatology"
+        os.unlink(f.name)
+    
+    # Test without climatology
+    yaml_without_climo = """
+postprocess:
+  components:
+    - type: "atmos"
+      postprocess_on: True
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        f.write(yaml_without_climo)
+        f.flush()
+        assert has_climatology(f.name) == False, "Should not detect climatology"
+        os.unlink(f.name)
+    
+    print("✓ has_climatology correctly detects climatology configuration")
 
 
 if __name__ == "__main__":
@@ -207,4 +252,5 @@ if __name__ == "__main__":
     test_climatology_with_multiple_sources()
     test_climatology_make_timeseries_dependency()
     test_consolidated_clean_dependencies()
+    test_has_climatology_detection()
     print("\nAll tests passed!")
