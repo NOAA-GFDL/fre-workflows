@@ -159,10 +159,10 @@ postprocess:
     
     graph = task_graphs(yaml_, history_segment, clean_work)
     
-    # Verify that climo triggers clean at current cycle and all offset cycles
-    # For P2Y climatology with P1Y chunks, we have 2 chunks (0, P1Y)
-    assert "climo-mon-P2Y_atmos_month         => clean-shards-ts-P1Y\n" in graph
-    assert "climo-mon-P2Y_atmos_month         => clean-shards-ts-P1Y[P1Y]\n" in graph
+    # Verify that a P1Y section is created with clean dependencies
+    assert "P1Y = \"\"\"" in graph
+    assert "climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph
+    assert "climo-mon-P2Y_atmos_month[-P1Y] => clean-shards-ts-P1Y" in graph
     
     # Verify other clean tasks are still present
     assert "remap-climo-mon-P2Y_atmos_month   => clean-shards-av-P2Y" in graph

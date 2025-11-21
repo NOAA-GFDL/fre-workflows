@@ -107,20 +107,30 @@ class Climatology(object):
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
 
         if clean_work:
-            # Climo task must complete before clean tasks run for all chunks it depends on
-            # Add dependencies for each chunk offset to prevent premature cleanup
-            count = 0
-            while count < chunks_per_interval:
-                if count == 0:
-                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-                else:
-                    offset = count * self.pp_chunk
-                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y[{offset}]\n"
-                count += 1
             graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
             graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
 
         graph += f"\"\"\"\n"
+        
+        # Add clean-shards-ts dependencies in a P{pp_chunk}Y section to block premature cleanup
+        # This ensures clean tasks wait for climatology at all relevant cycle offsets
+        if clean_work:
+            graph += f"P{self.pp_chunk.years}Y = \"\"\"\n"
+            # For each chunk in the interval, add a dependency from climo at the appropriate offset
+            count = 0
+            while count < chunks_per_interval:
+                # Calculate the negative offset to look back to where climo runs
+                # For P2Y climo with P1Y chunks: at cycle 1981, look back P1Y to climo at 1980
+                offset_years = self.interval_years - self.pp_chunk.years * count
+                if offset_years == self.interval_years:
+                    # At the cycle where climo runs, just reference it directly
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                elif offset_years > 0:
+                    # At cycles after climo, reference it with a negative offset
+                    offset_duration = duration_parser.parse(f"P{offset_years}Y")
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}[-{offset_duration}] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                count += 1
+            graph += f"\"\"\"\n"
 
         return graph
 
