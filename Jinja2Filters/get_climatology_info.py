@@ -67,7 +67,10 @@ class Climatology(object):
         else:
             grid = "regrid"
 
-        graph = f"P{self.interval_years}Y = \"\"\"\n"
+        graph = ""
+
+        # first, make the climo graphs themselves
+        graph += f"P{self.interval_years}Y = \"\"\"\n"
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
@@ -91,27 +94,17 @@ class Climatology(object):
                         graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
                 count += 1
             graph += "\n"
-            #if clean_work:
-            #    graph += f"    make-timeavgs-{grid}-P{self.interval_years}Y_{source}"
-            #    count = 0
-            #    while count < chunks_per_interval:
-            #        if count == 0:
-            #            graph += f" => clean-shards-{self.pp_chunk}"
-            #        else:
-            #            offset = count * self.pp_chunk
-            #            graph += f" & clean-shards-{self.pp_chunk}[{offset}]"
-            #        count += 1
-            #    graph += "\n"
-        graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-        graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-        graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            graph += f"\"\"\"\n"
 
+        # then, create the cleaning tasks
         if clean_work:
-            graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-            graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
-            graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
-
-        graph += f"\"\"\"\n"
+            for count in range(int(chunks_per_interval)):
+                graph += f"+P{count}Y/P{self.interval_years}Y = \"\"\"\n"
+                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}[-P{count}Y] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                graph += f"\"\"\"\n"
 
         return graph
 
