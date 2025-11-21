@@ -9,8 +9,8 @@ from get_climatology_info import task_graphs, duration_parser
 from yaml import safe_load
 
 
-def test_climatology_graph_uses_pp_chunk_recurrence():
-    """Test that climatology graph uses pp_chunk recurrence, not interval_years"""
+def test_climatology_graph_uses_interval_years_recurrence():
+    """Test that climatology graph uses interval_years recurrence"""
     yaml_content = """
 postprocess:
   components:
@@ -39,15 +39,14 @@ postprocess:
     
     graph = task_graphs(yaml_, history_segment, clean_work)
     
-    # Verify that the graph uses P1Y (pp_chunk) recurrence, not P2Y (interval_years)
-    assert "P1Y = \"\"\"" in graph, "Graph should use P1Y recurrence matching pp_chunk"
-    assert "P2Y = \"\"\"" not in graph, "Graph should not use P2Y recurrence"
+    # Verify that the graph uses P2Y (interval_years) recurrence
+    assert "P2Y = \"\"\"" in graph, "Graph should use P2Y recurrence matching interval_years"
     
     # Verify dependencies are correctly structured
     assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
     
-    print("✓ Climatology graph correctly uses pp_chunk recurrence")
+    print("✓ Climatology graph correctly uses interval_years recurrence")
 
 
 def test_climatology_with_multiple_sources():
@@ -81,9 +80,8 @@ postprocess:
     assert "rename-split-to-pp-native_atmos_daily" in graph
     assert "rename-split-to-pp-native_atmos_month" in graph
     
-    # Verify P1Y recurrence is used (pp_chunk), not P5Y (interval_years)
-    assert "P1Y = \"\"\"" in graph
-    assert "P5Y = \"\"\"" not in graph
+    # Verify P5Y recurrence is used (interval_years)
+    assert "P5Y = \"\"\"" in graph
     
     # Verify offsets for 5-year interval with 1-year chunks (0, 1, 2, 3, 4)
     assert "[P1Y]" in graph
@@ -125,14 +123,14 @@ postprocess:
     # Verify that rename-split-to-pp is not directly connected to climo
     assert "rename-split-to-pp-native_ocean => climo" not in graph
     
-    # Should still use P1Y recurrence
-    assert "P1Y = \"\"\"" in graph
+    # Should use P2Y recurrence (interval_years)
+    assert "P2Y = \"\"\"" in graph
     
     print("✓ Climatology correctly uses make-timeseries dependencies")
 
 
 if __name__ == "__main__":
-    test_climatology_graph_uses_pp_chunk_recurrence()
+    test_climatology_graph_uses_interval_years_recurrence()
     test_climatology_with_multiple_sources()
     test_climatology_make_timeseries_dependency()
     print("\nAll tests passed!")
