@@ -14,8 +14,11 @@ import sys
 import logging
 from pathlib import Path
 
+# Add current directory to sys.path to support execution from any directory
+sys.path.insert(0, str(Path(__file__).parent))
+
 # Import the check_cylc_tasks module
-from check_cylc_tasks import configure_logging, check_multiple_tasks
+from check_cylc_tasks import configure_logging, check_multiple_tasks  # pylint: disable=wrong-import-position
 
 
 def main() -> int:

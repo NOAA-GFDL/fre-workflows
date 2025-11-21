@@ -106,6 +106,8 @@ def check_task_status(
 
         if success_exit_code == 0:
             # Found successes
+            # grep outputs one match per line when searching multiple files
+            # Split by newlines (equivalent to original shell script's sed 's/ /\n/g')
             success_lines = success_result.stdout.strip().split('\n')
             for line in success_lines:
                 if line:
@@ -141,6 +143,8 @@ def check_task_status(
         if failure_exit_code == 0:
             # Found failures
             logger.error("Failures found for pattern: %s", task_pattern)
+            # grep outputs one match per line when searching multiple files
+            # Split by newlines (equivalent to original shell script's sed 's/ /\n/g')
             failure_lines = failure_result.stdout.strip().split('\n')
             for line in failure_lines:
                 if line:
