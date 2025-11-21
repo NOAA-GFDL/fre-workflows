@@ -215,6 +215,21 @@ def test_has_climatology_detection():
     import tempfile
     import os
     
+    def test_yaml_config(yaml_content, expected_result, message):
+        """Helper function to test climatology detection with proper cleanup"""
+        temp_file = None
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+                temp_file = f.name
+                f.write(yaml_content)
+                f.flush()
+            
+            result = has_climatology(temp_file)
+            assert result == expected_result, message
+        finally:
+            if temp_file and os.path.exists(temp_file):
+                os.unlink(temp_file)
+    
     # Test with climatology
     yaml_with_climo = """
 postprocess:
@@ -225,11 +240,7 @@ postprocess:
       - frequency: yr
         interval_years: 2
 """
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-        f.write(yaml_with_climo)
-        f.flush()
-        assert has_climatology(f.name) == True, "Should detect climatology"
-        os.unlink(f.name)
+    test_yaml_config(yaml_with_climo, True, "Should detect climatology")
     
     # Test without climatology
     yaml_without_climo = """
@@ -238,11 +249,7 @@ postprocess:
     - type: "atmos"
       postprocess_on: True
 """
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-        f.write(yaml_without_climo)
-        f.flush()
-        assert has_climatology(f.name) == False, "Should not detect climatology"
-        os.unlink(f.name)
+    test_yaml_config(yaml_without_climo, False, "Should not detect climatology")
     
     print("✓ has_climatology correctly detects climatology configuration")
 

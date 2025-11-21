@@ -325,16 +325,17 @@ def has_climatology(experiment_yaml):
     Returns:
         Boolean indicating if any component has climatology configured
     """
+    # Using context manager to ensure file is properly closed
     with open(experiment_yaml) as file_:
         yaml_ = safe_load(file_)
-        
-        for component in yaml_["postprocess"]["components"]:
-            if not component.get('postprocess_on', False):
-                continue
-            if 'climatology' in component and component['climatology']:
-                return True
-        
-        return False
+    
+    for component in yaml_["postprocess"]["components"]:
+        if not component.get('postprocess_on', False):
+            continue
+        if 'climatology' in component and component['climatology']:
+            return True
+    
+    return False
 
 def get_climatology_info(experiment_yaml, info_type):
     """Return requested climatology information from the experiment yaml
