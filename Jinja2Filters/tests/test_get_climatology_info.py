@@ -9,7 +9,7 @@ from yaml import safe_load
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from get_climatology_info import task_graphs, duration_parser
+from get_climatology_info import task_graphs, task_definitions, duration_parser
 
 
 def test_climatology_graph_uses_interval_years_recurrence():
@@ -191,29 +191,37 @@ postprocess:
     # Clean should use R1/$ recurrence to run once at final cycle
     assert "R1/$ = \"\"\"" in graph, "Clean section should use R1/$ recurrence"
     
-    # Extract the clean dependency line and check all tasks are present with :succeed-all
-    expected_tasks = ["climo-yr-P2Y_atmos_month", "climo-mon-P2Y_atmos_month", "climo-yr-P2Y_atmos_scalar"]
+    # Extract the clean dependency line and check families are used with :succeed-all
     clean_line_found = False
     remap_dependency_found = False
-    succeed_all_found = False
+    family_used = False
     for line in graph.split('\n'):
         if "=> clean-shards-ts-P1Y" in line:
-            # Check that all expected tasks appear in the dependency line with :succeed-all
-            if all(task in line for task in expected_tasks):
-                clean_line_found = True
-                # Check for :succeed-all qualifiers
-                if ":succeed-all" in line:
-                    succeed_all_found = True
-                # Also check for remap task dependency
-                if "REMAP-PP-COMPONENTS-TS-P1Y:succeed-all" in line:
-                    remap_dependency_found = True
-                break
+            clean_line_found = True
+            # Check for family with :succeed-all qualifiers
+            if "CLIMO-TASKS:succeed-all" in line:
+                family_used = True
+            # Also check for remap task dependency
+            if "REMAP-PP-COMPONENTS-TS-P1Y:succeed-all" in line:
+                remap_dependency_found = True
+            break
 
-    assert clean_line_found, "Clean task should wait for ALL climo tasks: " + ", ".join(expected_tasks)
-    assert remap_dependency_found, "Clean task should also wait for all REMAP-PP-COMPONENTS-TS tasks"
-    assert succeed_all_found, "Clean task dependencies should use :succeed-all to wait across all cycles"
+    assert clean_line_found, "Clean task should be present"
+    assert remap_dependency_found, "Clean task should wait for all REMAP-PP-COMPONENTS-TS tasks"
+    assert family_used, "Clean task dependencies should use CLIMO-TASKS family with :succeed-all"
 
-    print("✓ Clean tasks correctly wait for all climatology tasks AND remap tasks with :succeed-all")
+    print("✓ Clean tasks correctly wait for all climatology tasks AND remap tasks using families")
+    
+    # Also verify family definitions are present
+    yaml_ = safe_load(yaml_content)
+    definitions = task_definitions(yaml_, True)
+    
+    assert "[[CLIMO-TASKS]]" in definitions, "CLIMO-TASKS family should be defined"
+    assert "[[REMAP-CLIMO-TASKS]]" in definitions, "REMAP-CLIMO-TASKS family should be defined"
+    assert "[[COMBINE-CLIMO-TASKS]]" in definitions, "COMBINE-CLIMO-TASKS family should be defined"
+    assert "inherit = MAKE-TIMEAVGS, CLIMO-TASKS" in definitions, "Climo tasks should inherit from CLIMO-TASKS family"
+    
+    print("✓ Task families correctly defined")
 
 
 def test_has_climatology_detection():

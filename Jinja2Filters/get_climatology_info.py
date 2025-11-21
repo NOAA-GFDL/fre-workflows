@@ -136,7 +136,7 @@ class Climatology(object):
 
         definitions += f"""
     [[climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = MAKE-TIMEAVGS
+        inherit = MAKE-TIMEAVGS, CLIMO-TASKS
         [[[environment]]]
             sources = {sources}
             output_interval = P{self.interval_years}Y
@@ -150,7 +150,7 @@ class Climatology(object):
 
         definitions += f"""
     [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = REMAP-PP-COMPONENTS-AV
+        inherit = REMAP-PP-COMPONENTS-AV, REMAP-CLIMO-TASKS
         [[[environment]]]
             components = {self.component}
             currentChunk = P{self.interval_years}Y
@@ -160,7 +160,7 @@ class Climatology(object):
 
         definitions += f"""
     [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = COMBINE-TIMEAVGS
+        inherit = COMBINE-TIMEAVGS, COMBINE-CLIMO-TASKS
         [[[environment]]]
             component = {self.component}
             frequency = {self.frequency}
@@ -238,7 +238,17 @@ def task_definitions(yaml_, clean_work):
         String containing the task defintions.
     """
     logger.debug("About to generate all task definitions")
-    definitions = ""
+    
+    # Add family definitions for climatology tasks
+    definitions = """
+    [[CLIMO-TASKS]]
+        # Family for all climatology computation tasks
+    [[REMAP-CLIMO-TASKS]]
+        # Family for all climatology remap tasks
+    [[COMBINE-CLIMO-TASKS]]
+        # Family for all climatology combine tasks
+"""
+    
     for script_info in task_generator(yaml_):
         definitions += script_info.definition(clean_work)
     logger.debug("Finished generating all task definitions")
@@ -285,14 +295,11 @@ def task_graphs(yaml_, history_segment, clean_work):
             graph += "\n# Clean shards after ALL climatology AND remap tasks complete\n"
             graph += f"R1/$ = \"\"\"\n"
 
-            # Collect all climo tasks that use this pp_chunk
-            climo_tasks = [task['climo'] for task in all_task_names if task['pp_chunk_years'] == pp_chunk_years]
-            if climo_tasks:
-                # Wait for all climo tasks AND all remap tasks across all cycles
-                # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + " & ".join(f"{task}:succeed-all" for task in climo_tasks)
-                graph += f" & REMAP-PP-COMPONENTS-TS-P{pp_chunk_years}Y:succeed-all"
-                graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
+            # Wait for all instances of climatology tasks and remap tasks across all cycles
+            # Use family names with :succeed-all to wait for all instances
+            graph += "    CLIMO-TASKS:succeed-all"
+            graph += f" & REMAP-PP-COMPONENTS-TS-P{pp_chunk_years}Y:succeed-all"
+            graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
 
             graph += "\"\"\"\n"
 
@@ -302,19 +309,12 @@ def task_graphs(yaml_, history_segment, clean_work):
             graph += "\n# Clean averages and pp after ALL climatology tasks complete\n"
             graph += f"R1/$ = \"\"\"\n"
 
-            # Collect all remap and combine tasks for this interval
-            remap_tasks = [task['remap'] for task in all_task_names if task['interval_years'] == interval_years]
-            combine_tasks = [task['combine'] for task in all_task_names if task['interval_years'] == interval_years]
+            # Use family names with :succeed-all to wait for all instances across all cycles
+            graph += "    REMAP-CLIMO-TASKS:succeed-all"
+            graph += f" => clean-shards-av-P{interval_years}Y\n"
 
-            if remap_tasks:
-                # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + " & ".join(f"{task}:succeed-all" for task in remap_tasks)
-                graph += f" => clean-shards-av-P{interval_years}Y\n"
-
-            if combine_tasks:
-                # Use :succeed-all to wait for tasks across all cycle points
-                graph += "    " + " & ".join(f"{task}:succeed-all" for task in combine_tasks)
-                graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
+            graph += "    COMBINE-CLIMO-TASKS:succeed-all"
+            graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
 
             graph += "\"\"\"\n"
 
