@@ -1,7 +1,15 @@
 
     [[root]]
         init-script = """
+            # stock fre-cli
             module load fre/{{ FRE_VERSION }}
+
+            # custom user fre-cli
+            #module load conda
+            #conda activate user-fre-cli
+            #which fre
+
+            module load gcp/2.3
             module list
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -16,6 +24,11 @@
             --comment=xtmp,fre/{{ FRE_VERSION }}
         [[[environment]]]
             COPY_TOOL=gcp
+
+    [[STAGE-HISTORY]]
+        pre-script = """
+            module load gcp/2.3 hsm/1.3.0
+        """
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
     [[PRE-ANALYSIS]]
@@ -63,44 +76,25 @@
         """
 {% endif %}
 
-    [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
     [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[REMAP-PP-COMPONENTS]]
-        pre-script = mkdir -p $outputDir
-
-    [[DATA-CATALOG]]
-        pre-script = module load fre/{{ FRE_VERSION }}
+        pre-script = module load netcdf-c cdo nco
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo fre/{{ FRE_VERSION }} && mkdir -p $outputDir
-
-    [[MAKE-TIMEAVGS]]
-        pre-script = module load fre/{{ FRE_VERSION }} && mkdir -p $outputDir
+        pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]
-        pre-script = module load cdo nco && mkdir -p $outputDir
+        pre-script = module load cdo nco
 
 {% if DO_REGRID %}
     [[REGRID-XY]]
         execution time limit = P1D
         pre-script = """
+            module load fre-nctools/2024.05.01
             which fregrid
         """
 {% endif %}
 
-    [[CLEAN]]
-        pre-script = "set -x"
-
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = module load cdo
 {% endif %}
-
-    [[ANALYSIS]]
-        pre-script = """
-            module load gcp
-        """
