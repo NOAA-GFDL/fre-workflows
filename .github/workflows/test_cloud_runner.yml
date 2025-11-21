@@ -203,8 +203,7 @@ jobs:
               exit 2
           fi
 
-      - name: Print data-catalog-final (CONTINUES ON FAILURE)
-        continue-on-error: true
+      - name: Print data-catalog-final
         run: |
           set +e
           # Successes 

@@ -58,7 +58,7 @@ jobs:
 
       - name: Jinja2filter pylint
         run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.1 ./Jinja2Filters
+          pylint -v --rcfile ./pylintrc --fail-under 7.3 ./Jinja2Filters
 
       - name: lib/python pytest
         run: |
