@@ -8,10 +8,13 @@ and validates that the log path exists before processing.
 
 Usage:
     python check_workflow_tasks.py
+    python check_workflow_tasks.py --summary  # Print workflow summary only
 """
 
 import sys
 import logging
+import glob
+import argparse
 from pathlib import Path
 
 # Add current directory to sys.path to support execution from any directory
@@ -19,6 +22,78 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 # Import the check_cylc_tasks module
 from check_cylc_tasks import configure_logging, check_multiple_tasks  # pylint: disable=wrong-import-position
+
+
+def print_workflow_summary(log_base_path: str) -> int:
+    """
+    Print summary information about the workflow run.
+
+    This function prints:
+    - Number of tasks launched
+    - Job directories with job scripts
+    - Job scripts for 1980 only
+    - Rose-suite configuration
+
+    Args:
+        log_base_path: Base path to the Cylc workflow log directory
+
+    Returns:
+        Exit code:
+            0: Success (summary printed)
+            1: Errors occurred while printing summary
+    """
+    logger = logging.getLogger(__name__)
+
+    # Validate that the log path exists
+    log_path = Path(log_base_path)
+    if not log_path.exists():
+        logger.error("Log base path does not exist: %s", log_base_path)
+        return 1
+
+    try:
+        # Count number of tasks launched
+        job_pattern = f"{log_base_path}/log/job/????*/*/NN/job"
+        job_files = glob.glob(job_pattern)
+        num_tasks = len(job_files)
+        print(f"number of tasks launched: {num_tasks}")
+        print()
+
+        # List all job directories with job scripts
+        if job_files:
+            print("here's all the job directories with job scripts:")
+            for job_file in sorted(job_files):
+                # Get file stats to match ls -l output
+                job_path = Path(job_file)
+                stat = job_path.stat()
+                print(f"{stat.st_mode:o} {stat.st_nlink} {stat.st_size} {job_file}")
+            print()
+
+        # List job scripts for 1980 only
+        job_1980_pattern = f"{log_base_path}/log/job/1980*/*/NN/job"
+        job_1980_files = glob.glob(job_1980_pattern)
+        if job_1980_files:
+            print("here's all the job scripts for 1980 only:")
+            for job_file in sorted(job_1980_files):
+                job_path = Path(job_file)
+                stat = job_path.stat()
+                print(f"{stat.st_mode:o} {stat.st_nlink} {stat.st_size} {job_file}")
+            print()
+
+        # Print rose-suite configuration
+        config_pattern = f"{log_base_path}/log/config/*rose-suite.conf"
+        config_files = glob.glob(config_pattern)
+        if config_files:
+            print("rose-suite conf for workflow:")
+            for config_file in sorted(config_files):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    print(f.read())
+            print()
+
+        return 0
+
+    except Exception as ex:
+        logger.error("Error printing workflow summary: %s", str(ex))
+        return 1
 
 
 def main() -> int:
@@ -91,4 +166,25 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    parser = argparse.ArgumentParser(
+        description='Check PPP workflow task statuses or print workflow summary'
+    )
+    parser.add_argument(
+        '--summary',
+        action='store_true',
+        help='Print workflow summary only (do not check task statuses)'
+    )
+    args = parser.parse_args()
+
+    # Configure logging
+    configure_logging(verbose=False, quiet=False)
+
+    # Define the log base path for the PPP workflow
+    log_base_path = "/contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest"
+
+    if args.summary:
+        # Just print the summary
+        sys.exit(print_workflow_summary(log_base_path))
+    else:
+        # Run the main task checking
+        sys.exit(main())

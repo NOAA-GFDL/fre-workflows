@@ -94,21 +94,7 @@ jobs:
       - name: Print workflow summary
         continue-on-error: true
         run: |
-          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
-          echo "number of tasks launched: ${num_tasks}"
-          echo ""
-
-          echo "here's all the job directories with job scripts:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
-          echo ""
-
-          echo "here's all the job scripts for 1980 only:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
-          echo ""
-
-          echo "rose-suite conf for workflow:"
-          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
-          echo ""
+          python for_gh_runner/check_workflow_tasks.py --summary
 
       - name: Check all workflow tasks
         run: |

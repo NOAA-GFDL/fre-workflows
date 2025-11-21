@@ -138,8 +138,17 @@ jobs:
 
       - name: for_gh_runner pytest
         run: |
-          pytest -vv -rx ./for_gh_runner/tests
+          pytest -vv -rx --cov-report=xml --cov-config=.coveragerc --cov=for_gh_runner ./for_gh_runner/tests
 
       - name: for_gh_runner pylint
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 8.0 ./for_gh_runner
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          flags: for_gh_runner
+          name: for_gh_runner-coverage
+          fail_ci_if_error: false
+          verbose: true
