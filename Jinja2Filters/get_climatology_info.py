@@ -280,35 +280,40 @@ def task_graphs(yaml_, history_segment, clean_work):
 
         # For each unique pp_chunk, create a clean dependency that waits for ALL climo tasks
         # AND all remap tasks (since climo tasks depend on remap outputs)
+        # Use R1/$ to run clean only once at the final cycle point
         for pp_chunk_years in pp_chunks_to_clean:
             graph += "\n# Clean shards after ALL climatology AND remap tasks complete\n"
-            graph += f"P{pp_chunk_years}Y = \"\"\"\n"
+            graph += f"R1/$ = \"\"\"\n"
 
             # Collect all climo tasks that use this pp_chunk
             climo_tasks = [task['climo'] for task in all_task_names if task['pp_chunk_years'] == pp_chunk_years]
             if climo_tasks:
                 # Wait for all climo tasks AND all remap tasks across all cycles
-                graph += "    " + " & ".join(climo_tasks)
+                # Use :succeed-all to wait for tasks across all cycle points
+                graph += "    " + ":succeed-all & ".join(climo_tasks) + ":succeed-all"
                 graph += f" & REMAP-PP-COMPONENTS-TS-P{pp_chunk_years}Y:succeed-all"
                 graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
 
             graph += "\"\"\"\n"
 
         # For each unique interval_years, create clean dependencies for av and pp
+        # Use R1/$ to run clean only once at the final cycle point
         for interval_years in interval_years_to_clean:
             graph += "\n# Clean averages and pp after ALL climatology tasks complete\n"
-            graph += f"P{interval_years}Y = \"\"\"\n"
+            graph += f"R1/$ = \"\"\"\n"
 
             # Collect all remap and combine tasks for this interval
             remap_tasks = [task['remap'] for task in all_task_names if task['interval_years'] == interval_years]
             combine_tasks = [task['combine'] for task in all_task_names if task['interval_years'] == interval_years]
 
             if remap_tasks:
-                graph += "    " + " & ".join(remap_tasks)
+                # Use :succeed-all to wait for tasks across all cycle points
+                graph += "    " + ":succeed-all & ".join(remap_tasks) + ":succeed-all"
                 graph += f" => clean-shards-av-P{interval_years}Y\n"
 
             if combine_tasks:
-                graph += "    " + " & ".join(combine_tasks)
+                # Use :succeed-all to wait for tasks across all cycle points
+                graph += "    " + ":succeed-all & ".join(combine_tasks) + ":succeed-all"
                 graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
 
             graph += "\"\"\"\n"

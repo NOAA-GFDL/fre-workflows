@@ -52,8 +52,9 @@ postprocess:
     assert "=> climo-mon-P2Y_atmos_month" in graph
 
     # Verify clean dependencies are also present (since clean_work=True)
-    # Clean tasks use P1Y (pp_chunk) recurrence and wait for all climo tasks
-    assert "climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph
+    # Clean tasks use R1/$ to run once at final cycle point
+    assert "R1/$ = \"\"\"" in graph
+    assert "clean-shards-ts-P1Y" in graph
 
     print("✓ Climatology graph correctly uses interval_years recurrence")
 
@@ -187,15 +188,22 @@ postprocess:
     assert "climo-yr-P2Y_atmos_scalar" in graph
 
     # Verify clean dependency requires ALL climo tasks AND remap tasks
-    # Extract the clean dependency line and check all tasks are present
+    # Clean should use R1/$ recurrence to run once at final cycle
+    assert "R1/$ = \"\"\"" in graph, "Clean section should use R1/$ recurrence"
+    
+    # Extract the clean dependency line and check all tasks are present with :succeed-all
     expected_tasks = ["climo-yr-P2Y_atmos_month", "climo-mon-P2Y_atmos_month", "climo-yr-P2Y_atmos_scalar"]
     clean_line_found = False
     remap_dependency_found = False
+    succeed_all_found = False
     for line in graph.split('\n'):
         if "=> clean-shards-ts-P1Y" in line:
-            # Check that all expected tasks appear in the dependency line
+            # Check that all expected tasks appear in the dependency line with :succeed-all
             if all(task in line for task in expected_tasks):
                 clean_line_found = True
+                # Check for :succeed-all qualifiers
+                if ":succeed-all" in line:
+                    succeed_all_found = True
                 # Also check for remap task dependency
                 if "REMAP-PP-COMPONENTS-TS-P1Y:succeed-all" in line:
                     remap_dependency_found = True
@@ -203,8 +211,9 @@ postprocess:
 
     assert clean_line_found, "Clean task should wait for ALL climo tasks: " + ", ".join(expected_tasks)
     assert remap_dependency_found, "Clean task should also wait for all REMAP-PP-COMPONENTS-TS tasks"
+    assert succeed_all_found, "Clean task dependencies should use :succeed-all to wait across all cycles"
 
-    print("✓ Clean tasks correctly wait for all climatology tasks AND remap tasks")
+    print("✓ Clean tasks correctly wait for all climatology tasks AND remap tasks with :succeed-all")
 
 
 def test_has_climatology_detection():
