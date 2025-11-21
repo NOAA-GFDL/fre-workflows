@@ -57,7 +57,7 @@ jobs:
           # fre-workflows repo and branch
           echo "fre-workflows repo: $(git remote -v)"
           echo "fre-workflows branch: $(git branch)"
-          
+
           # fre-cli repo and branch
           cd fre-cli
           echo "fre-cli repo: $(git remote -v)"
