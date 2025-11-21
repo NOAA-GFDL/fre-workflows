@@ -109,14 +109,23 @@ class Climatology(object):
         graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
         graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
 
-        if clean_work:
-            graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}         => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-            graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}   => clean-shards-av-P{self.interval_years}Y\n"
-            graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
-
         graph += f"\"\"\"\n"
 
         return graph
+    
+    def get_task_names(self):
+        """Return the names of the climatology tasks for dependency tracking.
+        
+        Returns:
+            Dictionary with task names for each stage (climo, remap, combine)
+        """
+        return {
+            'climo': f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}",
+            'remap': f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}",
+            'combine': f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}",
+            'pp_chunk_years': self.pp_chunk.years,
+            'interval_years': self.interval_years
+        }
 
     def definition(self, clean_work):
         """Generate the cylc task definitions for the climatology.
@@ -246,8 +255,55 @@ def task_graphs(yaml_, history_segment, clean_work):
     """
     logger.debug("About to generate all task graphs")
     graph = ""
+    all_task_names = []
+    
     for script_info in task_generator(yaml_):
         graph += script_info.graph(history_segment, clean_work)
+        if clean_work:
+            all_task_names.append(script_info.get_task_names())
+    
+    # Add consolidated clean dependencies after all climo tasks
+    if clean_work and all_task_names:
+        # Group tasks by pp_chunk and interval_years for clean operations
+        pp_chunks_to_clean = set()
+        interval_years_to_clean = set()
+        
+        for task_info in all_task_names:
+            pp_chunks_to_clean.add(task_info['pp_chunk_years'])
+            interval_years_to_clean.add(task_info['interval_years'])
+        
+        # For each unique pp_chunk, create a clean dependency that waits for ALL climo tasks
+        for pp_chunk_years in pp_chunks_to_clean:
+            graph += f"\n# Clean shards after ALL climatology tasks complete\n"
+            graph += f"P{pp_chunk_years}Y = \"\"\"\n"
+            
+            # Collect all climo tasks that use this pp_chunk
+            climo_tasks = [task['climo'] for task in all_task_names if task['pp_chunk_years'] == pp_chunk_years]
+            if climo_tasks:
+                graph += "    " + " & ".join(climo_tasks)
+                graph += f" => clean-shards-ts-P{pp_chunk_years}Y\n"
+            
+            graph += f"\"\"\"\n"
+        
+        # For each unique interval_years, create clean dependencies for av and pp
+        for interval_years in interval_years_to_clean:
+            graph += f"\n# Clean averages and pp after ALL climatology tasks complete\n"
+            graph += f"P{interval_years}Y = \"\"\"\n"
+            
+            # Collect all remap and combine tasks for this interval
+            remap_tasks = [task['remap'] for task in all_task_names if task['interval_years'] == interval_years]
+            combine_tasks = [task['combine'] for task in all_task_names if task['interval_years'] == interval_years]
+            
+            if remap_tasks:
+                graph += "    " + " & ".join(remap_tasks)
+                graph += f" => clean-shards-av-P{interval_years}Y\n"
+            
+            if combine_tasks:
+                graph += "    " + " & ".join(combine_tasks)
+                graph += f" => clean-pp-timeavgs-P{interval_years}Y\n"
+            
+            graph += f"\"\"\"\n"
+    
     logger.debug("Finished generating all task graphs")
     return graph
 

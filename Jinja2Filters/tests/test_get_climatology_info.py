@@ -42,13 +42,16 @@ postprocess:
 
     graph = task_graphs(yaml_, history_segment, clean_work)
 
-    # Verify that the graph uses P2Y (interval_years) recurrence, not P1Y (pp_chunk)
+    # Verify that the graph uses P2Y (interval_years) recurrence for climo tasks
     assert "P2Y = \"\"\"" in graph, "Graph should use P2Y recurrence matching interval_years"
-    assert "P1Y = \"\"\"" not in graph, "Graph should not use P1Y recurrence"
 
     # Verify dependencies use positive offsets to look ahead for additional data
     assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
+    
+    # Verify clean dependencies are also present (since clean_work=True)
+    # Clean tasks use P1Y (pp_chunk) recurrence and wait for all climo tasks
+    assert "climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph
 
     print("✓ Climatology graph correctly uses interval_years recurrence")
 
@@ -137,8 +140,63 @@ postprocess:
     print("✓ Climatology correctly uses make-timeseries dependencies")
 
 
+def test_consolidated_clean_dependencies():
+    """
+    Test that clean tasks wait for ALL climatology tasks to complete
+    """
+    yaml_content = """
+postprocess:
+  components:
+    - type: "atmos_month"
+      sources:
+        - history_file: "atmos_month"
+      xyInterp: "180,288"
+      interpMethod: "conserve_order2"
+      postprocess_on: True
+      climatology:
+      - frequency: yr
+        interval_years: 2
+      - frequency: mon
+        interval_years: 2
+    - type: "atmos_scalar"
+      sources:
+        - history_file: "atmos_scalar"
+      postprocess_on: True
+      climatology:
+      - frequency: yr
+        interval_years: 2
+
+  settings:
+    history_segment: "P1Y"
+    pp_chunks: ["P1Y"]
+
+  switches:
+    clean_work: True
+"""
+    yaml_ = safe_load(yaml_content)
+    history_segment = duration_parser.parse(yaml_["postprocess"]["settings"]["history_segment"])
+    clean_work = yaml_["postprocess"]["switches"]["clean_work"]
+
+    graph = task_graphs(yaml_, history_segment, clean_work)
+
+    # Verify all climo tasks are present
+    assert "climo-yr-P2Y_atmos_month" in graph
+    assert "climo-mon-P2Y_atmos_month" in graph
+    assert "climo-yr-P2Y_atmos_scalar" in graph
+
+    # Verify clean dependency requires ALL climo tasks
+    # The clean task should have all climo tasks as dependencies
+    assert "climo-yr-P2Y_atmos_month & climo-mon-P2Y_atmos_month & climo-yr-P2Y_atmos_scalar => clean-shards-ts-P1Y" in graph or \
+           "climo-yr-P2Y_atmos_scalar & climo-yr-P2Y_atmos_month & climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph or \
+           "climo-mon-P2Y_atmos_month & climo-yr-P2Y_atmos_month & climo-yr-P2Y_atmos_scalar => clean-shards-ts-P1Y" in graph, \
+           "Clean task should wait for ALL climo tasks"
+
+    print("✓ Clean tasks correctly wait for all climatology tasks")
+
+
 if __name__ == "__main__":
     test_climatology_graph_uses_interval_years_recurrence()
     test_climatology_with_multiple_sources()
     test_climatology_make_timeseries_dependency()
+    test_consolidated_clean_dependencies()
     print("\nAll tests passed!")
