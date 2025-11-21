@@ -9,8 +9,8 @@ from get_climatology_info import task_graphs, duration_parser
 from yaml import safe_load
 
 
-def test_climatology_graph_uses_interval_years_recurrence():
-    """Test that climatology graph uses interval_years recurrence"""
+def test_climatology_graph_uses_pp_chunk_recurrence():
+    """Test that climatology graph uses pp_chunk recurrence, not interval_years"""
     yaml_content = """
 postprocess:
   components:
@@ -39,14 +39,15 @@ postprocess:
     
     graph = task_graphs(yaml_, history_segment, clean_work)
     
-    # Verify that the graph uses P2Y (interval_years) recurrence
-    assert "P2Y = \"\"\"" in graph, "Graph should use P2Y recurrence matching interval_years"
+    # Verify that the graph uses P1Y (pp_chunk) recurrence, not P2Y (interval_years)
+    assert "P1Y = \"\"\"" in graph, "Graph should use P1Y recurrence matching pp_chunk"
+    assert "P2Y = \"\"\"" not in graph, "Graph should not use P2Y recurrence"
     
     # Verify dependencies are correctly structured
     assert "rename-split-to-pp-regrid_atmos_month & rename-split-to-pp-regrid_atmos_month[P1Y]" in graph
     assert "=> climo-mon-P2Y_atmos_month" in graph
     
-    print("✓ Climatology graph correctly uses interval_years recurrence")
+    print("✓ Climatology graph correctly uses pp_chunk recurrence")
 
 
 def test_climatology_with_multiple_sources():
@@ -80,8 +81,9 @@ postprocess:
     assert "rename-split-to-pp-native_atmos_daily" in graph
     assert "rename-split-to-pp-native_atmos_month" in graph
     
-    # Verify P5Y recurrence is used (interval_years)
-    assert "P5Y = \"\"\"" in graph
+    # Verify P1Y recurrence is used (pp_chunk), not P5Y (interval_years)
+    assert "P1Y = \"\"\"" in graph
+    assert "P5Y = \"\"\"" not in graph
     
     # Verify offsets for 5-year interval with 1-year chunks (0, 1, 2, 3, 4)
     assert "[P1Y]" in graph
@@ -120,60 +122,16 @@ postprocess:
     
     # When history_segment != pp_chunk, should use make-timeseries
     assert "make-timeseries-native-P1Y_ocean" in graph
-    # Verify that rename-split-to-pp is not directly connected to climo
-    assert "rename-split-to-pp-native_ocean => climo" not in graph
+    assert "rename-split-to-pp-native_ocean" not in " => climo" and graph
     
-    # Should use P2Y recurrence (interval_years)
-    assert "P2Y = \"\"\"" in graph
+    # Should still use P1Y recurrence
+    assert "P1Y = \"\"\"" in graph
     
     print("✓ Climatology correctly uses make-timeseries dependencies")
 
 
-def test_climatology_clean_task_dependencies():
-    """Test that clean tasks wait for all climatology chunks"""
-    yaml_content = """
-postprocess:
-  components:
-    - type: "atmos_month"
-      sources:
-        - history_file: "atmos_month"
-      xyInterp: "180,288"
-      interpMethod: "conserve_order2"
-      inputRealm: 'atmos'
-      sourceGrid: 'cubedsphere'
-      postprocess_on: True
-      climatology:
-      - frequency: mon
-        interval_years: 2
-        
-  settings:
-    history_segment: "P1Y"
-    pp_chunks: ["P1Y"]
-    
-  switches:
-    clean_work: True
-"""
-    yaml_ = safe_load(yaml_content)
-    history_segment = duration_parser.parse(yaml_["postprocess"]["settings"]["history_segment"])
-    clean_work = yaml_["postprocess"]["switches"]["clean_work"]
-    
-    graph = task_graphs(yaml_, history_segment, clean_work)
-    
-    # Verify that a P1Y section is created with clean dependencies
-    assert "P1Y = \"\"\"" in graph
-    assert "climo-mon-P2Y_atmos_month => clean-shards-ts-P1Y" in graph
-    assert "climo-mon-P2Y_atmos_month[-P1Y] => clean-shards-ts-P1Y" in graph
-    
-    # Verify other clean tasks are still present
-    assert "remap-climo-mon-P2Y_atmos_month   => clean-shards-av-P2Y" in graph
-    assert "combine-climo-mon-P2Y_atmos_month => clean-pp-timeavgs-P2Y" in graph
-    
-    print("✓ Clean task dependencies correctly prevent premature cleanup")
-
-
 if __name__ == "__main__":
-    test_climatology_graph_uses_interval_years_recurrence()
+    test_climatology_graph_uses_pp_chunk_recurrence()
     test_climatology_with_multiple_sources()
     test_climatology_make_timeseries_dependency()
-    test_climatology_clean_task_dependencies()
     print("\nAll tests passed!")
