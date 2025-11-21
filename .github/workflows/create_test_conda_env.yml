@@ -135,3 +135,11 @@ jobs:
         run: |
           echo "i am not python in any part yet"
           pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/analysis
+
+      - name: for_gh_runner pytest
+        run: |
+          pytest -vv -rx ./for_gh_runner/tests
+
+      - name: for_gh_runner pylint
+        run: |
+          pylint -v --rcfile ./pylintrc --fail-under 8.0 ./for_gh_runner
