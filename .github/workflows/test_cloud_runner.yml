@@ -52,8 +52,6 @@ jobs:
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
           submodules: true
-      - name: Set up Python
-        uses: actions/setup-python@v5
       - name: Display fre-workflow and fre-cli repos and branches
         run: |
           # fre-workflows repo and branch
@@ -92,14 +90,14 @@ jobs:
           name: fre-workflow-logs
           path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
-
-      - name: Print workflow summary
-        continue-on-error: true
-        run: |
+# copying steps almost verbatim here: https://github.com/actions/setup-python
+      - uses: actions/checkout@v5
+      - name: Print workflow summary and final task states with python
+        uses: actions/setup-python@v6        
+        with:
+          python-version: '3.11'
+      - run: |
           python for_gh_runner/check_workflow_tasks.py --summary
-
-      - name: Check all workflow tasks
-        run: |
           python for_gh_runner/check_workflow_tasks.py
 
 ## Keep in here for now as a just in case reference ##
