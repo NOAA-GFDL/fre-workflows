@@ -37,11 +37,11 @@
 {% set PP_COMPONENTS = YAML | get_components %}
 
 [meta]
-    title = "Postprocessing Example 1"
+    title = "FRE Postprocessing"
     description = """
-    Postprocessing example that includes Bronx-like functionality,
+    Postprocessing approach with Bronx-like functionality
     """
-    URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
+    URL = https://github.com/noaa-gfdl/fre-workflows
 
 [scheduler]
     {# Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos. #}
