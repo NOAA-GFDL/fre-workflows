@@ -64,7 +64,7 @@ function process_files {
             # (when frequency and chunksize are both 0)
             # or you are dealing with a timeseries file that has one timestep
             # and you need to look at the time_bnds to get them
-            echo $(cdo ndate $file 2)
+            echo $(cdo ndate $file)
             #Counts every variable in the file that has time as a record dimension. For a static file, 
             #this should be 0 or 1; for a timeseries file, this will be greater than 1.
             #This assumes that we will have a record dimension named time - but frankly, 
