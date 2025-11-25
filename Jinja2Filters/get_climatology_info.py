@@ -74,10 +74,10 @@ class Climatology(object):
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
-        for index, source in enumerate(self.sources):
+        for source in self.sources:
             count = 0
             while count < chunks_per_interval:
-                if index == 0:
+                if count == 0:
                     connector = ""
                 else:
                     connector = " & "
@@ -97,7 +97,7 @@ class Climatology(object):
             graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f"\"\"\"\n"
+        graph += f"\"\"\"\n"
 
         # then, create the cleaning tasks
         if clean_work:
