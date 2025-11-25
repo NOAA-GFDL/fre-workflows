@@ -15,7 +15,8 @@ def err(message: str) -> None:
     Args:
         message: The message to print
     """
-    timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S%z')
+    # Use isoformat() for more reliable timezone handling across platforms
+    timestamp = datetime.now().astimezone().isoformat(timespec='seconds')
     print(f"[{timestamp}]: {message}", file=sys.stderr)
 
 
@@ -61,11 +62,13 @@ def get_freq_and_format_from_hours(hours: float) -> tuple:
     hours_floor = int(hours)
     hours_remainder = hours - hours_floor
 
-    # Annual (this is so questionable)
+    # Annual: > 180 days (4320 hours)
+    # Note: This threshold is conservative and may not accurately detect
+    # all annual frequencies. It was inherited from the original bash script.
     if hours_floor > 4320:
         return ('P1Y', 'CCYY')
 
-    # Monthly
+    # Monthly: ~28-31 days (672-744 hours)
     if 671 < hours_floor < 745:
         return ('P1M', 'CCYYMM')
 
@@ -129,20 +132,28 @@ def get_freq_and_format_from_two_dates(d1: str, d2: str) -> tuple:
         from metomi.isodatetime.parsers import TimePointParser
         from metomi.isodatetime.data import Calendar
 
-        parser = TimePointParser()
+        # Use 365-day calendar for consistent duration calculation
+        calendar = Calendar.default()
+        original_mode = calendar.mode
+        calendar.set_mode(Calendar.MODE_365)
 
-        # Parse the dates
-        tp1 = parser.parse(d1)
-        tp2 = parser.parse(d2)
+        try:
+            parser = TimePointParser()
 
-        # Calculate difference using 365-day calendar
-        Calendar.default().set_mode(Calendar.MODE_365)
-        duration = tp2 - tp1
+            # Parse the dates
+            tp1 = parser.parse(d1)
+            tp2 = parser.parse(d2)
 
-        # Get total hours
-        hours = duration.get_days_and_seconds()[0] * 24 + duration.get_days_and_seconds()[1] / 3600.0
+            # Calculate difference
+            duration = tp2 - tp1
 
-        return get_freq_and_format_from_hours(hours)
+            # Get total hours
+            hours = duration.get_days_and_seconds()[0] * 24 + duration.get_days_and_seconds()[1] / 3600.0
+
+            return get_freq_and_format_from_hours(hours)
+        finally:
+            # Restore original calendar mode
+            calendar.set_mode(original_mode)
 
     except ImportError:
         # Fallback if metomi.isodatetime not available

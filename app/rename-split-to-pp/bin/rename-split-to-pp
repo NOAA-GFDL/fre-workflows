@@ -404,10 +404,20 @@ def process_file(filepath: str, output_dir: str,
     # Link the file(s)
     if tile:
         # For tiled files, link all 6 tiles
+        # The tile name is in the 3rd position of the filename: DATE.label.tileN.VAR.nc
         tile_patterns = ['tile1', 'tile2', 'tile3', 'tile4', 'tile5', 'tile6']
+        src_filename = os.path.basename(filepath)
+        dst_filename = os.path.basename(out_file)
+        src_dir = os.path.dirname(filepath)
+        dst_dir = os.path.dirname(out_file)
+
         for t in tile_patterns:
-            src_file = filepath.replace('tile1', t)
-            dst_file = out_file.replace('tile1', t)
+            # Replace only the tile component in the filename, not in the path
+            src_fn = src_filename.replace('.tile1.', f'.{t}.')
+            dst_fn = dst_filename.replace('.tile1.', f'.{t}.')
+            src_file = os.path.join(src_dir, src_fn)
+            dst_file = os.path.join(dst_dir, dst_fn)
+
             if os.path.exists(src_file):
                 os.link(src_file, dst_file)
                 if freq != 'P0Y':
@@ -436,10 +446,14 @@ def find_matching_files(directory: str, component: str) -> list:
     pattern1 = os.path.join(directory, f"*.{component}.*.nc")
     pattern2 = os.path.join(directory, f"*.{component}.tile1.*.nc")
 
+    # Regex to detect tile patterns in filename only (not path)
+    tile_pattern = re.compile(r'\.tile[2-6]\.')
+
     files = set()
     for f in glob.glob(pattern1):
-        # Skip if this is a tiled file but not tile1
-        if '.tile' in f and '.tile1.' not in f:
+        filename = os.path.basename(f)
+        # Skip if this is a tiled file but not tile1 (check filename only)
+        if tile_pattern.search(filename):
             continue
         files.add(f)
 
