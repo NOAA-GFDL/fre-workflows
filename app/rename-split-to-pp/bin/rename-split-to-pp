@@ -22,7 +22,12 @@ from pathlib import Path
 # Import shared utilities
 script_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(script_dir.parent / 'shared'))
-from shared import err, get_freq_and_format_from_two_dates, get_freq_and_format_from_hours
+from shared import (
+    err,
+    get_freq_and_format_from_two_dates,
+    get_freq_and_format_from_two_days,
+    get_freq_and_format_from_hours
+)
 
 
 def run_command(cmd: list, capture_output: bool = True) -> subprocess.CompletedProcess:
@@ -311,7 +316,7 @@ def process_file(filepath: str, output_dir: str,
 
             # Check if dates are numeric (days) or ISO format
             if re.match(r'^[\d.]+$', d1):
-                freq, fmt = get_freq_and_format_from_hours(float(d1) + float(d2))
+                freq, fmt = get_freq_and_format_from_two_days(float(d1), float(d2))
             else:
                 freq, fmt = get_freq_and_format_from_two_dates(d1, d2)
 
@@ -451,6 +456,17 @@ def main():
     output_dir = os.environ.get('outputDir')
     component = os.environ.get('component')
     use_subdirs_str = os.environ.get('use_subdirs', 'False')
+
+    # Validate required environment variables
+    if not input_dir:
+        err("Error: inputDir environment variable is not set")
+        sys.exit(1)
+    if not output_dir:
+        err("Error: outputDir environment variable is not set")
+        sys.exit(1)
+    if not component:
+        err("Error: component environment variable is not set")
+        sys.exit(1)
 
     use_subdirs = use_subdirs_str.lower() == 'true'
 

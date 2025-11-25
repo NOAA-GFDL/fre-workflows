@@ -80,7 +80,18 @@ def get_freq_and_format_from_hours(hours: float) -> tuple:
     # Subhourly
     if hours_floor == 0 and hours_remainder > 0:
         # Convert remainder to a clean decimal string
-        remainder_str = f"{hours_remainder:.10f}".rstrip('0').lstrip('0').lstrip('.')
+        # Format to 10 decimal places, then strip trailing zeros
+        remainder_str = f"{hours_remainder:.10f}".rstrip('0')
+        # Handle edge case where remainder is 1.0 (becomes "1.")
+        if remainder_str.endswith('.'):
+            remainder_str = remainder_str[:-1]
+        # Remove leading "0." to get just the decimal part
+        if remainder_str.startswith('0.'):
+            remainder_str = remainder_str[2:]
+        elif remainder_str == '0':
+            # Edge case: hours_remainder was exactly 0 after rounding
+            err(f"ERROR: Could not determine frequency for hours={hours}")
+            return ('error', 'error')
         return (f'PT0.{remainder_str}H', 'CCYYMMDDThh')
 
     err(f"ERROR: Could not determine frequency for hours={hours}")
