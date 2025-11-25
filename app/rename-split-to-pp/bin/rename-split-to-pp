@@ -1,262 +1,531 @@
-#!/bin/bash
-set -euo pipefail
-set -x
+#!/usr/bin/env python3
+"""
+rename-split-to-pp: Create per-variable timeseries from shards.
 
-#
-# Create per-variable timeseries from shards
-#
+This script links each input file into a canonical directory structure,
+renaming files based on their content and metadata.
 
-# Link each input file into a canonical directory structure
-function process_files {
-    path="$1" #subdir or regular inputDir based on case
-    if (( $use_subdir_switch )); then
-        my_path=$(basename $path)/
-    else
-        my_path=
-    fi
-    
-    files_processed_count=0
-    #$files is defined before process_files is called
-    echo $files
-    for file in ${files[@]}; do
-        echo $file
-        # tiled or non-tiled
-        if (( $(echo $file | grep -o '\.' | wc -l) == 4 )); then
-            date=$(echo $file | cut -d. -f1)
-            label=$(echo $file | cut -d. -f2)
-            tile=$(echo $file | cut -d. -f3)
-            var=$(echo $file | cut -d. -f4)
-        else
-            date=$(echo $file | cut -d. -f1)
-            label=$(echo $file | cut -d. -f2)
-            var=$(echo $file | cut -d. -f3)
-            tile=""
-        fi
-        #echo DEBUG: file=$file, date=$date, label=$label, var=$var, tile=$tile
+Environment variables required:
+    inputDir: Input directory containing split netCDF files
+    outputDir: Output directory for reorganized files
+    component: The history source/component name (e.g., 'atmos_daily')
+    use_subdirs: 'True' or 'False' - whether to use subdirectories (for regridding case)
+"""
 
-        # Skip the average_DT|T1|T1 vars
-        # not sure if they are a problem for they aren't wanted anyway
-        if [[ $var =~ average_.. ]]; then
+import os
+import sys
+import re
+import glob
+import subprocess
+from pathlib import Path
+
+# Import shared utilities
+script_dir = Path(__file__).resolve().parent
+sys.path.insert(0, str(script_dir.parent / 'shared'))
+from shared import err, get_freq_and_format_from_two_dates, get_freq_and_format_from_hours
+
+
+def run_command(cmd: list, capture_output: bool = True) -> subprocess.CompletedProcess:
+    """Run a shell command and return the result."""
+    return subprocess.run(cmd, capture_output=capture_output, text=True)
+
+
+def cdo_sinfo(filepath: str) -> bool:
+    """Check if CDO can open the file."""
+    result = run_command(['cdo', 'sinfo', filepath])
+    return result.returncode == 0
+
+
+def cdo_ntime(filepath: str) -> int:
+    """Get the number of timesteps in a file using CDO."""
+    result = run_command(['cdo', 'ntime', filepath])
+    if result.returncode == 0:
+        return int(result.stdout.strip())
+    return 0
+
+
+def cdo_showtimestamp(filepath: str) -> list:
+    """Get timestamps from a file using CDO."""
+    result = run_command(['cdo', 'showtimestamp', filepath])
+    if result.returncode == 0:
+        return result.stdout.split()
+    return []
+
+
+def ncdump_header(filepath: str) -> str:
+    """Get the header of a netCDF file using ncdump."""
+    result = run_command(['ncdump', '-h', filepath])
+    if result.returncode == 0:
+        return result.stdout
+    return ''
+
+
+def ncdump_time_bnds(filepath: str) -> str:
+    """Get time_bnds from a netCDF file using ncdump."""
+    result = run_command(['ncdump', '-t', '-v', 'time_bnds', filepath])
+    if result.returncode == 0:
+        return result.stdout
+    return ''
+
+
+def has_time_dimension(header: str, varname: str) -> bool:
+    """Check if a variable has a time dimension."""
+    # Look for patterns like "var(time, ...)" or "var(time)"
+    pattern = rf'\b{re.escape(varname)}\s*\([^)]*\btime\b'
+    return bool(re.search(pattern, header))
+
+
+def isodatetime(date_str: str, offset: str = None, max_count: int = None,
+                print_format: str = None) -> str:
+    """
+    Call the isodatetime utility (cylc utility).
+
+    Args:
+        date_str: The date string to process
+        offset: Optional offset to apply
+        max_count: Maximum count for repeat sequences
+        print_format: Output format for the date
+
+    Returns:
+        The processed date string
+    """
+    cmd = ['isodatetime']
+
+    if max_count is not None:
+        cmd.extend(['--max', str(max_count)])
+
+    if print_format is not None:
+        cmd.extend(['--print-format', print_format])
+
+    cmd.append(date_str)
+
+    if offset is not None:
+        cmd.extend(['--offset', offset])
+
+    result = run_command(cmd)
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return ''
+
+
+def isodatetime_repeat(start_date: str, freq: str, max_count: int) -> list:
+    """
+    Generate a sequence of dates using isodatetime.
+
+    Args:
+        start_date: Start date
+        freq: Frequency/duration
+        max_count: Maximum count
+
+    Returns:
+        List of date strings
+    """
+    full_repeat = f"R{max_count}/{start_date}/{freq}"
+    cmd = ['isodatetime', '--max', str(max_count), full_repeat]
+    result = run_command(cmd)
+    if result.returncode == 0:
+        return result.stdout.strip().split('\n')
+    return []
+
+
+def isodatetime_duration(date1: str, date2: str) -> str:
+    """
+    Calculate the duration between two dates using isodatetime.
+
+    Args:
+        date1: First date
+        date2: Second date
+
+    Returns:
+        Duration string in ISO8601 format
+    """
+    cmd = ['isodatetime', date1, date2]
+    result = run_command(cmd)
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return ''
+
+
+def parse_time_bnds(ncdump_output: str) -> tuple:
+    """
+    Parse time_bnds output from ncdump to get the first two dates.
+
+    Args:
+        ncdump_output: Output from ncdump -t -v time_bnds
+
+    Returns:
+        Tuple of (date1, date2) strings
+    """
+    # Get the last two lines which contain the data
+    lines = ncdump_output.strip().split('\n')
+
+    # Look for the data section
+    for i, line in enumerate(lines):
+        if 'time_bnds =' in line:
+            # Get the next lines with actual data
+            data_lines = lines[i + 1:]
+            break
+    else:
+        data_lines = lines[-2:]
+
+    # Join and parse
+    data_text = ' '.join(data_lines)
+    # Remove quotes, semicolons, and extra whitespace
+    data_text = data_text.replace('"', '').replace(';', '').strip()
+
+    # Split by comma to get date pairs
+    parts = [p.strip() for p in data_text.split(',')]
+
+    if len(parts) >= 2:
+        d1 = parts[0].replace(' ', 'T')
+        d2 = parts[1].replace(' ', 'T')
+        return (d1, d2)
+
+    return (None, None)
+
+
+def promote_chunk_days_to_duration(chunk: str) -> str:
+    """
+    Adjust chunk duration for edge cases.
+
+    1. If duration is 365 or 366 days, count it as a year
+    2. If duration is ~30 days, count it as a month
+    3. If duration is 180-185 days, count it as 6 months
+
+    Args:
+        chunk: Duration string like 'P365D'
+
+    Returns:
+        Adjusted duration string
+    """
+    match = re.match(r'^P(\d+)D$', chunk)
+    if not match:
+        return chunk
+
+    days = int(match.group(1))
+
+    # Monthly (27-31 days)
+    if 27 < days < 32:
+        print(f"NOTE: Promoting {chunk} to P1M")
+        return 'P1M'
+
+    # 6 months (180-185 days)
+    if 179 < days < 186:
+        print(f"NOTE: Promoting {chunk} to P6M")
+        return 'P6M'
+
+    # Years (within 0.3% of 365 days)
+    years_int = days // 365
+    years_frac = days / 365 - years_int
+    if years_frac < 0.003 and years_int > 0:
+        print(f"NOTE: Promoting {chunk} to P{years_int}Y")
+        return f'P{years_int}Y'
+
+    return chunk
+
+
+def run_ppval(filepath: str) -> None:
+    """
+    Run fre pp ppval on a file to validate timesteps.
+
+    Args:
+        filepath: Path to the file to validate
+    """
+    cmd = ['fre', '-v', 'pp', 'ppval', '--path', filepath]
+    result = run_command(cmd, capture_output=False)
+    if result.returncode != 0:
+        err(f"WARNING: ppval returned non-zero for {filepath}")
+
+
+def process_file(filepath: str, output_dir: str,
+                 use_subdirs: bool, subdir: str = None) -> bool:
+    """
+    Process a single input file.
+
+    Args:
+        filepath: Full path to the input file
+        output_dir: Base output directory
+        use_subdirs: Whether to use subdirectories
+        subdir: Subdirectory name (if use_subdirs is True)
+
+    Returns:
+        True if file was processed successfully, False otherwise
+    """
+    filename = os.path.basename(filepath)
+    print(f"Processing: {filename}")
+
+    # Parse filename: DATE.label.VAR.nc or DATE.label.tile.VAR.nc
+    parts = filename.split('.')
+    dot_count = len(parts) - 1  # Number of dots
+
+    if dot_count == 4:
+        # Tiled: DATE.label.tile.VAR.nc
+        date = parts[0]
+        label = parts[1]
+        tile = parts[2]
+        var = parts[3]
+    elif dot_count == 3:
+        # Non-tiled: DATE.label.VAR.nc
+        date = parts[0]
+        label = parts[1]
+        var = parts[2]
+        tile = ""
+    else:
+        err(f"WARNING: Unexpected filename format: {filename}")
+        return False
+
+    # Skip average_DT, average_T1, average_T2 variables
+    if re.match(r'average_..', var):
+        return False
+
+    # Check if CDO can open the file
+    if not cdo_sinfo(filepath):
+        err(f"WARNING: Skipping file that CDO cannot open: {filepath}")
+        return False
+
+    # Check for time dimension (static vs timeseries)
+    header = ncdump_header(filepath)
+    is_static = not has_time_dimension(header, var)
+
+    if is_static:
+        timesteps = 1
+    else:
+        timesteps = cdo_ntime(filepath)
+
+    # Determine frequency and format
+    if timesteps == 1:
+        if is_static:
+            freq = 'P0Y'
+            fmt = 'CCYY'
+        else:
+            # Timeseries with one timestep - need to use time_bnds
+            time_bnds_output = ncdump_time_bnds(filepath)
+            if not time_bnds_output:
+                err(f"WARNING: Skipping timeseries file with one timestep but no time_bnds: {filepath}")
+                return False
+
+            d1, d2 = parse_time_bnds(time_bnds_output)
+            if d1 is None or d2 is None:
+                err(f"WARNING: Could not parse time_bnds: {filepath}")
+                return False
+
+            # Check if dates are numeric (days) or ISO format
+            if re.match(r'^[\d.]+$', d1):
+                freq, fmt = get_freq_and_format_from_hours(float(d1) + float(d2))
+            else:
+                freq, fmt = get_freq_and_format_from_two_dates(d1, d2)
+
+            if freq == 'error':
+                return False
+    else:
+        # Multiple timesteps - estimate frequency from first two timestamps
+        timestamps = cdo_showtimestamp(filepath)
+        if len(timestamps) < 2:
+            err(f"WARNING: Could not get timestamps from {filepath}")
+            return False
+
+        d1 = timestamps[0]
+        d2 = timestamps[1]
+
+        if d1 == "0000-00-00T00:00:00":
+            err(f"WARNING: Skipping file with t=0 timestamp of zeros: {filepath}")
+            return False
+
+        freq, fmt = get_freq_and_format_from_two_dates(d1, d2)
+        if freq == 'error':
+            return False
+
+    # Calculate date2 from # timesteps, date1, and frequency
+    date1 = isodatetime(date)
+    if not date1:
+        err(f"WARNING: Could not parse date: {date}")
+        return False
+
+    # Generate sequence to get date2
+    dates = isodatetime_repeat(date1, freq, timesteps)
+    if not dates:
+        err(f"WARNING: Could not generate date sequence for {filepath}")
+        return False
+
+    date2 = dates[-1] if dates else date1
+
+    # Calculate chunk (duration of the file)
+    date2_with_offset = isodatetime(date2, offset=freq)
+    chunk = isodatetime_duration(date1, date2_with_offset)
+
+    # Promote days to more canonical durations
+    chunk = promote_chunk_days_to_duration(chunk)
+
+    # Create new filename
+    if freq == 'P0Y':
+        # Static file
+        if tile:
+            newfile = f"{label}.{var}.{tile}.nc"
+        else:
+            newfile = f"{label}.{var}.nc"
+    else:
+        # Timeseries file
+        # Format dates for filename
+        date1_str = isodatetime(date1, print_format=fmt)
+        date2_str = isodatetime(date2, print_format=fmt)
+
+        if date1_str and date2_str:
+            date1_str = date1_str.replace('T', '')
+            date2_str = date2_str.replace('T', '')
+
+            if tile:
+                newfile = f"{label}.{date1_str}-{date2_str}.{var}.{tile}.nc"
+            else:
+                newfile = f"{label}.{date1_str}-{date2_str}.{var}.nc"
+        else:
+            err(f"WARNING: Could not format dates for {filepath}")
+            return False
+
+    # Determine output directory
+    if use_subdirs and subdir:
+        out_path = os.path.join(output_dir, subdir, label, freq, chunk)
+    else:
+        out_path = os.path.join(output_dir, label, freq, chunk)
+
+    # Create output directory
+    os.makedirs(out_path, exist_ok=True)
+
+    # Check if output file already exists
+    out_file = os.path.join(out_path, newfile)
+    if os.path.exists(out_file):
+        err(f"Output location {out_file} already exists, not overwriting")
+        return True
+
+    # Link the file(s)
+    if tile:
+        # For tiled files, link all 6 tiles
+        tile_patterns = ['tile1', 'tile2', 'tile3', 'tile4', 'tile5', 'tile6']
+        for t in tile_patterns:
+            src_file = filepath.replace('tile1', t)
+            dst_file = out_file.replace('tile1', t)
+            if os.path.exists(src_file):
+                os.link(src_file, dst_file)
+                if freq != 'P0Y':
+                    run_ppval(dst_file)
+    else:
+        os.link(filepath, out_file)
+        if freq != 'P0Y':
+            run_ppval(out_file)
+
+    return True
+
+
+def find_matching_files(directory: str, component: str) -> list:
+    """
+    Find files matching the expected pattern for the given component.
+
+    Args:
+        directory: Directory to search in
+        component: Component name (e.g., 'atmos_daily')
+
+    Returns:
+        List of matching file paths
+    """
+    # Pattern: DATE.component(.tile1).VAR.nc
+    # Only look for tile1 files for tiled data (will process all tiles together)
+    pattern1 = os.path.join(directory, f"*.{component}.*.nc")
+    pattern2 = os.path.join(directory, f"*.{component}.tile1.*.nc")
+
+    files = set()
+    for f in glob.glob(pattern1):
+        # Skip if this is a tiled file but not tile1
+        if '.tile' in f and '.tile1.' not in f:
             continue
-        fi
+        files.add(f)
 
-        # For now, skip files that can't be opened with cdo
-        # almost certainly we don't want them anyhow
-        if ! cdo sinfo $file > /dev/null 2>&1; then
-            err WARNING: Skipping file that CDO cannot open: $file
-            continue
-        fi
+    for f in glob.glob(pattern2):
+        files.add(f)
 
-        # Check for static
-        if ncdump -h $file | grep "\b${var}(" | grep time; then
-            timesteps=$(cdo ntime $file 2> /dev/null)
-            is_static=0
-        else
-            is_static=1
-            timesteps=1
-        fi
+    return sorted(files)
 
-        # statics and files with one timestamp aren't handled well
-        # cdo ntime reports 1 for statics, so need to use another call to distingush
-        # the comparisons at line 54 and 59 are very sensitive to (( vs (
-        if (( ${timesteps} == 1 )); then
-            # one timestep can mean 2 things: either you have a static file 
-            # (when frequency and chunksize are both 0)
-            # or you are dealing with a timeseries file that has one timestep
-            # and you need to look at the time_bnds to get them
-            echo $(cdo ndate $file 2)
-            #Counts every variable in the file that has time as a record dimension. For a static file, 
-            #this should be 0 or 1; for a timeseries file, this will be greater than 1.
-            #This assumes that we will have a record dimension named time - but frankly, 
-            #that's an assumption we're already making when we search for time_bnds
-            if [ $is_static == 1 ]; then
-                #this is the static case - you do not have a second timestep so this is 0
-                freq=P0Y
-            else
-                # this is the timeseries case
-                # possibly no good way to get freq/chunksize other than time_bnds
-                if ! ncdump -v time_bnds $file; then
-                    err WARNING: Skipping timeseries file that has one timestep but no time_bnds for frequency detection
-                    continue
-                else
-                    d1=$(ncdump -t -v time_bnds $file | tail -n 2 | head -n 1 | cut -d, -f1 | sed 's/[";]//g' | sed 's/^ *//' | sed 's/ *$//' | tr ' ' T)
-                    d2=$(ncdump -t -v time_bnds $file | tail -n 2 | head -n 1 | cut -d, -f2 | sed 's/[";]//g' | sed 's/^ *//' | sed 's/ *$//' | tr ' ' T)
-                    # we do not expect days here (due to -t in ncdump above) but sometimes we get it anyway
-                    # it will be days in this case
-                    if [[ $d1 =~ ^[0-9\.]+$ ]]; then
-                        read freq format < <(get_freq_and_format_from_two_days $d1 $d2)
-                    else
-                        read freq format < <(get_freq_and_format_from_two_dates $d1 $d2)
-                    fi
-                    if [[ $freq == "error" ]]; then
-                        continue
-                    fi
-                fi
-            fi
 
-        # estimate frequency from the first two timesteps
-        else
-            cdo_dates_stdout=$(cdo showtimestamp $file 2> /dev/null)
-            d1=$(echo $cdo_dates_stdout | awk '{ print $1 }')
-            d2=$(echo $cdo_dates_stdout | awk '{ print $2 }')
-            if [[ $d1 == "0000-00-00T00:00:00" ]]; then
-                err WARNING: Skipping file with t=0 timestamp of zeros: $file
+def main():
+    """Main entry point for rename-split-to-pp."""
+    # Get environment variables
+    input_dir = os.environ.get('inputDir')
+    output_dir = os.environ.get('outputDir')
+    component = os.environ.get('component')
+    use_subdirs_str = os.environ.get('use_subdirs', 'False')
+
+    use_subdirs = use_subdirs_str.lower() == 'true'
+
+    # Print arguments
+    print("Arguments:")
+    print(f"    input dir: {input_dir}")
+    print(f"    output dir: {output_dir}")
+    print(f"    component: {component}")
+    print(f"    use subdirs: {use_subdirs_str}")
+
+    # Print utilities
+    print("Utilities:")
+    for tool in ['cdo', 'ncdump', 'ncks', 'isodatetime']:
+        result = run_command(['which', tool])
+        if result.returncode == 0:
+            print(f"    {tool}: {result.stdout.strip()}")
+        else:
+            err(f"WARNING: {tool} not found")
+
+    # Verify input directory exists
+    if not os.path.isdir(input_dir):
+        err(f"Error: Input directory '{input_dir}' does not exist or isn't a directory")
+        sys.exit(1)
+
+    # Verify output directory exists
+    if not os.path.isdir(output_dir):
+        err(f"Error: Output directory '{output_dir}' does not exist or isn't a directory")
+        sys.exit(1)
+
+    files_processed_total = 0
+
+    if use_subdirs:
+        print("using subdirs")
+        # Process each subdirectory
+        for subdir in os.listdir(input_dir):
+            subdir_path = os.path.join(input_dir, subdir)
+            if not os.path.isdir(subdir_path):
                 continue
-            fi
-            read freq format < <(get_freq_and_format_from_two_dates $d1 $d2)
-            if [[ $freq == "error" ]]; then
+
+            files = find_matching_files(subdir_path, component)
+            if not files:
+                err(f"No input files in {subdir_path}")
                 continue
-            fi
-        fi
 
-        # calculate date2 from # timesteps, date1, and frequency
-        date1=$(isodatetime $date)
-        date2=$(isodatetime --max=$timesteps R$timesteps/$date1/$freq | tail -n 1 )
+            print(f"Processing subdirectory: {subdir}")
+            for filepath in files:
+                print(filepath)
+                if process_file(filepath, output_dir,
+                                use_subdirs=True, subdir=subdir):
+                    files_processed_total += 1
 
-        # chunksize is the duration of the file
-        chunk=$(isodatetime $date1 $(isodatetime $date2 --offset=$freq))
-        # Adjustments
-        # 1. if the duration is a 365 or 366 days, count it as a year
-        # 2. if the duration is ~30days, count it as a month
-        # 3. if the duration is 180-185, count it as 6 months
-        if [[ $chunk =~ ^P([0-9]+)D$ ]]; then
-            if (( ${BASH_REMATCH[1]} > 27 )) && (( ${BASH_REMATCH[1]} < 32 )); then
-                echo "NOTE: Promoting $chunk to P1M"
-                chunk=P1M
-            elif (( ${BASH_REMATCH[1]} > 179)) && (( ${BASH_REMATCH[1]} < 186 )); then
-                echo "NOTE: Promoting $chunk to P6M"
-                chunk=P6M
-            else
-                years_int=$(perl -e "print int(${BASH_REMATCH[1]} / 365)")
-                years_frac=$(perl -e "print ${BASH_REMATCH[1]} / 365 - $years_int")
-                if [[ $(echo "$years_frac < 0.003" | bc) == 1 ]]; then
-                    echo "NOTE: promoting $chunk to P${years_int}Y"
-                    chunk=P${years_int}Y
-                fi
-            fi
-        fi
+    else:
+        print("not using subdirs")
+        files = find_matching_files(input_dir, component)
 
-        # copy the file to its new name
-        if [[ $freq == P0Y ]]; then
-            if [[ -n $tile ]]; then
-                newfile=$label.$var.$tile.nc
-            else
-                newfile=$label.$var.nc
-            fi
-        else
-            if [[ -n $tile ]]; then
-                newfile=$label.$(isodatetime --print-format=$format $date1 | tr -d T)-$(isodatetime --print-format=$format $date2 | tr -d T).$var.$tile.nc
-            else
-                newfile=$label.$(isodatetime --print-format=$format $date1 | tr -d T)-$(isodatetime --print-format=$format $date2 | tr -d T).$var.nc
-            fi
-        fi
+        if not files:
+            err("ERROR: No input files found")
+            sys.exit(1)
+
+        print(' '.join([os.path.basename(f) for f in files]))
+        for filepath in files:
+            print(filepath)
+            if process_file(filepath, output_dir,
+                            use_subdirs=False):
+                files_processed_total += 1
+
+    print(f"{files_processed_total} files processed")
+
+    if files_processed_total == 0:
+        err("Error in rename-split-to-pp: no files in input dir matched requirements for processing!")
+        sys.exit(1)
+
+    print("Natural end of the shard renaming")
+    sys.exit(0)
 
 
-
-        # If in subdir mode, preserve the subdir
-        echo "using subdirs: $use_subdirs"
-        if (( $use_subdir_switch )); then
-            dir=$outputDir/$subdir/$label/$freq/$chunk
-        else
-            dir=$outputDir/$label/$freq/$chunk
-        fi
-
-        mkdir -p $dir
-        #using a [[ here breaks the check for a new file in some cases, which breaks
-        #the linking step around line 185
-        if [[ -f $dir/$newfile ]]; then
-            err Output location $dir/$newfile already exists, not overwriting
-        else
-            if [[ -n $tile ]]; then
-                for t in tile1 tile2 tile3 tile4 tile5 tile6; do
-                    f=${file/tile1/$t}
-                    newf=${newfile/tile1/$t}
-                    ln $f $dir/$newf
-                    if [[ $freq != P0Y ]]; then
-                        fre -v pp ppval --path $dir/$newfile
-                    fi
-                done
-            else
-                ln $file $dir/$newfile
-                if [[ $freq != P0Y ]]; then
-                        fre -v pp ppval --path $dir/$newfile
-                fi
-            fi
-        fi
-        files_processed_count=$((files_processed_count+1))
-    done
-    echo "${files_processed_count} files processed"
-    if [ $files_processed_count == 0 ]; then
-        echo "Error in rename-split-to-pp: no files in input dir matched requirements for processing!"
-        exit 1
-    fi
-}
-
-source $(dirname ${BASH_SOURCE[0]})/../shared/shared.sh
-
-echo Arguments:
-echo "    input dir: $inputDir"
-echo "    output dir: $outputDir"
-echo "    component: $component"
-echo "    use subdirs: ${use_subdirs:=}"
-echo Utilities:
-type cdo
-type ncdump
-type ncks
-#isodatetime is a cylc utility; cylc needs to be loaded
-type isodatetime
-
-# Verify input directory exists and is a directory
-if [[ ! -d $inputDir ]]; then
-    err "Error: Input directory '${inputDir}' does not exist or isn't a directory"
-    exit 1
-fi
-
-# Verify output directory exists and is a directory
-if [[ ! -d $outputDir ]]; then
-    err "Error: Output directory '${outputDir}' does not exist or isn't a directory"
-    exit 1
-fi
-
-# Assumptions:
-# - Format of the file: DATE1.comp.VAR(.tileX).nc
-# - Variable is a static if it does not have a time axis. Otherwise,
-# - Date1 is taken from the filename
-# - If only one time in file, pass for now. Otherwise,
-# - Frequency is estimated from the difference between the first two timesteps
-# - Date2 is estimated by multiplying the frequency and the number of timesteps
-cd $inputDir
-shopt -s extglob
-
-# Find and process the input files
-
-if [[ $use_subdirs == "True" ]]; then
-    echo "using subdirs"
-    use_subdir_switch=1
-    for subdir in $(ls); do
-        pushd $subdir
-        files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
-        if [[ $files =~ \* ]]; then
-            err No input files
-        else
-            process_files "$inputDir/$subdir"
-        fi
-        popd
-    done
-else
-    echo "not using subdirs"
-    use_subdir_switch=0
-    # target only the tile1 files for efficiency, at the cost of assuming there are 6
-    files=$(echo *.$component?(.tile1).+([[:word:]]).nc)
-
-    # Exit if no input files are found
-    if [[ $files =~ \* ]]; then
-        err ERROR: No input files found
-        exit 1
-    fi
-
-    process_files "$inputDir"
-fi
-
-echo Natural end of the shard renaming
-exit 0
+if __name__ == '__main__':
+    main()
