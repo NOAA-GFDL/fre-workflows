@@ -35,14 +35,36 @@ def run_command(cmd: list, capture_output: bool = True) -> subprocess.CompletedP
     return subprocess.run(cmd, capture_output=capture_output, text=True)
 
 
+# Try to import the Python CDO library
+try:
+    from cdo import Cdo
+    _cdo = Cdo()
+    _USE_CDO_PYTHON = True
+except (ImportError, Exception):
+    _USE_CDO_PYTHON = False
+    _cdo = None
+
+
 def cdo_sinfo(filepath: str) -> bool:
     """Check if CDO can open the file."""
+    if _USE_CDO_PYTHON:
+        try:
+            _cdo.sinfo(input=filepath)
+            return True
+        except Exception:
+            return False
     result = run_command(['cdo', 'sinfo', filepath])
     return result.returncode == 0
 
 
 def cdo_ntime(filepath: str) -> int:
     """Get the number of timesteps in a file using CDO."""
+    if _USE_CDO_PYTHON:
+        try:
+            result = _cdo.ntime(input=filepath)
+            return int(result[0])
+        except Exception:
+            return 0
     result = run_command(['cdo', 'ntime', filepath])
     if result.returncode == 0:
         return int(result.stdout.strip())
@@ -51,6 +73,12 @@ def cdo_ntime(filepath: str) -> int:
 
 def cdo_showtimestamp(filepath: str) -> list:
     """Get timestamps from a file using CDO."""
+    if _USE_CDO_PYTHON:
+        try:
+            result = _cdo.showtimestamp(input=filepath)
+            return result
+        except Exception:
+            return []
     result = run_command(['cdo', 'showtimestamp', filepath])
     if result.returncode == 0:
         return result.stdout.split()
@@ -182,8 +210,15 @@ def parse_time_bnds(ncdump_output: str) -> tuple:
     parts = [p.strip() for p in data_text.split(',')]
 
     if len(parts) >= 2:
-        d1 = parts[0].replace(' ', 'T')
-        d2 = parts[1].replace(' ', 'T')
+        # Replace only the first space (between date and time) with 'T'
+        # This handles dates like "0001-01-01 00:00:00 UTC" correctly
+        d1 = parts[0].strip()
+        d2 = parts[1].strip()
+        # Only replace the space between date and time, not trailing timezone
+        if ' ' in d1:
+            d1 = d1.replace(' ', 'T', 1)
+        if ' ' in d2:
+            d2 = d2.replace(' ', 'T', 1)
         return (d1, d2)
 
     return (None, None)
@@ -493,7 +528,15 @@ def main():
 
     # Print utilities
     print("Utilities:")
-    for tool in ['cdo', 'ncdump', 'ncks', 'isodatetime']:
+    if _USE_CDO_PYTHON:
+        print("    cdo: Using Python CDO library")
+    else:
+        result = run_command(['which', 'cdo'])
+        if result.returncode == 0:
+            print(f"    cdo: {result.stdout.strip()}")
+        else:
+            err("WARNING: cdo not found")
+    for tool in ['ncdump', 'ncks', 'isodatetime']:
         result = run_command(['which', tool])
         if result.returncode == 0:
             print(f"    {tool}: {result.stdout.strip()}")
