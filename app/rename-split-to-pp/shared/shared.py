@@ -116,6 +116,24 @@ def get_freq_and_format_from_two_days(d1: float, d2: float) -> tuple:
     return get_freq_and_format_from_hours(hours)
 
 
+def _clean_date_string(date_str: str) -> str:
+    """
+    Clean a date string by removing timezone suffixes that metomi.isodatetime
+    cannot parse (e.g., ' UTC' suffix).
+
+    Args:
+        date_str: Date string to clean
+
+    Returns:
+        Cleaned date string
+    """
+    # Remove trailing timezone names like 'UTC', 'GMT', etc.
+    # These can appear after the time in ncdump -t output
+    # Match and remove trailing timezone abbreviations like UTC, GMT, etc.
+    cleaned = re.sub(r'\s*(UTC|GMT|Z)$', '', date_str.strip())
+    return cleaned
+
+
 def get_freq_and_format_from_two_dates(d1: str, d2: str) -> tuple:
     """
     Determine frequency based on two ISO dates.
@@ -132,6 +150,10 @@ def get_freq_and_format_from_two_dates(d1: str, d2: str) -> tuple:
         from metomi.isodatetime.parsers import TimePointParser
         from metomi.isodatetime.data import Calendar
 
+        # Clean date strings to remove unsupported timezone suffixes
+        d1_clean = _clean_date_string(d1)
+        d2_clean = _clean_date_string(d2)
+
         # Use 365-day calendar for consistent duration calculation
         calendar = Calendar.default()
         original_mode = calendar.mode
@@ -141,8 +163,8 @@ def get_freq_and_format_from_two_dates(d1: str, d2: str) -> tuple:
             parser = TimePointParser()
 
             # Parse the dates
-            tp1 = parser.parse(d1)
-            tp2 = parser.parse(d2)
+            tp1 = parser.parse(d1_clean)
+            tp2 = parser.parse(d2_clean)
 
             # Calculate difference
             duration = tp2 - tp1
