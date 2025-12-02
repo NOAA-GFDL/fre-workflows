@@ -81,6 +81,14 @@ jobs:
                   # Write environment variable to GITHUB_ENV to make it accessible for other steps
                   echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
                   echo "OUTPUT DIR: $output_dir"
+
+                  # Create symbolic link to history/gridspec files in home
+                  historyfile_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
+                  mkdir -p $historyfile_linkdir
+
+                  # try to 2 questionable locations first - to see if that matters at all
+                  #ln -s /contrib2/c96L65/history $historyfile_linkdir 
+                  ln -s /contrib/container-test/history $historyfile_linkdir
               ;;
               #*"-aws")
               #    # Create the output directory associated with the runner that picked up the job
@@ -96,7 +104,7 @@ jobs:
           # Set up binds and required paths
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind $output_dir/:/mnt:rw
-                      --bind /contrib2/c96L65/history:/mnt/history:ro
+                      --bind ${historyfile_linkdir}/history:/mnt/history:ro
                       --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
           container_path=/contrib/container-test/ppp-wf.sif
