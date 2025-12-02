@@ -88,7 +88,7 @@ jobs:
 
                   # try to 2 questionable locations first - to see if that matters at all
                   #ln -s /contrib2/c96L65/history $historyfile_linkdir 
-                  ln -s /contrib/container-test/history $historyfile_linkdir
+                  ln /contrib/container-test/history $historyfile_linkdir
               ;;
               #*"-aws")
               #    # Create the output directory associated with the runner that picked up the job
