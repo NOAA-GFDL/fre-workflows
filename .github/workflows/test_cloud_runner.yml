@@ -76,15 +76,17 @@ jobs:
               *"RUNNER2")
                   # Create the output directory associated with the runner that picked up the job
                   output_dir=/contrib/container-test/ppp-setup-$runner_folder
+                  historyfile_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
+
+                  rm -rf $output_dir
+                  rm -rf $historyfile_linkdir
+                  
                   mkdir -p $output_dir
+                  mkdir -p $historyfile_linkdir
                   
                   # Write environment variable to GITHUB_ENV to make it accessible for other steps
                   echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
                   echo "OUTPUT DIR: $output_dir"
-
-                  # Create symbolic link to history/gridspec files in home
-                  historyfile_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
-                  mkdir -p $historyfile_linkdir
 
                   # try to 2 questionable locations first - to see if that matters at all
                   ln -s /contrib2/c96L65/history $historyfile_linkdir ## symbolic link
