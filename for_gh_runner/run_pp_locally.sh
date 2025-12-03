@@ -30,8 +30,8 @@ fi
 # echo "(~/.bash_profile) PATH now: $PATH"
 #
 
-# 0 to run the workflow. 1 to do everything except run it.
-dry_run=0
+# 0 to run the workflow. non-zero to do everything except run it, i.e. "dry-run".
+dry_run=1
 echo "dry_run=$dry_run"
 
 # there shouldn't be a strong need to change any of this
