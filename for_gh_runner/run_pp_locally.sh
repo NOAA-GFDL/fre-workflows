@@ -144,7 +144,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 
-if [ $dry_run -eq 1 ] ; then
+if [ ! $dry_run -eq 0 ] ; then
 	echo ""
 	echo ""
 	echo "*****************"
