@@ -2,8 +2,8 @@ fre_properties:
   - &YAML_VERSION          "test01"
   - &FRE_STEM              !join ["ppp_container/", *YAML_VERSION]
   - &PP_XYINTERP96         "180,288"
-  - &EXP_AMIP_START        "19790101T0000Z"
-  - &EXP_AMIP_END          "19800101T0000Z"
+  - &EXP_AMIP_START        "19800101T0000Z"
+  - &EXP_AMIP_END          "19810101T0000Z"
   - &PP_CHUNK96            "P1Y"
   - &GRID_SPEC96           "/mnt/c96_OM4_025_grid_No_mg_drag_v20160808.tar"
   - &GRID_SPEC96_LOCAL     "/archive/oar.gfdl.am5/model_gen5/inputs/c96_grid/c96_OM4_025_grid_No_mg_drag_v20160808.tar"
