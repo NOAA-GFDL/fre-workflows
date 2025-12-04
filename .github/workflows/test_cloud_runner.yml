@@ -73,7 +73,7 @@ jobs:
           # different history files to access each time.
           # when accessing the same location - the workflow kind of hangs and takes a while to run 
           case "$runner_folder" in
-              *"RUNNER2")
+              *"RUNNER1")
                   # Create the output directory associated with the runner that picked up the job
                   output_dir=/contrib/container-test/ppp-setup-$runner_folder
                   historyfile_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
