@@ -9,6 +9,11 @@ postprocess:
       inputRealm: 'atmos'
       sourceGrid: 'cubedsphere'
       postprocess_on: True
+      climatology:
+      - frequency: yr
+        interval_years: 2
+      - frequency: mon
+        interval_years: 2
 
     ## native component
     # Ian note: this is trivially a native component, there's only a time-axis
@@ -16,7 +21,11 @@ postprocess:
       sources:
         - history_file: "atmos_scalar"
       postprocess_on: True
-
+      climatology:
+      - frequency: yr
+        interval_years: 2
+      - frequency: mon
+        interval_years: 2
     - type: "atmos_month_cmip"
       sources:
         - history_file: "atmos_month_cmip"

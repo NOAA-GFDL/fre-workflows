@@ -14,29 +14,3 @@
             submission timeout = P1D
         [[[environment]]]
             COPY_TOOL=cp
-
-    [[SPLIT-NETCDF]]
-        pre-script = mkdir -p $outputDir
-
-    [[RENAME-SPLIT-TO-PP]]
-        pre-script = mkdir -p $outputDir
-
-    [[REMAP-PP-COMPONENTS]]
-        pre-script = mkdir -p $outputDir
-
-    [[MAKE-TIMESERIES]]
-        pre-script = mkdir -p $outputDir
-
-    [[MAKE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
-
-    [[COMBINE-TIMEAVGS]]
-        pre-script = mkdir -p $outputDir
-
-{% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
-    [[combine-statics]]
-        pre-script = mkdir -p $outputDir
-{% endif %}
-
-    [[CLEAN]]
-        pre-script = "set -x"
