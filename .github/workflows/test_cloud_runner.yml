@@ -237,11 +237,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
