@@ -434,6 +434,10 @@ jobs:
               exit 2
           fi
 
+      - name: Clean up output folder
+        run: rm -rf ${{ env.OUTPUT_DIR }}
+        ## will this work/conflict with cylc-run that was installed (with other symlinks)
+
 ## Keep in here for now as a just in case reference ##
 #      - name: Print any succeeded tasks
 #        run: |
