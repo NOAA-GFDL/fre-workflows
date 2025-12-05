@@ -1,99 +1,63 @@
-# Developer Guide
-
-1. [Configuration Settings](#configuration-settings)
-
-2. [Batch environment setup and fre-cli](#batch-environment-setup-and-fre-cli)
-
-3. [Post-processing guide using fre-cli and cylc](#guide)
-
-# Configuration Settings
+# PPAN `fre-workflows` Developer Guide
 
 `fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing
 on **PPAN**.
 
-## Cylc User settings
+## FYIs
 
-The path to the Cylc binary must be added to your `$PATH` environment variable first. Without the cylc binary,
-the initial setup of the workflow server fails. This can be done by modifying your PATH in your bash_profile
-as follows:
+### `cylc` functionality
+`fre-workflows` developers should be intimately familiar with [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
+### `global.cylc` configuration
+If `cylc` is in your `PATH`, you can check your global configuration with
 ```
-> cat /home/First.Last/.bash_profile
-# this is essential Cylc configuration below
-export PATH="${PATH}:/home/fms/local/opt/cylc/bin"
-```
-
-## Experiment settings
-
-In regards to post-processing, the yaml framework consists of the model, settings, and post-processing
-yaml files. 
-
-    - model yaml: contains yaml anchors (i.e. variables that can be used throughout the yaml framework)
-                  and paths that point to the settings and post-processing yaml giles
-    - settings yaml: experiment-specific settings and switches; can also define more experiment-specific
-                     yaml anchors
-    - post-processing yaml: information about the components to be post-processed
-
-It's helpful to be familiar with information in the `settings.yaml` as switches and settings can help
-developers for debugging purposes.
-
-Example `settings.yaml`:
-
-```
-> cat yaml_workflow/pp/settings.yaml:
-
-directories:
-  history_dir: "/archive/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA/ppan-prod-openmp/history"
-  pp_dir: "/archive/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA/ppan-prod-openmp/pp"
-  analysis_dir: "/nbhome/$USER/CMIP7/ESM4/DEV/ESM4.5_candidateA"
-  ptmp_dir: "/xtmp/$USER/ptmp"
-postprocess:
-  settings:
-    site: "ppan"
-    history_segment: "P1Y"
-    pp_start: 0002
-    pp_stop: 0003
-    pp_chunks: ["P5Y"]
-    pp_grid_spec: "/work/Niki.Zadeh/mosaic_generation/exchange_grid_toolset/workdir/mosaic_c96om5b04v20240410.20240423.an105/mosaic_c96om5b04v20240410.20240423.an105.tar"
-  switches:
-    do_timeavgs:                False
-    clean_work:                 False
-    do_refinediag:              False
-    do_atmos_plevel_masking:    False
-    do_preanalysis:             False
-    do_analysis:                False
-    do_analysis_only:           False
+cylc config -d
 ```
 
-For developers, you can set some of the yaml keys, such as `clean_work`, to specific values:
+You can define your own global configuration for `cylc` by putting a configuration file in the expected location. For some fields at least,
+the user's global configuration overrides the defaults even using a `module load`ed version. To start from a given global configuration:
+```
+mkdir --parents /home/$USER/.cylc/flow
+cylc config -d > /home/$USER/.cylc/flow/global.cylc
+# edit the file to your heart's content
+```
 
-  ```
-  postprocess:
-    switches:
-      clean_work: True/False
-  ```
+### default `PATH` and `cylc` on PPAN
 
-  - *what it does:* Switch to clean or keep the contents of the intermediate directories
-    produced by your post-processing workflow run before going on to the next step - for example,
-    removing the local history directory once you have all files split by
-    split.netcdf
+On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
+ and can be seen with `echo $PATH`. This smooths over configuration for job submission at the cost of some flexibility. A work around is to put
+ your preferred cylc into your `PATH` at login, while removing the default. In your `~/.bash_profile`:
+ ```
+ echo "(~/.bash_profile) removing /usr/local/bin from PATH"
+echo ""
+echo "(~/.bash_profile) PATH was: $PATH"
+echo ""
+export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
 
-  - *value for production:*  True
+# now add your preferred cylc to your PATH instead
+export PATH=/path/to/your/preferred/cylc/bin:$PATH
+echo "(~/.bash_profile) PATH now: $PATH"
+```
 
-      - intermediate files take up a LOT of space if kept
+### terminal and UTF encoding errors
 
-  - *value for development:* False
+A workaround is again, to edit your `~/.bash_profile` like above, and add define `LANG`:
+```
+echo "(~/.bash_profile) export LANG=C.UTF-8"
+export LANG=C.UTF-8
+```
 
-      - easier to debug errors if files are available
+### `fre.yamltools` Framework
 
-For more information on the yaml framework, see [fre-cli's README and documentation on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#model-yaml).
+The yaml framework is fully described in `fre-cli`'s `README` and documentation
+[on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
 
-# Batch environment setup and fre-cli for testing workflow changes
+
+# Testing `fre-workflows` locally on PPAN
 
 ## Local environment setup
-Currently, when submitting/testing a pp workflow, we HIGHLY recommend using the gfdl
-modulefiles for cylc and fre instead of developer conda environments, as different cylc
-and fre-cli versions may cause more confusion when debugging:
+Currently, when submitting/testing a pp workflow, it's simplest to use modulefiles for `cylc` and `fre` instead of developer conda environments.
+Developers however will need more flexibility than this to stay ahead of users and develop robust new features. 
 
 ```
 module load cylc
