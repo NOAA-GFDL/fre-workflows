@@ -7,21 +7,17 @@ https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
 '''
 
 # TODO rename: tool_ops_w_papiex --> tag_ops_ ?
-# TODO typing/type hints
-# TODO logging that is easy to turn off***
+
 import logging
 import re
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 logger.debug('tool_ops_w_papiex imported successfully. logger set. configuring logger.')
 
 FORMAT = "[%(levelname)5s:%(filename)24s:%(funcName)20s] %(message)s"
-#logging.basicConfig(level = logging.WARNING,
-#logging.basicConfig(level = logging.DEBUG,
-logging.basicConfig(level = logging.INFO,
-                    format = FORMAT,
-                    filename = None,
-                    encoding = 'utf-8' )
+logging.basicConfig(level = logging.INFO,# logging.WARNING,# logging.DEBUG,#
+                    format = FORMAT, encoding = 'utf-8' )
 logger.debug('logger configured')
 
 try:
@@ -36,11 +32,13 @@ except Exception as exc:
     logger.error('error! op_list import issues.')
     raise ImportError('could not find and/or import papiex_ops') from exc
 
+
 def check_import():
     '''
     for testing import of module via pytest only
     '''
     return 0
+
 
 def log_assign_append( msg: str,
                        line: str,
@@ -54,26 +52,31 @@ def log_assign_append( msg: str,
     script.append(line)
     return line
 
+
 def op_is_in_line( op_name: str,
                    line: str ) -> bool:
     '''
     searches a line for an operation string with regex, emits messages if any are found and returns True.
     Otherwise, the tool is silent and returns False.
 
-    Previous regex pattern:
+    Previous (now-replaced) regex pattern:
         r'[\s?|^]' + op_name + r'(?:\s+|$)'
-    This pattern was replaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
+
+    It was eplaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
+
     The current pattern:
         r'(?:\s|^)' + op_name + r'(?:\s+|$)'
+
     correctly matches operations at the start of a line or preceded by whitespace.
     '''
-    op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)' #seems good...
+    op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)'
     re_search_result = re.search(op_s_string, line)
     if re_search_result is None:
         return False
     logger.info("found op = %s in line = \n %s", op_name, line)
     logger.debug("regex search string was: %s", op_s_string)
     return True
+
 
 def check_op_in_typical_line_again( line: str,
                                     op_name: str ) -> bool:
@@ -84,8 +87,9 @@ def check_op_in_typical_line_again( line: str,
     left_side_of_line = line.split(op_name)[0]
     return left_side_of_line.isspace() or left_side_of_line == ''
 
+
 def look_for_ops( op_list_in: list[dict],
-                  line: str ) -> dict:
+                  line: str ) -> Optional[dict]:
     '''
     searches a line for operations in the op_list dictionary
 
@@ -96,6 +100,7 @@ def look_for_ops( op_list_in: list[dict],
             continue
         return op
 
+
 def get_new_bashif_line( line: str,
                          op_found: dict ) -> str:
     '''
@@ -104,15 +109,19 @@ def get_new_bashif_line( line: str,
     # if there is logic, the tag must work such that exit code of the command is still checked/preserved
     then_loc_group_span = re.search('; then', line).span()
     logger.debug('bash-if case, found the \'then\' part of if/elif: %s', then_loc_group_span)
+
     line = line[0:then_loc_group_span[0]]
     logger.debug('bash-if case, selected part of line, now line = \n %s', line)
+
     line = line.replace(op_found['op_name']+' ',
                         '{ export PAPIEX_TAGS="op:' + op_found['op_tag'] + \
                         ';op_instance:OP_INSTANCE"; ' + op_found['op_name'] + ' ' )
     logger.debug('bash-if case, replaced part of line, now line = \n %s', line)
+
     line += '; SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
     logger.info('bash-if case, appended to line, now = line = \n %s', line)
     return line
+
 
 def get_new_rose_task_run_line( line: str,
                                 op_found: dict ) -> str:
@@ -126,10 +135,11 @@ def get_new_rose_task_run_line( line: str,
     logger.info('rose case after, line = \n %s', line)
     return line
 
+
 def get_new_bash_line( line: str,
-                         op_found: dict ) -> str:
+                       op_found: dict ) -> str:
     '''
-    edits a bash line (not an if/elif statement, not a rose task run either) for a found operation and returns it
+    edits a bash line (not if/elif nor rose task statements) for a found operation and returns it
     '''
     # no logic, tool in the usual way.
     logger.debug("op_found = %s", op_found['op_name'])
@@ -144,10 +154,10 @@ def get_new_bash_line( line: str,
 
 def tool_ops_w_papiex( fin_name: str ) -> None:
     '''
-    parses a job bash-script assembled by script, tags operations of interest.
+    Parses a job bash-script assembled by script, tags operations of interest.
     accomplished by setting/unsetting PAPIEX_TAGS env var around operation of interest,
     referred to as a caliper approach.
-    an if-statement in bash will have a slightly different structure to preserve the
+    An if-statement in bash will have a slightly different structure to preserve the
     exit status and the resultant if/elif/else continuation of the job script
     '''
 
@@ -268,13 +278,14 @@ def tool_ops_w_papiex( fin_name: str ) -> None:
     del script
 
 
-
-
-def annotate_metadata(): #TODO 7
+def annotate_metadata():
     '''
     parses a job bash-script assembled by script, annotating metadata of interest.
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
     parsing the job script for metadata of interest.
+
+    not yet implemented, challenging for a questionable amount of benefit. the Jinja2 calls in site/ppan_test.cylc
+    are completely adequate for now
     '''
     raise NotImplementedError()
 
@@ -321,31 +332,35 @@ def annotate_metadata(): #TODO 7
     #   script.append('endif')
 
 if __name__ == '__main__':
+    logger.warning('running script as __name__ == __main__')
+    logger.warning('this is good for local development and case-coverage, but deployment use differs')
+    logger.warning('uncomment+edit the lines below these statements to get the desired functionality')
+    logger.warning('some of these are run as unit-tests in the pipeline!')
+
+    #import glob
+    #from pathlib import Path
+    #import pprint
+    #import shutil
+
+    ######## local testing/debugging, test on a whole target workflow you've run
+    #user = 'foo'
+    #test_scripts = glob.glob('/home/' + user + \
+    #                         '/cylc-run/test_pp_locally__ptest__ttest/log/job/198?0101T0000Z/*/01/job')
+    #logger.debug('test_scripts = %s', pprint.pformat(test_scripts) )
+    #for test_script in test_scripts:
+    #    if Path(test_script+'.notags').exists():
+    #        Path(test_script).unlink()
+    #        shutil.copy(test_script+'.notags', test_script)
+    #    logger.info('\n\n\n\nparsing test_script = %s', test_script)
+    #    tool_ops_w_papiex(test_script)
+    #    #break
 
 
-    #
-    import glob
-    from pathlib import Path
-    import pprint
-    import shutil
-    test_scripts = glob.glob('/home/inl/cylc-run/test_pp_locally__ptest__ttest/log/job/198?0101T0000Z/*/01/job')
-    logger.debug('test_scripts = %s', pprint.pformat(test_scripts) )
-    for test_script in test_scripts:
-#        if 'regrid' not in test_script:
-#            continue
-        if Path(test_script+'.notags').exists():
-            Path(test_script).unlink()
-            shutil.copy(test_script+'.notags', test_script)
-        logger.info('\n\n\n\nparsing test_script = %s', test_script)
-        tool_ops_w_papiex(test_script)
-#        break
-
-
-    ####### local testing/debugging, ONE script input to test on.
+    ####### local testing/debugging, ONE script input to test on, a realistic local test file example
     #infile = 'lib/python/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
     #tool_ops_w_papiex(infile)
 
 
-    ###### local testing/debugging, ONE script input to test on.
+    ###### local testing/debugging, ONE script input to test on. a concocted local test file example
     #infile = 'lib/python/tests/test_files_papiex_tooler/simple_failing_command.bash'
     #tool_ops_w_papiex(infile)
