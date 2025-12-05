@@ -1,37 +1,14 @@
 #!/bin/bash
 
+### see markdown instructions on usage in for-developers.md
+
 if [ $(basename $PWD) != 'fre-workflows' ]; then
     echo "ERROR: source me from a fre-workflows directory or i won't work"
     return 1
 fi
 
-###  preamble, i needed to make sure my global.cylc was more in-line with the cylc in /usr/local/bin
-###  I was able to grab the default global configuration and pipe it to my own file to edit:
-#
-# module load cylc
-# cylc config -d > /home/$USER/.cylc/flow/global.cylc
-#
-
-###  then, within /home/$USER/.cylc/flow/global.cylc, change the 'ssh command' field from 'gsissh' to 'ssh'
-
-###  then, add the following to your ~/.bash_profile to avoid annoying UTF-8 encoding errors
-#
-# echo "(~/.bash_profile) export LANG=C.UTF-8"
-# export LANG=C.UTF-8
-#
-
-###  if one wants to use their own conda environment to run this and test fre-cli/fre-workflows
-###  development together add the following as well to your ~/.bash_profile to remove /usr/local/bin
-###  from PATH to avoid cylc version clashing
-#
-# echo "(~/.bash_profile) PATH was: $PATH"
-# export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
-# export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
-# echo "(~/.bash_profile) PATH now: $PATH"
-#
-
 # 0 to run the workflow. non-zero to do everything except run it, i.e. "dry-run".
-dry_run=1
+dry_run=0
 echo "dry_run=$dry_run"
 
 # there shouldn't be a strong need to change any of this
@@ -81,12 +58,12 @@ if [ -d $cylc_src_dir_name ]; then
     sleep 10s
 fi
 
-
+# if you want this, comment on https://github.com/NOAA-GFDL/fre-cli/issues/673
 #echo ""
 #echo ""
 #echo "*****************"
-#echo "CHECKING OUT"
-#fre -vv pp checkout $ept_arg_string
+#echo "CHECKING OUT LOCAL REPO COPY"
+#fre -vv pp checkout $ept_arg_string --local .
 #if [ $? -ne 0 ] ; then
 #    echo "ERROR CHECKING OUT"
 #fi
