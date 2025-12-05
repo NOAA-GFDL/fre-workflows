@@ -5,20 +5,29 @@ on **PPAN**.
 
 
 
+
 ## Contents
 1. [Configuration](#configuration)
-2. [](#)
+2. [Testing locally on PPAN](#localPPANtesting)
+    1. [`cylc` doc](#cylcFunctioning)
+    2. [global `cylc` config](#globalCylcConfig)
+    3. [default PPAN settings](#PPANdefaults)
+	4. [terminal UTF encoding](#UTFencodingErrors)
+
 
 
 
 ## Configuration <a name="configuration"></a>
 
 
-### `cylc` functionality
+
+### `cylc` functionality <a name="cylcFunctioning"></a>
+
 `fre-workflows` developers should be intimately familiar with [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
-### `global.cylc` configuration
+### `global.cylc` configuration <a name="globalCylcConfig"></a>
+
 If `cylc` is in your `PATH`, you can check your global configuration with
 ```
 cylc config -d
@@ -33,7 +42,7 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 ```
 
 
-### default `PATH` and `cylc` on PPAN
+### default `PATH` and `cylc` on PPAN <a name="PPANdefaults"></a>
 
 On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
  and can be seen with `echo $PATH`. This smooths over configuration for job submission at the cost of some flexibility. A work around is to put
@@ -51,7 +60,7 @@ echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
 
-### terminal and UTF encoding errors
+### terminal and UTF encoding errors <a name="UTFencodeErrors"></a>
 
 A workaround is again, to edit your `~/.bash_profile` like above, and add define `LANG`:
 ```
@@ -67,7 +76,7 @@ The yaml framework is fully described in `fre-cli`'s `README` and documentation
 
 
 
-## Testing locally on PPAN
+## Testing locally on PPAN <a name="localPPANtesting"></a>
 
 There are multiple ways of accomplishing this. They are described in order of least to most complex.
 
@@ -95,6 +104,7 @@ in your environment setup.
 In this submission process via `fre pp run`, the platform passed on the command line determines the job
 runner. For PP/AN platforms, the job scripts are submitted through slurm. On other sites, scripts are
 submitted as background jobs.
+
 
 ### Remote environment setup
 Each slurm job that cylc submits is run from a bare environment. If the jobs were 
@@ -178,7 +188,6 @@ If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that
 you are working with. Remember: the slurm job scripts are executed as you, and
 have access to your conda environments.
-
 ```
     [[SPLIT-NETCDF]]
         pre-script = """
@@ -189,6 +198,7 @@ have access to your conda environments.
                      mkdir -p $outputDir
                      """
 ```
+
 The set +u/-u turns off and on strict variable checking respectively. Loading
 a conda environment requires less strict variable checking than cylc normally
 implements, so we need to turn that setting on and off for a single operation.
@@ -201,6 +211,8 @@ this outside of the lab (i.e. Gaea).
 
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
 
+
+
 ### Postprocess FMS history files
 To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
 
@@ -209,7 +221,6 @@ NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, 
 If further edits needs to be made for troubleshooting, users can edit files in the
 `~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up
 procedure:
-
 ```
 # If the experiment needs to be stopped
 cylc stop --now [your_test_experiment_workflow_id]
@@ -220,7 +231,8 @@ cylc clean [your_test_experiment_workflow_id]
 # From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
 
-## Inspect workflow progress with an interface (GUI or TUI)
+
+### Inspect workflow progress via GUI or TUI interface <a name="inspectWorkflowProgress"></a>
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow
 may stall, in which case it will shutdown in error after a period of time.
 
@@ -244,7 +256,8 @@ cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
-## Inspect workflow progress with a terminal CLI
+
+### Inspect workflow progress with a terminal CLI
 Various other `cylc` commands are useful for inspecting a running workflow.
 Try `cylc help`, and `cylc <command> --help` for more information on how to
 use these tools to your advantage!
