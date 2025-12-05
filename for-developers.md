@@ -12,10 +12,11 @@ on **PPAN**.
     2. [global `cylc` config](#globalcylcconfig)
     3. [default PPAN settings](#ppandefaults)
     4. [terminal UTF encoding](#utfencodeerrors)
-2. [Testing locally on PPAN](#localtesting)
-    1. [](#)
-    2. [](#)
-    3. [](#)
+    5. [`fre.yamltools` framework](#freyamlframework)
+2. [Running and testing workflows, generally and on PPAN](#runtestworkflows)
+    1. [local PPAN testing](#localppantesting)
+    2. [default local env setup](#deflocalsetup)
+	3. [default remote env setup](#remotenvsetup)
 3. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituimon)
     2. [via CLI](#cliprogressmon)
@@ -29,7 +30,8 @@ on **PPAN**.
 
 ### `cylc` functionality <a name="cylcfunctioning"></a>
 
-`fre-workflows` developers should be intimately familiar with [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
+`fre-workflows` developers should be intimately familiar with
+[`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
 ### `global.cylc` configuration <a name="globalcylcconfig"></a>
@@ -39,8 +41,9 @@ If `cylc` is in your `PATH`, you can check your global configuration with
 cylc config -d
 ```
 
-You can define your own global configuration for `cylc` by putting a configuration file in the expected location. For some fields at least,
-the user's global configuration overrides the defaults even using a `module load`ed version. To start from a given global configuration:
+You can define your own global configuration for `cylc` by putting a configuration file in the expected location.
+For some fields at least, the user's global configuration overrides the defaults even using a `module load`ed
+version. To start from a given global configuration:
 ```
 mkdir --parents /home/$USER/.cylc/flow
 cylc config -d > /home/$USER/.cylc/flow/global.cylc
@@ -51,10 +54,11 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 
 ### default `PATH` and `cylc` on PPAN <a name="ppandefaults"></a>
 
-On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
- and can be seen with `echo $PATH`. This smooths over configuration for job submission at the cost of some flexibility. A work around is to put
- your preferred cylc into your `PATH` at login, while removing the default. In your `~/.bash_profile`:
- ```
+On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name
+is clearly in your `PATH` and can be seen with `echo $PATH`. This smooths over configuration for job submission
+at the cost of some flexibility. A work around is to put  your preferred cylc into your `PATH` at login, while
+removing the default. In your `~/.bash_profile`:
+```
 echo "(~/.bash_profile) removing /usr/local/bin from PATH"
 echo ""
 echo "(~/.bash_profile) PATH was: $PATH"
@@ -78,7 +82,7 @@ export LANG=C.UTF-8
 
 
 
-### `fre.yamltools` Framework
+### `fre.yamltools` Framework <a name="freyamlframework"></a>
 
 The yaml framework is fully described in `fre-cli`'s `README` and documentation
 [on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
@@ -86,13 +90,17 @@ The yaml framework is fully described in `fre-cli`'s `README` and documentation
 
 
 
-## Testing locally on PPAN <a name="localPPANtesting"></a>
+## Testing locally on PPAN <a name="runtestworkflows"></a>
+
+MUST REVIEW AND EDIT STILL
 
 There are multiple ways of accomplishing this. They are described in order of least to most complex.
 
 
 
-### The default local environment setup
+### The default local environment setup <a name="deflocalsetup"></a>
+
+MUST REVIEW STILL
 
 Currently, if one is only testing workflow changes against known `fre` tag/versions, it's simplest to use
 modulefiles for `cylc` and `fre`. In order to test your `fre-workflows` edits against the known system
@@ -116,7 +124,9 @@ submitted as background jobs.
 
 
 
-### Remote environment setup
+### Remote environment setup <a name="remotenvsetup"></a>
+
+MUST REVIEW STILL
 
 Each slurm job that cylc submits is run from a bare environment. If the jobs were 
 submitted in a local conda environment, that environment will not be used within the
@@ -173,7 +183,15 @@ depending on the developmental progress of the features you wish to test:
 
 
 
-### Features in fre-cli that are part of a release
+## testing by feature in `fre=cli`
+
+TO REVIEW might remove? might re-engineer? TODO
+
+
+
+### Features in fre-cli that are part of a release  <a name="releasefeaturetesting"></a>
+
+TO REVIEW
 
 If the features that you want to include are part of a fre release, you can
 load a fre module from the pre-script of your cylc task (if not already specified
@@ -185,7 +203,10 @@ in the `[[root]]` section of the site file - this section is "inherited" by all 
 ```
 
 
-#### Features in fre-cli that are merged into main
+
+### Features in fre-cli that are merged into main <a name="mainmergefeaturetesting"></a>
+
+TO REVIEW
 
 If the features that you want to include are merged into main but not yet part
 of a fre release, you can use them by loading fre/test.
@@ -197,7 +218,9 @@ of a fre release, you can use them by loading fre/test.
 
 
 
-### Features in fre-cli that are in a development branch
+### Features in fre-cli that are in a development branch <a name="howdifffromprevsectiontesting"></a>
+
+TO REVIEW
 
 If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that
@@ -224,26 +247,30 @@ try to load the conda environment.
 This should be generic to all sites, though we have not yet had a chance to run
 this outside of the lab (i.e. Gaea).
 
-For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
+For more information on conda environment setup for fre-cli, see
+[fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
 
 
 
 ### Postprocess FMS history files
-To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
 
-NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the `ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file, and the rose-suite.conf files. 
+TO REVIEW
+
+To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps
+[here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
+
+NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the
+`ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file,
+and the rose-suite.conf files. 
 
 If further edits needs to be made for troubleshooting, users can edit files in the
-`~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up
-procedure:
+`~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up procedure:
 ```
 # If the experiment needs to be stopped
 cylc stop --now [your_test_experiment_workflow_id]
 
 # Removes the cylc-run directory and associated symlinks
 cylc clean [your_test_experiment_workflow_id]
-
-# From here, you can skip the checkout and configure-yaml steps, and proceed with validate, install, and run
 ```
 
 
@@ -251,15 +278,17 @@ cylc clean [your_test_experiment_workflow_id]
 
 ## `cylc` workflow monitoring <a name="cylcmontips"></a>
 
-The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow
-may stall, in which case it will shutdown in error after a period of time.
+TO REVIEW
 
-`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI
-commands that can expose workflow and task information.
+`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that
+can expose workflow and task information. The workflow will run and shutdown when all tasks are complete.
+If tasks fail, the workflow may stall, in which case it will shutdown in error after a period of time.
 
 
 
 ### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
+
+TO REVIEW
 
 The text-based GUI can be launched via:
 ```
@@ -277,6 +306,8 @@ can be completely avoided
 
 
 ### Inspect workflow progress with a terminal CLI <a name-"cliprogressmon"></a>
+
+TO REVIEW
 
 Various other `cylc` commands are useful for inspecting a running workflow.
 Try `cylc help`, and `cylc <command> --help` for more information on how to
