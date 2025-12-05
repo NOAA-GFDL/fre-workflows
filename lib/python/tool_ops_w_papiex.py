@@ -59,16 +59,11 @@ def op_is_in_line( op_name: str,
     searches a line for an operation string with regex, emits messages if any are found and returns True.
     Otherwise, the tool is silent and returns False.
 
-    Previous (now-replaced) regex pattern:
-        r'[\s?|^]' + op_name + r'(?:\s+|$)'       # pylint: disable=anomalous-backslash-in-string
-
-    It was eplaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
-
-    The current pattern:
-        r'(?:\s|^)' + op_name + r'(?:\s+|$)'      # pylint: disable=anomalous-backslash-in-string
-
-    correctly matches operations at the start of a line or preceded by whitespace.
+    The old pattern was replaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
+    The new pattern matches operations at the start of a line or preceded by whitespace. Regardless, keeping the old one as
+    a comment, just in case of future bugs/problems with the search
     '''
+    # op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)' # old pattern, keep please
     op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)'
     re_search_result = re.search(op_s_string, line)
     if re_search_result is None:
