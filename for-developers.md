@@ -8,11 +8,14 @@ on **PPAN**.
 
 ## Contents
 1. [Configuration](#configuration)
-2. [Testing locally on PPAN](#localPPANtesting)
-    1. [`cylc` doc](#cylcFunctioning)
-    2. [global `cylc` config](#globalCylcConfig)
-    3. [default PPAN settings](#PPANdefaults)
-	4. [terminal UTF encoding](#UTFencodingErrors)
+2. [Testing locally on PPAN](#localtesting)
+    1. [`cylc` doc](#cylcfunctioning)
+    2. [global `cylc` config](#globalcylcconfig)
+    3. [default PPAN settings](#ppandefaults)
+    4. [terminal UTF encoding](#utfencodeerrors)
+3. [`cylc` workflow monitoring](#cylcmontips)
+    1. [via GUI or TUI](#guituimon)
+    2. [via CLI](#cliprogressmon)
 
 
 
@@ -21,12 +24,12 @@ on **PPAN**.
 
 
 
-### `cylc` functionality <a name="cylcFunctioning"></a>
+### `cylc` functionality <a name="cylcfunctioning"></a>
 
 `fre-workflows` developers should be intimately familiar with [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
-### `global.cylc` configuration <a name="globalCylcConfig"></a>
+### `global.cylc` configuration <a name="globalcylcconfig"></a>
 
 If `cylc` is in your `PATH`, you can check your global configuration with
 ```
@@ -42,7 +45,7 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 ```
 
 
-### default `PATH` and `cylc` on PPAN <a name="PPANdefaults"></a>
+### default `PATH` and `cylc` on PPAN <a name="ppandefaults"></a>
 
 On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
  and can be seen with `echo $PATH`. This smooths over configuration for job submission at the cost of some flexibility. A work around is to put
@@ -60,7 +63,7 @@ echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
 
-### terminal and UTF encoding errors <a name="UTFencodeErrors"></a>
+### terminal and UTF encoding errors <a name="utfencodeerrors"></a>
 
 A workaround is again, to edit your `~/.bash_profile` like above, and add define `LANG`:
 ```
@@ -160,7 +163,7 @@ allows you to avoid awkward back-and-forth edits in your git history.
 How you edit `site/ppan.cylc` for the environment you would like to use might look different
 depending on the developmental progress of the features you wish to test:
 
-#### Features in fre-cli that are part of a release
+### Features in fre-cli that are part of a release
 
 If the features that you want to include are part of a fre release, you can
 load a fre module from the pre-script of your cylc task (if not already specified
@@ -182,7 +185,7 @@ of a fre release, you can use them by loading fre/test.
 ```
 
 
-#### Features in fre-cli that are in a development branch
+### Features in fre-cli that are in a development branch
 
 If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that
@@ -232,7 +235,13 @@ cylc clean [your_test_experiment_workflow_id]
 ```
 
 
-### Inspect workflow progress via GUI or TUI interface <a name="inspectWorkflowProgress"></a>
+
+
+## `cylc` workflow monitoring <a name="cylcmontips"></a>
+
+
+
+### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow
 may stall, in which case it will shutdown in error after a period of time.
 
@@ -249,19 +258,22 @@ cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 ```
 Then, navigate to one of the two links printed to screen in your web browser.
 If one just wants a quick look at the state of their workflow, the user-interfaces
-can be completely avoided by using the `workflow-state` command, two examples of which are:
+can be completely avoided
 
+
+
+### Inspect workflow progress with a terminal CLI <a name-"cliprogressmon"></a>
+Various other `cylc` commands are useful for inspecting a running workflow.
+Try `cylc help`, and `cylc <command> --help` for more information on how to
+use these tools to your advantage!
+
+Try using the `workflow-state` command, two examples of which are:
 ```
 cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
-
-### Inspect workflow progress with a terminal CLI
-Various other `cylc` commands are useful for inspecting a running workflow.
-Try `cylc help`, and `cylc <command> --help` for more information on how to
-use these tools to your advantage!
-
+Try these others in the CLI to assist with monitoring your workflow progress
 - `cylc scan` Lists running workflows
 - `cylc cat-log [workflow_id]` Show the scheduler log
 - `cylc list` Lists all tasks
