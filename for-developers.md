@@ -8,11 +8,14 @@ on **PPAN**.
 
 ## Contents
 1. [Configuration](#configuration)
-2. [Testing locally on PPAN](#localtesting)
     1. [`cylc` doc](#cylcfunctioning)
     2. [global `cylc` config](#globalcylcconfig)
     3. [default PPAN settings](#ppandefaults)
     4. [terminal UTF encoding](#utfencodeerrors)
+2. [Testing locally on PPAN](#localtesting)
+    1. [](#)
+    2. [](#)
+    3. [](#)
 3. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituimon)
     2. [via CLI](#cliprogressmon)
@@ -45,6 +48,7 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 ```
 
 
+
 ### default `PATH` and `cylc` on PPAN <a name="ppandefaults"></a>
 
 On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
@@ -63,13 +67,15 @@ echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
 
+
 ### terminal and UTF encoding errors <a name="utfencodeerrors"></a>
 
-A workaround is again, to edit your `~/.bash_profile` like above, and add define `LANG`:
+A workaround is again, to edit your `~/.bash_profile` like above, and add/define `LANG`:
 ```
 echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
+
 
 
 ### `fre.yamltools` Framework
@@ -79,23 +85,23 @@ The yaml framework is fully described in `fre-cli`'s `README` and documentation
 
 
 
+
 ## Testing locally on PPAN <a name="localPPANtesting"></a>
 
 There are multiple ways of accomplishing this. They are described in order of least to most complex.
 
 
+
 ### The default local environment setup
+
 Currently, if one is only testing workflow changes against known `fre` tag/versions, it's simplest to use
 modulefiles for `cylc` and `fre`. In order to test your `fre-workflows` edits against the known system
-
 ```
 module load cylc
 module load fre/2025.04
 ```
 
 Developers however will need more flexibility than this to stay ahead of users and develop robust new features.
-
-
 
 Generally, edits pertaining to the workflow or fre-cli tool usage in the workflow are code
 changes meant to run through the cylc created batch job scripts, submitted by the cylc scheduler.
@@ -109,7 +115,9 @@ runner. For PP/AN platforms, the job scripts are submitted through slurm. On oth
 submitted as background jobs.
 
 
+
 ### Remote environment setup
+
 Each slurm job that cylc submits is run from a bare environment. If the jobs were 
 submitted in a local conda environment, that environment will not be used within the
 workflow. Thus, if you want to invoke fre-cli tools from within a fre-workflows task,
@@ -163,6 +171,8 @@ allows you to avoid awkward back-and-forth edits in your git history.
 How you edit `site/ppan.cylc` for the environment you would like to use might look different
 depending on the developmental progress of the features you wish to test:
 
+
+
 ### Features in fre-cli that are part of a release
 
 If the features that you want to include are part of a fre release, you can
@@ -174,6 +184,7 @@ in the `[[root]]` section of the site file - this section is "inherited" by all 
         pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
 ```
 
+
 #### Features in fre-cli that are merged into main
 
 If the features that you want to include are merged into main but not yet part
@@ -183,6 +194,7 @@ of a fre release, you can use them by loading fre/test.
     [[SPLIT-NETCDF]]
         pre-script = module load fre/test; mkdir -p $outputDir
 ```
+
 
 
 ### Features in fre-cli that are in a development branch
@@ -239,15 +251,17 @@ cylc clean [your_test_experiment_workflow_id]
 
 ## `cylc` workflow monitoring <a name="cylcmontips"></a>
 
-
-
-### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
 The workflow will run and shutdown when all tasks are complete. If tasks fail, the workflow
 may stall, in which case it will shutdown in error after a period of time.
 
 `cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI
-commands that can expose workflow and task information. The text-based GUI can be
-launched via:
+commands that can expose workflow and task information.
+
+
+
+### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
+
+The text-based GUI can be launched via:
 ```
 cylc tui [workflow_id]
 ```
@@ -263,6 +277,7 @@ can be completely avoided
 
 
 ### Inspect workflow progress with a terminal CLI <a name-"cliprogressmon"></a>
+
 Various other `cylc` commands are useful for inspecting a running workflow.
 Try `cylc help`, and `cylc <command> --help` for more information on how to
 use these tools to your advantage!
