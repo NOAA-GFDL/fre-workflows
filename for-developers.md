@@ -16,7 +16,7 @@ on **PPAN**.
 2. [Running and testing workflows, generally and on PPAN](#runtestworkflows)
     1. [local PPAN testing](#localppantesting)
     2. [default local env setup](#deflocalsetup)
-	3. [default remote env setup](#remotenvsetup)
+    3. [default remote env setup](#remotenvsetup)
 3. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituimon)
     2. [via CLI](#cliprogressmon)
@@ -166,9 +166,9 @@ directly after checking it out with the fre-cli subtool `fre pp checkout`:
 > fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
 > pushd ~/cylc-src/ESM4.5_candidateA__ppan__prod-openmp
 > ls
-app/	       environment.yml	       etc/		       Jinja2Filters/  pytest.ini	     README-portability.md    site/
-bin/	       envs/		       flow.cylc	       lib/	       README-developers.md  README_using_fre-cli.md  tests/
-ESM4.5_candidateA.yaml  generic-global-config/  meta/	       README.md	     rose-suite.conf
+app/       environment.yml       etc/       Jinja2Filters/  pytest.ini     README-portability.md    site/
+bin/       envs/       flow.cylc       lib/       README-developers.md  README_using_fre-cli.md  tests/
+ESM4.5_candidateA.yaml  generic-global-config/  meta/       README.md     rose-suite.conf
 > emacs site/ppan.cylc
 ```
 
