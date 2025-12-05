@@ -59,8 +59,14 @@ def op_is_in_line( op_name: str,
     '''
     searches a line for an operation string with regex, emits messages if any are found and returns True.
     Otherwise, the tool is silent and returns False.
+
+    Previous regex pattern:
+        r'[\s?|^]' + op_name + r'(?:\s+|$)'
+    This pattern was replaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
+    The current pattern:
+        r'(?:\s|^)' + op_name + r'(?:\s+|$)'
+    correctly matches operations at the start of a line or preceded by whitespace.
     '''
-    #op_s_string = r'[\s?|^]' + op_name + r'(?:\s+|$)' #missing rm -rf when at the start of a line
     op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)' #seems good...
     re_search_result = re.search(op_s_string, line)
     if re_search_result is None:
