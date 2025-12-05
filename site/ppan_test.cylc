@@ -10,6 +10,7 @@
 {% endset %}
 
 
+{# see https://cylc.github.io/cylc-doc/stable/html/user-guide/writing-workflows/scheduler.html#scheduler-configuration #}
 [scheduler]
     [[events]]
         startup handlers = """
