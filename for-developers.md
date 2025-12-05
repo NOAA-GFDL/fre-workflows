@@ -3,10 +3,20 @@
 `fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing
 on **PPAN**.
 
-## FYIs
+
+
+## Contents
+1. [Configuration](#configuration)
+2. [](#)
+
+
+
+## Configuration <a name="configuration"></a>
+
 
 ### `cylc` functionality
 `fre-workflows` developers should be intimately familiar with [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
+
 
 ### `global.cylc` configuration
 If `cylc` is in your `PATH`, you can check your global configuration with
@@ -22,13 +32,14 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 # edit the file to your heart's content
 ```
 
+
 ### default `PATH` and `cylc` on PPAN
 
 On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name is clearly in your `PATH`
  and can be seen with `echo $PATH`. This smooths over configuration for job submission at the cost of some flexibility. A work around is to put
  your preferred cylc into your `PATH` at login, while removing the default. In your `~/.bash_profile`:
  ```
- echo "(~/.bash_profile) removing /usr/local/bin from PATH"
+echo "(~/.bash_profile) removing /usr/local/bin from PATH"
 echo ""
 echo "(~/.bash_profile) PATH was: $PATH"
 echo ""
@@ -39,6 +50,7 @@ export PATH=/path/to/your/preferred/cylc/bin:$PATH
 echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
+
 ### terminal and UTF encoding errors
 
 A workaround is again, to edit your `~/.bash_profile` like above, and add define `LANG`:
@@ -47,22 +59,31 @@ echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
 
+
 ### `fre.yamltools` Framework
 
 The yaml framework is fully described in `fre-cli`'s `README` and documentation
 [on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
 
 
-# Testing `fre-workflows` locally on PPAN
 
-## Local environment setup
-Currently, when submitting/testing a pp workflow, it's simplest to use modulefiles for `cylc` and `fre` instead of developer conda environments.
-Developers however will need more flexibility than this to stay ahead of users and develop robust new features. 
+## Testing locally on PPAN
+
+There are multiple ways of accomplishing this. They are described in order of least to most complex.
+
+
+### The default local environment setup
+Currently, if one is only testing workflow changes against known `fre` tag/versions, it's simplest to use
+modulefiles for `cylc` and `fre`. In order to test your `fre-workflows` edits against the known system
 
 ```
 module load cylc
 module load fre/2025.04
 ```
+
+Developers however will need more flexibility than this to stay ahead of users and develop robust new features.
+
+
 
 Generally, edits pertaining to the workflow or fre-cli tool usage in the workflow are code
 changes meant to run through the cylc created batch job scripts, submitted by the cylc scheduler.
@@ -75,7 +96,7 @@ In this submission process via `fre pp run`, the platform passed on the command 
 runner. For PP/AN platforms, the job scripts are submitted through slurm. On other sites, scripts are
 submitted as background jobs.
 
-## Remote environment setup
+### Remote environment setup
 Each slurm job that cylc submits is run from a bare environment. If the jobs were 
 submitted in a local conda environment, that environment will not be used within the
 workflow. Thus, if you want to invoke fre-cli tools from within a fre-workflows task,
@@ -129,7 +150,7 @@ allows you to avoid awkward back-and-forth edits in your git history.
 How you edit `site/ppan.cylc` for the environment you would like to use might look different
 depending on the developmental progress of the features you wish to test:
 
-### Features in fre-cli that are part of a release
+#### Features in fre-cli that are part of a release
 
 If the features that you want to include are part of a fre release, you can
 load a fre module from the pre-script of your cylc task (if not already specified
@@ -140,7 +161,7 @@ in the `[[root]]` section of the site file - this section is "inherited" by all 
         pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
 ```
 
-### Features in fre-cli that are merged into main
+#### Features in fre-cli that are merged into main
 
 If the features that you want to include are merged into main but not yet part
 of a fre release, you can use them by loading fre/test.
@@ -151,7 +172,7 @@ of a fre release, you can use them by loading fre/test.
 ```
 
 
-### Features in fre-cli that are in a development branch
+#### Features in fre-cli that are in a development branch
 
 If you wish to work with changes that are not yet merged into main, the
 setup-script needs to set up your conda environment for the fre-cli repo that
@@ -180,9 +201,7 @@ this outside of the lab (i.e. Gaea).
 
 For more information on conda environment setup for fre-cli, see [fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
 
-# Guide
-
-## Postprocess FMS history files
+### Postprocess FMS history files
 To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
 
 NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the `ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file, and the rose-suite.conf files. 
