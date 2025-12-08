@@ -13,20 +13,20 @@ to using `fre-workflows` elsewhere.
     2. [Global `cylc` Config](#globalcylcconfig)
 	3. [`cylc` platforms and site](#cylcplatformandsite)
 	    1. [`site` value specifics](#sitespecifics)
-2. [Configuring Workflows With `fre`](#freyamlframework)
-3. [PPAN Specifics](#ppanspecifics)
+2. [PPAN Specifics](#ppanspecifics)
     1. [Terminal UTF Encoding](#utfencodeerrors)
     2. [PPAN Documentation](#moreppandoc)
+3. [Configuring Workflows With `fre`](#freyamlframework)
 4. [Running Workflows with `fre` on PPAN](#configrunppanworkflows)
     1. [With LMOD and Modules](#withlmod)
     2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
     3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
+5. [`cylc` workflow monitoring](#cylcmontips)
+    1. [via GUI or TUI](#guituimon)
+    2. [via CLI](#cliprogressmon)
 5. [too old?reviewing](#footemp)
     2. [REVIEWING default local env setup](#deflocalsetup)
     3. [REVIEWING default remote env setup](#remotenvsetup)
-6. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
-    1. [REVIEWING via GUI or TUI](#guituimon)
-    2. [REVIEWING via CLI](#cliprogressmon)
 
 
 
@@ -86,16 +86,6 @@ workflow functionality across different workflow settings.
 
 
 
-## Configuring Workflows With `fre` <a name="freyamlframework"></a>
-
-Developers are expected to know how to configure workflows with `fre`'s `yaml` framework, but this is not covered here.
-This is considered user functionality under `fre-cli`, and as such, is fully described in `fre-cli`'s documentation,
-located [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). One should also
-consult the documentation for `fre pp`, located [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
-
-
-
-
 ## PPAN Specifics <a name="ppanspecifics"></a>
 
 This section will minimally describe the PPAN specifics needed to submit workflows via any method described below.
@@ -134,6 +124,16 @@ as above, defining `LANG` at login time:
 echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
+
+
+
+
+## Configuring Workflows With `fre` <a name="freyamlframework"></a>
+
+Developers are expected to know how to configure workflows with `fre`'s `yaml` framework, but this is not covered here.
+This is considered user functionality under `fre-cli`, and as such, is fully described in `fre-cli`'s documentation,
+located [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). One should also
+consult the documentation for `fre pp`, located [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
 
 
 
@@ -251,6 +251,60 @@ this needs to be for both our current session, and the login shell the `cylc` sc
 ultimately use to manage/monitor the workflow. To accomplish this. consult the 
 
 
+
+
+## `cylc` workflow monitoring <a name="cylcmontips"></a>
+
+TO REVIEW
+
+`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that
+can expose workflow and task information. The workflow will run and shutdown when all tasks are complete.
+If tasks fail, the workflow may stall, in which case it will shutdown in error after a period of time.
+
+
+
+### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
+
+TO REVIEW
+
+The text-based GUI can be launched via:
+```
+cylc tui [workflow_id]
+```
+
+The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
+```
+cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
+```
+Then, navigate to one of the two links printed to screen in your web browser.
+If one just wants a quick look at the state of their workflow, the user-interfaces
+can be completely avoided
+
+
+
+### Inspect workflow progress with a terminal CLI <a name="cliprogressmon"></a>
+
+TO REVIEW
+
+Various other `cylc` commands are useful for inspecting a running workflow.
+Try `cylc help`, and `cylc <command> --help` for more information on how to
+use these tools to your advantage!
+
+Try using the `workflow-state` command, two examples of which are:
+```
+cylc workflow-state -v [workflow_id]                # show all jobs
+cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
+```
+
+Try these others in the CLI to assist with monitoring your workflow progress
+- `cylc scan` Lists running workflows
+- `cylc cat-log [workflow_id]` Show the scheduler log
+- `cylc list` Lists all tasks
+- `cylc report-timings`
+
+
+
+
 ## Older stuff still reviewing
 
 ### The User/Module Approach <a name="deflocalsetup"></a>
@@ -338,7 +392,7 @@ depending on the developmental progress of the features you wish to test:
 
 
 
-## testing by feature in `fre=cli`
+## testing by feature in `fre-cli`
 
 TO REVIEW might remove? might re-engineer? TODO
 
@@ -429,53 +483,3 @@ cylc clean [your_test_experiment_workflow_id]
 ```
 
 
-
-
-## `cylc` workflow monitoring <a name="cylcmontips"></a>
-
-TO REVIEW
-
-`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that
-can expose workflow and task information. The workflow will run and shutdown when all tasks are complete.
-If tasks fail, the workflow may stall, in which case it will shutdown in error after a period of time.
-
-
-
-### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
-
-TO REVIEW
-
-The text-based GUI can be launched via:
-```
-cylc tui [workflow_id]
-```
-
-The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
-```
-cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
-```
-Then, navigate to one of the two links printed to screen in your web browser.
-If one just wants a quick look at the state of their workflow, the user-interfaces
-can be completely avoided
-
-
-
-### Inspect workflow progress with a terminal CLI <a name-"cliprogressmon"></a>
-
-TO REVIEW
-
-Various other `cylc` commands are useful for inspecting a running workflow.
-Try `cylc help`, and `cylc <command> --help` for more information on how to
-use these tools to your advantage!
-
-Try using the `workflow-state` command, two examples of which are:
-```
-cylc workflow-state -v [workflow_id]                # show all jobs
-cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
-```
-
-Try these others in the CLI to assist with monitoring your workflow progress
-- `cylc scan` Lists running workflows
-- `cylc cat-log [workflow_id]` Show the scheduler log
-- `cylc list` Lists all tasks
-- `cylc report-timings`
