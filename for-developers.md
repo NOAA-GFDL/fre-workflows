@@ -9,11 +9,11 @@ The following are guidelines for developing/testing on **PPAN**.
 ## Contents
 1. [Configuration](#configuration)
     1. [`cylc` doc](#cylcfunctioning)
-    2. [default PPAN settings](#ppandefaults)
+    2. [default PPAN settings](#ppancylcdefaults)
         1. [terminal UTF encoding](#utfencodeerrors)
     3. [global `cylc` config](#globalcylcconfig)
     4. [workflow configuration with `fre.yamltools`](#freyamlframework)
-2. [Running and testing workflows, generally and on PPAN](#runtestworkflows)
+2. [Running/testing workflows on PPAN](#runtestworkflows)
     1. [local PPAN testing](#localppantesting)
     2. [default local env setup](#deflocalsetup)
     3. [default remote env setup](#remotenvsetup)
@@ -35,7 +35,7 @@ The following are guidelines for developing/testing on **PPAN**.
 
 
 
-### default `PATH` and `cylc` on PPAN <a name="ppandefaults"></a>
+### default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
 
 On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
 confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
@@ -81,10 +81,6 @@ cylc config -d > /home/$USER/.cylc/flow/global.cylc
 
 Sometimes, a configuration value or setting in a specific workflow takes precedent over the global configuration. For
 specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
-
-
-
-
 
 
 
