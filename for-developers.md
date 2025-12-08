@@ -9,27 +9,33 @@ to using `fre-workflows` elsewhere.
 
 ## Contents
 1. [`cylc` Configuration](#cylcconfiguration)
-    1. [`cylc` Doc](#cylcfunctioning)
+    1. [`cylc` Documentation](#cylcdoc)
     2. [Default PPAN Settings](#ppancylcdefaults)
         1. [Terminal UTF Encoding](#utfencodeerrors)
+        2. [PPAN Documentation](#moreppandoc)
     3. [Global `cylc` Config](#globalcylcconfig)
 2. [Configuring Workflows With `fre`](#freyamlframework)
-3. [Running Workflows with `fre` on PPAN](#runppanworkflows)
-    1. [REVIEWING local PPAN testing](#localppantesting)
+3. [Running Workflows with `fre` on PPAN](#configrunppanworkflows)
+    1. [With LMOD and Modules](#withlmod)
+    2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
+    3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
+4. [too old?reviewing](#footemp)
     2. [REVIEWING default local env setup](#deflocalsetup)
     3. [REVIEWING default remote env setup](#remotenvsetup)
-3. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
+5. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
     1. [REVIEWING via GUI or TUI](#guituimon)
     2. [REVIEWING via CLI](#cliprogressmon)
 
 
 
 
-## Configuration <a name="cylcconfiguration"></a>
+## `cylc` Configuration <a name="cylcconfiguration"></a>
+
+This section will go over the basics of configuring `cylc` and other PPAN-specific configurations relevant to `cylc`.
 
 
 
-### `cylc` functionality <a name="cylcfunctioning"></a>
+### `cylc` Documentation <a name="cylcdoc"></a>
 
 `fre-workflows` developers should be intimately familiar with
 [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
@@ -43,7 +49,7 @@ confirmed via `echo $PATH`. This smooths over configuration for managing/running
 flexibility. To avoid the default `cylc`, a work around is to put your preferred `cylc` into your `PATH` at login, while
 removing the default. To do this, insert into your shell's login/profile script (`bash`/`~/.bash_profile` used below):
 ```
-## note, this is for bash
+# note, this is for bash
 echo "(~/.bash_profile) removing /usr/local/bin from PATH"
 echo ""
 echo "(~/.bash_profile) PATH was: $PATH"
@@ -62,7 +68,7 @@ An annoyance that sometimes pops up, preventung the submission of a workflow. Th
 `LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
 as above, defining `LANG` at login time:
 ```
-## note, this for bash
+# note, this for bash
 echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
@@ -79,8 +85,8 @@ More information on PPAN generally can be found under the RDHPCS systems wiki
 ### `global.cylc` Configuration <a name="globalcylcconfig"></a>
 
 If `cylc` is in your `PATH`, the global configuration can be exposed with `cylc config -d`. If desired, one can override
- these values and define their own global configuration by putting a configuration file in the expected location. For this,
- it's best to start your own global configuration with the current one. We can do this with:
+these values and define their own global configuration by putting a configuration file in the expected location. For 
+this, it's best to start your own global configuration with the current one. We can do this with:
 ```
 mkdir --parents /home/$USER/.cylc/flow
 cylc config -d > /home/$USER/.cylc/flow/global.cylc
@@ -103,7 +109,7 @@ consult the documentation for `fre pp`, located [here](https://github.com/NOAA-G
 
 
 
-## Running the CI/CD Testing Workflow on PPAN <a name="configrunppanworkflows"></a>
+## Running a Workflow on PPAN <a name="configrunppanworkflows"></a>
 
 There are multiple approaches to setting up and running workflows on PPAN. This section specifically describes how to
 locally run a copy of the CI/CD testing workflow in this repository. The approaches are described below in order of
@@ -129,10 +135,10 @@ least flexible, as it forces usage of current releases of `fre-cli` and/or it's 
 approach can only be used to test new changes to the workflow template itself, and cannot be used to evaluate how a
 change in `fre-cli` may affect workflow functionality.
 
-Assuming you have a copy of this repository already (see assumtions above), then to run a workflow in this approach,
+Assuming you have a copy of this repository already (see assumptions above), then to run a workflow in this approach,
 all that is needed is-
 ```
-# load fre, the current version may be updated or different
+# load fre, the current version may be updated or different than 2025.04
 module load fre/2025.04
 
 ## if instead, you want the current main branch of noaa-gfdl/fre-cli
@@ -149,9 +155,63 @@ mock the code checkout again, and re-configure/validate/install the workflow.
 
 
 
-### Running Using Your Own `conda` Environment and module-loaded `cylc` <a name="usecondawithoutcylc"></a>
+### Running With Your `conda` Environment and module-loaded `cylc` <a name="withcondaandcylc"></a>
 
-This approach will let you use your own `conda` environment with `fre-cli`, as long as the e
+**NOTE** It is highly recommended by the `cylc` package itself to keep the version consistent across `install`,
+`validate`, and `play` steps. Though it's sometimes possible to let them differ and "force" `cylc` to run anyways, we
+generally always follow this guideline to avoid any pathological behaviors that could result.
+
+This approach will let you use your own `conda` environment with a custom `fre-cli` install, while leaning on a(n) LMOD
+loaded `cylc`. The additional `module load cylc` will guarantee we only use one version of `cylc`, since this is the
+`cylc` in one's `PATH` by default. As such, this approach is quite flexible, but requires that all changes are
+compatible with a version of `cylc` that possibly differs from what is in the `fre-cli` environment.
+
+If these caveats are acceptable, then begin by activating your `conda` environment, and figuring out where your `fre` is
+```
+module load miniforge
+conda activate your-fre-cli-env
+
+# note this down for the next step
+which fre
+
+# to make sure cylc versions don't differ between installed and running workflows
+module load cylc
+```
+
+Now, open up `site/ppan_test.cylc` with your favorite text editor (or `site/ppan.cylc` to test without `epmt`
+annotations/tagging), and under `[runtime]`, within the in the `root` task-family's `init-script` find the following:
+```
+[runtime]
+    [[root]]
+        init-script = """
+            module load epmt
+            module list
+            epmt check
+
+            module load fre/{{ FRE_VERSION }}
+            module load hsm/1.3.0
+
+            #### if one wants to use their own conda environment, edit the PATH and uncomment below like so:
+            #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
+        """
+```
+
+Uncomment the `export PATH=...` line to point to the folder containing the executable you found with `which fre`. Then,
+we can use the `run_pp_locally` script again:
+```
+# configure, install, validate, and run installed/configured workflow
+source for_gh_runner/run_pp_locally.sh
+```
+
+
+
+### Running With Only Your `conda` Environment <a name="withcondaonly"></a>
+
+This is very similar to the previous approach, but requires you to create your own `global.cylc` configuration and edit
+it to comply with system restrictions and enable proper functionality.
+
+
+
 
 ## Older stuff still reviewing
 
