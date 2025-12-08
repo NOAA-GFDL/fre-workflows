@@ -9,10 +9,10 @@ The following are guidelines for developing/testing on **PPAN**.
 ## Contents
 1. [Configuration](#configuration)
     1. [`cylc` doc](#cylcfunctioning)
-    2. [global `cylc` config](#globalcylcconfig)
-    3. [default PPAN settings](#ppandefaults)
-    4. [terminal UTF encoding](#utfencodeerrors)
-    5. [`fre.yamltools` framework](#freyamlframework)
+    2. [default PPAN settings](#ppandefaults)
+        1. [terminal UTF encoding](#utfencodeerrors)
+    3. [global `cylc` config](#globalcylcconfig)
+    4. [workflow configuration with `fre.yamltools`](#freyamlframework)
 2. [Running and testing workflows, generally and on PPAN](#runtestworkflows)
     1. [local PPAN testing](#localppantesting)
     2. [default local env setup](#deflocalsetup)
@@ -58,7 +58,7 @@ echo "(~/.bash_profile) PATH now: $PATH"
 #### terminal UTF-encoding errors <a name="utfencodeerrors"></a>
 
 An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
-`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is to again, to edit your login/profile script
+`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
 as above, defining `LANG` at login time:
 ```
 ## note, this for bash
@@ -88,10 +88,11 @@ specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cyl
 
 
 
-### `fre.yamltools` Framework <a name="freyamlframework"></a>
+### Workflow configuration with `fre.yamltools` <a name="freyamlframework"></a>
 
-The yaml framework is fully described in `fre-cli`'s `README` and documentation
-[on the yaml files](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
+Configuration of workflows with `fre`'s `yaml` framework is user functionality that is fully described in `fre-cli`'s
+`README` and documentation,
+[located here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
 
 
 
