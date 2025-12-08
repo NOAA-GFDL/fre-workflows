@@ -10,19 +10,21 @@ to using `fre-workflows` elsewhere.
 ## Contents
 1. [`cylc` Configuration](#cylcconfiguration)
     1. [`cylc` Documentation](#cylcdoc)
-    2. [Default PPAN Settings](#ppancylcdefaults)
-        1. [Terminal UTF Encoding](#utfencodeerrors)
-        2. [PPAN Documentation](#moreppandoc)
-    3. [Global `cylc` Config](#globalcylcconfig)
+    2. [Global `cylc` Config](#globalcylcconfig)
+	3. [`cylc` platforms and site](#cylcplatformandsite)
+	    1. [`site` value specifics](#sitespecifics)
 2. [Configuring Workflows With `fre`](#freyamlframework)
-3. [Running Workflows with `fre` on PPAN](#configrunppanworkflows)
+3. [PPAN Specifics](#ppanspecifics)
+    1. [Terminal UTF Encoding](#utfencodeerrors)
+    2. [PPAN Documentation](#moreppandoc)
+4. [Running Workflows with `fre` on PPAN](#configrunppanworkflows)
     1. [With LMOD and Modules](#withlmod)
     2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
     3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
-4. [too old?reviewing](#footemp)
+5. [too old?reviewing](#footemp)
     2. [REVIEWING default local env setup](#deflocalsetup)
     3. [REVIEWING default remote env setup](#remotenvsetup)
-5. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
+6. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
     1. [REVIEWING via GUI or TUI](#guituimon)
     2. [REVIEWING via CLI](#cliprogressmon)
 
@@ -42,46 +44,6 @@ This section will go over the basics of configuring `cylc` and other PPAN-specif
 
 
 
-### Default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
-
-On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
-confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
-flexibility. To avoid the default `cylc`, a work around is to put your preferred `cylc` into your `PATH` at login, while
-removing the default. To do this, insert into your shell's login/profile script (`bash`/`~/.bash_profile` used below):
-```
-# note, this is for bash
-echo "(~/.bash_profile) removing /usr/local/bin from PATH"
-echo ""
-echo "(~/.bash_profile) PATH was: $PATH"
-echo ""
-export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
-
-# now add your preferred cylc to your PATH instead
-export PATH=/path/to/your/preferred/cylc/bin:$PATH
-echo "(~/.bash_profile) PATH now: $PATH"
-```
-
-
-#### Terminal UTF-encoding Errors <a name="utfencodeerrors"></a>
-
-An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
-`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
-as above, defining `LANG` at login time:
-```
-# note, this for bash
-echo "(~/.bash_profile) export LANG=C.UTF-8"
-export LANG=C.UTF-8
-```
-
-
-#### PPAN Documentation <a name="moreppandoc"></a>
-
-More information on PPAN generally can be found under the RDHPCS systems wiki
-[here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and on the GFDL wiki
-[here](https://wiki.gfdl.noaa.gov/index.php/Main_Page).
-
-
-
 ### `global.cylc` Configuration <a name="globalcylcconfig"></a>
 
 If `cylc` is in your `PATH`, the global configuration can be exposed with `cylc config -d`. If desired, one can override
@@ -98,6 +60,31 @@ specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cyl
 
 
 
+### `cylc` Platforms and `site/` files <a name="cylcplatformandsite"></a>
+
+`cylc` and `fre` treat the notion of platforms slightly differently, creating the potential for some confusion.
+
+In `fre`, a platform typically refers to a specific environment of a specific system, generally for the purposes of
+tracking which compilers and hardware are used where, and what settings are required to make models run. It's used as a
+common input argument to many functions, helping uniquely identify workflow configurations and place where they were run
+at the same time.
+
+In `cylc` a platform is usually about selecting a specific set global configuration values, and in `fre-workflows`, also
+implies which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
+platform values are `ppan` and `ppan_test`, corresponding to template files in `site/` name respectively. One gets
+chosen based on a `site` configuration value within a `fre` settings `yaml`.
+
+
+#### `ppan` v. `ppan_test` <a name="sitevaluespecifics"></a>
+
+These two differ by one key field, the `job runner handler` field. `site/ppan.cylc` will specify that `cylc`'s default
+`Slurm` job runner handler will be used. `site/ppan_test.cylc` by contrast, will use a custom version of the `Slurm` job
+runner handler, that parses the job script and tags certain operations for tracking via `epmt`. Additionally, `ppan_test`
+contains `Jinja2` lines that will be parsed and ultimately render to a string of annotations that help `epmt` track
+workflow functionality across different workflow settings.
+
+
+
 
 ## Configuring Workflows With `fre` <a name="freyamlframework"></a>
 
@@ -105,6 +92,48 @@ Developers are expected to know how to configure workflows with `fre`'s `yaml` f
 This is considered user functionality under `fre-cli`, and as such, is fully described in `fre-cli`'s documentation,
 located [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). One should also
 consult the documentation for `fre pp`, located [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
+
+
+
+
+## PPAN Specifics <a name="ppanspecifics"></a>
+
+This section will minimally describe the PPAN specifics needed to submit workflows via any method described below.
+Generally, more information on PPAN can be found under the RDHPCS systems wiki
+[here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and on the GFDL wiki
+[here](https://wiki.gfdl.noaa.gov/index.php/Main_Page). 
+
+
+
+### Default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
+
+On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
+confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
+flexibility. To avoid the default `cylc`, a work around is to put your preferred `cylc` into your `PATH` at login, while
+removing the default. To do this, insert into your shell's login/profile script (`bash`/`~/.bash_profile` used below):
+```
+# note, this is for bash
+echo "(~/.bash_profile) removing /usr/local/bin from PATH"
+echo "(~/.bash_profile) PATH was: $PATH"
+
+export PATH=$(echo "$PATH" | awk -v RS=: -v ORS=: '$0 != "/usr/local/bin"' | sed 's/:$//')
+
+# now add your preferred cylc to your PATH instead
+export PATH=/path/to/your/preferred/cylc/bin:$PATH
+echo "(~/.bash_profile) PATH now: $PATH"
+```
+
+
+### Terminal UTF-encoding Errors <a name="utfencodeerrors"></a>
+
+An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
+`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
+as above, defining `LANG` at login time:
+```
+# note, this for bash
+echo "(~/.bash_profile) export LANG=C.UTF-8"
+export LANG=C.UTF-8
+```
 
 
 
@@ -135,8 +164,8 @@ least flexible, as it forces usage of current releases of `fre-cli` and/or it's 
 approach can only be used to test new changes to the workflow template itself, and cannot be used to evaluate how a
 change in `fre-cli` may affect workflow functionality.
 
-Assuming you have a copy of this repository already (see assumptions above), then to run a workflow in this approach,
-all that is needed is-
+Assuming you have a copy of this repository already (see [above](#configrunppanworkflows) section), then to run a
+workflow in this approach, all that is needed is-
 ```
 # load fre, the current version may be updated or different than 2025.04
 module load fre/2025.04
@@ -207,10 +236,19 @@ source for_gh_runner/run_pp_locally.sh
 
 ### Running With Only Your `conda` Environment <a name="withcondaonly"></a>
 
-This is very similar to the previous approach, but requires you to create your own `global.cylc` configuration and edit
-it to comply with system restrictions and enable proper functionality.
+This is very similar to the [previous](#withcondaandcylc) approach, but requires you to create your own `global.cylc`
+configuration and edit it to comply with system restrictions and enable proper functionality. First, consult the previous
+[section](#globalcylcconfig) to create your own `global.cylc` beginning with the global config from the default `cylc`
+in your `PATH`.
 
+Next, open the `global.cylc` file and confirm the field `use login shell` is set to `true`, then find the `ssh command`
+field and change it to `ssh`. Do this for both the `ppan` and `ppan_test` platform definitions.
 
+Now, we need to remove the default `cylc` from our `PATH`, and additionally include a path to the exact `cylc` within
+our conda environment. To accomplish this, follow the instructions in the previous section [here](#ppanspecifics).
+
+this needs to be for both our current session, and the login shell the `cylc` scheduler will
+ultimately use to manage/monitor the workflow. To accomplish this. consult the 
 
 
 ## Older stuff still reviewing
