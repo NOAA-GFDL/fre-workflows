@@ -1,7 +1,7 @@
 # PPAN `fre-workflows` Developer Guide
 
-`fre-workflows` has primarily been developed and tested on PPAN. The following are guidelines for developing
-on **PPAN**.
+`fre-workflows` can be used across multiple different platforms, but historically has been developed and tested on PPAN.
+The following are guidelines for developing/testing on **PPAN**.
 
 
 
@@ -34,31 +34,15 @@ on **PPAN**.
 [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
-### `global.cylc` configuration <a name="globalcylcconfig"></a>
-
-If `cylc` is in your `PATH`, you can check your global configuration with
-```
-cylc config -d
-```
-
-You can define your own global configuration for `cylc` by putting a configuration file in the expected location.
-For some fields at least, the user's global configuration overrides the defaults even using a `module load`ed
-version. To start from a given global configuration:
-```
-mkdir --parents /home/$USER/.cylc/flow
-cylc config -d > /home/$USER/.cylc/flow/global.cylc
-# edit the file to your heart's content
-```
-
-
 
 ### default `PATH` and `cylc` on PPAN <a name="ppandefaults"></a>
 
-On PPAN, your `PATH` by default has `cylc` in it. This can be seen on login with `which cylc`. The directory name
-is clearly in your `PATH` and can be seen with `echo $PATH`. This smooths over configuration for job submission
-at the cost of some flexibility. A work around is to put  your preferred cylc into your `PATH` at login, while
-removing the default. In your `~/.bash_profile`:
+On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
+confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
+flexibility. To avoid the default `cylc`, a work around is to put your preferred `cylc` into your `PATH` at login, while
+removing the default. To do this, insert into your shell's login/profile script (`bash`/`~/.bash_profile` used below):
 ```
+## note, this is for bash
 echo "(~/.bash_profile) removing /usr/local/bin from PATH"
 echo ""
 echo "(~/.bash_profile) PATH was: $PATH"
@@ -71,14 +55,36 @@ echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
 
+#### terminal UTF-encoding errors <a name="utfencodeerrors"></a>
 
-### terminal and UTF encoding errors <a name="utfencodeerrors"></a>
-
-A workaround is again, to edit your `~/.bash_profile` like above, and add/define `LANG`:
+An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
+`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is to again, to edit your login/profile script
+as above, defining `LANG` at login time:
 ```
+## note, this for bash
 echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
+
+
+
+### `global.cylc` configuration <a name="globalcylcconfig"></a>
+
+If `cylc` is in your `PATH`, the global configuration can be exposed with `cylc config -d`. If desired, one can override
+ these values and define their own global configuration by putting a configuration file in the expected location. For this,
+ it's best to start your own global configuration with the current one. We can do this with:
+```
+mkdir --parents /home/$USER/.cylc/flow
+cylc config -d > /home/$USER/.cylc/flow/global.cylc
+# edit the file to your heart's content
+```
+
+Sometimes, a configuration value or setting in a specific workflow takes precedent over the global configuration. For
+specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
+
+
+
+
 
 
 
