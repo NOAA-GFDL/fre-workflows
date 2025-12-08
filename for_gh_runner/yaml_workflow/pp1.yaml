@@ -26,6 +26,8 @@ postprocess:
         interval_years: 2
       - frequency: mon
         interval_years: 2
+
+    ## regridded component with slightly different atmos masking case requirements
     - type: "atmos_month_cmip"
       sources:
         - history_file: "atmos_month_cmip"
