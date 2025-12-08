@@ -247,8 +247,17 @@ field and change it to `ssh`. Do this for both the `ppan` and `ppan_test` platfo
 Now, we need to remove the default `cylc` from our `PATH`, and additionally include a path to the exact `cylc` within
 our conda environment. To accomplish this, follow the instructions in the previous section [here](#ppanspecifics).
 
-this needs to be for both our current session, and the login shell the `cylc` scheduler will
-ultimately use to manage/monitor the workflow. To accomplish this. consult the 
+Still with me? Now, just like in the [previous section](#withcondaandcylc), edit either `ppan.cylc` or `ppan_test.cylc`
+in `site/` to add your `fre-cli` environment executables to `PATH` for your submitted workflow tasks. This should be the
+last bit of editing we have to do.
+
+Now, log out, and log back in to PPAN to make sure the new login specifics get picked up, and from the `fre-workflows`
+directory do:
+```
+module load miniforge
+conda activate your-fre-cli-env
+source for_gh_runner/run_pp_locally.sh
+```
 
 
 
