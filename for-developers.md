@@ -1,30 +1,31 @@
 # PPAN `fre-workflows` Developer Guide
 
 `fre-workflows` can be used across multiple different platforms, but historically has been developed and tested on PPAN.
-The following are guidelines for developing/testing on **PPAN**.
+The following are guidelines for developing/testing on **PPAN**, but does still contain some generally-applicable advice
+to using `fre-workflows` elsewhere.
 
 
 
 
 ## Contents
-1. [Configuration](#configuration)
-    1. [`cylc` doc](#cylcfunctioning)
-    2. [default PPAN settings](#ppancylcdefaults)
-        1. [terminal UTF encoding](#utfencodeerrors)
-    3. [global `cylc` config](#globalcylcconfig)
-    4. [workflow configuration with `fre.yamltools`](#freyamlframework)
-2. [Running/testing workflows on PPAN](#runtestworkflows)
-    1. [local PPAN testing](#localppantesting)
-    2. [default local env setup](#deflocalsetup)
-    3. [default remote env setup](#remotenvsetup)
-3. [`cylc` workflow monitoring](#cylcmontips)
-    1. [via GUI or TUI](#guituimon)
-    2. [via CLI](#cliprogressmon)
+1. [`cylc` Configuration](#cylcconfiguration)
+    1. [`cylc` Doc](#cylcfunctioning)
+    2. [Default PPAN Settings](#ppancylcdefaults)
+        1. [Terminal UTF Encoding](#utfencodeerrors)
+    3. [Global `cylc` Config](#globalcylcconfig)
+2. [Configuring Workflows With `fre`](#freyamlframework)
+3. [Running Workflows with `fre` on PPAN](#runppanworkflows)
+    1. [REVIEWING local PPAN testing](#localppantesting)
+    2. [REVIEWING default local env setup](#deflocalsetup)
+    3. [REVIEWING default remote env setup](#remotenvsetup)
+3. [REVIEWING `cylc` workflow monitoring](#cylcmontips)
+    1. [REVIEWING via GUI or TUI](#guituimon)
+    2. [REVIEWING via CLI](#cliprogressmon)
 
 
 
 
-## Configuration <a name="configuration"></a>
+## Configuration <a name="cylcconfiguration"></a>
 
 
 
@@ -35,7 +36,7 @@ The following are guidelines for developing/testing on **PPAN**.
 
 
 
-### default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
+### Default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
 
 On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
 confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
@@ -55,7 +56,7 @@ echo "(~/.bash_profile) PATH now: $PATH"
 ```
 
 
-#### terminal UTF-encoding errors <a name="utfencodeerrors"></a>
+#### Terminal UTF-encoding Errors <a name="utfencodeerrors"></a>
 
 An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
 `LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
@@ -67,8 +68,15 @@ export LANG=C.UTF-8
 ```
 
 
+#### PPAN Documentation <a name="moreppandoc"></a>
 
-### `global.cylc` configuration <a name="globalcylcconfig"></a>
+More information on PPAN generally can be found under the RDHPCS systems wiki
+[here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and on the GFDL wiki
+[here](https://wiki.gfdl.noaa.gov/index.php/Main_Page).
+
+
+
+### `global.cylc` Configuration <a name="globalcylcconfig"></a>
 
 If `cylc` is in your `PATH`, the global configuration can be exposed with `cylc config -d`. If desired, one can override
  these values and define their own global configuration by putting a configuration file in the expected location. For this,
@@ -84,24 +92,70 @@ specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cyl
 
 
 
-### Workflow configuration with `fre.yamltools` <a name="freyamlframework"></a>
 
-Configuration of workflows with `fre`'s `yaml` framework is user functionality that is fully described in `fre-cli`'s
-`README` and documentation,
-[located here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework).
+## Configuring Workflows With `fre` <a name="freyamlframework"></a>
 
-
-
-
-## Testing locally on PPAN <a name="runtestworkflows"></a>
-
-MUST REVIEW AND EDIT STILL
-
-There are multiple ways of accomplishing this. They are described in order of least to most complex.
+Developers are expected to know how to configure workflows with `fre`'s `yaml` framework, but this is not covered here.
+This is considered user functionality under `fre-cli`, and as such, is fully described in `fre-cli`'s documentation,
+located [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). One should also
+consult the documentation for `fre pp`, located [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
 
 
 
-### The default local environment setup <a name="deflocalsetup"></a>
+
+## Running the CI/CD Testing Workflow on PPAN <a name="configrunppanworkflows"></a>
+
+There are multiple approaches to setting up and running workflows on PPAN. This section specifically describes how to
+locally run a copy of the CI/CD testing workflow in this repository. The approaches are described below in order of
+least to most complex. They are also, equivalently, from the developer standpoint, in order of least to most flexible.
+
+**All cases below make the following assumptions**:
+- you have access to PPAN and have logged in
+- you have adequate disk space for what you're trying to do
+- you begin from a terminal with `$CWD` pointing to a clone of `fre-workflows` under `cylc-src` nor `cylc-run`
+- you are making changes to the aforementioned clone, and now you need to test them
+- you want to use the workflow defined in `for_gh_runner/yaml_workflow` and are OK with "mocking" the checkout step
+
+If these assumptions match your current situation, you are in the right place! These are the assumptions made by the
+local workflow running `bash` script, `for_gh_runner/run_pp_locally.sh`. It is similar to `for_gh_runner/runscript.sh`
+by design, to keep workflow testing done on PPAN as apples-to-apples with this repository's pipeline as possible.
+
+
+
+### Running Using LMOD Modules <a name="withlmod"></a>
+
+This approach closely tracks how users will generally run workflows, and is the simplest/quickest approach. It's the
+least flexible, as it forces usage of current releases of `fre-cli` and/or it's current `main` branch. As such, this
+approach can only be used to test new changes to the workflow template itself, and cannot be used to evaluate how a
+change in `fre-cli` may affect workflow functionality.
+
+Assuming you have a copy of this repository already (see assumtions above), then to run a workflow in this approach,
+all that is needed is-
+```
+# load fre, the current version may be updated or different
+module load fre/2025.04
+
+## if instead, you want the current main branch of noaa-gfdl/fre-cli
+#module load fre/2025.test
+
+# configure, install, validate, and run installed/configured workflow
+source for_gh_runner/run_pp_locally.sh
+```
+
+You may run into some basic error messages at the `fre pp validate` step complaining about certain directories not
+existing. As long as the complaints are about *output* directories, simply create the directories with `mkdir --parents`
+and re-run `source for_gh_runner/run_pp_locally.sh`. The script will clean up after itself from previous run attempts,
+mock the code checkout again, and re-configure/validate/install the workflow.
+
+
+
+### Running Using Your Own `conda` Environment and module-loaded `cylc` <a name="usecondawithoutcylc"></a>
+
+This approach will let you use your own `conda` environment with `fre-cli`, as long as the e
+
+## Older stuff still reviewing
+
+### The User/Module Approach <a name="deflocalsetup"></a>
 
 MUST REVIEW STILL
 
