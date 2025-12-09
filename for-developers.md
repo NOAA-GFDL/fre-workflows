@@ -24,8 +24,11 @@ to using `fre-workflows` elsewhere.
 5. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-6. [Notes on Workflow Configuration](#advancedconfig)
-    1. [Workflow Configuration Hierarchy](#remotenvsetup)
+6. [Workflow Editing Best Practices](#workfloweditingpractices)
+    1. [Which Workflow File Should I Edit?](#whichfileedit)
+    2. [Can I Edit the Code in `~/cylc-run`?](#editcylcruncode)
+    3. [Can I Edit the Code in `~/cylc-src`?](#editcylcsrccode)
+    4. [How Do I Test My Changes?](#howtotest)
 
 
 
@@ -329,7 +332,7 @@ to the batch task environment.
 ### Workflow Configuration Hierarchy <a name="workflowconfigheirarchy"></a>
 
 `cylc` workflow configuration is hierarchical, with site-specific configurations from (`site/`), layered on top of a 
-central workflow configuraton (`flow.cylc`), all of which is layered on top of a global `cylc` scheduler configuration 
+central workflow configuration (`flow.cylc`), all of which is layered on top of a global `cylc` scheduler configuration 
 (see section [1.2](#globalcylcconfig)). I.e., the global scheduler configuration is included first, then the central 
 workflow template (`flow.cylc`) with basic task-parameters/task-family definitions, and then a site-specific configuration 
 is appended and parsed from the `site/` directory.
@@ -348,7 +351,7 @@ to the bottom of the workflow template.
 #### Which Workflow File Should I Edit? <a name="whichfileedit"></a>
 
 **If you are trying to make changes to a workflow template, first consider where the changes should live**, given the
-heirarchy described above. For example, if your changes are so specific to PPAN that the workflow will break everywhere
+hierarchy described above. For example, if your changes are so specific to PPAN that the workflow will break everywhere
 else, then those changes belong in both `site/ppan.cylc` and `site/ppan_test.cylc`. If the changes were specific to 
 Gaea, they would go in `site/gaea.cylc`, etc.. If the changes are truly platform independent, and must be propagated
 to all sites, then the changes should go in `flow.cylc`.
@@ -374,7 +377,7 @@ editing the copy under `cylc-src`, and instead assumes you are developing a loca
 
 This will ultimately mean you have three copies of the code lying around, with one being your local development copy, 
 another being the mock-checked-out code under `cylc-src`, and the fully-configured code installed and run from `cylc-run`.
-It's this "bloat" that tempts some `fre` developers to edit to code under `~/cylc-src` to develop changes. Some have 
+It's this "bloat" that tempts some `fre` developers to edit the code under `~/cylc-src` to develop changes. Some have 
 done this without issue successfully, and some have regrettably forgotten to include details/changes critical to 
 workflow functioning that were not easy to recall or re-engineer.
 
@@ -382,7 +385,7 @@ workflow functioning that were not easy to recall or re-engineer.
 #### How Do I Test My Changes? <a name="howtotest"></a>
 
 There are multiple routes, most of them are described in this document. Local testing on PPAN (see section 
-[3](#configrunppanworkflows)) is highly recommended, as it gives developers options to test things out given the level
+[4](#configrunppanworkflows)) is highly recommended, as it gives developers options to test things out given the level
 of flexibility required for testing the changes. 
 
 In the case of PRs, testing success in current pipeline routines is expected, and required. The `create_test_conda_env` 
