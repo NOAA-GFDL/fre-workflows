@@ -24,11 +24,14 @@ to using `fre-workflows` elsewhere.
 5. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-6. [Workflow Editing Best Practices](#workfloweditingpractices)
-    1. [Which Workflow File Should I Edit?](#whichfileedit)
-    2. [Can I Edit the Code in `~/cylc-run`?](#editcylcruncode)
-    3. [Can I Edit the Code in `~/cylc-src`?](#editcylcsrccode)
-    4. [How Do I Test My Changes?](#howtotest)
+6. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
+    1. [Workflow Task Environments / Requirements](#workflowtaskenvsreqs)
+    2. [Workflow Configuration Hierarchy](#workflowconfigheirarchy)
+    3. [Workflow Editing Best Practices](#workfloweditingpractices)
+        1. [Which Workflow File Should I Edit?](#whichfileedit)
+        2. [Can I Edit the Code in `~/cylc-run`?](#editcylcruncode)
+        3. [Can I Edit the Code in `~/cylc-src`?](#editcylcsrccode)
+        4. [How Do I Test My Changes?](#howtotest)
 
 
 
