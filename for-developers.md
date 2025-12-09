@@ -24,9 +24,8 @@ to using `fre-workflows` elsewhere.
 5. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-6. [Older content under review](#footemp)
-    1. [REVIEWING default local env setup](#deflocalsetup)
-    2. [REVIEWING default remote env setup](#remotenvsetup)
+6. [Notes on Workflow Configuration](#advancedconfig)
+    1. [Workflow Configuration Hierarchy](#remotenvsetup)
 
 
 
@@ -47,7 +46,7 @@ This section covers the basics of configuring `cylc` and other PPAN-specific con
 ### `global.cylc` Configuration <a name="globalcylcconfig"></a>
 
 If `cylc` is in your `PATH`, you can view the global configuration with `cylc config -d`. If desired, you can override
-these values and define your own global configuration by placing a configuration file in the expected location. 
+these values and define your own global configuration by placing a configuration file in the expected location.
 To do this, start your global configuration with the current one:
 ```
 mkdir --parents /home/$USER/.cylc/flow
@@ -70,7 +69,7 @@ It serves as a common input argument to many functions, helping uniquely identif
 
 In `cylc`, a platform is usually about selecting a specific set of global configuration values. In `fre-workflows`, it also
 determines which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
-platform values are `ppan` and `ppan_test`, corresponding to the template files `site/ppan.cylc` and `site/ppan_test.cylc` 
+platform values are `ppan` and `ppan_test`, corresponding to the template files `site/ppan.cylc` and `site/ppan_test.cylc`
 respectively. The platform is chosen based on a `site` configuration value within a `fre` settings `yaml`.
 
 
@@ -90,7 +89,7 @@ workflow functionality across different workflow settings.
 This section describes the essential PPAN-specific configurations needed to submit workflows via any method described below.
 For more comprehensive information on PPAN, consult the RDHPCS systems wiki
 [here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and the GFDL wiki
-[here](https://wiki.gfdl.noaa.gov/index.php/Main_Page). 
+[here](https://wiki.gfdl.noaa.gov/index.php/Main_Page).
 
 
 
@@ -263,8 +262,8 @@ source for_gh_runner/run_pp_locally.sh
 
 ## `cylc` workflow monitoring <a name="cylcmontips"></a>
 
-`cylc` has two workflow viewing interfaces; a full graphical interface (GUI), text interface (TUI), and a variety of CLI commands that
-can expose workflow and task information. The workflow will run and shut down when all tasks are complete.
+`cylc` has two workflow viewing interfaces; a full graphical interface (GUI), text interface (TUI), and a variety of CLI
+commands that can expose workflow and task information. The workflow will run and shut down when all tasks are complete.
 If tasks fail, the workflow may stall, in which case it will shut down with an error after a period of time.
 
 
@@ -287,10 +286,9 @@ Then navigate to one of the two links printed to screen in your web browser.
 
 ### Inspect workflow progress with a terminal CLI <a name="cliprogressmon"></a>
 
-If you just want a quick look at the state of your workflow, you can avoid the user interfaces
-and use the CLI instead. Various `cylc` commands are useful for inspecting a running workflow.
-Run `cylc help` and `cylc <command> --help` for more information on how to
-use these tools.
+If you just want a quick look at the state of your workflow, you can avoid the user interfaces and use the CLI instead.
+Various `cylc` commands are useful for inspecting a running workflow. Run `cylc help`, `cylc help all`, and
+`cylc <command> --help` for more information on how to use these tools.
 
 The `workflow-state` command is particularly useful, for example:
 ```
@@ -307,181 +305,92 @@ Other useful CLI commands for monitoring your workflow progress:
 
 
 
-## Older stuff still reviewing
-
-### The User/Module Approach <a name="deflocalsetup"></a>
-
-MUST REVIEW STILL
-
-Currently, if one is only testing workflow changes against known `fre` tag/versions, it's simplest to use
-modulefiles for `cylc` and `fre`. In order to test your `fre-workflows` edits against the known system
-```
-module load cylc
-module load fre/2025.04
-```
-
-Developers however will need more flexibility than this to stay ahead of users and develop robust new features.
-
-Generally, edits pertaining to the workflow or fre-cli tool usage in the workflow are code
-changes meant to run through the cylc created batch job scripts, submitted by the cylc scheduler.
-
-Even if you are developing and testing a fre-cli tool for use in the workflow in a local conda environment,
-the workflow itself, should still be submitted using the modulefiles to eliminate any possible sources of error
-in your environment setup.
-
-In this submission process via `fre pp run`, the platform passed on the command line determines the job
-runner. For PP/AN platforms, the job scripts are submitted through slurm. On other sites, scripts are
-submitted as background jobs.
+## Further Notes on Workflow Development and Configuration <a name="notesworkflowdevconfig"></a>
 
 
 
-### Remote environment setup <a name="remotenvsetup"></a>
+### Workflow Task Environments / Requirements <a name="workflowtaskenvsreqs"></a>
 
-MUST REVIEW STILL
+Each Slurm job that `cylc` submits runs from a bare environment. For example, if you submitted the workflow from a local
+conda environment, that environment will not be automatically available, or activated, within the workflow tasks.
+Therefore, if you want to invoke `fre-cli` (or any) tools from within `fre-workflows` tasks, you need to add `fre-cli`
+to the batch task environment.
 
-Each slurm job that cylc submits is run from a bare environment. If the jobs were 
-submitted in a local conda environment, that environment will not be used within the
-workflow. Thus, if you want to invoke fre-cli tools from within a fre-workflows task,
-you need to add fre-cli to the batch environment.
-
-To do this, you use the pre-script defined for each task. You can see an example
-of a pre-script in `flow.cylc`:
-
+`cylc` provides several ways to specify the requirements of your tasks. One way is to set-up environments and tools within
+`init-script` or `pre-script` sections defined for each task. A simple example of a `pre-script` in `flow.cylc` looks like:
 ```
     [[RENAME-SPLIT-TO-PP]]
         pre-script = mkdir -p $outputDir
         script = rose task-run --verbose --app-key rename-split-to-pp
 ```
 
-However, the `flow.cylc` is **NOT** where we want to put our edits. Cylc has hierarchical
-layers of configuration - settings can be set in more than one place, and the
-most specific settings are prioritized over the least specific settings.
 
-The overall hierarchy looks something like this:
 
-highest priority---  `site/[sitefile].cylc` > `flow.cylc` ---lowest priority
+### Workflow Configuration Hierarchy <a name="workflowconfigheirarchy"></a>
 
-Prioritization does not mean that the settings in any file are ignored - but if
-the settings in two files disagree, cylc uses the setting value in the
-higher-priority file over the lower-priority one. We currently have pre-scripts
-defined for every step of the workflow in `site/[sitefile].cylc` - **DEVELOPERS SHOULD EDIT HERE**.
+`cylc` workflow configuration is hierarchical, with site-specific configurations from (`site/`), layered on top of a 
+central workflow configuraton (`flow.cylc`), all of which is layered on top of a global `cylc` scheduler configuration 
+(see section [1.2](#globalcylcconfig)). I.e., the global scheduler configuration is included first, then the central 
+workflow template (`flow.cylc`) with basic task-parameters/task-family definitions, and then a site-specific configuration 
+is appended and parsed from the `site/` directory.
 
-**For testing at the lab, site/ppan.cylc should be edited.**
-
-*Please note:* these steps may include changes that you do not want to include
-in your git history for safety's sake. To avoid adding these to your git
-history, you can edit the code in `~/cylc-src/[your_test_experiment_workflow_id]`
-directly after checking it out with the fre-cli subtool `fre pp checkout`:
-
-```
-> fre pp checkout -b 51.var.filtering -e ESM4.5_candidateA -p ppan -t prod-openmp
-> pushd ~/cylc-src/ESM4.5_candidateA__ppan__prod-openmp
-> ls
-app/       environment.yml       etc/       Jinja2Filters/  pytest.ini     README-portability.md    site/
-bin/       envs/       flow.cylc       lib/       README-developers.md  README_using_fre-cli.md  tests/
-ESM4.5_candidateA.yaml  generic-global-config/  meta/       README.md     rose-suite.conf
-> emacs site/ppan.cylc
-```
-
-The code that cylc runs from in `~/cylc-run/[your_test_experiment_workflow_id]` is copied from
-`~/cylc-src/[your_test_experiment_workflow_id]`, not re-cloned from git. It is not advisable to
-put any changes you want to be permanent in `~/cylc-src/[your_test_experiment_workflow_id]`. This
-is a little bit risky - it can be hard to keep track of where your edits are taking place, but
-allows you to avoid awkward back-and-forth edits in your git history.
-
-How you edit `site/ppan.cylc` for the environment you would like to use might look different
-depending on the developmental progress of the features you wish to test:
+As a developer, it is important to understand this, because it allows settings to be defined in multiple places. At first
+this may seem redundant, but done intentionally, this can greatly increase the flexibility of a workflow template. If
+done unintentionally, we can easily create nasty, hard-to-understand runtime bugs in our workflows. Note that when 
+things are defined multiple times, the configuration value/setting/definition that takes precedence is the one closest
+to the bottom of the workflow template.
 
 
 
-## testing by feature in `fre-cli`
-
-TO REVIEW might remove? might re-engineer? TODO
+### Workflow Editing Best Practices <a name="workfloweditingpractices"></a>
 
 
+#### Which Workflow File Should I Edit? <a name="whichfileedit"></a>
 
-### Features in fre-cli that are part of a release  <a name="releasefeaturetesting"></a>
-
-TO REVIEW
-
-If the features that you want to include are part of a fre release, you can
-load a fre module from the pre-script of your cylc task (if not already specified
-in the `[[root]]` section of the site file - this section is "inherited" by all tasks):
-
-```
-    [[SPLIT-NETCDF]]
-        pre-script = module load fre/{{ VERSION }}; mkdir -p $outputDir
-```
+**If you are trying to make changes to a workflow template, first consider where the changes should live**, given the
+heirarchy described above. For example, if your changes are so specific to PPAN that the workflow will break everywhere
+else, then those changes belong in both `site/ppan.cylc` and `site/ppan_test.cylc`. If the changes were specific to 
+Gaea, they would go in `site/gaea.cylc`, etc.. If the changes are truly platform independent, and must be propagated
+to all sites, then the changes should go in `flow.cylc`.
 
 
+#### Can I Edit the Code in `~/cylc-run`? <a name="editcylcruncode"></a>
 
-### Features in fre-cli that are merged into main <a name="mainmergefeaturetesting"></a>
+**No, do not edit code in `~/cylc-run`**. The workflow templates get placed there at `install` time, and certain files being
+tracked by `git` are edited in order to configure the workflow. The code in this folder is the code that gets used at 
+run-time, and it should be managed by `cylc` only.
 
-TO REVIEW
-
-If the features that you want to include are merged into main but not yet part
-of a fre release, you can use them by loading fre/test.
-
-```
-    [[SPLIT-NETCDF]]
-        pre-script = module load fre/test; mkdir -p $outputDir
-```
+In any case, tracking changes on edited code in `cylc-run` becomes complicated very quickly, as `cylc` will edit the files
+directly.
 
 
+#### Can I Edit the Code in `~/cylc-src`? <a name="editcylcsrccode"></a>
 
-### Features in fre-cli that are in a development branch <a name="howdifffromprevsectiontesting"></a>
+**Technically yes, but we do not recommend this**. This goes against the "spirit" of what `cylc-src` is for within `fre`.
+Code under `cylc-src` is supposed to be code which was checked out by `fre`, under a specific tag and/or branch on NOAA-GFDL
+github repositories. Further more, the local test workflow defined `for_gh_runner/run_pp_locally.sh` assumes you are NOT 
+editing the copy under `cylc-src`, and instead assumes you are developing a local clone of `fre-workflows`, with your
+`$PWD` being the repository folder. 
 
-TO REVIEW
-
-If you wish to work with changes that are not yet merged into main, the
-setup-script needs to set up your conda environment for the fre-cli repo that
-you are working with. Remember: the slurm job scripts are executed as you, and
-have access to your conda environments.
-```
-    [[SPLIT-NETCDF]]
-        pre-script = """
-                     module load miniforge
-                     set +u
-                     conda activate my-fre-cli-env
-                     set -u
-                     mkdir -p $outputDir
-                     """
-```
-
-The set +u/-u turns off and on strict variable checking respectively. Loading
-a conda environment requires less strict variable checking than cylc normally
-implements, so we need to turn that setting on and off for a single operation.
-
-If this is not set/unset, you're going to see an unset variable error when you
-try to load the conda environment.
-
-This should be generic to all sites, though we have not yet had a chance to run
-this outside of the lab (i.e. Gaea).
-
-For more information on conda environment setup for fre-cli, see
-[fre-cli's README and documentation](https://github.com/NOAA-GFDL/fre-cli/blob/main/README.md).
+This will ultimately mean you have three copies of the code lying around, with one being your local development copy, 
+another being the mock-checked-out code under `cylc-src`, and the fully-configured code installed and run from `cylc-run`.
+It's this "bloat" that tempts some `fre` developers to edit to code under `~/cylc-src` to develop changes. Some have 
+done this without issue successfully, and some have regrettably forgotten to include details/changes critical to 
+workflow functioning that were not easy to recall or re-engineer.
 
 
+#### How Do I Test My Changes? <a name="howtotest"></a>
 
-### Postprocess FMS history files
+There are multiple routes, most of them are described in this document. Local testing on PPAN (see section 
+[3](#configrunppanworkflows)) is highly recommended, as it gives developers options to test things out given the level
+of flexibility required for testing the changes. 
 
-TO REVIEW
+In the case of PRs, testing success in current pipeline routines is expected, and required. The `create_test_conda_env` 
+workflow must successfully build an environment and run all unit tests within the environment successfully. Additionally,
+a manual run of the `test_cloud_runner` workflow is required, as it tests the postprocessing workflow in a fully integrated,
+end-to-end manner. The success of the `test_cloud_runner` workflow must be unconditionally improved from the current version
+of the `main` branch.
 
-To postprocess FMS history files on GFDL's PP/AN, users can follow fre-cli post-processing steps
-[here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#id1).
 
-NOTE: After the first two steps, `fre pp checkout` and `fre pp configure-yaml`, users can edit the
-`ppan.cylc` site file under `~/cylc-src/$your_test_experiment/site/ppan.cylc`, the combined yaml file,
-and the rose-suite.conf files. 
-
-If further edits needs to be made for troubleshooting, users can edit files in the
-`~/cylc-src/[your_test_experiment_workflow_id]` directory and follow this clean up procedure:
-```
-# If the experiment needs to be stopped
-cylc stop --now [your_test_experiment_workflow_id]
-
-# Removes the cylc-run directory and associated symlinks
-cylc clean [your_test_experiment_workflow_id]
-```
 
 
