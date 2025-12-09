@@ -22,7 +22,7 @@ to using `fre-workflows` elsewhere.
     2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
     3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
 5. [`cylc` workflow monitoring](#cylcmontips)
-    1. [via GUI or TUI](#guituimon)
+    1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
 5. [too old?reviewing](#footemp)
     2. [REVIEWING default local env setup](#deflocalsetup)
