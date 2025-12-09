@@ -24,39 +24,39 @@ to using `fre-workflows` elsewhere.
 5. [`cylc` workflow monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-5. [too old?reviewing](#footemp)
-    2. [REVIEWING default local env setup](#deflocalsetup)
-    3. [REVIEWING default remote env setup](#remotenvsetup)
+6. [Older content under review](#footemp)
+    1. [REVIEWING default local env setup](#deflocalsetup)
+    2. [REVIEWING default remote env setup](#remotenvsetup)
 
 
 
 
 ## `cylc` Configuration <a name="cylcconfiguration"></a>
 
-This section will go over the basics of configuring `cylc` and other PPAN-specific configurations relevant to `cylc`.
+This section covers the basics of configuring `cylc` and other PPAN-specific configurations relevant to `cylc`.
 
 
 
 ### `cylc` Documentation <a name="cylcdoc"></a>
 
-`fre-workflows` developers should be intimately familiar with
+`fre-workflows` developers should be intimately familiar with the
 [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
 
 ### `global.cylc` Configuration <a name="globalcylcconfig"></a>
 
-If `cylc` is in your `PATH`, the global configuration can be exposed with `cylc config -d`. If desired, one can override
-these values and define their own global configuration by putting a configuration file in the expected location. For 
-this, it's best to start your own global configuration with the current one. We can do this with:
+If `cylc` is in your `PATH`, you can view the global configuration with `cylc config -d`. If desired, you can override
+these values and define your own global configuration by placing a configuration file in the expected location. 
+To do this, start your global configuration with the current one:
 ```
 mkdir --parents /home/$USER/.cylc/flow
 cylc config -d > /home/$USER/.cylc/flow/global.cylc
 # edit the file to your heart's content
 ```
 
-Sometimes, a configuration value or setting in a specific workflow takes precedent over the global configuration. For
-specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
+Sometimes a configuration value or setting in a specific workflow takes precedence over the global configuration. For
+details, consult the [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
 
@@ -65,22 +65,21 @@ specifics on this, consult the [`cylc` documentation](https://cylc.github.io/cyl
 `cylc` and `fre` treat the notion of platforms slightly differently, creating the potential for some confusion.
 
 In `fre`, a platform typically refers to a specific environment of a specific system, generally for the purposes of
-tracking which compilers and hardware are used where, and what settings are required to make models run. It's used as a
-common input argument to many functions, helping uniquely identify workflow configurations and place where they were run
-at the same time.
+tracking which compilers and hardware are used, what settings are required to make models run, and where they were run.
+It serves as a common input argument to many functions, helping uniquely identify workflow configurations.
 
-In `cylc` a platform is usually about selecting a specific set global configuration values, and in `fre-workflows`, also
-implies which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
-platform values are `ppan` and `ppan_test`, corresponding to template files in `site/` name respectively. One gets
-chosen based on a `site` configuration value within a `fre` settings `yaml`.
+In `cylc`, a platform is usually about selecting a specific set of global configuration values. In `fre-workflows`, it also
+determines which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
+platform values are `ppan` and `ppan_test`, corresponding to the template files `site/ppan.cylc` and `site/ppan_test.cylc` 
+respectively. The platform is chosen based on a `site` configuration value within a `fre` settings `yaml`.
 
 
 #### `ppan` v. `ppan_test` <a name="sitevaluespecifics"></a>
 
-These two differ by one key field, the `job runner handler` field. `site/ppan.cylc` will specify that `cylc`'s default
-`Slurm` job runner handler will be used. `site/ppan_test.cylc` by contrast, will use a custom version of the `Slurm` job
-runner handler, that parses the job script and tags certain operations for tracking via `epmt`. Additionally, `ppan_test`
-contains `Jinja2` lines that will be parsed and ultimately render to a string of annotations that help `epmt` track
+These two platforms differ in one key field: the `job runner handler`. `site/ppan.cylc` specifies that `cylc`'s default
+`Slurm` job runner handler will be used. `site/ppan_test.cylc` uses a custom version of the `Slurm` job
+runner handler that parses the job script and tags certain operations for tracking via `epmt`. Additionally, `ppan_test`
+contains `Jinja2` lines that are parsed and ultimately render to a string of annotations that help `epmt` track
 workflow functionality across different workflow settings.
 
 
@@ -88,19 +87,19 @@ workflow functionality across different workflow settings.
 
 ## PPAN Specifics <a name="ppanspecifics"></a>
 
-This section will minimally describe the PPAN specifics needed to submit workflows via any method described below.
-Generally, more information on PPAN can be found under the RDHPCS systems wiki
-[here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and on the GFDL wiki
+This section describes the essential PPAN-specific configurations needed to submit workflows via any method described below.
+For more comprehensive information on PPAN, consult the RDHPCS systems wiki
+[here](https://docs.rdhpcs.noaa.gov/systems/ppan_user_guide.html#) and the GFDL wiki
 [here](https://wiki.gfdl.noaa.gov/index.php/Main_Page). 
 
 
 
 ### Default `PATH` and `cylc` on PPAN <a name="ppancylcdefaults"></a>
 
-On PPAN, your `PATH` has `cylc` by default. This can be seen on login by immediately running `which cylc`, and further
-confirmed via `echo $PATH`. This smooths over configuration for managing/running workflows, at the cost of some
-flexibility. To avoid the default `cylc`, a work around is to put your preferred `cylc` into your `PATH` at login, while
-removing the default. To do this, insert into your shell's login/profile script (`bash`/`~/.bash_profile` used below):
+On PPAN, `cylc` is included in your `PATH` by default. You can verify this by running `which cylc` after login, or by
+checking `echo $PATH`. While this simplifies configuration for managing and running workflows, it reduces
+flexibility. To use a different version of `cylc`, you can add your preferred `cylc` to your `PATH` at login while
+removing the default. To do this, add the following to your shell's login/profile script (`bash`/`~/.bash_profile` shown below):
 ```
 # note, this is for bash
 echo "(~/.bash_profile) removing /usr/local/bin from PATH"
@@ -116,11 +115,11 @@ echo "(~/.bash_profile) PATH now: $PATH"
 
 ### Terminal UTF-encoding Errors <a name="utfencodeerrors"></a>
 
-An annoyance that sometimes pops up, preventung the submission of a workflow. There are two work arounds- one is putting
-`LANG=C.UTF-8` in front of any shell calls that spawn the error. Another is, again, to edit your login/profile script
-as above, defining `LANG` at login time:
+UTF-encoding errors can occasionally prevent workflow submission. There are two workarounds: one is to prefix
+`LANG=C.UTF-8` to any shell calls that produce the error. Alternatively, you can edit your login/profile script
+as shown above, defining `LANG` at login time:
 ```
-# note, this for bash
+# note, this is for bash
 echo "(~/.bash_profile) export LANG=C.UTF-8"
 export LANG=C.UTF-8
 ```
@@ -131,9 +130,9 @@ export LANG=C.UTF-8
 ## Configuring Workflows With `fre` <a name="freyamlframework"></a>
 
 Developers are expected to know how to configure workflows with `fre`'s `yaml` framework, but this is not covered here.
-This is considered user functionality under `fre-cli`, and as such, is fully described in `fre-cli`'s documentation,
-located [here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). One should also
-consult the documentation for `fre pp`, located [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
+This is considered user functionality under `fre-cli` and is fully described in the `fre-cli` documentation
+[here](https://noaa-gfdl.readthedocs.io/projects/fre-cli/en/latest/usage.html#yaml-framework). You should also
+consult the documentation for `fre pp` [here](https://github.com/NOAA-GFDL/fre-cli/tree/main/fre/pp#readme).
 
 
 
@@ -147,7 +146,7 @@ least to most complex. They are also, equivalently, from the developer standpoin
 **All cases below make the following assumptions**:
 - you have access to PPAN and have logged in
 - you have adequate disk space for what you're trying to do
-- you begin from a terminal with `$CWD` pointing to a clone of `fre-workflows` under `cylc-src` nor `cylc-run`
+- you begin from a terminal with `$CWD` pointing to a clone of `fre-workflows` not under `cylc-src` or `cylc-run`
 - you are making changes to the aforementioned clone, and now you need to test them
 - you want to use the workflow defined in `for_gh_runner/yaml_workflow` and are OK with "mocking" the checkout step
 
@@ -159,13 +158,13 @@ by design, to keep workflow testing done on PPAN as apples-to-apples with this r
 
 ### Running Using LMOD Modules <a name="withlmod"></a>
 
-This approach closely tracks how users will generally run workflows, and is the simplest/quickest approach. It's the
-least flexible, as it forces usage of current releases of `fre-cli` and/or it's current `main` branch. As such, this
+This approach closely tracks how users will generally run workflows and is the simplest and quickest approach. It is the
+least flexible, as it forces usage of current releases of `fre-cli` and/or its current `main` branch. As such, this
 approach can only be used to test new changes to the workflow template itself, and cannot be used to evaluate how a
 change in `fre-cli` may affect workflow functionality.
 
-Assuming you have a copy of this repository already (see [above](#configrunppanworkflows) section), then to run a
-workflow in this approach, all that is needed is-
+Assuming you have a copy of this repository already (see the [above](#configrunppanworkflows) section), run the
+workflow with the following:
 ```
 # load fre, the current version may be updated or different than 2025.04
 module load fre/2025.04
@@ -190,12 +189,12 @@ mock the code checkout again, and re-configure/validate/install the workflow.
 `validate`, and `play` steps. Though it's sometimes possible to let them differ and "force" `cylc` to run anyways, we
 generally always follow this guideline to avoid any pathological behaviors that could result.
 
-This approach will let you use your own `conda` environment with a custom `fre-cli` install, while leaning on a(n) LMOD
-loaded `cylc`. The additional `module load cylc` will guarantee we only use one version of `cylc`, since this is the
-`cylc` in one's `PATH` by default. As such, this approach is quite flexible, but requires that all changes are
+This approach lets you use your own `conda` environment with a custom `fre-cli` install, while relying on an LMOD-
+loaded `cylc`. The additional `module load cylc` ensures you only use one version of `cylc`, since this is the
+`cylc` in your `PATH` by default. As such, this approach is quite flexible, but requires that all changes are
 compatible with a version of `cylc` that possibly differs from what is in the `fre-cli` environment.
 
-If these caveats are acceptable, then begin by activating your `conda` environment, and figuring out where your `fre` is
+If these caveats are acceptable, begin by activating your `conda` environment and determining where your `fre` is located:
 ```
 module load miniforge
 conda activate your-fre-cli-env
@@ -207,8 +206,8 @@ which fre
 module load cylc
 ```
 
-Now, open up `site/ppan_test.cylc` with your favorite text editor (or `site/ppan.cylc` to test without `epmt`
-annotations/tagging), and under `[runtime]`, within the in the `root` task-family's `init-script` find the following:
+Now, open `site/ppan_test.cylc` with your preferred text editor (or `site/ppan.cylc` to test without `epmt`
+annotations/tagging), and under `[runtime]`, within the `root` task-family's `init-script`, find the following:
 ```
 [runtime]
     [[root]]
@@ -220,13 +219,13 @@ annotations/tagging), and under `[runtime]`, within the in the `root` task-famil
             module load fre/{{ FRE_VERSION }}
             module load hsm/1.3.0
 
-            #### if one wants to use their own conda environment, edit the PATH and uncomment below like so:
+            #### if you want to use your own conda environment, edit the PATH and uncomment below like so:
             #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
 ```
 
-Uncomment the `export PATH=...` line to point to the folder containing the executable you found with `which fre`. Then,
-we can use the `run_pp_locally` script again:
+Uncomment the `export PATH=...` line to point to the folder containing the executable you found with `which fre`. Then
+source the `run_pp_locally` script as before:
 ```
 # configure, install, validate, and run installed/configured workflow
 source for_gh_runner/run_pp_locally.sh
@@ -244,15 +243,15 @@ in your `PATH`.
 Next, open the `global.cylc` file and confirm the field `use login shell` is set to `true`, then find the `ssh command`
 field and change it to `ssh`. Do this for both the `ppan` and `ppan_test` platform definitions.
 
-Now, we need to remove the default `cylc` from our `PATH`, and additionally include a path to the exact `cylc` within
-our conda environment. To accomplish this, follow the instructions in the previous section [here](#ppanspecifics).
+You will need to remove the default `cylc` from your `PATH` and include a path to the exact `cylc` within
+your conda environment. To accomplish this, follow the instructions in the previous section [here](#ppanspecifics).
 
-Still with me? Now, just like in the [previous section](#withcondaandcylc), edit either `ppan.cylc` or `ppan_test.cylc`
+Next, just like in the [previous section](#withcondaandcylc), edit either `ppan.cylc` or `ppan_test.cylc`
 in `site/` to add your `fre-cli` environment executables to `PATH` for your submitted workflow tasks. This should be the
-last bit of editing we have to do.
+last bit of editing you need to do.
 
-Now, log out, and log back in to PPAN to make sure the new login specifics get picked up, and from the `fre-workflows`
-directory do:
+Finally, log out and log back in to PPAN to ensure the new login configuration is applied, then from the `fre-workflows`
+directory, run:
 ```
 module load miniforge
 conda activate your-fre-cli-env
@@ -264,52 +263,46 @@ source for_gh_runner/run_pp_locally.sh
 
 ## `cylc` workflow monitoring <a name="cylcmontips"></a>
 
-TO REVIEW
-
-`cylc` has two workflow viewing interfaces (full GUI and text UI), and a variety of CLI commands that
-can expose workflow and task information. The workflow will run and shutdown when all tasks are complete.
-If tasks fail, the workflow may stall, in which case it will shutdown in error after a period of time.
+`cylc` has two workflow viewing interfaces; a full graphical interface (GUI), text interface (TUI), and a variety of CLI commands that
+can expose workflow and task information. The workflow will run and shut down when all tasks are complete.
+If tasks fail, the workflow may stall, in which case it will shut down with an error after a period of time.
 
 
 
 ### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
-
-TO REVIEW
 
 The text-based GUI can be launched via:
 ```
 cylc tui [workflow_id]
 ```
 
-The full GUI can be launched on jhan or jhanbigmem (an107 or an201).
+The full GUI can be launched on jhan or jhanbigmem (an107 or an201):
 ```
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
 ```
-Then, navigate to one of the two links printed to screen in your web browser.
-If one just wants a quick look at the state of their workflow, the user-interfaces
-can be completely avoided
+
+Then navigate to one of the two links printed to screen in your web browser.
 
 
 
 ### Inspect workflow progress with a terminal CLI <a name="cliprogressmon"></a>
 
-TO REVIEW
+If you just want a quick look at the state of your workflow, you can avoid the user interfaces
+and use the CLI instead. Various `cylc` commands are useful for inspecting a running workflow.
+Run `cylc help` and `cylc <command> --help` for more information on how to
+use these tools.
 
-Various other `cylc` commands are useful for inspecting a running workflow.
-Try `cylc help`, and `cylc <command> --help` for more information on how to
-use these tools to your advantage!
-
-Try using the `workflow-state` command, two examples of which are:
+The `workflow-state` command is particularly useful, for example:
 ```
 cylc workflow-state -v [workflow_id]                # show all jobs
 cylc workflow-state -v [workflow_id] | grep failed  # show only failed ones
 ```
 
-Try these others in the CLI to assist with monitoring your workflow progress
-- `cylc scan` Lists running workflows
-- `cylc cat-log [workflow_id]` Show the scheduler log
-- `cylc list` Lists all tasks
-- `cylc report-timings`
+Other useful CLI commands for monitoring your workflow progress:
+- `cylc scan` - Lists running workflows
+- `cylc cat-log [workflow_id]` - Shows the scheduler log
+- `cylc list` - Lists all tasks
+- `cylc report-timings` - Reports timing information
 
 
 
