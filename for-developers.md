@@ -11,20 +11,22 @@ to using `fre-workflows` elsewhere.
 1. [`cylc` Configuration](#cylcconfiguration)
     1. [`cylc` Documentation](#cylcdoc)
     2. [Global `cylc` Config](#globalcylcconfig)
-	3. [`cylc` platforms and site](#cylcplatformandsite)
-	    1. [`site` value specifics](#sitespecifics)
+	3. [`cylc` Platforms and Site](#cylcplatformandsite)
+	    1. [`site` Value Specifics](#sitespecifics)
 2. [PPAN Specifics](#ppanspecifics)
     1. [Terminal UTF Encoding](#utfencodeerrors)
     2. [PPAN Documentation](#moreppandoc)
 3. [Configuring Workflows With `fre`](#freyamlframework)
-4. [Running Workflows with `fre` on PPAN](#configrunppanworkflows)
+4. [Running Workflows With `fre` on PPAN](#configrunppanworkflows)
     1. [With LMOD and Modules](#withlmod)
     2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
     3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
-5. [`cylc` workflow monitoring](#cylcmontips)
+5. [`cylc` Workflow Monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-6. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
+6. [Testing and Verifying `epmt` Functionality](#epmttesting)
+    1. [Verifying `epmt` Annotations and `papiex` Tags](#verifyingepmt)
+7. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
     1. [Workflow Task Environments / Requirements](#workflowtaskenvsreqs)
     2. [Workflow Configuration Hierarchy](#workflowconfigheirarchy)
     3. [Workflow Editing Best Practices](#workfloweditingpractices)
@@ -307,6 +309,47 @@ Other useful CLI commands for monitoring your workflow progress:
 - `cylc cat-log [workflow_id]` - Shows the scheduler log
 - `cylc list` - Lists all tasks
 - `cylc report-timings` - Reports timing information
+
+
+
+
+## Testing and Verifying `epmt` Functionality <a name="epmttesting"></a>
+
+The `site` variable in `for_gh_runner/yaml_workflow/local_settings.yaml` controls which site configuration is loaded.
+Setting `site='ppan_test'` enables `epmt` functionality, namely per-task metadata annotations, and `papiex` tags for 
+shell calls and processes. The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`. The `papiex` tagging is more complex, requiring the use of a modified Slurm `job_runner_handler` class from `cylc`. This handler, 
+dubbed the `PPANHandler`, inserts tags into the batch job script by `lib/python/tag_ops_w_papiex.py`, parsing the
+script line-by-line. 
+
+The code for `PPANHandler` is in `lib/python/ppan_handler.py`, and is thoroughly documented and commented. For more
+information, please see the docstrings and comments within the code.
+Setting `site='ppan'` runs without `epmt` integration.
+
+
+
+### Verifying `epmt` Annotations and `papiex` Tags <a name="verifyingepmt"></a>
+
+Running workflows with `epmt` enabled follows the same procedures described in section [4](#configrunppanworkflows), 
+using `ppan_test` instead of `ppan`. After a workflow has at least partially completed, verify that `epmt` data was captured. From a workstation, query job information (replace `your_user_here` with your username):
+```python
+module load epmt
+epmt python
+>>> my_user = 'your_user_here'
+>>> import epmt_query as eq
+>>> my_jobs = eq.get_jobs(fltr=( eq.Job.user_id == my_user ), fmt='terse')
+>>> my_jobs  # list of job IDs as strings
+
+>>> one_job_dict = eq.get_jobs(jobs=[my_jobs[-1]], fmt='dict')
+>>> import pprint
+>>> pprint.pprint(one_job_dict[0])  # detailed job info with epmt annotations
+
+>>> workflow_uuid = one_job_dict[0]['tags']['exp_run_uuid']
+>>> one_workflows_worth_of_jobs = eq.get_jobs(tags=f'exp_run_uuid:{workflow_uuid}', fmt='terse')
+>>> one_workflows_worth_of_jobs  # all jobs from the workflow
+```
+
+The workflow UUID in the job tags allows retrieval of all jobs associated with a specific workflow run. This works for 
+all workflow tasks regardless of success or failure, as `epmt` captures data in nearly all circumstances.
 
 
 
