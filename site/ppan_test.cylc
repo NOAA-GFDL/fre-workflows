@@ -30,7 +30,7 @@
             epmt check
 
             module load fre/{{ FRE_VERSION }}
-            module load gcp/2.3
+            module load gcp/2.3 hsm/1.3.0
 
             #### if one wants to use their own conda environment, edit the PATH and uncomment below like so:
             #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
