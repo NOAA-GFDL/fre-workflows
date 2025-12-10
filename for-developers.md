@@ -1,7 +1,7 @@
 # PPAN `fre-workflows` Developer Guide
 
 `fre-workflows` can be used across multiple different platforms, but historically has been developed and tested on PPAN.
-The following are guidelines for developing/testing on **PPAN**, but does still contain some generally-applicable advice
+The following are guidelines for developing/testing on **PPAN**, but still contains some generally-applicable advice
 to using `fre-workflows` elsewhere.
 
 
@@ -28,7 +28,7 @@ to using `fre-workflows` elsewhere.
     1. [Verifying `epmt` Annotations and `papiex` Tags](#verifyingepmt)
 7. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
     1. [Workflow Task Environments / Requirements](#workflowtaskenvsreqs)
-    2. [Workflow Configuration Hierarchy](#workflowconfigheirarchy)
+    2. [Workflow Configuration Hierarchy](#workflowconfighierarchy)
     3. [Workflow Editing Best Practices](#workfloweditingpractices)
         1. [Which Workflow File Should I Edit?](#whichfileedit)
         2. [Can I Edit the Code in `~/cylc-run`?](#editcylcruncode)
@@ -316,21 +316,29 @@ Other useful CLI commands for monitoring your workflow progress:
 ## Testing and Verifying `epmt` Functionality <a name="epmttesting"></a>
 
 The `site` variable in `for_gh_runner/yaml_workflow/local_settings.yaml` controls which site configuration is loaded.
-Setting `site='ppan_test'` enables `epmt` functionality, namely per-task metadata annotations, and `papiex` tags for 
-shell calls and processes. The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`. The `papiex` tagging is more complex, requiring the use of a modified Slurm `job_runner_handler` class from `cylc`. This handler, 
-dubbed the `PPANHandler`, inserts tags into the batch job script by `lib/python/tag_ops_w_papiex.py`, parsing the
-script line-by-line. 
+Setting `site='ppan'` runs without `epmt` integration. Setting `site='ppan_test'` enables `epmt` functionality. Namely,
+these are per-task metadata annotations, and `papiex` tag insertion for shell calls and processes. The way these two
+functionalities work is slightly different.
 
-The code for `PPANHandler` is in `lib/python/ppan_handler.py`, and is thoroughly documented and commented. For more
-information, please see the docstrings and comments within the code.
-Setting `site='ppan'` runs without `epmt` integration.
+The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`, using available environment variables
+and/or Jinja2 variables to pull and render the tag at runtime. The `papiex` tag insertion is more complex, requiring 
+the use of a custom Slurm `job_runner_handler`. `job_runner_handler`'s in `cylc` are classes that manage submission of
+workflow tasks to a batch workload system. See
+[here](https://cylc.github.io/cylc-doc/stable/html/user-guide/task-implementation/job-submission.html#supported-job-submission-methods) for more information on this concept.
+
+The custom `handler` for `fre-workflows` is called `PPANHandler`, and the code for it is in `lib/python/ppan_handler.py`.
+At job-submission time, `PPANHandler` inserts tags into the batch job script by calling `lib/python/tag_ops_w_papiex.py`, 
+which parses the script line-by-line right before submission. It also saves a copy of the un-tagged job script for 
+debugging purposes. The code for `PPANHandler` is thoroughly documented and commented. For more information, please see 
+the docstrings and comments within the code.
 
 
 
 ### Verifying `epmt` Annotations and `papiex` Tags <a name="verifyingepmt"></a>
 
 Running workflows with `epmt` enabled follows the same procedures described in section [4](#configrunppanworkflows), 
-using `ppan_test` instead of `ppan`. After a workflow has at least partially completed, verify that `epmt` data was captured. From a workstation, query job information (replace `your_user_here` with your username):
+using `ppan_test` instead of `ppan`. After a workflow has at least partially completed, verify that `epmt` data was 
+captured. From a workstation, query job information (replace `your_user_here` with your username):
 ```python
 module load epmt
 epmt python
@@ -365,7 +373,7 @@ conda environment, that environment will not be automatically available, or acti
 Therefore, if you want to invoke `fre-cli` (or any) tools from within `fre-workflows` tasks, you need to add `fre-cli`
 to the batch task environment.
 
-`cylc` provides several ways to specify the requirements of your tasks. One way is to set-up environments and tools within
+`cylc` provides several ways to specify the requirements of your tasks. One way is to set up environments and tools within
 `init-script` or `pre-script` sections defined for each task. A simple example of a `pre-script` in `flow.cylc` looks like:
 ```
     [[RENAME-SPLIT-TO-PP]]
@@ -375,7 +383,7 @@ to the batch task environment.
 
 
 
-### Workflow Configuration Hierarchy <a name="workflowconfigheirarchy"></a>
+### Workflow Configuration Hierarchy <a name="workflowconfighierarchy"></a>
 
 `cylc` workflow configuration is hierarchical, with site-specific configurations from (`site/`), layered on top of a 
 central workflow configuration (`flow.cylc`), all of which is layered on top of a global `cylc` scheduler configuration 
@@ -399,7 +407,7 @@ to the bottom of the workflow template.
 **If you are trying to make changes to a workflow template, first consider where the changes should live**, given the
 hierarchy described above. For example, if your changes are so specific to PPAN that the workflow will break everywhere
 else, then those changes belong in both `site/ppan.cylc` and `site/ppan_test.cylc`. If the changes were specific to 
-Gaea, they would go in `site/gaea.cylc`, etc.. If the changes are truly platform independent, and must be propagated
+Gaea, they would go in `site/gaea.cylc`, etc. If the changes are truly platform independent, and must be propagated
 to all sites, then the changes should go in `flow.cylc`.
 
 
@@ -417,7 +425,7 @@ directly.
 
 **Technically yes, but we do not recommend this**. This goes against the "spirit" of what `cylc-src` is for within `fre`.
 Code under `cylc-src` is supposed to be code which was checked out by `fre`, under a specific tag and/or branch on NOAA-GFDL
-github repositories. Further more, the local test workflow defined `for_gh_runner/run_pp_locally.sh` assumes you are NOT 
+github repositories. Furthermore, the local test workflow defined `for_gh_runner/run_pp_locally.sh` assumes you are NOT 
 editing the copy under `cylc-src`, and instead assumes you are developing a local clone of `fre-workflows`, with your
 `$PWD` being the repository folder. 
 
