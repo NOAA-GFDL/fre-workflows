@@ -1,122 +1,230 @@
 #!/usr/bin/env python
-''' tags specific operations for data-scraping via PAPIEX and EPMT
+'''
+tags specific operations for data-scraping via PAPIEX and EPMT
 this is an adaptation of the following for FRE Canopy specifically
 https://gitlab.gfdl.noaa.gov/fre-legacy/fre-commands/-/blob/
-387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258 '''
+387bfb136361373a8532a2c9a12bab497f9ea654/bin/frepp#L8059-L8258
+'''
 
-# should this be a class?
-# should we rename some things? e.g. tool_ops_w_papiex --> papiex_ops_tooler ?
-# typing/type hints?
+# TODO rename: tool_ops_w_papiex --> tag_ops_ ?
+
+import logging
 import re
+from typing import Optional
 
+logger = logging.getLogger(__name__)
+logger.debug('tool_ops_w_papiex imported successfully. logger set. configuring logger.')
+
+FORMAT = "[%(levelname)5s:%(filename)24s:%(funcName)20s] %(message)s"
+logging.basicConfig(level = logging.INFO,# logging.WARNING,# logging.DEBUG,#
+                    format = FORMAT, encoding = 'utf-8' )
+logger.debug('logger configured')
 
 try:
     if any([ 'lib.python'  in __name__ ,
              'tests.test_' in __name__  ]) :
-        #print('(tool_ops_w_papiex) attempting RELATIVE import from .papiex_ops ...\n')
+        logger.info('attempting RELATIVE import of .papiex_ops ...')
         from .papiex_ops import op_list
     else:
-        #print('(tool_ops_w_papiex) attempting import from papiex_ops ... \n')
-        from papiex_ops import op_list
-except:
-    print('(tool_ops_w_papiex) error! op_list import issues.')
+        logger.info('attempting ABSOLUTE import of papiex_ops ...')
+        from papiex_ops import op_list # pylint: disable=import-error
+except Exception as exc:
+    logger.error('error! op_list import issues.')
+    raise ImportError('could not find and/or import papiex_ops') from exc
 
-def test_import():
-    ''' for testing import of module via pytest only '''
+
+def check_import():
+    '''
+    for testing import of module via pytest only
+    '''
     return 0
 
-def tool_ops_w_papiex(fin_name):
-    ''' parses a job bash-script assembled by script, tags operations of interest.
+
+def log_assign_append( msg: str,
+                       line: str,
+                       script: list[str] ) -> str:
+    '''
+    logs a message at DEBUG using msg and the line. appends the line to script.
+
+    returns the line.
+    '''
+    logger.debug('%s %s', msg, line)
+    script.append(line)
+    return line
+
+
+def op_is_in_line( op_name: str,
+                   line: str ) -> bool:
+    '''
+    searches a line for an operation string with regex, emits messages if any are found and returns True.
+    Otherwise, the tool is silent and returns False.
+
+    The old pattern was replaced because it missed cases where the operation (e.g., 'rm -rf') was at the start of a line.
+    The new pattern matches operations at the start of a line or preceded by whitespace. Regardless, keeping the old one as
+    a comment, just in case of future bugs/problems with the search
+    '''
+    # op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)' # old pattern, keep please
+    op_s_string = r'(?:\s|^)' + op_name + r'(?:\s+|$)'
+    re_search_result = re.search(op_s_string, line)
+    if re_search_result is None:
+        return False
+    logger.info("found op = %s in line = \n %s", op_name, line)
+    logger.debug("regex search string was: %s", op_s_string)
+    return True
+
+
+def check_op_in_typical_line_again( line: str,
+                                    op_name: str ) -> bool:
+    '''
+    given a line with op_name in it, split it in half where op_name was, pick the left half,
+    and make sure it's whitespace or empty
+    '''
+    left_side_of_line = line.split(op_name)[0]
+    return left_side_of_line.isspace() or left_side_of_line == ''
+
+
+def look_for_ops( op_list_in: list[dict],
+                  line: str ) -> Optional[dict]:
+    '''
+    searches a line for operations in the op_list dictionary
+
+    returns data dictionary of found operations if one matches. Otherwise, None
+    '''
+    for op in op_list_in:
+        if not op_is_in_line(op['op_name'], line):
+            continue
+        return op
+
+
+def get_new_bashif_line( line: str,
+                         op_found: dict ) -> str:
+    '''
+    edits a bash-if/elif line for a found operation and returns it
+    '''
+    # if there is logic, the tag must work such that exit code of the command is still checked/preserved
+    then_loc_group_span = re.search('; then', line).span()
+    logger.debug('bash-if case, found the \'then\' part of if/elif: %s', then_loc_group_span)
+
+    line = line[0:then_loc_group_span[0]]
+    logger.debug('bash-if case, selected part of line, now line = \n %s', line)
+
+    line = line.replace(op_found['op_name']+' ',
+                        '{ export PAPIEX_TAGS="op:' + op_found['op_tag'] + \
+                        ';op_instance:OP_INSTANCE"; ' + op_found['op_name'] + ' ' )
+    logger.debug('bash-if case, replaced part of line, now line = \n %s', line)
+
+    line += '; SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
+    logger.info('bash-if case, appended to line, now = line = \n %s', line)
+    return line
+
+
+def get_new_rose_task_run_line( line: str,
+                                op_found: dict ) -> str:
+    '''
+    edits a rose task-run line for a found operation and returns it
+    '''
+    # this is one of the easiest cases, because the job script is effectively a single line of interest
+    logger.debug('rose case before, line = \n %s', line)
+    line = 'export PAPIEX_TAGS="op:' + op_found['op_tag'] + \
+           ';op_instance:OP_INSTANCE"; ' + line + '; unset PAPIEX_TAGS;'
+    logger.info('rose case after, line = \n %s', line)
+    return line
+
+
+def get_new_bash_line( line: str,
+                       op_found: dict ) -> str:
+    '''
+    edits a bash line (not if/elif nor rose task statements) for a found operation and returns it
+    '''
+    # no logic, tool in the usual way.
+    logger.debug("op_found = %s", op_found['op_name'])
+    logger.debug('other case, before, line = \n %s', line)
+    line = line.replace( op_found['op_name'] + ' ',
+                         'export PAPIEX_TAGS="op:' + op_found['op_tag'] + \
+                         ';op_instance:OP_INSTANCE"; ' + op_found['op_name'] + ' ' )
+    line += '; unset PAPIEX_TAGS;'
+    logger.info('other case, after, line = \n %s', line)
+
+    return line
+
+def tool_ops_w_papiex( fin_name: str ) -> None:
+    '''
+    Parses a job bash-script assembled by script, tags operations of interest.
     accomplished by setting/unsetting PAPIEX_TAGS env var around operation of interest,
     referred to as a caliper approach.
-    an if-statement in bash will have a slightly different structure to preserve the
-    exit status and the resultant if/elif/else continuation of the job script '''
+    An if-statement in bash will have a slightly different structure to preserve the
+    exit status and the resultant if/elif/else continuation of the job script
+    '''
 
-    # init op_instance (cnt)
+    logger.info('init op_instance (cnt)')
     for op in op_list:
-        #print(f"initializing op_instance count for {op}")
+        logger.debug("initializing op_instance count for %s", op['op_name'])
         op['op_instance'] = 0
 
-    # init lists of lines (list[strs]), prevline (str)
+    logger.info('init lists of lines (list[strs]), prevline (str)')
     lines = []
     script = []
     prevline = ''
-    #first_time = True
 
-    # Read in the file
-    with open(fin_name, 'r') as file :
+    logger.info('opening %s', fin_name)
+    with open(fin_name, 'r', encoding='utf-8') as file :
         lines = file.read().splitlines()
 
-    # parse line-by-line
+    if not len(lines) > 0:
+        raise IOError(f'could not read file {fin_name}')
+    logger.info('file opened and split into lines successfully')
+
+    an_op_was_tagged = False
+    logger.info('about to parse the file line-by-line')
     for line in lines:
 
-        # is this line a comment? skip.
         if re.match( r'\s*#', line) is not None:
-            script.append(line)
+            prevline = log_assign_append('skip, line is a comment: ', line, script)
             continue
 
-        # is this line an env var export?
         if re.match( r'\s*export', line) is not None:
-            script.append(line)
+            prevline = log_assign_append('skip, line is an export: ', line, script)
             continue
 
-        # is this line a module-load kind of step? skip.
         if re.match( r'\s*module ', line) is not None:
-            script.append(line)
+            prevline = log_assign_append('skip, line is a module load: ', line, script)
             continue
 
-        # is this line a bash 'type' kind of step? skip.
         if re.match( r'\s*type ', line) is not None:
-            script.append(line)
+            prevline = log_assign_append('skip, line declares a bash type: ', line, script)
             continue
 
-        # does the line have an op of interest?
-        has_op=False
-        for op in op_list:
-            if re.search(op['s_string'], line) is not None:
-                #print(f"found op={op['op_name']} \n {line}")
-                has_op=True
-                op_found=op
-                break
-
-        # if no op, add line as-is and continue.
+        op_found = look_for_ops(op_list, line)
+        has_op = op_found is not None
         if not has_op:
-            script.append(line)
+            prevline = log_assign_append('skip, line has no ops of interest: ', line, script)
             continue
 
-        # if there's an op, is it locked up in a condition statement?
-        is_bashif=False
-        is_rose_task_run=False
+        logger.debug('further analyzing line holding op of interest... (conditional? rose task? etc)')
+        is_bashif = False
+        is_rose_task_run = False
         if any([ re.search('if ', line)   is not None,
                  re.search('elif ', line) is not None ]):
-            #print(f'found bash-if statement')
-            is_bashif=True
-        elif re.search('rose task-run ', line) is not None:
-            #print(f'found rose task-run statement')
-            is_rose_task_run=True
+            logger.debug('line with op is an if (or elif) statement in bash')
+            is_bashif = True
 
-        # now edit the line accordingly to whether it's guarded by a bash if(or elif)-statement
-        if is_bashif:
-            # if there is logic, tool such that exit code preserved
-            then_loc_group_span=re.search('; then',line).span()
-            #print(f'is_bashif: before selecting part of line, line = \n {line}')
-            line =  line[0:then_loc_group_span[0]]
-            #print(f'is_bashif: before replace, line = \n {line}')
-            line =  line.replace(op_found['op_name']+' ',
-                                 op_found['r_string_w_if'])
-            #print(f'is_bashif: after replace, line = \n {line}')
-            line += '; SUCCESS=$?; unset PAPIEX_TAGS; } && [ $SUCCESS -eq 0 ]; then'
-        elif is_rose_task_run:
-            line = op_found['r_string_rose'] + line + '; unset PAPIEX_TAGS;'
+        elif re.search('rose task-run ', line) is not None:
+            logger.debug('line with op is a rose task-run line')
+            is_rose_task_run = True
+
         else:
-            # if no logic, tool in the usual way.
-            #print(f"op_found={op_found['op_name']}")
-            #print(f'line=\n{line}')
-            if op_found['r_string'] is None:
+            logger.debug('neither a rose task nor a bash if statement. typical shell line.')
+            if not check_op_in_typical_line_again(line, op_found['op_name']):
+                prevline = log_assign_append('skip, this line likely isn\'t a call to the op: ', line, script)
                 continue
-            line = line.replace( op_found['op_name']+' ',
-                                 op_found['r_string'])
-            line += '; unset PAPIEX_TAGS;'
+
+        logger.debug('now editing the line accordingly to type of line')
+        if is_bashif:
+            line = get_new_bashif_line( line, op_found )
+        elif is_rose_task_run:
+            line = get_new_rose_task_run_line( line, op_found )
+        else:
+            line = get_new_bash_line( line, op_found )
 
         ### Refine the PAPIEX_TAGS for a particular operation ###
         # is the op a retry? If so, mark as such via tag and OP_INSTANCE
@@ -124,46 +232,56 @@ def tool_ops_w_papiex(fin_name):
         # pathologies across jobs that should be similar.
         if 'failure, retrying' in prevline:
             retry = ';retry:1'
+            logger.debug('previous line was a RETRY logging statement, so this line must be a retry! retry = %s', retry)
         else:
             retry = ''
 
         # Increment the operation instance.
         # op_instance correlates to a specific line in the script.
-        this_op = re.search('PAPIEX_TAGS="op:(.*);op_instance:OP_INSTANCE',line)
-        if this_op is None:
-            print(line)
-            raise KeyError
-
-        this_op = this_op.group(1)
         for op in op_list:
-            if this_op == op['op_name']:
-                op['op_instance'] += 1
-                line = line.replace( "OP_INSTANCE",
-                                     str(op['op_instance'] ) + retry)
-                break
+            if op_found['op_tag'] != op['op_tag']:
+                continue
+            logger.debug('incrementing op_instance for op = %s', op['op_name'])
+            op['op_instance'] += 1
 
-        # done with this line, append and track what we just did
-        # to catch retry ops
-        script.append(line)
-        prevline = line
+            logger.debug('replacing op_instance, before, line = \n %s', line)
+            line = line.replace( "OP_INSTANCE",
+                                 str(op['op_instance'] ) + retry)
+            logger.debug('replacing op_instance, after, line = \n %s', line)
+            break
 
-    # end file with a new line, write out the file.
-    # this script (not tool_ops_w_papiex) should do the replacing of old script
-    # renaming... etc. #TODO 5
-    # more flexible options? replace? keep both? #TODO 6
+        # track previous line to catch retry ops
+        #logger.debug('before, prevline = \n %s', prevline)
+        prevline = log_assign_append('appending line with tagged op: \n ', line, script)
+        #logger.debug('before, prevline = \n %s', prevline)
+        an_op_was_tagged = True
+
+    # script must end in newline, cylc requirement i think?
     script[-1] += '\n'
+
+    if an_op_was_tagged:
+        logger.info('tagged at least one operation in this script. done tagging!')
+    else:
+        logger.info('no operations of interest found, nothing tagged.')
+
     fout_name = fin_name + '.tags'
-    with open(fout_name, 'w') as file:
+    logger.debug('writing output job script: %s', fout_name)
+    with open(fout_name, 'w', encoding='utf-8') as file:
         file.write('\n'.join(script))
 
+    logger.debug('writing output job script written. cleaning up script from memory')
     del script
 
 
-
-def annotate_metadata(): #TODO 7
-    ''' parses a job bash-script assembled by script, annotating metadata of interest.
+def annotate_metadata():
+    '''
+    parses a job bash-script assembled by script, annotating metadata of interest.
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
-    parsing the job script for metadata of interest. '''
+    parsing the job script for metadata of interest.
+
+    not yet implemented, challenging for a questionable amount of benefit. the Jinja2 calls in site/ppan_test.cylc
+    are completely adequate for now
+    '''
     raise NotImplementedError()
 
     ## Reset the EPMT_JOB_TAGS root
@@ -208,12 +326,36 @@ def annotate_metadata(): #TODO 7
     #   script.append('    ' + epmt_instrument)
     #   script.append('endif')
 
-if __name__=='__main__':
-    tool_ops_w_papiex('FOO')
+if __name__ == '__main__':
+    logger.warning('running script as __name__ == __main__')
+    logger.warning('this is good for local development and case-coverage, but deployment use differs')
+    logger.warning('uncomment+edit the lines below these statements to get the desired functionality')
+    logger.warning('some of these are run as unit-tests in the pipeline!')
 
-    ###### local testing/debugging, ONE script input to test on.
-    ##infile='/home/Ian.Laflotte/Working/59.postprocessing/test_tooling_ops.sh'
-    #infile='/home/Ian.Laflotte/Working/59.postprocessing/am5_c96L33_amip_job_stage-history'
-    #test_papiex_tooling(infile)
-    ##### local testing/debugging, MANY input scripts to test on.
-    #many_tests_papiex_tooling(200000)
+    #import glob
+    #from pathlib import Path
+    #import pprint
+    #import shutil
+
+    ######## local testing/debugging, test on a whole target workflow you've run
+    #user = 'foo'
+    #test_scripts = glob.glob('/home/' + user + \
+    #                         '/cylc-run/test_pp_locally__ptest__ttest/log/job/198?0101T0000Z/*/01/job')
+    #logger.debug('test_scripts = %s', pprint.pformat(test_scripts) )
+    #for test_script in test_scripts:
+    #    if Path(test_script+'.notags').exists():
+    #        Path(test_script).unlink()
+    #        shutil.copy(test_script+'.notags', test_script)
+    #    logger.info('\n\n\n\nparsing test_script = %s', test_script)
+    #    tool_ops_w_papiex(test_script)
+    #    #break
+
+
+    ####### local testing/debugging, ONE script input to test on, a realistic local test file example
+    #infile = 'lib/python/tests/test_files_papiex_tooler/am5_c96L33_amip_mask-atmos-plevel_atmos_scalar_job'
+    #tool_ops_w_papiex(infile)
+
+
+    ###### local testing/debugging, ONE script input to test on. a concocted local test file example
+    #infile = 'lib/python/tests/test_files_papiex_tooler/simple_failing_command.bash'
+    #tool_ops_w_papiex(infile)
