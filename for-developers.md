@@ -322,7 +322,7 @@ functionalities work is slightly different.
 
 The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`, using available environment variables
 and/or Jinja2 variables to pull and render the tag at runtime. The `papiex` tag insertion is more complex, requiring 
-the use of a custom Slurm `job_runner_handler`. `job_runner_handler`'s in `cylc` are classes that manage submission of
+the use of a custom Slurm `job_runner_handler`. `job_runner_handler`s in `cylc` are classes that manage submission of
 workflow tasks to a batch workload system. See
 [here](https://cylc.github.io/cylc-doc/stable/html/user-guide/task-implementation/job-submission.html#supported-job-submission-methods) 
 for more information on this concept.
@@ -339,22 +339,29 @@ the docstrings and comments within the code.
 
 Running workflows with `epmt` enabled follows the same procedures described in section [4](#configrunppanworkflows), 
 using `ppan_test` instead of `ppan`. After a workflow has at least partially completed, verify that `epmt` data was 
-captured. From a workstation, query job information (replace `your_user_here` with your username):
+captured. Job success is irrelevant- `epmt` should retrieve the data successfully for near any degree of success/failure. 
+From a workstation, do `module load epmt`, then `epmt python` to open a python shell with `epmt`. You can query job 
+information below by replacing `your_user_here` with your username:
 ```python
-module load epmt
-epmt python
+>>>
+>>> # setup, fill in your username, import epmt_query from epmt's built-in python shell
 >>> my_user = 'your_user_here'
 >>> import epmt_query as eq
+>>>
+>>> # query for jobs assoc with your username, show as list of job IDs
 >>> my_jobs = eq.get_jobs(fltr=( eq.Job.user_id == my_user ), fmt='terse')
->>> my_jobs  # list of job IDs as strings
-
+>>> my_jobs
+>>> 
+>>> # detailed job info with epmt annotations
 >>> one_job_dict = eq.get_jobs(jobs=[my_jobs[-1]], fmt='dict')
 >>> import pprint
->>> pprint.pprint(one_job_dict[0])  # detailed job info with epmt annotations
-
+>>> pprint.pprint(one_job_dict[0])
+>>> 
+>>> # if you know the value of $CYLC_WORKFLOW_UUID, you can get data for all of the workflow's jobs completed so far
 >>> workflow_uuid = one_job_dict[0]['tags']['exp_run_uuid']
 >>> one_workflows_worth_of_jobs = eq.get_jobs(tags=f'exp_run_uuid:{workflow_uuid}', fmt='terse')
->>> one_workflows_worth_of_jobs  # all jobs from the workflow
+>>> one_workflows_worth_of_jobs
+>>>
 ```
 
 The workflow UUID in the job tags allows retrieval of all jobs associated with a specific workflow run. This works for 
