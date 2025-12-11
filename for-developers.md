@@ -12,21 +12,21 @@ to using `fre-workflows` elsewhere.
     1. [`cylc` Documentation](#cylcdoc)
     2. [Global `cylc` Config](#globalcylcconfig)
 	3. [`cylc` Platforms and Site](#cylcplatformandsite)
-	    1. [`site` Value Specifics](#sitespecifics)
+	    1. [`site` Value Specifics](#sitevaluespecifics)
 2. [PPAN Specifics](#ppanspecifics)
-    1. [Terminal UTF Encoding](#utfencodeerrors)
-    2. [PPAN Documentation](#moreppandoc)
-3. [Configuring Workflows With `fre`](#freyamlframework)
-4. [Running Workflows With `fre` on PPAN](#configrunppanworkflows)
+    1. [PPAN `cylc` Defaults](#ppancylcdefaults)
+    2. [Terminal UTF Encoding](#utfencodeerrors)
+4. [Configuring Workflows With `fre`](#freyamlframework)
+5. [Running Workflows With `fre` on PPAN](#configrunppanworkflows)
     1. [With LMOD and Modules](#withlmod)
     2. [With Your Own `conda`/`fre-cli` and LMOD `cylc`](#withcondaandcylc)
     3. [With Only Your Own `conda`/`fre-cli`](#withcondaonly)
-5. [`cylc` Workflow Monitoring](#cylcmontips)
+6. [`cylc` Workflow Monitoring](#cylcmontips)
     1. [via GUI or TUI](#guituiprogressmon)
     2. [via CLI](#cliprogressmon)
-6. [Testing and Verifying `epmt` Functionality](#epmttesting)
+7. [Testing and Verifying `epmt` Functionality](#epmttesting)
     1. [Verifying `epmt` Annotations and `papiex` Tags](#verifyingepmt)
-7. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
+8. [Further Notes on Workflow Development and Configuration](#notesworkflowdevconfig)
     1. [Workflow Task Environments / Requirements](#workflowtaskenvsreqs)
     2. [Workflow Configuration Hierarchy](#workflowconfighierarchy)
     3. [Workflow Editing Best Practices](#workfloweditingpractices)
@@ -278,14 +278,14 @@ If tasks fail, the workflow may stall, in which case it will shut down with an e
 
 ### Inspect workflow progress via GUI or TUI interface <a name="guituiprogressmon"></a>
 
-The text-based GUI can be launched via:
-```
-cylc tui [workflow_id]
-```
-
-The full GUI can be launched on jhan or jhanbigmem (an107 or an201):
+The full GUI can be launched like so:
 ```
 cylc gui --ip=`hostname -f` --port=`jhp 1` --no-browser
+```
+
+A text-based interface (TUI) is also available, though occasionally breaks for large workflows. It can be launched via:
+```
+cylc tui [workflow_id]
 ```
 
 Then navigate to one of the two links printed to screen in your web browser.
@@ -324,7 +324,8 @@ The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`, 
 and/or Jinja2 variables to pull and render the tag at runtime. The `papiex` tag insertion is more complex, requiring 
 the use of a custom Slurm `job_runner_handler`. `job_runner_handler`'s in `cylc` are classes that manage submission of
 workflow tasks to a batch workload system. See
-[here](https://cylc.github.io/cylc-doc/stable/html/user-guide/task-implementation/job-submission.html#supported-job-submission-methods) for more information on this concept.
+[here](https://cylc.github.io/cylc-doc/stable/html/user-guide/task-implementation/job-submission.html#supported-job-submission-methods) 
+for more information on this concept.
 
 The custom `handler` for `fre-workflows` is called `PPANHandler`, and the code for it is in `lib/python/ppan_handler.py`.
 At job-submission time, `PPANHandler` inserts tags into the batch job script by calling `lib/python/tag_ops_w_papiex.py`, 
