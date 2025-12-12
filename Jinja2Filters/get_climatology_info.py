@@ -140,12 +140,14 @@ class Climatology(object):
 
         definitions += f"""
     [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = COMBINE-TIMEAVGS
+        inherit = COMBINE-TIMEAVGS-P{self.interval_years}Y
         [[[environment]]]
             component = {self.component}
             frequency = {self.frequency}
             interval = P{self.interval_years}Y
             end = $(cylc cycle-point --print-year --offset={offset})
+    [[COMBINE-TIMEAVGS-P{self.interval_years}Y]]
+        inherit = COMBINE-TIMEAVGS
         """
 
         if clean_work:
