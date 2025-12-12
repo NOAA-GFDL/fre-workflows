@@ -20,6 +20,7 @@ postprocess:
     - type: "atmos_scalar"
       sources:
         - history_file: "atmos_scalar"
+        - history_file: "atmos_global_cmip"
       postprocess_on: True
       climatology:
       - frequency: yr
