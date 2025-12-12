@@ -327,6 +327,7 @@ fre analysis install \
                 definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
+            interval_years_minus_one = self.chunk - one_year
             definitions += f"""
     [[data-catalog-{self.chunk}]]
         inherit = DATA-CATALOG
@@ -334,6 +335,7 @@ fre analysis install \
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc cycle-point --template=CCYY)
+            yr2 = $(cylc cycle-point --template=CCYY --offset-years={interval_years_minus_one.years})
             databegyr = $yr1
             dataendyr = $yr2
             datachunk = {self.chunk.years}
