@@ -223,16 +223,17 @@ annotations/tagging), and under `[runtime]`, within the `root` task-family's `in
             module list
             epmt check
 
+            #### if you want to use your own conda environment, comment out 'module load fre/...' below
             module load fre/{{ FRE_VERSION }}
-            module load hsm/1.3.0
+            module load gcp/2.3 hsm/1.3.0
 
             #### if you want to use your own conda environment, edit the PATH and uncomment below like so:
             #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
 ```
 
-Uncomment the `export PATH=...` line to point to the folder containing the executable you found with `which fre`. Then
-source the `run_pp_locally` script as before:
+Comment out the line with `module load fre/...`. Uncomment the `export PATH=...` line to point to the folder containing 
+the executable you found with `which fre`. Then source the `run_pp_locally` script as before:
 ```
 # configure, install, validate, and run installed/configured workflow
 source for_gh_runner/run_pp_locally.sh
