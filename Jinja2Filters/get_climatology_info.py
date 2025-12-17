@@ -11,7 +11,7 @@ from legacy_date_conversions import *
 import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Global variables just set to reduce typing a little.
 duration_parser = metomi.isodatetime.parsers.DurationParser()
