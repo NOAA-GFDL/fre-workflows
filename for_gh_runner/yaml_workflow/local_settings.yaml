@@ -1,6 +1,8 @@
-# directories shared across tools
 directories:
-  history_dir:        "/work/$USER/test_cloud_runner_history_files"
+## to test staging data from archive, use the below
+#  history_dir:        "/archive/inl/test_cloud_runner_history_files"
+# to have a faster turn-around (does not test archive data staging), use the below
+  history_dir:        "/work/inl/test_cloud_runner_history_files"
   pp_dir:             !join [/work/$USER/test_cloud_runner_scratch_dir/, *FRE_STEM, /, pp]
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:           "/xtmp/$USER/ptmp"
