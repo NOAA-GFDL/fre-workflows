@@ -94,7 +94,6 @@ jobs:
           echo "OUTPUT DIR: $output_dir"
           echo "HISTORY FILE LOCATION: $data_linkdir/history"
           echo "GRID SPEC LOCATION: $data_linkdir/grid_spec"
-          exit 0
 
           # Set up binds and required paths
           bind_paths="--bind ${output_dir}/:/mnt:rw
