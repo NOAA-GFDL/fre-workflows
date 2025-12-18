@@ -77,6 +77,7 @@ jobs:
           data_linkdir=/home/Dana.Singh/workflow-run-${runner_foldername}
           echo "OUTPUT DIR: $output_dir"
           echo "DATA DIR: $data_linkdir"
+          echo "RUNNER NAME: $RUNNER_NAME"
           exit 0
           # Remove if paths previously exist
           rm -rf $output_dir
@@ -95,7 +96,6 @@ jobs:
           echo "OUTPUT DIR: $output_dir"
           echo "HISTORY FILE LOCATION: $data_linkdir/history"
           echo "GRID SPEC LOCATION: $data_linkdir/grid_spec"
-          echo "RUNNER NAME: $RUNNER_NAME"
           exit 0
 
           # Set up binds and required paths
