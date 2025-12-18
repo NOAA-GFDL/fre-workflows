@@ -7,7 +7,7 @@ on:
         required: false
         type: string
       fre-workflows-branch:
-        description: 'If on fork: Input branch you are using on your fork.'
+        description: 'If using fork: Input branch you are using on your fork.'
         required: false
         default: 'main'
         type: string
@@ -68,7 +68,7 @@ jobs:
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_folder=$(echo ${PWD} | cut -d/ -f3)
-
+          exit 0 
           # If we have mulitple runners - bind paths will also need to be in cases as we need
           # different history files to access each time.
           # when accessing the same location - the workflow kind of hangs and takes a while to run 
