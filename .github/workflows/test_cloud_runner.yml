@@ -68,6 +68,7 @@ jobs:
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_folder=$(echo ${PWD} | cut -d/ -f3)
+          echo "runner_folder: ${runner_folder}"
           exit 0 
           # If we have mulitple runners - bind paths will also need to be in cases as we need
           # different history files to access each time.
