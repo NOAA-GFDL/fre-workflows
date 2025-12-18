@@ -64,10 +64,8 @@ jobs:
           echo "Currently in: ${PWD}"
 
           # Set up output directory based on which runner picks up the job
-          # This is to ensure there are no access issues when using 
-          # the setup/output folder mounted to /mnt if there are multiple
-          # runners.
-          #runner_foldername=$(echo ${PWD} | cut -d/ -f4)
+          # This is to ensure there are no accessibility issues when using 
+          # multiple runners.
           echo "Runner that picked up the job: ${RUNNER_NAME}"
 
           # Define output directory, grid spec file name, and directory where
@@ -83,12 +81,13 @@ jobs:
           rm -rf $data_linkdir
 
           ## Create data link directory and output directory
-          #mkdir -p $output_dir
-          #mkdir -p $historyfile_linkdir
+          mkdir -p $output_dir
+          mkdir -p $data_linkdir
+          mkdir -p $data_linkdir/grid_spec
 
           ## Create symbolic links (for if runners are used at same time)
           ln -s /contrib2/c96L65/history ${data_linkdir}
-          ln -s /contrib/container-test/grid_spec/${gridspec_file} ${data_linkdir}
+          ln -s /contrib/container-test/grid_spec/${gridspec_file} ${data_linkdir}/grid_spec
 
           # Write environment variable to GITHUB_ENV to make it accessible for other steps
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
