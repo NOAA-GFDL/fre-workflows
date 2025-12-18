@@ -95,7 +95,7 @@ jobs:
           echo "OUTPUT DIR: $output_dir"
           echo "HISTORY FILE LOCATION: $data_linkdir/history"
           echo "GRID SPEC LOCATION: $data_linkdir/grid_spec"
-
+          echo "RUNNER NAME: $RUNNER_NAME"
           exit 0
 
           # Set up binds and required paths
