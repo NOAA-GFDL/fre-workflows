@@ -68,47 +68,38 @@ jobs:
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
           runner_dirname=$(echo ${PWD} | cut -d/ -f4)
-          echo "runner_folder: ${runner_dirname}"
-          exit 0 
-          # If we have mulitple runners - bind paths will also need to be in cases as we need
-          # different history files to access each time.
-          # when accessing the same location - the workflow kind of hangs and takes a while to run 
-          case "$runner_folder" in
-              *"RUNNER1")
-                  # Create the output directory associated with the runner that picked up the job
-                  output_dir=/contrib/container-test/ppp-setup-$runner_folder
-                  historyfile_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
+          echo "Runner that picked up the job: ${runner_dirname}"
 
-                  rm -rf $output_dir
-                  rm -rf $historyfile_linkdir
-                  
-                  mkdir -p $output_dir
-                  mkdir -p $historyfile_linkdir
-                  
-                  # Write environment variable to GITHUB_ENV to make it accessible for other steps
-                  echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
-                  echo "OUTPUT DIR: $output_dir"
+          # Define output directory, grid spec file name, and directory where
+          # data will be linked
+          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
+          output_dir=/contrib/container-test/ppp-setup-$runner_folder
+          data_linkdir=/home/Dana.Singh/workflow-run-$runner_folder
 
-                  # try to 2 questionable locations first - to see if that matters at all
-                  ln -s /contrib2/c96L65/history $historyfile_linkdir ## symbolic link
-                  #ln /contrib/container-test/history/* $historyfile_linkdir/history ##hard link
-              ;;
-              #*"-aws")
-              #    # Create the output directory associated with the runner that picked up the job
-              #    output_dir=/contrib/container-test/ppp-setup-$runner_folder
-              #    mkdir -p $output_dir
-              #    
-              #    # Write environment variable to GITHUB_ENV to make it accessible for other steps
-              #    echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
-              #    echo "OUTPUT DIR: $output_dir"
-              #;;
-          esac
+          # Remove if paths previously exist
+          rm -rf $output_dir
+          rm -rf $data_linkdir
+
+          ## Create data link directory and output directory
+          #mkdir -p $output_dir
+          #mkdir -p $historyfile_linkdir
+
+          # try to 2 questionable locations first - to see if that matters at all
+          ln -s /contrib2/c96L65/history $data_linkdir ## symbolic link
+          ln -s /contrib/container-test/grid_spec/${gridspec_file} $data_linkdir
+
+          # Write environment variable to GITHUB_ENV to make it accessible for other steps
+          echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+          echo "OUTPUT DIR: $output_dir"
+          echo "HISTORY FILE LOCATION: $data_linkdir/history"
+          echo "GRID SPEC LOCATION: $data_linkdir/grid_spec"
+
+          exit 0
 
           # Set up binds and required paths
-          gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind $output_dir/:/mnt:rw
-                      --bind ${historyfile_linkdir}/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+          bind_paths="--bind ${output_dir}/:/mnt:rw
+                      --bind ${data_linkdir}/history:/mnt/history:ro
+                      --bind ${data_linkdir}/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
           container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${PWD}/for_gh_runner/runscript.sh
