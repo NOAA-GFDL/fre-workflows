@@ -67,14 +67,14 @@ jobs:
           # This is to ensure there are no access issues when using 
           # the setup/output folder mounted to /mnt if there are multiple
           # runners.
-          runner_dirname=$(echo ${PWD} | cut -d/ -f4)
+          runner_foldername=$(echo ${PWD} | cut -d/ -f4)
           echo "Runner that picked up the job: ${runner_dirname}"
 
           # Define output directory, grid spec file name, and directory where
           # data will be linked
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          output_dir=/contrib/container-test/ppp-setup-${runner_folder}
-          data_linkdir=/home/Dana.Singh/workflow-run-${runner_folder}
+          output_dir=/contrib/container-test/ppp-setup-${runner_foldername}
+          data_linkdir=/home/Dana.Singh/workflow-run-${runner_foldername}
           echo "OUTPUT DIR: $output_dir"
           echo "DATA DIR: $data_linkdir"
           exit 0
