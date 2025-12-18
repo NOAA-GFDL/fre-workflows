@@ -25,6 +25,7 @@ conda activate /app/cylc-flow-tools
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
+conda install noaa-gfdl::catalogbuilder=2025.01.01
 export PATH=/mnt/.local/bin:$PATH
 cd -
 
