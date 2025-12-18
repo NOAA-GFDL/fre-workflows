@@ -225,7 +225,8 @@ jobs:
               exit 2
           fi
 
-      - name: Print data-catalog-final
+      - name: Print data-catalog-final (FAILURE-GUARDED)
+        continue-on-error: true
         run: |
           set +e
           # Successes 

@@ -9,20 +9,39 @@
             export PAPIEX_OUTPUT=$PAPIEX_OLD_OUTPUT
 {% endset %}
 
+
+{# see https://cylc.github.io/cylc-doc/stable/html/user-guide/writing-workflows/scheduler.html#scheduler-configuration #}
+[scheduler]
+    [[events]]
+        startup handlers = """
+            mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        """
+        shutdown handlers = """
+            mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
+        """
+
+[runtime]
     [[root]]
         init-script = """
-            module load fre/{{ FRE_VERSION }}
-            module load gcp/2.3
             module load epmt
             module list
             epmt check
+
+            #### if you want to use your own conda environment, comment out 'module load fre/...' below
+            module load fre/{{ FRE_VERSION }}
+            module load gcp/2.3 hsm/1.3.0
+
+            #### if you want to use your own conda environment, edit the PATH and uncomment below like so:
+            #export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:PLACE_HOLDER;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
@@ -31,7 +50,6 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[events]]]
-            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
             submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
@@ -42,22 +60,19 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:pp-starter;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:pp-starter;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
     [[STAGE-HISTORY]]
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:stage-history;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:stage-history;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
-        """
-        pre-script = """
-            module load gcp/2.3 hsm/1.3.0
         """
 
 {% if DO_REFINEDIAG or DO_PREANALYSIS %}
@@ -65,15 +80,14 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:analysis;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         pre-script = """
             env
             set -x
-            module load gcp
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -86,9 +100,9 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:refineDiag;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:refineDiag;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
         post-script = """
@@ -129,11 +143,14 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:data-catalog:exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:data-catalog;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
+
+    [[MAKE-TIMEAVGS]]
+        pre-script = module load cdo
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo
@@ -154,9 +171,9 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:clean;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:clean;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
 
@@ -165,21 +182,21 @@
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:combine-statics;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:combine-statics;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        pre-script = module load cdo && mkdir -p $outputDir
+        pre-script = mkdir -p $outputDir
 {% endif %}
 
     [[ANALYSIS]]
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:analysis;exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};\
-                pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
+                exp_target:{{ TARGET }};exp_component:analysis;\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
+                script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
 
@@ -189,39 +206,39 @@
         env-script = """
     {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:{{ COMPONENT }};exp_component_source:PLACE_HOLDER;\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_target:{{ TARGET }};exp_component:{{ COMPONENT }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
     {{ EPMT_POSTAMBLE }}
         """
 {% endfor %}
 
+
+
+
 {% if DO_REGRID %}
-    {% set REGRID_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
-    {% for KEY in REGRID_COMPONENTS %}
-    [[<regrid={{ KEY }}>]]
+    {% set REGRID_LIST = REGRID.split(', ') %}
+    {% for REGRID_COMP in REGRID_LIST %}
+    [[<regrid={{ REGRID_COMP }}>]]
         env-script = """
         {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:{{ REGRID_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_target:{{ TARGET }};exp_component:{{ REGRID_COMP }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
         {{ EPMT_POSTAMBLE }}
         """
     {% endfor %}
 
     {% if DO_REGRID_STATIC %}
-        {% set REGRID_STATIC_COMPONENTS  =  "regrid-xy" | form_task_parameter_components('static', PP_COMPONENTS) %}
-        {% for KEY in REGRID_STATIC_COMPONENTS %}
-    [[<regrid_static={{ KEY }}>]]
+        {% set REGRID_STATIC_LIST = REGRID_STATIC.split(', ') %}
+        {% for REGRID_STATIC_COMP in REGRID_STATIC_LIST %}
+    [[<regrid_static={{ REGRID_STATIC_COMP }}>]]
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:{{ REGRID_STATIC_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_target:{{ TARGET }};exp_component:{{ REGRID_STATIC_COMP }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
@@ -230,29 +247,27 @@
 {% endif %}
 
 {% if DO_NATIVE %}
-    {% set NATIVE_COMPONENTS  =  "native" | form_task_parameter_components('temporal', PP_COMPONENTS) %}
-    {% for KEY in NATIVE_COMPONENTS %}
-    [[<native={{ KEY }}>]]
+    {% set NATIVE_LIST = NATIVE.split(', ') %}
+    {% for NATIVE_COMP in NATIVE_LIST %}
+    [[<native={{ NATIVE_COMP }}>]]
         env-script = """
         {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:{{ NATIVE_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_target:{{ TARGET }};exp_component:{{ NATIVE_COMP }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
         {{ EPMT_POSTAMBLE }}
         """
     {% endfor %}
     {% if DO_NATIVE_STATIC %}
-        {% set NATIVE_STATIC_COMPONENTS  =  "native" | form_task_parameter_components('static', PP_COMPONENTS) %}
-        {% for KEY in NATIVE_STATIC_COMPONENTS %}
-    [[<native_static={{ KEY }}>]]
+        {% set NATIVE_STATIC_LIST = NATIVE_STATIC.split(', ') %}
+        {% for NATIVE_STATIC_COMP in NATIVE_STATIC_LIST %}
+    [[<native_static={{ NATIVE_STATIC_COMP }}>]]
         env-script = """
             {{ EPMT_PREAMBLE }}
             epmt annotate EPMT_JOB_TAGS="exp_name:{{ EXPERIMENT }};exp_fre_mod:{{ FRE_VERSION }};exp_platform:{{ PLATFORM }};\
-                exp_target:{{ TARGET }};exp_component:{{ NATIVE_STATIC_COMPONENTS[KEY] }};exp_component_source:{{ KEY }};\
-                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ MOS_PER_HIST_SEGMENT }};\
-                pp_chunk_a_months:{{ MOS_PER_CHUNK_A }};pp_chunk_b_months:{{ MOS_PER_CHUNK_B }};\
+                exp_target:{{ TARGET }};exp_component:{{ NATIVE_STATIC_COMP }};\
+                exp_time:$CYLC_TASK_CYCLE_POINT;exp_seg_months:{{ HISTORY_SEGMENT }};\
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """

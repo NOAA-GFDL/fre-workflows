@@ -79,6 +79,9 @@
     [[RENAME-SPLIT-TO-PP]]
         pre-script = module load netcdf-c cdo nco
 
+    [[MAKE-TIMEAVGS]]
+        pre-script = module load cdo
+
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo
 
