@@ -75,7 +75,9 @@ jobs:
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           output_dir=/contrib/container-test/ppp-setup-${runner_folder}
           data_linkdir=/home/Dana.Singh/workflow-run-${runner_folder}
-
+          echo "OUTPUT DIR: $output_dir"
+          echo "DATA DIR: $data_linkdir"
+          exit 0
           # Remove if paths previously exist
           rm -rf $output_dir
           rm -rf $data_linkdir
