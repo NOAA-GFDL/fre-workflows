@@ -63,7 +63,7 @@ class AnalysisScript(object):
         if self.product == "ts":
             if self.chunk not in pp_chunks:
                 raise ValueError(f"ERROR: Analysis script '{self.name}' requests timeseries chunk size '{self.chunk}', but " +
-                                 f"this chunk size is not declared in 'pp_chunks'")
+                                 "this chunk size is not declared in 'pp_chunks'")
         elif self.product == "av":
             # Loop through the components and look for the ones specified by the analysis script
             # For each component to check, confirm that its climatology section contains the requested climo chunk
