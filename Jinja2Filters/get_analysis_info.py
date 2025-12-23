@@ -19,7 +19,7 @@ time_parser = TimePointParser(assumed_time_zone=(0, 0))
 
 class AnalysisScript(object):
     def __init__(self, name, config, experiment_components, experiment_starting_date,
-                 experiment_stopping_date, pp_chunks):
+                 experiment_stopping_date, pp_chunks, yaml):
         """Initialize the analysis script object.
 
         Args:
@@ -29,6 +29,7 @@ class AnalysisScript(object):
             experiment_starting_date: Starting date for the experiment.
             experiment_stopping_date: Stopping date for the experiment.
             pp_chunks: List of ISO8601 durations used by the workflow.
+            yaml: Resolved postprocessing yaml
         """
         self.name = name
         logger.debug(f"{name}: initializing AnalysisScript instance")
@@ -55,9 +56,32 @@ class AnalysisScript(object):
         self.script_type = config["workflow"]["script_type"]
         self.chunk = duration_parser.parse(config["workflow"]["chunk_size"])
 
-        if self.chunk not in pp_chunks:
-            raise ValueError(f"ERROR: Analysis script '{self.name}' requests chunk size '{self.chunk}', but " +
-                             f"this chunk size is not declared in 'pp_chunks'")
+        # Retrieve other config
+        self.data_frequency = config["required"]["data_frequency"]
+
+        # check for needed pp prerequisites
+        if self.product == "ts":
+            if self.chunk not in pp_chunks:
+                raise ValueError(f"ERROR: Analysis script '{self.name}' requests timeseries chunk size '{self.chunk}', but " +
+                                 "this chunk size is not declared in 'pp_chunks'")
+        elif self.product == "av":
+            # Loop through the components and look for the ones specified by the analysis script
+            # For each component to check, confirm that its climatology section contains the requested climo chunk
+            for ana_comp in config["workflow"]["components"]:
+                found_needed_inputs_for_component = False
+                for exp_comp in yaml["postprocess"]["components"]:
+                    if exp_comp["type"] == ana_comp:
+                        try:
+                            for climo_request in exp_comp["climatology"]:
+                                if climo_request["frequency"] == self.data_frequency and climo_request["interval_years"] == self.chunk.years:
+                                    found_needed_inputs_for_component = True
+                        except KeyError:
+                            pass
+                if not found_needed_inputs_for_component:
+                    raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
+                                     f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
+        else:
+            raise ValueError("ERROR: product type must be 'ts' or 'av'")
 
         # Parse the new analysis config items
         if 'legacy' in config:
@@ -72,8 +96,6 @@ class AnalysisScript(object):
                 self.legacy_script_args = ""
         else:
             self.is_legacy = False
-
-        self.data_frequency = config["required"]["data_frequency"]
 
         # if dates are years, convert to string or else ISO conversion will fail
         if isinstance(config["required"]["date_range"][0], int):
@@ -293,7 +315,7 @@ fre analysis install \
         '''
         """
 
-        if self.script_type == "independent" and self.date_range == self.experiment_date_range:
+        if self.script_type == "independent":
             # to make the task run, we will create a corresponding task graph below
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
@@ -305,6 +327,7 @@ fre analysis install \
                 definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
+            interval_years_minus_one = self.chunk - one_year
             definitions += f"""
     [[data-catalog-{self.chunk}]]
         inherit = DATA-CATALOG
@@ -312,6 +335,7 @@ fre analysis install \
         inherit = ANALYSIS
         [[[environment]]]
             yr1 = $(cylc cycle-point --template=CCYY)
+            yr2 = $(cylc cycle-point --template=CCYY --offset-years={interval_years_minus_one.years})
             databegyr = $yr1
             dataendyr = $yr2
             datachunk = {self.chunk.years}
@@ -346,7 +370,7 @@ fre analysis install \
             logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
 
-        if self.script_type == "cumulative" and self.date_range == self.experiment_date_range:
+        if self.script_type == "cumulative":
             # Case 2: run the analysis every chunk, but depend on all previous chunks too.
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
@@ -494,7 +518,7 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
     for script_name, script_params in yaml_["analysis"].items():
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
-                                     experiment_start, experiment_stop, pp_chunks)
+                                     experiment_start, experiment_stop, pp_chunks, yaml_)
         if script_info.switch == False:
             logger.info(f"{script_name}: Skipping, switch set to off")
             continue

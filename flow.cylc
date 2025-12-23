@@ -765,6 +765,7 @@
     [[remap-pp-components-static<component>]]
         inherit = REMAP-PP-COMPONENTS, <component>
         script = """
+            mkdir -p $outputDir
             fre -vv app remap --input-dir=$inputDir \
                                 --output-dir=$outputDir \
                                 --begin-date=$begin \
@@ -918,7 +919,6 @@
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
             FRE_ANALYSIS_ARCHIVE = /archive/fms/fre-analysis/test
             # fre-analysis template vars
-            yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
             fremodule = fre/{{ FRE_VERSION }}
