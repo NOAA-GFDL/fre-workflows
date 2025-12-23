@@ -97,6 +97,9 @@ class Climatology(object):
             graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            if clean_work:
+                graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
+                graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
         graph += f"\"\"\"\n"
 
         # then, create the cleaning tasks
