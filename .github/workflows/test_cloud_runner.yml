@@ -74,7 +74,7 @@ jobs:
           output_dir=/contrib/container-test/output-${RUNNER_NAME}
           data_linkdir=/home/Dana.Singh/workflow-data-${RUNNER_NAME}
 
-          ## Remove if paths previously exist
+          ## Remove if paths previously exist - this might actually delete them from the host as well
           #rm -rf $output_dir
           #rm -rf $data_linkdir/history
           #rm -rf $data_linkdir/grid_spec
@@ -103,6 +103,7 @@ jobs:
           container_path=/contrib/container-test/ppp-wf.sif
           runscript_path=${PWD}/for_gh_runner/runscript.sh
 
+          # Run the container
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
       - name: Upload workflow-run log files
@@ -504,9 +505,9 @@ jobs:
               exit 2
           fi
 
+        ## I think this will work (without cylc clean) because the OUTPUT_DIR is bind mounted from the host
       - name: Clean up output folder
         run: rm -rf ${{ env.OUTPUT_DIR }}
-        ## will this work/conflict with cylc-run that was installed (with other symlinks)
 
 ## Keep in here for now as a just in case reference ##
 #      - name: Print any succeeded tasks
