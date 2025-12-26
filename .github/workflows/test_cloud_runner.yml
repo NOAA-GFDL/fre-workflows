@@ -7,7 +7,7 @@ on:
         required: false
         type: string
       fre-workflows-branch:
-        description: 'If on fork: Input branch you are using on your fork.'
+        description: 'If using fork: Input branch you are using on your fork.'
         required: false
         default: 'main'
         type: string
@@ -26,11 +26,6 @@ on:
   push:
     branches:
       - main  # triggers pipeline on push to main
-
-# cancel running jobs if theres a newer push
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   test-cloud:
@@ -66,59 +61,85 @@ jobs:
       - name: Run ppp-container
         run: |
           # Print pwd then run script
-          echo "Currently in:"
-          cwd=$(pwd)
-          echo $cwd
+          echo "Currently in: ${PWD}"
+
+          # Set up output directory based on which runner picks up the job
+          # This is to ensure there are no accessibility issues when using 
+          # multiple runners.
+          echo "Runner that picked up the job: ${RUNNER_NAME}"
+
+          # Define output directory, grid spec file name, and directory where
+          # data will be linked
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
-                      --bind /contrib2/c96L65/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
+          output_dir=/contrib/container-test/output-${RUNNER_NAME}
+          data_linkdir=/home/Dana.Singh/workflow-data-${RUNNER_NAME}
+
+          ## Remove if paths previously exist - this might actually delete them from the host as well
+          #rm -rf $output_dir
+          #rm -rf $data_linkdir/history
+          #rm -rf $data_linkdir/grid_spec
+
+          ## Create data link directory and output directory
+          mkdir -p $output_dir
+          mkdir -p $data_linkdir
+          mkdir -p $data_linkdir/grid_spec
+
+          ## Create symbolic links for data (for if multiple runners are used at same time)
+          ln -sf /contrib2/c96L65_TEST/history ${data_linkdir}
+          ln -sf /contrib/container-test/grid_spec/${gridspec_file} ${data_linkdir}/grid_spec
+
+          # Write environment variable to GITHUB_ENV to make it accessible for other steps
+          echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
+          echo "OUTPUT DIR: $output_dir"
+          echo "HISTORY FILE DIR: $data_linkdir/history"
+          echo "GRID SPEC DIR: $data_linkdir/grid_spec"
+
+          # Set up binds and required paths
+          bind_paths="--bind ${output_dir}/:/mnt:rw
+                      --bind ${data_linkdir}/history:/mnt/history:ro
+                      --bind ${data_linkdir}/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
                       --bind /contrib/container-test"
-
           container_path=/contrib/container-test/ppp-wf.sif
-          runscript_path=${cwd}/for_gh_runner/runscript.sh
+          runscript_path=${PWD}/for_gh_runner/runscript.sh
 
+          # Run the container
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
-
-          # Can potentially do this to get list of tasks
-          #task_list=$(cylc list test_pp__ptest__ttest)
-          #task1=$(echo $task_list | cut -d ' ' -f1) ....
 
       - name: Upload workflow-run log files
         uses: actions/upload-artifact@v4
         with:
           name: fre-workflow-logs
-          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          path: ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
       - name: Print workflow summary
         continue-on-error: true
         run: |
-          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
+          num_tasks=$(ls -l ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
           echo "number of tasks launched: ${num_tasks}"
           echo ""
 
           echo "here's all the job directories with job scripts:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
+          ls -l ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
           echo ""
 
           echo "here's all the job scripts for 1980 only:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
+          ls -l ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
           echo ""
 
           echo "rose-suite conf for workflow:"
-          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
+          cat ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
           echo ""
 
       - name: Print pp-starter successes or failures
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -145,11 +166,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -176,11 +197,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -208,11 +229,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -239,11 +260,11 @@ jobs:
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -270,11 +291,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -301,11 +322,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
           exit_status_1=$? 
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -332,11 +353,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
           exit_status_2=$? 
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -363,11 +384,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -394,11 +415,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -425,11 +446,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -456,11 +477,11 @@ jobs:
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" ${{ env.OUTPUT_DIR }}/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -482,6 +503,10 @@ jobs:
               echo "WARNING: error with grep execution"
               exit 2
           fi
+
+        ## I think this will work (without cylc clean) because the OUTPUT_DIR is bind mounted from the host
+      - name: Clean up output folder
+        run: rm -rf ${{ env.OUTPUT_DIR }}
 
 ## Keep in here for now as a just in case reference ##
 #      - name: Print any succeeded tasks
