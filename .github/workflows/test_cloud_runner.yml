@@ -84,14 +84,13 @@ jobs:
           mkdir -p $data_linkdir
           mkdir -p $data_linkdir/grid_spec
 
-          ## Create symbolic links for data (for if runners are used at same time)
+          ## Create symbolic links for data (for if multiple runners are used at same time)
           ln -sf /contrib2/c96L65_TEST/history ${data_linkdir}
           ln -sf /contrib/container-test/grid_spec/${gridspec_file} ${data_linkdir}/grid_spec
 
           # Write environment variable to GITHUB_ENV to make it accessible for other steps
           echo "OUTPUT_DIR=$output_dir" >> $GITHUB_ENV
           echo "OUTPUT DIR: $output_dir"
-          echo "DATA DIR: $data_linkdir"
           echo "HISTORY FILE DIR: $data_linkdir/history"
           echo "GRID SPEC DIR: $data_linkdir/grid_spec"
 
