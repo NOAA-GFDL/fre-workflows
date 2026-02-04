@@ -70,12 +70,11 @@ jobs:
           cwd=$(pwd)
           echo $cwd
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
-          bind_paths="--bind /contrib/container-test/ppp-setup/:/mnt:rw
-                      --bind /contrib2/c96L65/history:/mnt/history:ro
-                      --bind /contrib/container-test/grid_spec/${gridspec_file}:/mnt/${gridspec_file}:ro
-                      --bind /contrib/container-test"
+          bind_paths="--bind /contrib-efs/container-test/ppp-setup/:/mnt:rw
+                      --bind /contrib2-bucket/c96L65_am5f11d12r0_amip/history:/mnt/history:ro
+                      --bind /contrib-efs/container-test/c96_grid/${gridspec_file}:/mnt/${gridspec_file}:ro"
 
-          container_path=/contrib/container-test/ppp-wf.sif
+          container_path=/contrib-efs/container-test/ppp-wf.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
@@ -88,37 +87,37 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fre-workflow-logs
-          path: /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          path: /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
           if-no-files-found: error
 
       - name: Print workflow summary
         continue-on-error: true
         run: |
-          num_tasks=$(ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
+          num_tasks=$(ls -l /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job | wc -l)
           echo "number of tasks launched: ${num_tasks}"
           echo ""
 
           echo "here's all the job directories with job scripts:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
+          ls -l /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/????*/*/NN/job
           echo ""
 
           echo "here's all the job scripts for 1980 only:"
-          ls -l /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
+          ls -l /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/1980*/*/NN/job
           echo ""
 
           echo "rose-suite conf for workflow:"
-          cat /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
+          cat /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
           echo ""
 
       - name: Print pp-starter successes or failures
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/pp-starter/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -145,11 +144,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -176,11 +175,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/regrid-xy*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -208,11 +207,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/data-catalog-final/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -239,11 +238,11 @@ jobs:
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/mask-atmos-plevel*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -270,11 +269,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-pp-components*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -301,11 +300,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
           exit_status_1=$? 
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/rename-split-to-pp*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -332,11 +331,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/split-netcdf*/0[1-3]/job.status)
           exit_status_2=$? 
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -363,11 +362,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/climo-*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -394,11 +393,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/combine-climo*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -425,11 +424,11 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/remap-climo-*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
@@ -456,11 +455,11 @@ jobs:
         run: |
           set +e
           # Successes
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
           exit_status_1=$?
 
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/clean*/0[1-3]/job.status)
           exit_status_2=$?
 
           if [ $exit_status_1 -eq 0 ]; then
