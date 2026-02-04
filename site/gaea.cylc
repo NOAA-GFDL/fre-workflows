@@ -16,9 +16,6 @@
         # Set default time limit to 4 hours
         execution time limit = PT4H
         platform = localhost
-        [[[events]]]
-            mail events = startup shutdown aborted timeout stalled inactivity
-            submission timeout = P1D
         [[[directives]]]
             --comment=fre/{{ FRE_VERSION }}
         [[[environment]]]

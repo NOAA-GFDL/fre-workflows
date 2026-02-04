@@ -17,9 +17,6 @@
         # Set default time limit to 4 hours
         execution time limit = PT4H
         platform = ppan
-        [[[events]]]
-            mail events = startup, shutdown, aborted, timeout, stalled, inactivity
-            submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,fre/{{ FRE_VERSION }}
         [[[environment]]]
