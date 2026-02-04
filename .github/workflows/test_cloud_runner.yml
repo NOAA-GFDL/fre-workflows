@@ -74,7 +74,7 @@ jobs:
                       --bind /contrib2-bucket/c96L65_am5f11d12r0_amip/history:/mnt/history:ro
                       --bind /contrib-efs/container-test/c96_grid/${gridspec_file}:/mnt/${gridspec_file}:ro"
 
-          container_path=/contrib-efs/container-test/fre-2025.04.tar.sif
+          container_path=/contrib-efs/container-test/fre-2025.04.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
