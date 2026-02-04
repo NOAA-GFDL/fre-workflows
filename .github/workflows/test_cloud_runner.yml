@@ -297,7 +297,8 @@ jobs:
               exit 2
           fi
 
-      - name: Print rename-split-to-pp successes or failures
+      - name: Print rename-split-to-pp successes or failures (FAILURE-GUARDED)
+        continue-on-error: true
         run: |
           set +e
           # Successes 
