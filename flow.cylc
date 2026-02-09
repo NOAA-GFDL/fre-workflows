@@ -1,47 +1,14 @@
 #!jinja2
 
-{# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = "2025.test" %}
-
-{# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
-
-{# things written between hash and single braces is a Jinja comment. #}
-{# Jinja code between single braces is run.                          #}
-{# Jinja code with two braces is printed.                            #}
-
-{# The site-specific file (stored in site/ subdir) is included at the end of this file. When working in the main   #}
-{# branch, the ppan site file should be specified. The ppan site comprises of gfdl specific tools. Other available #}
-{# sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.          #}
-{# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
-{% set SITE = SITE %}
-
 {# Setting STALL_TIMEOUT here provides the ability to override the value if necessary #}
 {# A use case for overriding this value is exhibited in the fre-workflows pipeline test_cloud_runner.yaml #}
 {# In this pipeline, the stall timeout will be 0 in order for the workflow to immediately abort is stalled #}
-{% if STALL_TIMEOUT is not defined %}
-    {% set STALL_TIMEOUT = "P1W" %}
+{% if config['workfow']['stall_timeout'] is not defined %}
+    {% set config['workflow']['stall_timeout'] = "P1W" %}
 {% endif %}
-
-{# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
-{% if ANALYSIS_START is not defined %}
-    {% set ANALYSIS_START = PP_START %}
-{% endif %}
-{% if ANALYSIS_STOP is not defined %}
-    {% set ANALYSIS_STOP = PP_STOP %}
-{% endif %}
-
-{# The combined yaml is the definitive configuration source #}
-{% set YAML = EXPERIMENT + '.yaml' %}
 
 {# Retrieve active pp components from the yaml #}
-{% set PP_COMPONENTS = YAML | get_components %}
-
-[meta]
-    title = "Postprocessing Example 1"
-    description = """
-    Postprocessing example that includes Bronx-like functionality,
-    """
-    URL = https://gitlab.gfdl.noaa.gov/fre2/workflows/postprocessing
+{% set PP_COMPONENTS = config['postprocess']['components'].keys() %}
 
 [scheduler]
     {# Implicit tasks are tasks without explicit runtime definitions in [runtime], often typos. #}
@@ -67,8 +34,8 @@
 {# More info:                                                      #}
 {# The python loaded within Cylc has access to some useful Cylc utilities (e.g. metomi.isodatetime.parsers).   #}
 {# For development/testing, use "module load conda; conda activate cylc". Then the Cylc python will be loaded. #}
-{% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
-{% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
+{% set REGRID  =  "regrid-xy" | form_task_parameters('temporal', PP_COMPONENTS, config) %}
+{% set REGRID_STATIC  =  "regrid-xy" | form_task_parameters('static', PP_COMPONENTS, config) %}
 
 {% set DO_REGRID = REGRID|length %}
 {% set DO_REGRID_STATIC = REGRID_STATIC|length %}
@@ -81,8 +48,8 @@
     regrid_static = {{ REGRID_STATIC }}
 {% endif %}
 
-{% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS, YAML) %}
-{% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS, YAML) %}
+{% set NATIVE  =  "native" | form_task_parameters('temporal', PP_COMPONENTS, config) %}
+{% set NATIVE_STATIC  =  "native" | form_task_parameters('static', PP_COMPONENTS, config) %}
 
 {% set DO_NATIVE = NATIVE|length %}
 {% set DO_NATIVE_STATIC = NATIVE_STATIC|length %}
@@ -101,8 +68,8 @@
 
 
 [scheduling]
-    initial cycle point = {{ PP_START }}
-    final cycle point = {{ PP_STOP }}
+    initial cycle point = {{ config['postprocess']['settings']['pp_start'] }}
+    final cycle point = {{ config['postprocess']['settings']['pp_stop'] }}
     # max number of active cycle points (default 5)
     # this should be something sensible assuming tasks with required outputs
     # (i.e. not marked as "ok to fail") such as analysis scripts.
@@ -123,39 +90,39 @@
             limit = 1
             members = DATA-CATALOG
     [[graph]]
-{% if DO_ANALYSIS_ONLY %}
-    {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, DO_ANALYSIS_ONLY) }}
+{% if postprocess['switches']['do_analysis_only'] %}
+    {{ config | get_analysis_info('task-graph', PP_COMPONENTS, config['directories']['postprocess'], config['postprocess']['settings']['pp_start'], config['postprocess']['settings']['pp_stop'], config['postprocess']['settings']['pp_chunks'], postprocess['switches']['do_analysis_only']) }}
 {% else %}
         #
         # Every history-file segment: Stage, refineDiag, regrid, split
         #
-        {{ HISTORY_SEGMENT }} = """
+        {{ config['run']['segment_size'] }} = """
             pp-starter => STAGE-HISTORY
 
-    {% if DO_REFINEDIAG %}
+    {% if postprocess['refinediag'] %}
             stage-history => REFINE-DIAG
             REFINE-DIAG:succeed-all => stage-history-refined
     {% endif %}
 
-    {% if DO_PREANALYSIS %}
+    {% if postprocess['preanalysis'] %}
             stage-history => PRE-ANALYSIS
     {% endif %}
 
     {% if DO_REGRID %}
             STAGE-HISTORY:succeed-all => regrid-xy<regrid> => split-netcdf-regrid<regrid> => rename-split-to-pp-regrid<regrid>
-        {% if DO_ATMOS_PLEVEL_MASKING %}
+        {% if config['postprocess']['switches'][do_atmos_plevel_masking'] %}
             STAGE-HISTORY:succeed-all => mask-atmos-plevel<regrid> => regrid-xy<regrid>
         {% endif %}
     {% endif %}
 
     {% if DO_NATIVE %}
             STAGE-HISTORY:succeed-all => split-netcdf-native<native> => rename-split-to-pp-native<native>
-        {% if DO_ATMOS_PLEVEL_MASKING %}
+        {% if config['postprocess']['switches'][do_atmos_plevel_masking'] %}
             STAGE-HISTORY:succeed-all => mask-atmos-plevel<native> => split-netcdf-native<native>
         {% endif %}
     {% endif %}
 
-    {% if HISTORY_DIR_REFINED is defined %}
+    {% if config['directories']['history_refined'] is defined %}
         {% if DO_REGRID %}
             stage-history-refined => regrid-xy<regrid>
         {% endif %}
@@ -164,7 +131,7 @@
         {% endif %}
     {% endif %}
 
-    {% if CLEAN_WORK %}
+    {% config['postprocess']['switches']['clean_work'] %}
         {% if DO_REGRID %}
             regrid-xy<regrid>                 => clean-history-native
             split-netcdf-regrid<regrid>       => clean-history-regrid-xy
@@ -201,7 +168,7 @@
             rename-split-to-pp-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
     {% endif %}
 
-    {% if HISTORY_DIR_REFINED is defined %}
+    {% if config['directories']['history_refined'] is defined %}
         {% if DO_REGRID_STATIC %}
             stage-history-refined => regrid-xy<regrid_static>
         {% endif %}
@@ -211,7 +178,7 @@
         {% endif %}
     {% endif %}
 
-    {% if CLEAN_WORK and DO_REGRID_STATIC %}
+    {% if config['postprocess']['switches']['clean_work'] and DO_REGRID_STATIC %}
             regrid-xy<regrid_static> => clean-history-native
             split-netcdf-regrid<regrid_static> => clean-history-regrid-xy
             rename-split-to-pp-regrid<regrid_static> => clean-split-regrid-xy
@@ -219,7 +186,7 @@
             combine-statics => clean-pp-statics
     {% endif %}
 
-    {% if CLEAN_WORK and DO_NATIVE_STATIC %}
+    {% if config['postprocess']['switches']['clean_work'] and DO_NATIVE_STATIC %}
             split-netcdf-native<native_static> => clean-history-native
             rename-split-to-pp-native<native_static> => clean-split-native
             remap-pp-components-static<component> => clean-shards-static
@@ -230,7 +197,7 @@
         #
         # Timeseries
         #
-    {% for chunk in PP_CHUNKS | iter_chunks(HISTORY_SEGMENT, PP_START, PP_STOP) %}
+    {% for chunk in config['postprocess']['settings']['pp_chunks'] | iter_chunks(config['run']['segment_size'], config['postprocess']['settings']['pp_start'], config['postprocess']['settings']['pp_stop']) %}
         R1/{{ chunk.cycle_point }} = """
 
         {% if DO_REGRID %}
@@ -238,7 +205,7 @@
             {% for SEGMENT in chunk.segments[1:] %}
             & rename-split-to-pp-regrid<regrid>[{{ SEGMENT }}]
             {% endfor %}
-            {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
+            {% if config['run']['segment_size'] != chunk.chunk_size | string %}
                 => make-timeseries-regrid-{{ chunk.chunk_size }}<regrid>
             {% endif %}
         {% endif %}
@@ -248,31 +215,31 @@
             {% for SEGMENT in chunk.segments[1:] %}
             & rename-split-to-pp-native<native>[{{ SEGMENT }}]
             {% endfor %}
-            {% if HISTORY_SEGMENT != chunk.chunk_size | string %}
+            {% if config['run']['segment_size'] != chunk.chunk_size | string %}
                 => make-timeseries-native-{{ chunk.chunk_size }}<native>
             {% endif %}
         {% endif %}
 
         {% if DO_REGRID %}
-            {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
+            {{ "regrid-xy" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', config, config['run']['segment_size']) }}
         {% endif %}
 
         {% if DO_NATIVE %}
-            {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', YAML, HISTORY_SEGMENT) }}
+            {{ "native" | form_remap_dep('temporal', chunk.chunk_size, PP_COMPONENTS, 'ts', config, config['run']['segment_size']) }}
         {% endif %}
 
-        {% if CLEAN_WORK %}
+        {% if config['postprocess']['switches']['clean_work'] %}
             REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}:succeed-all => clean-shards-ts-{{ chunk.chunk_size }}
         {% endif %}
         """
 
         R1/$ = REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all => data-catalog-final
 
-        {% if CLEAN_WORK %}
+        {% if config['postprocess']['switches']['clean_work'] %}
             {% for segment in chunk.segments %}
                 R1/{{ segment }} = """
                     REMAP-PP-COMPONENTS-TS-{{ chunk.chunk_size }}[{{ chunk.cycle_point }}]:succeed-all
-                    => clean-shards-ts-{{ HISTORY_SEGMENT }}
+                    => clean-shards-ts-{{ config['run']['segment_size'] }}
                 """
             {% endfor %}
         {% endif %}
@@ -281,18 +248,22 @@
         #
         # Climatologies task graph
         #
-    {{ YAML | get_climatology_info('task-graph') }}
+    {{ config | get_climatology_info('task-graph') }}
 
         #
         # Analysis task graph
         #
-    {% if DO_ANALYSIS %}
-        {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, DO_ANALYSIS_ONLY) }}
+    {% if postprocess['switches']['do_analysis'] %}
+        {{ config | get_analysis_info('task-graph', PP_COMPONENTS, config['directories']['postprocess'], config['postprocess']['settings']['pp_start'], config['postprocess']['settings']['pp_stop'], config['postprocess']['settings']['pp_chunks'], postprocess['switches']['do_analysis_only']) }}
     {% endif %}
 
 {% endif %}
 
 [runtime]
+    [[root]]
+        [[[environment]]]
+            YAML = $CYLC_WORKFLOW_RUN_DIR/config.yaml
+
     [[pp-starter]]
         inherit = PP-STARTER
         # NOTE! script must appear *before* [[[enviroment]]] or else
@@ -324,7 +295,7 @@
             fi
         """
         [[[environment]]]
-            targetFile = {{ HISTORY_DIR }}/YYYYMMDD.nc.tar
+            targetFile = {{ config['directories']['history'] }}/YYYYMMDD.nc.tar
 
     [[STAGE-HISTORY]]
         # Increase time limit for staging jobs to 8 hours
@@ -386,18 +357,18 @@
     [[stage-history]]
         inherit = STAGE-HISTORY
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR }}
-            ptmpDir = {{ PTMP_DIR }}
+            historyDir = {{ config['directories']['history'] }}
+            ptmpDir = {{ config['directories']['ptmp'] }}
 
 
-{% if HISTORY_DIR_REFINED is defined %}
+{% if config['directories']['history_refined'] is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         post-script = """
         """
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR_REFINED }}
-            ptmpDir = {{ PTMP_DIR }}
+            historyDir = {{ config['directories']['history_refined'] }}
+            ptmpDir = {{ config['directories']['ptmp'] }}
 
 {% endif %}
 
@@ -427,7 +398,7 @@
             component = $CYLC_TASK_PARAM_regrid
             use_subdirs = 1
     {% endif %}
-    {% for PP_CHUNK in PP_CHUNKS %}
+    {% for PP_CHUNK in config['postprocess']['settings']['pp_chunks'] %}
     [[MAKE-TIMEAVGS-{{ PP_CHUNK }}]]
         [[[environment]]]
             interval = {{ PP_CHUNK }}
@@ -445,9 +416,9 @@
         {% endif %}
     {% endfor %}
 
-{{ YAML | get_climatology_info('task-definitions') }}
+{{ config | get_climatology_info('task-definitions') }}
 
-{% if DO_REFINEDIAG or DO_PREANALYSIS %}
+{% if config['postprocess']['refinediag'] or config['postprocess']['preanalysis' %}
     [[PRE-ANALYSIS]]
         pre-script = """
             env
@@ -457,7 +428,7 @@
             ls
         """
         [[[environment]]]
-            name = {{ EXPERIMENT }}
+            name = {{ config['settings']['experiment_name'] }}
             rtsxml = no-more-xml
             work = $TMPDIR/work
             tempCache = $TMPDIR/tempCache
@@ -466,17 +437,17 @@
             scriptName = $CYLC_TASK_LOG_DIR/job
             oname = $(cylc cycle-point --template CCYYMMDD)
             hsmdate = $oname.nc
-            ptmpDir = {{ PTMP_DIR }}/{{ HISTORY_DIR }}
-            histDir = {{ HISTORY_DIR }}
-            platform = {{ PLATFORM }}
-            target = {{ TARGET }}
-            segment_months = {{ HISTORY_SEGMENT }}
+            ptmpDir = {{ config['directories']['ptmp'] }}/{{ config['directories']['history'] }}
+            histDir = {{ config['directories']['history'] }}
+            platform = {{ config['settings']['platform'] }}
+            target = {{ config['settings']['target'] }}
+            segment_months = {{ config['run']['segment_size'] }}
             basedate = is-this-needed
-            gridspec = {{ PP_GRID_SPEC }}
+            gridspec = {{ config['directories']['grid_spec'] }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
-            catalog = {{ PP_DIR }}/catalog.json
+            catalog = {{ config['directories']['postprocess'] }}/catalog.json
 {% endif %}
-{% if DO_REFINEDIAG %}
+{% if config['postprocess']['refinediag'] %}
     [[REFINE-DIAG]]
         inherit = PRE-ANALYSIS
         post-script = """
@@ -494,11 +465,11 @@
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
                 exit 1
             fi
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+            if [[ -f {{ config['directories']['history_refined'] }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ config['directories']['ptmp'] }}/{{ config['directories']['history_refined'] }} is..."
+                ls {{ config['directories']['ptmp'] }}/{{ config['directories']['history_refined'] }}
+                echo "the contents of {{ config['directories']['ptmp'] }}/{{ config['directories']['history_refined'] }}/$oname.nc is..."
+                ls {{ config['directories']['ptmp'] }}/{{ config['directories']['history_refined'] }}/$oname.nc
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
@@ -520,22 +491,21 @@
             """
     {%- endmacro %}
 {# Use the 'split' function to transform string into an iterable list, including of length 1 #}
-    {% set refineDiag_scripts = REFINEDIAG_SCRIPTS.split(' ') %}
-    {% for refineDiag_path in refineDiag_scripts %}
-            [[refineDiag-{{ refineDiag_path[refineDiag_path.rfind('/')+1:refineDiag_path.rfind('.')] | replace(".", "_") }}]]
+    {% for refineDiag in config['postprocess']['refinediag'] %}
+            [[refineDiag-{{ refineDiag.script ]]
         {{ exec_refine(refineDiag_path) }}
     {% endfor %}
 {% endif %}
 
-{% if DO_PREANALYSIS and PREANALYSIS_SCRIPT is defined %}
-    {% set preanalysis_name = PREANALYSIS_SCRIPT[PREANALYSIS_SCRIPT.rfind('/')+1:PREANALYSIS_SCRIPT.rfind('.')] |
+{% if config['postprocess']['preanalysis'] %}
+    {% set preanalysis_name = config['postprocess']['preanalysis']['script'] %}
         replace(".", "_") %}
     [[preAnalysis-{{ preanalysis_name }}]]
         inherit = PRE-ANALYSIS
         script = """
             ls
             echo NOTE: About to source user script
-            if csh {{ PREANALYSIS_SCRIPT }}; then
+            if csh {{ config['postprocess'][preanalysis']['script' }}; then
                 echo NOTE: User script exited normally
             else
                 echo ERROR: User script got an error status $?
@@ -700,7 +670,7 @@
 
     [[REMAP-PP-COMPONENTS]]
         [[[environment]]]
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+            yaml_config = $YAML
             components = $CYLC_TASK_PARAM_component
 
     [[REMAP-PP-COMPONENTS-TS]]
@@ -721,9 +691,9 @@
         [[[environment]]]
             components = $CYLC_TASK_PARAM_component
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts
-            outputDir = {{ PP_DIR }}
+            outputDir = {{ config['directories']['postprocess'] }}
             product = ts
-    {% for PP_CHUNK in PP_CHUNKS %}
+    {% for PP_CHUNK in config['postprocess']['settings']['pp_chunks'] %}
     [[REMAP-PP-COMPONENTS-TS-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-TS
         [[[environment]]]
@@ -751,7 +721,7 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
             product = av
-    {% for PP_CHUNK in PP_CHUNKS %}
+    {% for PP_CHUNK in config['postprocess']['settings']['pp_chunks'] %}
     [[REMAP-PP-COMPONENTS-AV-{{ PP_CHUNK }}]]
         inherit = REMAP-PP-COMPONENTS-AV
         [[[environment]]]
@@ -786,7 +756,7 @@
     [[DATA-CATALOG]]
         script = data-catalog
         [[[environment]]]
-            PP_DIR = {{ PP_DIR }}
+            PP_DIR = {{ config['directories']['postprocess'] }}
     [[data-catalog-final]]
         inherit = DATA-CATALOG
 
@@ -804,7 +774,7 @@
         [[[environment]]]
             begin = $(cylc cycle-point --print-year)
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/av
-            outputDir = {{ PP_DIR }}
+            outputDir = {{ config['directories']['postprocess'] }}
 
     [[MAKE-TIMESERIES]]
         script = """
@@ -813,7 +783,7 @@
         """
         [[[environment]]]
             fail_ok_components = grid_spec lumip_Lyr lumip_Lyr_crp lumip_Lyr_psl lumip_Lyr_pst
-            pp_stop = {{ PP_STOP }}
+            pp_stop = {{ config['postprocess']['settings']['pp_stop'] }}
 
 {% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE]]
@@ -832,11 +802,11 @@
             use_subdirs = 1
 {% endif %}
 
-    {% for PP_CHUNK in PP_CHUNKS %}
+    {% for PP_CHUNK in config['postprocess']['settings']['pp_chunks'] %}
     [[MAKE-TIMESERIES-{{ PP_CHUNK }}]]
         [[[environment]]]
             begin = $(cylc cycle-point)
-            inputChunk = {{ HISTORY_SEGMENT }}
+            inputChunk = {{ config['run']['segment_size'] }}
             outputChunk = {{ PP_CHUNK }}
         {% if DO_NATIVE %}
     [[MAKE-TIMESERIES-NATIVE-{{ PP_CHUNK }}]]
@@ -870,7 +840,7 @@
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = PT1M
         [[[environment]]]
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+            yaml_config = $YAML
             inputDir    = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir   = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             remapDir    = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
@@ -897,10 +867,10 @@
         """
         [[[environment]]]
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/pp/static
-            outputDir = {{ PP_DIR }}
+            outputDir = {{ config['directories']['postprocess'] }}
 {% endif %}
 
-{% if DO_ANALYSIS %}
+{% if postprocess['switches']['do_analysis'] %}
     [[PUBLISH-ANALYSIS]]
         [[[environment]]]
             dora_url = dora.gfdl.noaa.gov
@@ -919,16 +889,16 @@
             FRE_ANALYSIS_ARCHIVE = /archive/fms/fre-analysis/test
             # fre-analysis template vars
             yr2 = $(cylc cycle-point --template=CCYY)
-            out_dir = {{ ANALYSIS_DIR }}
-            descriptor = {{ EXPERIMENT }}
+            out_dir = {{ config['directories']['analysis' }}
+            descriptor = {{ config['config']['settings']['experiment_name'] }}
             fremodule = fre/{{ FRE_VERSION }}
-            WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
-            hist_dir = {{ HISTORY_DIR }}
-            gridspecfile = {{ PP_GRID_SPEC }}
+            WORKDIR = $TMPDIR/{{ config['settings']['experiment_name'] }}/{{ config['settings']['platform'] }}-{{ config['settings']['target'] }}/$CYLC_TASK_CYCLE_POINT
+            hist_dir = {{ config['directories']['history'] }}
+            gridspecfile = {{ config['directories']['grid_spec'] }}
             # new template vars
-            catalog = {{ PP_DIR }}/catalog.json
-            experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ EXPERIMENT }}.yaml
-    {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, False ) }}
+            catalog = {{ config['directories']['postprocess'] }}/catalog.json
+            experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ config['settings']['experiment_name'] }}.yaml
+    {{ config | get_analysis_info('task-definitions', PP_COMPONENTS, config['directories']['postprocess'], config['postprocess']['settings']['pp_start'], config['postprocess']['settings']['pp_stop'], config['postprocess']['settings']['pp_chunks'], False ) }}
 {% endif %}
 
     [[CLEAN]]
@@ -1004,12 +974,12 @@
                 fi
             done
         """
-    [[clean-shards-ts-{{ HISTORY_SEGMENT }}]]
+    [[clean-shards-ts-{{ config['run']['segment_size'] }}]]
         inherit = CLEAN-SHARDS-TS
         [[[environment]]]
-            duration = {{ HISTORY_SEGMENT }}
+            duration = {{ config['run']['segment_size'] }}
 
-    {% for PP_CHUNK in PP_CHUNKS %}
+    {% for PP_CHUNK in config['postprocess']['settings']['pp_chunks'] %}
     [[clean-shards-ts-{{ PP_CHUNK }}]]
         inherit = CLEAN-SHARDS-TS
         [[[environment]]]
@@ -1030,12 +1000,12 @@
         """
 
 # Site-specific settings
-{% include 'site/' ~ SITE ~ '.cylc' %}
+{% include 'site/' ~ config['workflow']['site'] ~ '.cylc' %}
 
 {# this is required for portability should probably only include #}
 {# inherit = <some_task_param> if SITE = ppan_test #}
 {# but empty task-family inheritence is inconsequential for now. #}
-{% if SITE != 'ppan_test' %}
+{% if config['workflow']['site'] != 'ppan_test' %}
     {% if DO_REGRID %}
     [[<regrid>]]
         {% if DO_REGRID_STATIC %}
