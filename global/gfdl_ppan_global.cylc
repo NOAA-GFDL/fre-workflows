@@ -1,43 +1,44 @@
 [hub]
-    url = 
+    url =
 [scheduler]
     UTC mode = True
     process pool size = 4
     process pool timeout = PT10M
-    auto restart delay = 
+    auto restart delay =
     [[run hosts]]
         available = an007, an008
         ports = 43001 .. 43101
-        condemned = 
-        ranking = 
+        condemned =
+        ranking =
         process check timeout = PT10S
     [[host self-identification]]
         method = name
         target = google.com
-        host = 
     [[events]]
-        handlers = 
-        handler events = 
-        mail events = 
-        startup handlers = mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share             && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
-        shutdown handlers = mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s             && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
-        abort handlers = 
-        workflow timeout = 
-        workflow timeout handlers = 
+        handlers =
+        handler events =
+        mail events =
+        startup handlers = mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+                                && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        shutdown handlers = mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+                                && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
+        abort handlers =
+        workflow timeout =
+        workflow timeout handlers =
         abort on workflow timeout = False
-        stall handlers = 
+        stall handlers =
         stall timeout = PT1H
-        stall timeout handlers = 
+        stall timeout handlers =
         abort on stall timeout = True
-        inactivity timeout = 
-        inactivity timeout handlers = 
+        inactivity timeout =
+        inactivity timeout handlers =
         abort on inactivity timeout = False
         restart timeout = PT2M
     [[mail]]
-        from = 
-        smtp = 
-        to = 
-        footer = 
+        from =
+        smtp =
+        to =
+        footer =
         task event batch interval = PT5M
     [[main loop]]
         plugins = health check, reset bad hosts
@@ -57,15 +58,15 @@
         [[[localhost]]]
             share = /xtmp/$USER/work
             work = /xtmp/$USER/work
-            run = 
-            share/cycle = 
-            log = 
-            log/job = 
+            run =
+            share/cycle =
+            log =
+            log/job =
 [platforms]
     [[localhost]]
         hosts = localhost
         job runner = background
-        job runner command template = 
+        job runner command template =
         communication method = zmq
         submission polling intervals = PT15M
         submission retry delays = PT1M
@@ -74,25 +75,25 @@
         ssh command = ssh
         rsync command = rsync
         use login shell = True
-        cylc path = 
-        global init-script = 
-        copyable environment variables = 
+        cylc path =
+        global init-script =
+        copyable environment variables =
         retrieve job logs = False
         retrieve job logs command = rsync -a
-        retrieve job logs max size = 
-        retrieve job logs retry delays = 
+        retrieve job logs max size =
+        retrieve job logs retry delays =
         tail command template = tail -n +1 --follow=name %(filename)s
-        err tailer = 
-        out tailer = 
-        err viewer = 
-        out viewer = 
-        job name length maximum = 
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
         install target = localhost
         clean job submission environment = False
-        job submission environment pass-through = 
-        job submission executable paths = 
+        job submission environment pass-through =
+        job submission executable paths =
         max batch submit size = 100
-        ssh forward environment variables = 
+        ssh forward environment variables =
         [[[meta]]]
         [[[selection]]]
             method = definition order
@@ -106,28 +107,28 @@
         job submission executable paths = /usr/local/slurm/default/bin
         submission retry delays = PT1M
         ssh command = ssh
-        job runner command template = 
+        job runner command template =
         communication method = zmq
         submission polling intervals = PT15M
         execution polling intervals = PT15M
         execution time limit polling intervals = PT1M, PT2M, PT7M
         rsync command = rsync
         use login shell = True
-        global init-script = 
-        copyable environment variables = 
+        global init-script =
+        copyable environment variables =
         retrieve job logs command = rsync -a
-        retrieve job logs max size = 
-        retrieve job logs retry delays = 
+        retrieve job logs max size =
+        retrieve job logs retry delays =
         tail command template = tail -n +1 --follow=name %(filename)s
-        err tailer = 
-        out tailer = 
-        err viewer = 
-        out viewer = 
-        job name length maximum = 
-        job submission environment pass-through = 
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
+        job submission environment pass-through =
         max batch submit size = 100
-        ssh forward environment variables = 
-        cylc path = 
+        ssh forward environment variables =
+        cylc path =
         [[[meta]]]
         [[[selection]]]
             method = random
@@ -142,36 +143,36 @@
         job submission executable paths = /usr/local/slurm/default/bin
         submission retry delays = PT1M
         ssh command = ssh
-        job runner command template = 
+        job runner command template =
         communication method = zmq
         submission polling intervals = PT15M
         execution polling intervals = PT15M
         execution time limit polling intervals = PT1M, PT2M, PT7M
         rsync command = rsync
         use login shell = True
-        global init-script = 
-        copyable environment variables = 
+        global init-script =
+        copyable environment variables =
         retrieve job logs command = rsync -a
-        retrieve job logs max size = 
-        retrieve job logs retry delays = 
+        retrieve job logs max size =
+        retrieve job logs retry delays =
         tail command template = tail -n +1 --follow=name %(filename)s
-        err tailer = 
-        out tailer = 
-        err viewer = 
-        out viewer = 
-        job name length maximum = 
-        job submission environment pass-through = 
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
+        job submission environment pass-through =
         max batch submit size = 100
-        ssh forward environment variables = 
+        ssh forward environment variables =
         [[[meta]]]
         [[[selection]]]
             method = random
         [[[directives]]]
 [platform groups]
 [task events]
-    handlers = 
-    handler events = 
-    handler retry delays = 
-    mail events = 
-    execution timeout = 
-    submission timeout = 
+    handlers =
+    handler events =
+    handler retry delays =
+    mail events =
+    execution timeout =
+    submission timeout =
