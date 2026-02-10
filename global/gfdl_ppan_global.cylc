@@ -1,0 +1,178 @@
+[hub]
+    url =
+[scheduler]
+    UTC mode = True
+    process pool size = 4
+    process pool timeout = PT10M
+    auto restart delay =
+    [[run hosts]]
+        available = an007, an008
+        ports = 43001 .. 43101
+        condemned =
+        ranking =
+        process check timeout = PT10S
+    [[host self-identification]]
+        method = name
+        target = google.com
+    [[events]]
+        handlers =
+        handler events =
+        mail events =
+        startup handlers = mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+                                && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        shutdown handlers = mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+                                && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
+        abort handlers =
+        workflow timeout =
+        workflow timeout handlers =
+        abort on workflow timeout = False
+        stall handlers =
+        stall timeout = PT1H
+        stall timeout handlers =
+        abort on stall timeout = True
+        inactivity timeout =
+        inactivity timeout handlers =
+        abort on inactivity timeout = False
+        restart timeout = PT2M
+    [[mail]]
+        from =
+        smtp =
+        to =
+        footer =
+        task event batch interval = PT5M
+    [[main loop]]
+        plugins = health check, reset bad hosts
+        [[[health check]]]
+            interval = PT10M
+        [[[auto restart]]]
+            interval = PT10M
+        [[[reset bad hosts]]]
+            interval = PT30M
+    [[logging]]
+        rolling archive length = 15
+        maximum size in bytes = 1000000
+[install]
+    max depth = 4
+    source dirs = ~/cylc-src
+    [[symlink dirs]]
+        [[[localhost]]]
+            share = /xtmp/$USER/work
+            work = /xtmp/$USER/work
+            run =
+            share/cycle =
+            log =
+            log/job =
+[platforms]
+    [[localhost]]
+        hosts = localhost
+        job runner = background
+        job runner command template =
+        communication method = zmq
+        submission polling intervals = PT15M
+        submission retry delays = PT1M
+        execution polling intervals = PT15M
+        execution time limit polling intervals = PT1M, PT2M, PT7M
+        ssh command = ssh
+        rsync command = rsync
+        use login shell = True
+        cylc path =
+        global init-script =
+        copyable environment variables =
+        retrieve job logs = False
+        retrieve job logs command = rsync -a
+        retrieve job logs max size =
+        retrieve job logs retry delays =
+        tail command template = tail -n +1 --follow=name %(filename)s
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
+        install target = localhost
+        clean job submission environment = False
+        job submission environment pass-through =
+        job submission executable paths =
+        max batch submit size = 100
+        ssh forward environment variables =
+        [[[meta]]]
+        [[[selection]]]
+            method = definition order
+        [[[directives]]]
+    [[ppan]]
+        job runner = slurm
+        hosts = localhost
+        install target = localhost
+        retrieve job logs = False
+        clean job submission environment = False
+        job submission executable paths = /usr/local/slurm/default/bin
+        submission retry delays = PT1M
+        ssh command = ssh
+        job runner command template =
+        communication method = zmq
+        submission polling intervals = PT15M
+        execution polling intervals = PT15M
+        execution time limit polling intervals = PT1M, PT2M, PT7M
+        rsync command = rsync
+        use login shell = True
+        global init-script =
+        copyable environment variables =
+        retrieve job logs command = rsync -a
+        retrieve job logs max size =
+        retrieve job logs retry delays =
+        tail command template = tail -n +1 --follow=name %(filename)s
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
+        job submission environment pass-through =
+        max batch submit size = 100
+        ssh forward environment variables =
+        cylc path =
+        [[[meta]]]
+        [[[selection]]]
+            method = random
+        [[[directives]]]
+    [[ppan_test]]
+        job runner = ppan_handler
+        hosts = localhost
+        cylc path = /home/fms/local/opt/cylc/bin
+        install target = localhost
+        retrieve job logs = False
+        clean job submission environment = False
+        job submission executable paths = /usr/local/slurm/default/bin
+        submission retry delays = PT1M
+        ssh command = ssh
+        job runner command template =
+        communication method = zmq
+        submission polling intervals = PT15M
+        execution polling intervals = PT15M
+        execution time limit polling intervals = PT1M, PT2M, PT7M
+        rsync command = rsync
+        use login shell = True
+        global init-script =
+        copyable environment variables =
+        retrieve job logs command = rsync -a
+        retrieve job logs max size =
+        retrieve job logs retry delays =
+        tail command template = tail -n +1 --follow=name %(filename)s
+        err tailer =
+        out tailer =
+        err viewer =
+        out viewer =
+        job name length maximum =
+        job submission environment pass-through =
+        max batch submit size = 100
+        ssh forward environment variables =
+        [[[meta]]]
+        [[[selection]]]
+            method = random
+        [[[directives]]]
+[platform groups]
+[task events]
+    handlers =
+    handler events =
+    handler retry delays =
+    mail events =
+    execution timeout =
+    submission timeout =
