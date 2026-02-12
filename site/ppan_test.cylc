@@ -49,8 +49,6 @@
         # Set default time limit to 4 hours
         execution time limit = PT4H
         platform = ppan_test
-        [[[events]]]
-            submission timeout = P1D
         [[[directives]]]
             --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
         [[[environment]]]
@@ -153,6 +151,9 @@
         pre-script = module load cdo
 
     [[MAKE-TIMESERIES]]
+        pre-script = module load cdo
+
+    [[MAKE-TIMEAVGS]]
         pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]

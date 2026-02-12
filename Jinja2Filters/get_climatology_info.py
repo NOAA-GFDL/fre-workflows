@@ -11,7 +11,7 @@ from legacy_date_conversions import *
 import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Global variables just set to reduce typing a little.
 duration_parser = metomi.isodatetime.parsers.DurationParser()
@@ -74,10 +74,10 @@ class Climatology(object):
 
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
-        for index, source in enumerate(self.sources):
+        for source in self.sources:
             count = 0
             while count < chunks_per_interval:
-                if index == 0:
+                if count == 0:
                     connector = ""
                 else:
                     connector = " & "
@@ -97,7 +97,10 @@ class Climatology(object):
             graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f"\"\"\"\n"
+            if clean_work:
+                graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
+                graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
+        graph += f"\"\"\"\n"
 
         # then, create the cleaning tasks
         if clean_work:
@@ -140,12 +143,14 @@ class Climatology(object):
 
         definitions += f"""
     [[combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
-        inherit = COMBINE-TIMEAVGS
+        inherit = COMBINE-TIMEAVGS-P{self.interval_years}Y
         [[[environment]]]
             component = {self.component}
             frequency = {self.frequency}
             interval = P{self.interval_years}Y
             end = $(cylc cycle-point --print-year --offset={offset})
+    [[COMBINE-TIMEAVGS-P{self.interval_years}Y]]
+        inherit = COMBINE-TIMEAVGS
         """
 
         if clean_work:
