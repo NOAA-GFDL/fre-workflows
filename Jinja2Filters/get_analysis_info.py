@@ -60,28 +60,26 @@ class AnalysisScript(object):
         self.data_frequency = config["required"]["data_frequency"]
 
         # check for needed pp prerequisites
+        if self.product not in ['av', 'ts']:
+            raise ValueError("ERROR: product type must be 'ts' or 'av'")
         if self.product == "ts":
             if self.chunk not in pp_chunks:
                 raise ValueError(f"ERROR: Analysis script '{self.name}' requests timeseries chunk size '{self.chunk}', but " +
                                  "this chunk size is not declared in 'pp_chunks'")
-        elif self.product == "av":
+        else:
             # Loop through the components and look for the ones specified by the analysis script
             # For each component to check, confirm that its climatology section contains the requested climo chunk
             for ana_comp in config["workflow"]["components"]:
                 found_needed_inputs_for_component = False
                 for exp_comp in yaml["postprocess"]["components"]:
                     if exp_comp["type"] == ana_comp:
-                        try:
+                        if 'climatology' in exp_comp:
                             for climo_request in exp_comp["climatology"]:
                                 if climo_request["frequency"] == self.data_frequency and climo_request["interval_years"] == self.chunk.years:
                                     found_needed_inputs_for_component = True
-                        except KeyError:
-                            pass
                 if not found_needed_inputs_for_component:
                     raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
                                      f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
-        else:
-            raise ValueError("ERROR: product type must be 'ts' or 'av'")
 
         # Parse the new analysis config items
         if 'legacy' in config:
@@ -292,12 +290,12 @@ $scriptOut {self.legacy_script_args}
         new_analysis_str = f"""
     [[analysis-{self.name}]]
         script = '''
-fre analysis run \
-    --name              freanalysis_{self.name} \
-    --catalog           $catalog \
-    --output-directory  $out_dir/{self.name} \
-    --output-yaml       $out_dir/{self.name}/output.yaml \
-    --experiment-yaml   $experiment_yaml \
+fre analysis run
+    --name              freanalysis_{self.name}
+    --catalog           $catalog
+    --output-directory  $out_dir/{self.name}
+    --output-yaml       $out_dir/{self.name}/output.yaml
+    --experiment-yaml   $experiment_yaml
     --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
         '''
         # retry 10 times (due to mysterious intake-esm issue)
@@ -320,7 +318,7 @@ fre analysis install \
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
-            logger.info(f"{self.name}: Will run every chunk {self.chunk}")
+            logger.debug(f"{self.name}: Will run every chunk {self.chunk}")
             if self.is_legacy:
                 definitions += legacy_analysis_str
             else:
@@ -375,7 +373,7 @@ fre analysis install \
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
-            logger.info(f"{self.name}: Will run each chunk {self.chunk} from beginning {self.experiment_date_range[0]}")
+            logger.debug(f"{self.name}: Will run each chunk {self.chunk} from beginning {self.experiment_date_range[0]}")
             date = self.experiment_date_range[0]
             while date <= self.experiment_date_range[1]:
                 date_str = f"{date.year:04}"
@@ -452,7 +450,7 @@ fre analysis install \
                 d2 -= self.chunk
             d1_str = f"{d1.year:04}"
             d2_str = f"{d2.year:04}"
-            logger.info(f"{self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})")
+            logger.debug(f"{self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})")
             date1_str = f"{self.date_range[0].year:04}"
             date2_str = f"{self.date_range[1].year:04}"
 
@@ -520,7 +518,7 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop, pp_chunks, yaml_)
         if script_info.switch == False:
-            logger.info(f"{script_name}: Skipping, switch set to off")
+            logger.debug(f"{script_name}: Skipping, switch set to off")
             continue
         yield script_info
 
