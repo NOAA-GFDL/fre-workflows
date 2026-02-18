@@ -28,11 +28,13 @@ pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
 
-######check for cylc install plugin
-## install/register cylc plugin
-#pip install .
-#cylc version --long
-##exit 1
+#####check for cylc install plugin
+# uninstall first??
+pip uninstall -y hello-world
+# install/register cylc plugin
+pip install .
+cylc version --long
+#exit 1
 ###################################
 
 get_user_input () {
@@ -116,14 +118,7 @@ fre_pp_steps () {
 #    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
 #    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
 #    check_exit_status "VALIDATE"
-    echo " I dont have to eb in the cylc src dir, do I?"
-    #####check for cylc install plugin
-    # install/register cylc plugin
-    pip install .
-    cylc version --long
-    #exit 1
-    ##################################
-    cd /mnt/cylc-src/${name}
+    echo " I dont have to be in the cylc src dir, do I?"
 
     # Install
     echo -e "\nRunning fre pp install, installing workflow in ${HOME}/cylc-run/${name} ..."
