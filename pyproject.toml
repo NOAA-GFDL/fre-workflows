@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cylc-hw-plugin"
+version = "0.1.0"
+dependencies = [
+    "cylc-flow",
+]
+
+[project.entry-points."cylc.pre_configure.hw"]
+# Format: <plugin_name> = "<module>.<submodule>:<function_or_class>"
+hello_world = "install_plugin.hello_world:pre_configure"
