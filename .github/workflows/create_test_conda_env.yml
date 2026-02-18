@@ -50,7 +50,7 @@ jobs:
 
       - name: Check pre-configure plugin registered correctly
         run: |
-          cylc long --version
+          cylc version --long
           exit 1
 
       - name: cylc lint workflow files

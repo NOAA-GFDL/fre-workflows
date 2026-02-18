@@ -29,7 +29,7 @@ export PATH=/mnt/.local/bin:$PATH
 cd -
 
 #####check for cylc install plugin
-cylc long --version
+cylc version --long
 exit 1
 ##################################
 
