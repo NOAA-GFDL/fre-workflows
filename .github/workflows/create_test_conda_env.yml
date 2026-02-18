@@ -50,6 +50,7 @@ jobs:
 
       - name: Check pre-configure plugin registered correctly
         run: |
+          pip install .
           cylc version --long
           exit 1
 
