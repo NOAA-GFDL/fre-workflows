@@ -28,6 +28,11 @@ pip install .
 export PATH=/mnt/.local/bin:$PATH
 cd -
 
+#####check for cylc install plugin
+cylc long --version
+exit 1
+##################################
+
 get_user_input () {
     echo Please Enter Experiment Name:
     echo "Experiment name: test_pp"
