@@ -29,6 +29,8 @@ export PATH=/mnt/.local/bin:$PATH
 cd -
 
 #####check for cylc install plugin
+# install/register cylc plugin
+pip install .
 cylc version --long
 exit 1
 ##################################
