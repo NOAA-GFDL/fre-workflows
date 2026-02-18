@@ -32,7 +32,7 @@ cd -
 # install/register cylc plugin
 pip install .
 cylc version --long
-exit 1
+#exit 1
 ##################################
 
 get_user_input () {
@@ -101,15 +101,21 @@ fre_pp_steps () {
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
 
-    ## Configure the rose-suite and rose-app files for the workflow
-    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite/app config files ..."
-    fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
-    check_exit_status "CONFIGURE-YAML"
+#    ## Configure the rose-suite and rose-app files for the workflow
+#    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite/app config files ..."
+#    fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
+#    check_exit_status "CONFIGURE-YAML"
+    echo -e "\nRunning fre yamltools combine-yamls"
+    fre -vv yamltools combine-yamls -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile} --use pp -o config.yaml
+    check_exit_status "COMBINE-YAMLS"
+    # move yaml to cylc-src
+    mv config.yaml /mnt/cylc-src/${name}/
+#############
 
-    ## Validate the configuration files
-    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
-    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
-    check_exit_status "VALIDATE"
+#    ## Validate the configuration files
+#    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
+#    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
+#    check_exit_status "VALIDATE"
 
     # Install
     echo -e "\nRunning fre pp install, installing workflow in ${HOME}/cylc-run/${name} ..."
@@ -120,6 +126,10 @@ fre_pp_steps () {
     echo -e "\nRunning the workflow with cylc play ..."
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
     #check_exit_status "PLAY" # if cylc play fails and this is not commented, log uploading does not work
+
+#####
+    cat /mnt/cylc-run/${name}/log/config/flow-processed.cylc
+#####
 
     ## SUMMARY
     echo -e "\nWorkflow ended, final task states from workflow-state are ..."
