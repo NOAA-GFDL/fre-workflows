@@ -48,6 +48,11 @@ jobs:
           # add conda env's executables to github's PATH equiv.
           echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
 
+      - name: Check pre-configure plugin registered correctly
+        run: |
+          cylc long --version
+          exit 1
+
       - name: cylc lint workflow files
         run: |
           cylc lint -v
