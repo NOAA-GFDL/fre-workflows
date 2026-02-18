@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
     name='hello-world',
     version='1.0',
-    py_modules=['hello_world'], #name of file
+    py_modules=['install_plugin'], #name of file
     entry_points={
         # group name: ["plugin_name = module:function"]
         'cylc.pre_configure': [
