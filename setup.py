@@ -10,7 +10,7 @@ setup(
     entry_points={
         # group name: ["plugin_name = module:function"]
         'cylc.pre_configure': [
-            'hw = hello_world:pre_configure'
+            'hw = install_plugin.hello_world:pre_configure'
         ],
     }
 )
