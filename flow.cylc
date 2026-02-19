@@ -10,7 +10,7 @@
 {% set PTMP_DIR = directories['ptmp_dir'] %}
 
 [meta]
-  title = Simple Test Workflow
+    title = Simple Test Workflow
 
 [scheduler]
     [[events]]
