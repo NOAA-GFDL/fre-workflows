@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python
   - pip
+  - setuptools<81
   - noaa-gfdl::fre-cli
   - conda-forge::pyyaml
   - conda-forge::nco
