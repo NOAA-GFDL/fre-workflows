@@ -1,13 +1,16 @@
 #!jinja2
 
+# DEBUG: is postprocess here? {{ postprocess is defined }}
+#
 {% if STALL_TIMEOUT is not defined %}
     {% set STALL_TIMEOUT = "PT0S" %}
 {% endif %}
 
 ##set the good stuff
-{% set SITE =  postprocess['settings']['site'] %}
-{% set CLEAN_WORK =  postprocess['switches']['clean_work'] %}
-{% set PTMP_DIR = directories['ptmp_dir'] %}
+{% set SITE =  postprocess.settings.site %}
+{# set SITE =  postprocess['settings']['site'] #}
+{# set CLEAN_WORK =  postprocess['switches']['clean_work'] #}
+{# set PTMP_DIR = directories['ptmp_dir'] #}
 
 [meta]
     title = Simple Test Workflow
