@@ -2,7 +2,7 @@ from cylc.flow import LOG
 from pathlib import Path
 import yaml
 
-def pre_configure(srcdir=None, opts=None, rundir="/home/Dana.Singh/cylc-run"):
+def pre_configure(srcdir=None, opts=None, rundir=None, jinja2_vars=None):
     LOG.info("PLUGIN OUTPUT")
     LOG.info("Hello world. How the heck are you?")
 
@@ -14,17 +14,21 @@ def pre_configure(srcdir=None, opts=None, rundir="/home/Dana.Singh/cylc-run"):
             yml_info = yaml.safe_load(f)
 
     LOG.info(yml_info)
-    if yml_info:
-        return {'template_variables': {'yml': yml_info},
-                'templating_detected': 'jinja2'}
-    else:
-        return {}
+    #LOG.info(yml_info[
+#    if yml_info:
+#        return {'template_variables': {'yml': yml_info},
+#                'templating_detected': 'jinja2'}
+#    else:
+#        return {}
 
 ####another things to try
-#    if yml_info:
-#        jinja2vars['yml_info'] = yml_info
-#
-#    return {'templating_detected': 'jinja2'}
+    # inject/mutate jinja2_vars directly 
+    if yml_info and jinja2_vars is not None:
+        jinja2_vars['yml'] = yml_info
+
+    return {'template_variables': yml_info,
+            'templating_detected': 'jinja2'}
+
 ####
 
 ## want this script to accept resolved yaml and create everything needed to run workflow
