@@ -7,7 +7,12 @@
 {% endif %}
 
 ##set the good stuff
-{% set SITE =  postprocess.settings.site %}
+{% if postprocess is defined %}
+    {% set SITE =  postprocess.settings.site %}
+{% else  %}
+    {% set SITE = "pending" %}
+{% endif %}
+
 {# set SITE =  postprocess['settings']['site'] #}
 {# set CLEAN_WORK =  postprocess['switches']['clean_work'] #}
 {# set PTMP_DIR = directories['ptmp_dir'] #}
