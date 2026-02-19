@@ -1,6 +1,6 @@
 # plugins must be properly installed, in-place PYTHONPATH meddling will not work.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 ## Register plugin
 setup(
