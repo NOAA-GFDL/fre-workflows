@@ -10,10 +10,10 @@
 {% if postprocess is defined %}
     {% set SITE =  postprocess.settings.site %}
 {% else  %}
-    {% set SITE = "pending" %}
+    {% set SITE = "DID NOT EXTRACT" %}
 {% endif %}
 
-{# set SITE =  postprocess['settings']['site'] #}
+{% set SITE2 =  postprocess['settings']['site'] %}
 {# set CLEAN_WORK =  postprocess['switches']['clean_work'] #}
 {# set PTMP_DIR = directories['ptmp_dir'] #}
 
@@ -33,5 +33,6 @@
         # Accessing variables from the YAML file
         script = """
             echo {{ SITE }}
+            echo {{ SITE2 }}
         """
 
