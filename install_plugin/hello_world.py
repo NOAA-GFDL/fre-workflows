@@ -26,7 +26,7 @@ def pre_configure(srcdir=None, opts=None, rundir=None, jinja2_vars=None):
     if yml_info and jinja2_vars is not None:
         jinja2_vars['yml'] = yml_info
 
-    return {'template_variables': yml_info,
+    return {'template_variables': {'yml': yml_info},
             'templating_detected': 'jinja2'}
 
 ####
