@@ -124,6 +124,9 @@ fre_pp_steps () {
     fre -vv pp install -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "INSTALL"
 
+    echo "Check cylc config"
+    cylc config ${expname}__${plat}__${targ}
+    exit 1
     ## RUN
     echo -e "\nRunning the workflow with cylc play ..."
     cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
