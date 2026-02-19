@@ -13,7 +13,7 @@
 {# branch, the ppan site file should be specified. The ppan site comprises of gfdl specific tools. Other available #}
 {# sites include ppan, gfdl-ws, and generic. The generic.cylc site file is used for a portable flow.cylc.          #}
 {# (Probably, we should use similar mechanisms where sensible, e.g. for shared items among workflows)              #}
-{% set SITE = postprocess['settings']['site'] %}
+{% set SITE = yml['postprocess']['settings']['site'] %}
 
 {# Setting STALL_TIMEOUT here provides the ability to override the value if necessary #}
 {# A use case for overriding this value is exhibited in the fre-workflows pipeline test_cloud_runner.yaml #}
