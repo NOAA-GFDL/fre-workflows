@@ -108,17 +108,16 @@ fre_pp_steps () {
 #    fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
 #    check_exit_status "CONFIGURE-YAML"
     echo -e "\nRunning fre yamltools combine-yamls"
-    fre -vv yamltools combine-yamls -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile} --use pp -o config.yaml
+    fre -vv yamltools combine-yamls -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile} --use pp -o resolved.yaml
     check_exit_status "COMBINE-YAMLS"
     # move yaml to cylc-src
-    mv config.yaml /mnt/cylc-src/${name}/
+    mv resolved.yaml /mnt/cylc-src/${name}/
 #############
 
 #    ## Validate the configuration files
 #    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
 #    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
 #    check_exit_status "VALIDATE"
-    echo " I dont have to be in the cylc src dir, do I?"
 
     # Install
     echo -e "\nRunning fre pp install, installing workflow in ${HOME}/cylc-run/${name} ..."

@@ -14,8 +14,11 @@ def pre_configure(srcdir=None, opts=None, rundir="/home/Dana.Singh/cylc-run"):
             yml_info = yaml.safe_load(f)
 
     LOG.info(yml_info)
-    return {'template_variables': yml_info,
-            'templating_detected': 'jinja2'}
+    if yml_info:
+        return {'template_variables': yml_info,
+                'templating_detected': 'jinja2'}
+    else:
+        return {}
 
 ## want this script to accept resolved yaml and create everything needed to run workflow
 # - in dictionary format

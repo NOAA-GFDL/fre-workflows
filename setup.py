@@ -8,10 +8,11 @@ setup(
     version='1.0',
     py_modules=['install_plugin'], #name of file
     entry_points={
-        # group name: ["plugin_name = module:function"]
+        ## Register plugin with cylc
+        # plugin type: ["plugin_name = module:function"]
         'cylc.pre_configure': [
-            'hw = install_plugin.hello_world:pre_configure'
-        ],
+            'hw=install_plugin.hello_world:pre_configure'
+        ]
     }
 )
 
