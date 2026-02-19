@@ -7,7 +7,7 @@ setup(
     name='hello-world',
     version='1.0',
     #py_modules=['install_plugin'], #name of file
-    packages=find_packages()
+    packages=find_packages(),
     entry_points={
         ## Register plugin with cylc
         # plugin type: ["plugin_name = module:function"]

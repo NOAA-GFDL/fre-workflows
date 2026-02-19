@@ -22,6 +22,8 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+echo "CHECK PACKAGES"
+conda list
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
