@@ -10,7 +10,5 @@
         # Set default time limit to 4 hours
         execution time limit = PT4H
         platform = localhost
-        [[[events]]]
-            submission timeout = P1D
         [[[environment]]]
             COPY_TOOL=cp
