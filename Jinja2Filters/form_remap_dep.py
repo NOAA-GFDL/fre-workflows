@@ -1,18 +1,18 @@
-""" 
+"""
 form_remap_dep:
 - parses the remap_pp_components rose-app.conf
 - uses input from rose-suite.conf in the form of env variables
 - returns the pp component and source name dependencies for
-  remap_pp_components task execution. 
+  remap_pp_components task execution.
 
 For instance, for an atmos PP component that requires the regridded
 atmos_month and regridded atmos_daily history files, this JinjaFilter
 when called within flow.cylc helps identify this dependency to
-complete the corresponding task graph. 
+complete the corresponding task graph.
 
 This JinjaFilter ensures a remap-pp-component only waits for the
 dependent make-timeseries tasks such that the succeeded components
-output are made available in the final destination. 
+output are made available in the final destination.
 
 See form_remap_dep invocations from flow.cylc
 """
@@ -20,8 +20,8 @@ See form_remap_dep invocations from flow.cylc
 
 import os
 from pathlib import Path
-import yaml
 import logging
+import yaml
 
 # set up logging
 logging.basicConfig()
@@ -35,14 +35,14 @@ def form_remap_dep(grid_type: str,
                    output_type: str,
                    yamlfile: str,
                    history_segment: str=None) -> str:
-    """ 
+    """
     Form the task parameter list based on the grid type,
     the temporal type, and the desired pp component(s)
 
     Arguments:
        @param grid_type (str): One of: native or regrid-xy
        @param temporal_type (str): One of: temporal or static
-       @param chunk (str): e.g P5Y for 5-year time series 
+       @param chunk (str): e.g P5Y for 5-year time series
        @param pp_component (str): all, or a space-separated list
        @param output_type (str): ts or av
        @param yamlfile (str): yaml configuration file passed through workflow
@@ -50,7 +50,7 @@ def form_remap_dep(grid_type: str,
                                      segment equals pp-chunk-a
 
        @return remap_dep (multiline str) with Jinja formatting listing source-pp
-               dependencies  
+               dependencies
     """
     pp_components = pp_components_str.split(' ')
     if grid_type == "regrid-xy":

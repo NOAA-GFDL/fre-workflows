@@ -1,10 +1,7 @@
-import re
-import os
-from pathlib import Path
+import logging
 import yaml
 
 # set up logging
-import logging
 logging.basicConfig(level=logging.INFO)
 fre_logger = logging.getLogger(__name__)
 
@@ -26,4 +23,4 @@ def get_components(yamlfile):
 
     # we want to return a list, but some other scripts are expecting a space-separated string
     #return(components)
-    return(" ".join(components))
+    return " ".join(components)

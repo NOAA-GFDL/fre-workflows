@@ -1,14 +1,11 @@
-from pathlib import Path
-
+import logging
 import metomi.isodatetime.dumpers
 import metomi.isodatetime.parsers
 from yaml import safe_load
-import pprint
 
 from legacy_date_conversions import *
 
 # set up logging
-import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -22,9 +19,9 @@ time_parser = metomi.isodatetime.parsers.TimePointParser(assumed_time_zone=(0, 0
 def sort_pp_chunks(unsorted_strings):
     """Create descending list of pp chunk durations"""
     durations = []
-    for s in unsorted_strings:
-        durations.append(duration_parser.parse(s))
-    return(sorted(durations, reverse=True))
+    for string in unsorted_strings:
+        durations.append(duration_parser.parse(string))
+    return sorted(durations, reverse=True)
 
 def lookup_source_for_component(yaml_, component):
     """Return list of history files associated with a pp component"""
@@ -33,9 +30,9 @@ def lookup_source_for_component(yaml_, component):
         if item["type"] == component:
             for source in item["sources"]:
                 sources.append(source["history_file"])
-    return(sources)
+    return sources
 
-class Climatology(object):
+class Climatology:
     def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid):
         """Initialize the climatology object
 
@@ -168,8 +165,6 @@ class Climatology(object):
         return definitions
 
 def task_generator(yaml_):
-    history_segment = yaml_["postprocess"]["settings"]["history_segment"]
-
     # Retrieve the pp components
     components = []
     for component in yaml_["postprocess"]["components"]:
@@ -270,7 +265,7 @@ def get_climatology_info(experiment_yaml, info_type):
         if info_type == "task-graph":
             logger.debug("about to return graph")
             return task_graphs(yaml_, history_segment, clean_work)
-        elif info_type == "task-definitions":
+        if info_type == "task-definitions":
             logger.debug("about to return definitions")
             return task_definitions(yaml_, clean_work)
 

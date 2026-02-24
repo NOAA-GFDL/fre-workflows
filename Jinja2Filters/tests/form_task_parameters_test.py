@@ -34,7 +34,7 @@ def yaml_file(tmp_path):
     with open(yaml_file, 'w') as file_:
         yaml.dump(CONFIG, file_)
 
-    yield(yaml_file)
+    yield yaml_file
 
 def test_retrieve_only_atmos(yaml_file):
     """Retrieve only atmos component"""

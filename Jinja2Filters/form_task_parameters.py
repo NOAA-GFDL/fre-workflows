@@ -1,5 +1,5 @@
 """
-Form the task parameter list based on the grid type, 
+Form the task parameter list based on the grid type,
 the temporal type,and the desired pp component(s)
 """
 

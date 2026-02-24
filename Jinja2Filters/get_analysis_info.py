@@ -1,12 +1,12 @@
+import logging
 from pathlib import Path
 
 from metomi.isodatetime.parsers import DurationParser, TimePointParser
 from yaml import safe_load
 
-from legacy_date_conversions import *
+from legacy_date_conversions import convert_iso_duration_to_bronx_chunk
 
 # set up logging
-import logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,7 +17,7 @@ one_year = duration_parser.parse("P1Y")
 time_parser = TimePointParser(assumed_time_zone=(0, 0))
 
 
-class AnalysisScript(object):
+class AnalysisScript:
     def __init__(self, name, config, experiment_components, experiment_starting_date,
                  experiment_stopping_date, pp_chunks, yaml):
         """Initialize the analysis script object.
@@ -36,7 +36,7 @@ class AnalysisScript(object):
 
         # Skip if configuration wants to skip it
         self.switch = config["workflow"]["analysis_on"]
-        if self.switch == False:
+        if self.switch is False:
             return
 
         # Skip if the components are not available
@@ -118,7 +118,7 @@ class AnalysisScript(object):
         Returns:
             String cylc task graph for the analysis.
         """
-        if self.switch == False:
+        if self.switch is False:
             return ""
 
         graph = ""
@@ -211,7 +211,7 @@ class AnalysisScript(object):
         Returns:
             Cylc task definition string for this analysis script
         """
-        if self.switch == False:
+        if self.switch is False:
             return ""
 
         definitions = ""
@@ -517,7 +517,7 @@ def task_generator(yaml_, experiment_components, experiment_start, experiment_st
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop, pp_chunks, yaml_)
-        if script_info.switch == False:
+        if script_info.switch is False:
             logger.debug(f"{script_name}: Skipping, switch set to off")
             continue
         yield script_info
@@ -597,7 +597,7 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
             logger.debug("get_analysis_info: about to return graph")
             return task_graph(yaml_, experiment_components, experiment_start,
                               experiment_stop, pp_chunks, analysis_only)
-        elif info_type == "task-definitions":
+        if info_type == "task-definitions":
             logger.debug("get_analysis_info: about to return definitions")
             return task_definitions(yaml_, experiment_components, experiment_start,
                                    experiment_stop, pp_chunks, pp_dir)
