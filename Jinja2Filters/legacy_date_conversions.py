@@ -24,7 +24,7 @@ def convert_iso_duration_to_bronx_freq(duration):
     }
 
     try:
-        return(lookup[duration])
+        return lookup[duration]
     except KeyError:
         print(f"ERROR: Conversion of ISO duration '{duration}' to Bronx-style frequency not known")
         raise
@@ -40,10 +40,10 @@ def convert_iso_duration_to_bronx_chunk(duration):
 
     match_obj = re.match('^P([0-9]+)Y$', duration_str)
     if match_obj:
-        return(match_obj.group(1) + 'yr')
+        return match_obj.group(1) + 'yr'
     match_obj = re.match('^P([0-9]+)M$', duration_str)
     if match_obj:
-        return(match_obj.group(1) + 'mo')
+        return match_obj.group(1) + 'mo'
     raise Exception(f"Conversion of ISO duration '{duration}' to Bronx-style timeseries chunk not known")
 
 #print(convert_iso_duration_to_bronx_freq('PT30M'))

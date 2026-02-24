@@ -35,7 +35,7 @@ def sample_yaml(tmp_path):
     with open(yaml_file, 'w') as file_:
         yaml.dump(CONFIG, file_)
 
-    yield(yaml_file)
+    yield yaml_file
 
 
 def test_regrid_one_one(sample_yaml):

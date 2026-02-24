@@ -45,16 +45,16 @@ def iter_chunks(chunk_sizes, history_segment, pp_start, pp_stop):
     def n_segments(interval):
         return int(interval.get_seconds() / history_segment.get_seconds())
 
-    for cs in chunk_sizes:
-        n_segments_full_chunk = n_segments(cs)
+    for chunk_size in chunk_sizes:
+        n_segments_full_chunk = n_segments(chunk_size)
         cycle_point = pp_start
         while cycle_point <= pp_stop:
             n_segments_remaining = n_segments(pp_stop + history_segment - cycle_point)
             n = min(n_segments_full_chunk, n_segments_remaining)
             yield {
-                'chunk_size': cs,
+                'chunk_size': chunk_size,
                 'cycle_point': cycle_point,
                 'segments': [cycle_point + history_segment*i for i in range(n)],
                 'is_partial': False if n == n_segments_full_chunk else True
             }
-            cycle_point += cs
+            cycle_point += chunk_size

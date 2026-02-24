@@ -56,6 +56,7 @@
         # When the stall timeout is reached, a stalled workflow will exit
         # and remove the /xtmp working directory.
         stall timeout = {{ STALL_TIMEOUT }}
+        mail events = startup, shutdown, abort, stall, inactivity timeout, restart timeout
 
 [task parameters]
 {# The task parameters (except for component) depend on configuration in Rose apps,                            #}
@@ -765,6 +766,7 @@
     [[remap-pp-components-static<component>]]
         inherit = REMAP-PP-COMPONENTS, <component>
         script = """
+            mkdir -p $outputDir
             fre -vv app remap --input-dir=$inputDir \
                                 --output-dir=$outputDir \
                                 --begin-date=$begin \
@@ -918,7 +920,6 @@
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
             FRE_ANALYSIS_ARCHIVE = /archive/fms/fre-analysis/test
             # fre-analysis template vars
-            yr2 = $(cylc cycle-point --template=CCYY)
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
             fremodule = fre/{{ FRE_VERSION }}
