@@ -654,7 +654,7 @@
     [[RENAME-SPLIT-TO-PP]]
         script = """
             mkdir -p $outputDir
-            rose task-run --verbose --app-key rename-split-to-pp
+            fre -vv pp rename-split --input-dir=$inputDir --output-dir=$outputDir --component=$component $use_subdirs
         """
 
 {% if DO_NATIVE %}
@@ -664,7 +664,7 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/native
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/native
             component = $CYLC_TASK_PARAM_native
-            use_subdirs = "False"
+            use_subdirs = ""
 {% endif %}
 
 {% if DO_REGRID %}
@@ -674,7 +674,7 @@
             inputDir = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/split/regrid-xy
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/ts/regrid-xy
             component = $CYLC_TASK_PARAM_regrid
-            use_subdirs = "True"
+            use_subdirs = --use-subdirs
 {% endif %}
 
 {% if DO_NATIVE %}

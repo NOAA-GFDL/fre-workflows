@@ -2,12 +2,13 @@
     [[root]]
         init-script = """
             # stock fre-cli
-            module load fre/{{ FRE_VERSION }}
+            #module load fre/{{ FRE_VERSION }}
 
             # custom user fre-cli
-            #module load conda
+            module load conda
+            conda activate newtest
             #conda activate user-fre-cli
-            #which fre
+            which fre
 
             module load gcp/2.3
             module list
@@ -73,16 +74,10 @@
         """
 {% endif %}
 
-    [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco
-
     [[MAKE-TIMEAVGS]]
         pre-script = module load cdo
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo
-
-    [[MAKE-TIMEAVGS]]
         pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]
