@@ -876,7 +876,7 @@
             inputDir    = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir   = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             remapDir    = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
-            workDir     = $CYLC_TASK_WORK_DIR
+            workDir     = $TMPDIR
             inputDate   = $CYLC_TASK_CYCLE_POINT
 
     [[regrid-xy<regrid>]]
