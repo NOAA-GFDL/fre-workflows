@@ -173,11 +173,11 @@ change in `fre-cli` may affect workflow functionality.
 Assuming you have a copy of this repository already (see the [above](#configrunppanworkflows) section), run the
 workflow with the following:
 ```
-# load fre, the current version may be updated or different than 2025.04
-module load fre/2025.04
+# load fre, the current version may be updated
+module load fre/2026.01-alpha1
 
 ## if instead, you want the current main branch of noaa-gfdl/fre-cli
-#module load fre/2025.test
+#module load fre/2026.01-alpha1
 
 # configure, install, validate, and run installed/configured workflow
 source for_gh_runner/run_pp_locally.sh
