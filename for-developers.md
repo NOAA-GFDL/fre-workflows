@@ -177,7 +177,7 @@ workflow with the following:
 module load fre/2026.01-alpha1
 
 ## if instead, you want the current main branch of noaa-gfdl/fre-cli
-#module load fre/2026.01-alpha1
+#module load fre/test
 
 # configure, install, validate, and run installed/configured workflow
 source for_gh_runner/run_pp_locally.sh
