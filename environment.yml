@@ -1,11 +1,10 @@
 name: fre-workflows
 channels:
   - conda-forge
-  - noaa-gfdl
 dependencies:
-  - python
+  - nco
   - pip
+  - python
+  - pyyaml
+  - pylint
   - setuptools<81
-  - noaa-gfdl::fre-cli
-  - conda-forge::pyyaml
-  - conda-forge::nco
