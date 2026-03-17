@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - cylc-flow
+  - metomi-rose
   - nco
   - pip
   - python
