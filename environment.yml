@@ -2,8 +2,10 @@ name: fre-workflows
 channels:
   - conda-forge
 dependencies:
+  - cdo
   - cylc-flow
   - metomi-rose
+  - nccmp
   - nco
   - pip
   - python
