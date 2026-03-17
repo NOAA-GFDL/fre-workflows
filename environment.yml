@@ -1,9 +1,11 @@
 name: fre-workflows
 channels:
   - conda-forge
+  - noaa-gfdl
 dependencies:
   - cdo
   - cylc-flow
+  - fre-cli
   - metomi-rose
   - nccmp
   - nco
