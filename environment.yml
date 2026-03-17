@@ -8,4 +8,5 @@ dependencies:
   - python
   - pyyaml
   - pylint
+  - pytest
   - setuptools<81
