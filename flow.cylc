@@ -30,6 +30,11 @@
     {% set ANALYSIS_STOP = PP_STOP %}
 {% endif %}
 
+{# Default DO_CMOR to False if not defined #}
+{% if DO_CMOR is not defined %}
+    {% set DO_CMOR = False %}
+{% endif %}
+
 {# The combined yaml is the definitive configuration source #}
 {% set YAML = EXPERIMENT + '.yaml' %}
 
@@ -289,6 +294,13 @@
         #
     {% if DO_ANALYSIS %}
         {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, DO_ANALYSIS_ONLY) }}
+    {% endif %}
+
+        #
+        # CMOR task graph
+        #
+    {% if DO_CMOR %}
+        R1/$ = data-catalog-final => cmor-config => cmor-yaml
     {% endif %}
 
 {% endif %}
@@ -930,6 +942,69 @@
             catalog = {{ PP_DIR }}/catalog.json
             experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ EXPERIMENT }}.yaml
     {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, False ) }}
+{% endif %}
+
+{% if DO_CMOR %}
+    [[CMOR-CONFIG]]
+        script = """
+            set -euo pipefail
+            echo Arguments:
+            echo "    pp_dir: $pp_dir"
+            echo "    cmor_tables_dir: $cmor_tables_dir"
+            echo "    cmor_mip_era: $cmor_mip_era"
+            echo "    cmor_exp_config: $cmor_exp_config"
+            echo "    cmor_output_yaml: $cmor_output_yaml"
+            echo "    cmor_output_dir: $cmor_output_dir"
+            echo "    cmor_varlist_dir: $cmor_varlist_dir"
+            echo Utilities:
+            type fre
+
+            mkdir -p $cmor_output_dir $cmor_varlist_dir
+
+            fre -vv cmor config \
+                --pp_dir=$pp_dir \
+                --mip_tables_dir=$cmor_tables_dir \
+                --mip_era=$cmor_mip_era \
+                --exp_config=$cmor_exp_config \
+                --output_yaml=$cmor_output_yaml \
+                --output_dir=$cmor_output_dir \
+                --varlist_dir=$cmor_varlist_dir
+        """
+        [[[environment]]]
+            pp_dir = {{ PP_DIR }}
+            cmor_tables_dir = {{ CMOR_TABLES_DIR }}
+            cmor_mip_era = {{ CMOR_MIP_ERA }}
+            cmor_exp_config = {{ CMOR_EXP_CONFIG }}
+            cmor_output_yaml = {{ PP_DIR }}/cmor/cmor_config.yaml
+            cmor_output_dir = {{ CMOR_OUTPUT_DIR }}
+            cmor_varlist_dir = {{ PP_DIR }}/cmor/varlists
+    [[cmor-config]]
+        inherit = CMOR-CONFIG
+
+    [[CMOR-YAML]]
+        script = """
+            set -euo pipefail
+            echo Arguments:
+            echo "    cmor_output_yaml: $cmor_output_yaml"
+            echo "    experiment: $experiment"
+            echo "    platform: $platform"
+            echo "    target: $target"
+            echo Utilities:
+            type fre
+
+            fre -vv cmor yaml \
+                --yamlfile=$cmor_output_yaml \
+                --experiment=$experiment \
+                --platform=$platform \
+                --target=$target
+        """
+        [[[environment]]]
+            cmor_output_yaml = {{ PP_DIR }}/cmor/cmor_config.yaml
+            experiment = {{ EXPERIMENT }}
+            platform = {{ PLATFORM }}
+            target = {{ TARGET }}
+    [[cmor-yaml]]
+        inherit = CMOR-YAML
 {% endif %}
 
     [[CLEAN]]
