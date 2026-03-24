@@ -666,21 +666,30 @@
             # Enable nullglob so the wildcard expands to nothing if no files match
             shopt -s nullglob
 
-            # Find and use the first manifest if it exists
-            first_manifest=""
-            for file in $CYLC_WORKFLOW_SHARE_DIR/*diag_manifest.yaml; do
-                first_manifest=$file
-                break
+            # Initialize an empty array to hold our command-line arguments
+            use_diag_manifest=()
+            found_manifest="false"
+
+            # Loop through all matching files and append them to the array
+            for file in "$CYLC_WORKFLOW_SHARE_DIR"/cycle/$CYLC_TASK_CYCLE_POINT/*diag_manifest.yaml.*; do
+                use_diag_manifest+=("--diag-manifest=$file")
+                found_manifest="true"
             done
-            if [[ -n $first_manifest ]]; then
-                cp $CYLC_WORKFLOW_SHARE_DIR/*diag_manifest.yaml .
-                use_diag_manifest="--diag-manifest=$first_manifest"
-            else
-                use_diag_manifest=""
+
+            # If the array has at least one item, copy the files
+            if [[ "$found_manifest" == "true" ]]; then
+                cp "$CYLC_WORKFLOW_SHARE_DIR"/cycle/$CYLC_TASK_CYCLE_POINT/*diag_manifest.yaml.* .
             fi
 
-            mkdir -p $outputDir
-            fre -vv pp rename-split --input-dir=$inputDir --output-dir=$outputDir --component=$component $use_subdirs $use_diag_manifest
+            mkdir -p "$outputDir"
+
+            # Expand the array into separate arguments using "${array[@]}"
+            fre -vv pp rename-split \
+                --input-dir="$inputDir" \
+                --output-dir="$outputDir" \
+                --component="$component" \
+                $use_subdirs \
+                "${use_diag_manifest[@]}"
         """
 
 {% if DO_NATIVE %}
