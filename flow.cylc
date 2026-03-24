@@ -371,19 +371,24 @@
                 exit 1
             fi
 
+            # Check history files for expected timesteps
+            echo "    checking data integrity with fre pp histval..."
+            fre -vv pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
+                --date_string $(cylc cycle-point --template CCYYMMDD)
+
             echo "    Linking staged files to ${CYLC_WORKFLOW_SHARE_DIR}"
             mkdir -p $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             cd $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             ln -f $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* . \
                 || ln -sf $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc/* .
 
-            echo "    checking data integrity with fre pp histval..."
-            fre -vv pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
-                --date_string $(cylc cycle-point --template CCYYMMDD)
-
             # save any diag manifests
-            if ls *diag_manifest.yaml; then
-                cp *diag_manifest.yaml $CYLC_WORKFLOW_SHARE_DIR
+            cd $ptmpDir/$historyDir/$(cylc cycle-point --template CCYYMMDD).nc
+            if ls *diag_manifest.yaml.*; then
+                cp *diag_manifest.yaml.* $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT
+                echo "Copied diag manifests to $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT"
+            else
+                echo "No diag manifests found"
             fi
 
             echo "Natural end of the history file staging"
