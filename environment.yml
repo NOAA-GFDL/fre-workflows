@@ -3,15 +3,9 @@ channels:
   - conda-forge
   - noaa-gfdl
 dependencies:
-  - cdo
-  - cylc-flow
-  - fre-cli
-  - metomi-rose
-  - nccmp
-  - nco
-  - pip
   - python
-  - pyyaml
-  - pylint
-  - pytest
+  - pip
   - setuptools<81
+  - noaa-gfdl::fre-cli
+  - conda-forge::pyyaml
+  - conda-forge::nco
