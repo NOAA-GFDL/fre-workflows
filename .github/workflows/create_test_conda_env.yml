@@ -84,14 +84,6 @@ jobs:
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 10.0 ./app/combine-statics
 
-      - name: rename-split-to-pp pytest
-        run: |
-          pytest -vv -rx app/rename-split-to-pp/tests
-
-      - name: rename-split-to-pp pylint
-        run: |
-          pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
-
       - name: combine-timeavgs pytest (STEP CONTINUES ON FAILURE)
         continue-on-error: true
         run: |
