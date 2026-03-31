@@ -105,9 +105,6 @@
         """
 {% endif %}
 
-    [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco
-
     [[DATA-CATALOG]]
         env-script = """
             {{ EPMT_PREAMBLE }}
@@ -122,9 +119,6 @@
         pre-script = module load cdo
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo
-
-    [[MAKE-TIMEAVGS]]
         pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]

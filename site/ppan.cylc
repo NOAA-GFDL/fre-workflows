@@ -49,9 +49,6 @@
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo
 
-    [[MAKE-TIMEAVGS]]
-        pre-script = module load cdo
-
     [[COMBINE-TIMEAVGS]]
         pre-script = module load cdo nco
 
