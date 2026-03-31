@@ -80,13 +80,13 @@ class Climatology:
                     connector = " & "
                 if count == 0:
                     if self.pp_chunk == history_segment:
-                        graph += f"{connector}rename-split-to-pp-{grid}_{source}"
+                        graph += f"{connector}split-netcdf-{grid}_{source}"
                     else:
                         graph += f"{connector}make-timeseries-{grid}-{self.pp_chunk}_{source}"
                 else:
                     offset = count * self.pp_chunk
                     if self.pp_chunk == history_segment:
-                        graph += f" & rename-split-to-pp-{grid}_{source}[{offset}]"
+                        graph += f" & split-netcdf-{grid}_{source}[{offset}]"
                     else:
                         graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
                 count += 1
