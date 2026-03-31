@@ -9,3 +9,5 @@ dependencies:
   - noaa-gfdl::fre-cli
   - conda-forge::pyyaml
   - conda-forge::nco
+  - pylint
+  - pytest
