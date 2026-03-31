@@ -156,7 +156,7 @@
         {% endif %}
     {% endif %}
 
-    {% if HISTORY_DIR_REFINED is defined %}
+    {% if REFINED_HISTORY_DIR is defined %}
         {% if DO_REGRID %}
             stage-history-refined => regrid-xy<regrid>
         {% endif %}
@@ -199,7 +199,7 @@
             split-netcdf-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
     {% endif %}
 
-    {% if HISTORY_DIR_REFINED is defined %}
+    {% if REFINED_HISTORY_DIR is defined %}
         {% if DO_REGRID_STATIC %}
             stage-history-refined => regrid-xy<regrid_static>
         {% endif %}
@@ -396,13 +396,13 @@
             ptmpDir = {{ PTMP_DIR }}
 
 
-{% if HISTORY_DIR_REFINED is defined %}
+{% if REFINED_HISTORY_DIR is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         post-script = """
         """
         [[[environment]]]
-            historyDir = {{ HISTORY_DIR_REFINED }}
+            historyDir = {{ REFINED_HISTORY_DIR }}
             ptmpDir = {{ PTMP_DIR }}
 
 {% endif %}
@@ -500,15 +500,19 @@
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
                 exit 1
             fi
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
+            if [[ -f {{ REFINED_HISTORY_DIR }}/$oname.nc.tar ]]; then
+                echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} is..."
+                ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}
+                echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc is..."
+                ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc
+                hsmget -v -t -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
+                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
+            hsmput -v -t -s tar -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
+                -w $TMPDIR/history_refineDiag $hsmdate
         """
 {# The following section executes refineDiag tasks, whether single or multiple refineDiag paths are given #}
 {# Create a 'macro' function to reduce code repeat #}
