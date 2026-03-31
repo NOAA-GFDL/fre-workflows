@@ -366,7 +366,7 @@
                 exit 1
             fi
 
-            # Check history files for expected timesteps
+            # Check history files for expected number of timesteps
             echo "    checking data integrity with fre pp histval..."
             fre -vv pp histval --warn --history $ptmpDir$historyDir/$(basename -s .tar $file) \
                 --date_string $(cylc cycle-point --template CCYYMMDD)
@@ -595,7 +595,12 @@
         script = """
             # Split history files by variable
             mkdir -p $splitOutputDir
-            fre -vv pp split-netcdf-wrapper -i $splitInputDir -o $splitOutputDir -s $history_file --split-all-vars $use_subdirs
+            fre -vv pp split-netcdf-wrapper \
+                -i $splitInputDir \
+                -o $splitOutputDir \
+                -s $history_file \
+                --split-all-vars \
+                $use_subdirs
 
             # Enable nullglob so the wildcard expands to nothing if no files match
             shopt -s nullglob

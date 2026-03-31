@@ -2,4 +2,3 @@ __pycache__
 *~
 app/remap-pp-components/test-outDir
 app/combine-statics/tests/*output/
-rose-suite.conf
