@@ -24,9 +24,6 @@
     [[STAGE-HISTORY]]
         pre-script = module load hsm/1.3.0
 
-    [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load cray-hdf5 cray-netcdf cdo nco
-
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo
 
