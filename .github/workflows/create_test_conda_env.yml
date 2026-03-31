@@ -1,6 +1,10 @@
 name: create_test_conda_env
 
-on: [push]
+on:
+  push:
+    branches:
+      - main        # only run on push to main (post-merge)
+  pull_request:     # run for any PR targeting any branch
 
 jobs:
   build-linux:
