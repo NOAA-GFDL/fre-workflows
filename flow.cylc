@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = "2026.01.alpha1" %}
+{% set FRE_VERSION = "2026.01.alpha2" %}
 
 {# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
 
