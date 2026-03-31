@@ -40,7 +40,7 @@ def sample_yaml(tmp_path):
 
 def test_regrid_one_one(sample_yaml):
     """atmos regrid 1-year history to 1-year timeseries"""
-    result = "rename-split-to-pp-regrid_atmos_daily & rename-split-to-pp-regrid_atmos_month => remap-pp-components-ts-P1Y_atmos\n"
+    result = "split-netcdf-regrid_atmos_daily & split-netcdf-regrid_atmos_month => remap-pp-components-ts-P1Y_atmos\n"
     assert result == form_remap_dep.form_remap_dep(grid_type='regrid-xy',
                                                    temporal_type='temporal',
                                                    chunk='P1Y',
@@ -74,7 +74,7 @@ def test_regrid_two_one(sample_yaml):
 
 def test_native_one_one(sample_yaml):
     """land native 1-year history to 1-year timeseries"""
-    result = "rename-split-to-pp-native_land_daily & rename-split-to-pp-native_land_month & rename-split-to-pp-native_river => remap-pp-components-ts-P1Y_land_cubic\n"
+    result = "split-netcdf-native_land_daily & split-netcdf-native_land_month & split-netcdf-native_river => remap-pp-components-ts-P1Y_land_cubic\n"
     assert result == form_remap_dep.form_remap_dep(grid_type='native',
                                                    temporal_type='temporal',
                                                    chunk='P1Y',
