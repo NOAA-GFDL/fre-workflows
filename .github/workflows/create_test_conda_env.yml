@@ -1,6 +1,10 @@
 name: create_test_conda_env
 
-on: [push]
+on:
+  push:
+    branches:
+      - main        # only run on push to main (post-merge)
+  pull_request:     # run for any PR targeting any branch
 
 jobs:
   build-linux:
@@ -68,14 +72,6 @@ jobs:
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 9.8 ./lib/python
 
-      - name: python macros pytest
-        run: |
-          pytest -vv -rx ./meta/lib/python/macros/tests
-
-      - name: python macros pylint
-        run: |
-          pylint -v --rcfile ./pylintrc --fail-under 7.5 ./meta/lib/python/macros/
-
       - name: make-timeseries pytest
         run: |
           pytest -vv -rx ./app/make-timeseries/tests
@@ -91,38 +87,6 @@ jobs:
       - name: combine-statics pylint
         run: |
           pylint -v --rcfile ./pylintrc --fail-under 10.0 ./app/combine-statics
-
-      - name: rename-split-to-pp pytest
-        run: |
-          pytest -vv -rx app/rename-split-to-pp/tests
-
-      - name: rename-split-to-pp pylint
-        run: |
-          pylint -v --rcfile ./pylintrc --fail-under 3.2 ./app/rename-split-to-pp
-
-      - name: combine-timeavgs pytest (STEP CONTINUES ON FAILURE)
-        continue-on-error: true
-        run: |
-          echo "i have no tests yet"
-          pytest -vv -rx app/combine-timeavgs/tests
-
-      - name: combine-timeavgs pylint (STEP CONTINUES ON FAILURE)
-        continue-on-error: true
-        run: |
-          echo "i am not python in any part yet"
-          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/combine-timeavgs
-
-      - name: make-timeavgs pytest (STEP CONTINUES ON FAILURE)
-        continue-on-error: true
-        run: |
-          echo "i have no tests yet"
-          pytest -vv -rx app/make-timeavgs/tests
-
-      - name: make-timeavgs pylint (STEP CONTINUES ON FAILURE)
-        continue-on-error: true
-        run: |
-          echo "i am not python in any part yet"
-          pylint -v --rcfile ./pylintrc --fail-under 0.0 ./app/make-timeavgs
 
       - name: analysis pytest (STEP CONTINUES ON FAILURE)
         continue-on-error: true

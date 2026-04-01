@@ -174,7 +174,7 @@ Assuming you have a copy of this repository already (see the [above](#configrunp
 workflow with the following:
 ```
 # load fre, the current version may be updated
-module load fre/2026.01-alpha1
+module load fre/2026.01.alpha2
 
 ## if instead, you want the current main branch of noaa-gfdl/fre-cli
 #module load fre/test

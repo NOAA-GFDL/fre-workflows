@@ -63,7 +63,7 @@ def form_remap_dep(grid_type: str,
     # and omitted for secondary chunk generation.
     if output_type == "ts":
         if str(history_segment) == str(chunk):
-            prereq_task = "rename-split-to-pp"
+            prereq_task = "split-netcdf"
         else:
             prereq_task = "make-timeseries"
     elif output_type== "av":
@@ -151,13 +151,13 @@ def form_remap_dep(grid_type: str,
             for src in value:
                 if makets_stmt != '':
                 # make-timeseries and make-timeavgs tasks have the chunksize in the task name,
-                # but rename-split-to-pp does not
-                    if prereq_task == 'rename-split-to-pp':
+                # but split-netcdf does not
+                    if prereq_task == 'split-netcdf':
                         makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}_{src}"
                     else:
                         makets_stmt = f"{makets_stmt} & {prereq_task}-{grid}-{chunk}_{src}"
                 else:
-                    if prereq_task == 'rename-split-to-pp':
+                    if prereq_task == 'split-netcdf':
                         makets_stmt = f"{prereq_task}-{grid}_{src}"
                     else:
                         makets_stmt = f"{prereq_task}-{grid}-{chunk}_{src}"

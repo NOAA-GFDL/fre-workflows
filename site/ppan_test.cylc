@@ -103,39 +103,7 @@
                 script_name:$CYLC_TASK_NAME;exp_run_uuid:$CYLC_WORKFLOW_UUID"
             {{ EPMT_POSTAMBLE }}
         """
-        post-script = """
-            cd $refineDiagDir
-            if ls *nc; then
-                refinedCount=$(ls -1 *nc | wc -l)
-            else
-                refinedCount=0
-            fi
-            if [[ $refinedCount > 0 ]]; then
-                for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
-                done
-            else
-                echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
-                exit 1
-            fi
-            if [[ -f {{ HISTORY_DIR_REFINED }}/$oname.nc.tar ]]; then
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}
-                echo "the contents of {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc is..."
-                ls {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }}/$oname.nc
-                hsmget -v -t -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} \
-                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
-                mv -f * $TMPDIR/modify_refineDiag
-                mv -f $TMPDIR/modify_refineDiag/* .
-                rm -rf $TMPDIR/modify_refineDiag
-            fi
-            hsmput -v -t -s tar -a {{ HISTORY_DIR_REFINED }} -p {{ PTMP_DIR }}/{{ HISTORY_DIR_REFINED }} \
-                -w $TMPDIR/history_refineDiag $hsmdate
-        """
 {% endif %}
-
-    [[RENAME-SPLIT-TO-PP]]
-        pre-script = module load netcdf-c cdo nco
 
     [[DATA-CATALOG]]
         env-script = """
@@ -151,9 +119,6 @@
         pre-script = module load cdo
 
     [[MAKE-TIMESERIES]]
-        pre-script = module load cdo
-
-    [[MAKE-TIMEAVGS]]
         pre-script = module load cdo
 
     [[COMBINE-TIMEAVGS]]
