@@ -100,12 +100,12 @@ fre_pp_steps () {
     check_exit_status "CONFIGURE-YAML"
 
     ## Validate the configuration files
-#    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
-#    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
-#    check_exit_status "VALIDATE"
-    echo -e "Runnin rose macro --suite-only --validate"
-    rose macro --suite-only --validate
+    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
+    fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "VALIDATE"
+#    echo -e "Runnin rose macro --suite-only --validate"
+#    rose macro --suite-only --validate
+#    check_exit_status "VALIDATE"
 
     # Install
     echo -e "\nRunning fre pp install, installing workflow in ${HOME}/cylc-run/${name} ..."
