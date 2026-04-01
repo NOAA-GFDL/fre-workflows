@@ -72,6 +72,7 @@ jobs:
           gridspec_file=c96_OM4_025_grid_No_mg_drag_v20160808.tar
           bind_paths="--bind /contrib-efs/container-test/ppp-setup/:/mnt:rw
                       --bind /contrib2-bucket/c96L65_am5f11d12r0_amip/history:/mnt/history:ro
+                      --bind /contrib2-bucket/proto4.0_c48l33o1degSPEAR/refined_history:/mnt/refined_history:ro
                       --bind /contrib-efs/container-test/c96_grid/${gridspec_file}:/mnt/${gridspec_file}:ro"
 
           ## TO-DO: figure out pulling container instead
@@ -154,6 +155,111 @@ jobs:
 
           if [ $exit_status_1 -eq 0 ]; then
               echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+      - name: Print stage-history-refined successes or failures
+        run: |
+          set +e
+          # Successes
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history-refined/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/stage-history-refined/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+          elif [ $exit_status_1 -eq 1 ]; then
+              echo "No succeeded tasks found"
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+          if [ $exit_status_2 -eq 0 ]; then
+              echo "Failures found"
+              echo $failure | sed 's/ /\n/g' #split string by spaces
+              exit 1   #exit with error
+          elif [ $exit_status_2 -eq 1 ]; then
+              echo "No task failures found."
+          else
+              echo "WARNING: error with grep execution"
+              exit 2
+          fi
+
+#      - name: Print refine-diag successes or failures
+#        run: |
+#          set +e
+#          # Successes 
+#          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/REFINE-DIAG/0[1-3]/job.status)
+#          exit_status_1=$?
+#
+#          # Failures
+#          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/REFINE-DIAG/0[1-3]/job.status)
+#          exit_status_2=$?
+#
+#          if [ $exit_status_1 -eq 0 ]; then
+#              echo $success | sed 's/ /\n/g' #split string by spaces
+#
+#              # Check if refine-diag task executed correctly
+#              # history files copied into another history file 
+#              # ........
+#
+#          elif [ $exit_status_1 -eq 1 ]; then
+#              echo "No succeeded tasks found"
+#          else
+#              echo "WARNING: error with grep execution"
+#              exit 2
+#          fi
+#
+#          if [ $exit_status_2 -eq 0 ]; then
+#              echo "Failures found"
+#              echo $failure | sed 's/ /\n/g' #split string by spaces
+#              exit 1   #exit with error
+#          elif [ $exit_status_2 -eq 1 ]; then
+#              echo "No task failures found."
+#          else
+#              echo "WARNING: error with grep execution"
+#              exit 2
+#          fi
+
+      - name: Print pre-analysis successes or failures
+        run: |
+          set +e
+          # Successes 
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.status)
+          exit_status_1=$?
+
+          # Failures
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.status)
+          exit_status_2=$?
+
+          if [ $exit_status_1 -eq 0 ]; then
+              echo $success | sed 's/ /\n/g' #split string by spaces
+
+              # Check if preanalysis task executed correctly (check expected output)
+              output=$(cat /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.out)
+              if ! output | grep -q "Pre-analysis script is running!"; then
+                  echo "Pre-analysis script did not run successfully"
+                  exit 1
+
           elif [ $exit_status_1 -eq 1 ]; then
               echo "No succeeded tasks found"
           else
