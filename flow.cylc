@@ -458,7 +458,7 @@
         pre-script = """
             env
             set -x
-            mkdir -p $work $tempCache $refineDiagDir
+            mkdir -p $work/$hsmdate $tempCache $refineDiagDir
             cd $work/$hsmdate
             ls
         """

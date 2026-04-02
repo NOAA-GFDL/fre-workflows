@@ -240,19 +240,14 @@ jobs:
         run: |
           set +e
           # Successes 
-          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.status)
+          success=$(grep -E "CYLC_JOB_EXIT=SUCCEEDED" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/preAnalysis-*/0[1-3]/job.status)
           exit_status_1=$?
           # Failures
-          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.status)
+          failure=$(grep -E "CYLC_JOB_EXIT=ERR" /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/preAnalysis-*/0[1-3]/job.status)
           exit_status_2=$?
           if [ $exit_status_1 -eq 0 ]; then
               echo $success | sed 's/ /\n/g' #split string by spaces
-              # Check if preanalysis task executed correctly (check expected output)
-#              output=$(cat /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/job/*/PRE-ANALYSIS/0[1-3]/job.out)
-#              if ! output | grep -q "Pre-analysis script is running!"; then
-#                  echo "Pre-analysis script did not run successfully"
-#                  exit 1
-              # Check database exists
+              # Check if preanalysis task executed correctly: Check database exists
               if [ -s "/contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/db" ]; then
                   echo "Pre-analysis task produced non-empty db file"
                   exit 0
