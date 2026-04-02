@@ -1,7 +1,7 @@
 # directories shared across tools
 directories:
   history_dir:        "/mnt/history"
-  refined_history_dir: "/mnt/proto4.0_c48l33o1degSPEAR/refined_history"
+  refined_history_dir: "/mnt/refined_history"
   pp_dir:             "/mnt/pp"
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:           "/mnt/ptmp"
