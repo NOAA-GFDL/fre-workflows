@@ -4,7 +4,7 @@ directories:
 #
 # to have a faster turn-around (does not test archive data staging), use the below
   history_dir:         "/work/inl/test_cloud_runner_history_files"
-  history_dir_refined: "/work/d4s/test_cloud_runner_history_refined/proto4.0_c48l33o1degSPEAR"
+  refined_history_dir: "/work/d4s/test_cloud_runner_history_refined/proto4.0_c48l33o1degSPEAR"
   pp_dir:             !join [/work/$USER/test_cloud_runner_scratch_dir/, *FRE_STEM, /, pp]
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:           "/xtmp/$USER/ptmp"
@@ -20,19 +20,17 @@ postprocess:
     pp_grid_spec:            *GRID_SPEC96_LOCAL
   switches:
     clean_work:              True
-    do_refinediag:           False
     do_atmos_plevel_masking: True
-    do_preanalysis:          False
     do_analysis:             False
     do_analysis_only:        False
   preanalysis:
     vitals:
       script: "/work/d4s/test_cloud_runner_history_refined/preanalysis_script/gfdlvitals_refineDiag_om5.latest.csh"
-      input: ['atmos_month', 'aerosol_month']
+      inputs: ['atmos_month', 'aerosol_month']
       do_preanalysis: True
   refinediag:
     ocean:
       script: "/work/d4s/test_cloud_runner_history_refined/refinediag_script/refineDiag_atmos_FRE.csh"
-      input: ['ocean_monthly', 'ocean_bgc']
-      output: ['ocean_refined']
+      inputs: ['ocean_monthly', 'ocean_bgc']
+      outputs: ['ocean_refined']
       do_refinediag: True
