@@ -22,10 +22,10 @@ postprocess:
     vitals:
       script:                "FOOBARPLACEHOLD/etc/preAnalysis/dummy.csh"
       inputs:                 ['atmos_month']
-      do_preanalysis:        True
+      do_preanalysis:        False
   refinediag:
     atmos:
       script:                "FOOBARPLACEHOLD/etc/refineDiag/dummy.csh"
       inputs:                 ['atmos_month']
       outputs:                ['atmos_refined']
-      do_refinediag:         True
+      do_refinediag:         False
