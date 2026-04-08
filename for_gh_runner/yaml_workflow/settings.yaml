@@ -20,12 +20,12 @@ postprocess:
     do_analysis_only:        False
   preanalysis:
     vitals:
-      script:                "$CYLC_WORKFLOW_RUN_DIR/etc/preAnalysis/dummy.csh"
+      script:                "FOOBARPLACEHOLD/etc/preAnalysis/dummy.csh"
       inputs:                 ['atmos_month']
       do_preanalysis:        True
   refinediag:
     atmos:
-      script:                "$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/dummy.csh"
+      script:                "FOOBARPLACEHOLD/etc/refineDiag/dummy.csh"
       inputs:                 ['atmos_month']
       outputs:                ['atmos_refined']
       do_refinediag:         True
