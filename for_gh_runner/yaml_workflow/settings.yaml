@@ -21,11 +21,11 @@ postprocess:
   preanalysis:
     vitals:
       script:                "$CYLC_WORKFLOW_RUN_DIR/etc/preAnalysis/dummy.csh"
-      input:                 ['atmos_month']
+      inputs:                 ['atmos_month']
       do_preanalysis:        True
   refinediag:
     atmos:
       script:                "$CYLC_WORKFLOW_RUN_DIR/etc/refineDiag/dummy.csh"
-      input:                 ['atmos_month']
-      output:                ['atmos_refined']
+      inputs:                 ['atmos_month']
+      outputs:                ['atmos_refined']
       do_refinediag:         True
