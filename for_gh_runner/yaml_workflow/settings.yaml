@@ -26,7 +26,7 @@ postprocess:
       do_preanalysis: True
   refinediag:
     ocean:
-      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_refinediag.sh"
+      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_refinediag.csh"
       inputs: ['ocean_monthly', 'ocean_bgc'] # not used currently
       outputs: ['ocean_refined']             # not used currently
       do_refinediag: True
