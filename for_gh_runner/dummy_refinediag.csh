@@ -3,18 +3,25 @@
 ## RefineDiag scripts reads raw history files and generates new, refined history files
 # Script copies test history file to another history file
  
-# what's in here
-ls 
-
 # define outfile
-input_dir=$pwd
-output_dir= $refineDiagDir
+set input_dir = `pwd`
 
-if ls $input_dir then
+if ( $?refineDiagDir ) then
+    set output_dir = $refineDiagDir
+else
+    echo "ERROR: refineDiagDir environment variable is not set."
+    exit 1
+endif
+
+if ( -d "$input_dir" ) then
+    cd $input_dir
+    ls
+    echo "Input directory found: $input_dir"
     echo "good to go"
 else
-    echo "Nothing in here"
+    echo "Error: Input directory $input_dir does not exist."
     exit 1
+endif
 
 #cd $input_dir
 #if ($?refineDiagDir) then  #(and input_dir exists and is non-empty)
