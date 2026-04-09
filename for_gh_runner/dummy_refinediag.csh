@@ -14,7 +14,11 @@ endif
 if ( -d "$input_dir" ) then
     ls -aF
     echo "Input directory found: $input_dir"
-    echo "good to go"
+    echo "good to gio"
+    for each INFILE (`\bin\ls *atmos_daily*cmip*.nc`)
+        set OUTFILE = `echo $INFILE | sed -e 's/_cmip/_refined/'`
+        cp $INFILE $refineDiagDir/$OUTFILE
+    end
 else
     echo "Error: Input directory $input_dir does not exist."
     exit 1
