@@ -2,8 +2,6 @@
 
 ## RefineDiag scripts reads raw history files and generates new, refined history files
 # Script copies test history file to another history file
- 
-# define outfile
 set input_dir = `pwd`
 
 if ( $?refineDiagDir ) then
@@ -14,8 +12,7 @@ else
 endif
 
 if ( -d "$input_dir" ) then
-    cd $input_dir
-    ls
+    ls -aF
     echo "Input directory found: $input_dir"
     echo "good to go"
 else
