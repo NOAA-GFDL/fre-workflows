@@ -21,7 +21,7 @@ postprocess:
     do_analysis_only:        False
   preanalysis:
     vitals:
-      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_preanalysis.sh"
+      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_preanalysis.csh"
       inputs: ['atmos_month', 'aerosol_month']
       do_preanalysis: True
   refinediag:
