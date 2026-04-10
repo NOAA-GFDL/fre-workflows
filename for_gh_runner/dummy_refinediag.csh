@@ -2,7 +2,9 @@
 
 ## RefineDiag scripts reads raw history files and generates new, refined history files
 # Script copies test history file to another history file
-set input_dir = $histDir
+set input_dir = `pwd`
+
+echo "INPUT DIR FOR REFINE: $input_dir"
 
 if ( $?refineDiagDir ) then
     set output_dir = $refineDiagDir
