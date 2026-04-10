@@ -15,11 +15,10 @@ if ( -d "$input_dir" ) then
     ls -aF
     echo "Input directory found: $input_dir"
     echo "good to go"
-    for each INFILE (`\bin\ls *atmos_month*.nc`)
-        #set OUTFILE = `echo $INFILE | sed -e 's/_month/_refined/'`
+    foreach INFILE (*atmos_month*.nc`)
         set OUTFILE = ${INFILE:r}_refined.${INFILE:e}
         echo "OUTFILE $OUTFILE"
-        cp $INFILE $refineDiagDir/$OUTFILE
+        cp "$INFILE" "$output_dir/$OUTFILE"
     end
 else
     echo "Error: Input directory $input_dir does not exist."
