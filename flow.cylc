@@ -458,7 +458,8 @@
         pre-script = """
             env
             set -x
-            mkdir -p $work/$hsmdate $tempCache $refineDiagDir
+            mkdir -p $work $tempCache $refineDiagDir
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
             ls
         """
