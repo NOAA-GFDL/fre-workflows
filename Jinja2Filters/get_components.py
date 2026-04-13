@@ -10,15 +10,22 @@ def get_components(yamlfile):
 
     Arguments:
         yamlfile (str): Filepath to the yaml
-"""
+    """
     fre_logger.debug(f"Yaml file: {yamlfile}")
-    components = []
 
+    components = []
     with open(yamlfile) as file_:
         yaml_ = yaml.safe_load(file_)
 
         for component in yaml_["postprocess"]["components"]:
-            if component['postprocess_on'] is True:
+            # if postprocess_on key exists, evluate value
+            if "postprocess_on" in component:
+                if component['postprocess_on'] is True:
+                    components.append(component["type"])
+                else:
+                    print(f'{component["type"]} set to false (do not post-process)')
+            else:
+                # default is True, if not set
                 components.append(component["type"])
 
     # we want to return a list, but some other scripts are expecting a space-separated string
