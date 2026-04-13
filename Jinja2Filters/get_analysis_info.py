@@ -35,7 +35,13 @@ class AnalysisScript:
         logger.debug(f"{name}: initializing AnalysisScript instance")
 
         # Skip if configuration wants to skip it
-        self.switch = config["workflow"]["analysis_on"]
+        # analysis_on is an optional key that is True (by default)
+        # if not defined in the YAML
+        if "analysis_on" in config["workflow"]:
+            self.switch = config["workflow"]["analysis_on"]
+        else:
+            self.switch = True
+    
         if self.switch is False:
             return
 
