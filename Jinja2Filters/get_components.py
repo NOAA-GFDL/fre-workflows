@@ -1,4 +1,3 @@
-#!/usr/bin/env /home/Dana.Singh/conda/envs/fre-cli/bin/python 
 import logging
 import yaml
 
@@ -34,5 +33,3 @@ def get_components(yamlfile):
     # we want to return a list, but some other scripts are expecting a space-separated string
     #return(components)
     return " ".join(components)
-
-print(get_components("/home/Dana.Singh/fre/singh/fre-cli-updates-fixes/fre-workflows/here.yaml"))
