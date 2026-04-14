@@ -495,7 +495,8 @@
             fi
             if [[ $refinedCount > 0 ]]; then
                 for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                    # list the variables names in the netcdf file
+                    ncdump -h $file | grep -E "float|double" | awk '{print $2'} | cut -d '(' -f1
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
