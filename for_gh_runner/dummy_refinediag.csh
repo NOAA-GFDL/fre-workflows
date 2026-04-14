@@ -15,7 +15,7 @@ if ( -d "$input_dir" ) then
     ls -aF
     echo "Input directory found: $input_dir"
     echo "good to go"
-    foreach INFILE (*atmos_month*.nc`)
+    foreach INFILE (*atmos_month*.nc)
         set OUTFILE = ${INFILE:r}_refined.${INFILE:e}
         echo "OUTFILE $OUTFILE"
         cp "$INFILE" "$output_dir/$OUTFILE"
