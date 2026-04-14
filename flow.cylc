@@ -481,6 +481,7 @@
             gridspec = {{ PP_GRID_SPEC }}
             refineDiagDir = $TMPDIR/history_refineDiag/$hsmdate
             catalog = {{ PP_DIR }}/catalog.json
+            yaml = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 {% endif %}
 {% if DO_REFINEDIAG %}
     [[REFINE-DIAG]]
