@@ -12,7 +12,7 @@ else
 endif
 
 if ( -d "$input_dir" ) then
-    ls -aF
+    #ls -aF
     echo "Input directory found: $input_dir"
     echo "good to go"
     foreach INFILE (*atmos_month*.nc)
