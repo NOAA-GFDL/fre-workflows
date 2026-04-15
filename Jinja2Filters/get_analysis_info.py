@@ -35,12 +35,17 @@ class AnalysisScript:
         logger.debug(f"{name}: initializing AnalysisScript instance")
 
         # Skip if configuration wants to skip it
-        self.switch = config["workflow"]["analysis_on"]
+        self.switch = config["switch"]
         if self.switch is False:
             return
 
+        # Only support legacy scripts ATM
+        if config["flavor_type"] != "legacy":
+            raise ValueError(f"ERROR: Only 'legacy' flavored analysis is currently supported. Come back soon! '{self.name}' is {config['flavor_type']}-flavored")
+        self.is_legacy = True
+
         # Skip if the components are not available
-        self.components = [x.strip() for x in config["workflow"]["components"]]
+        self.components = [x.strip() for x in config["flavor_config"]["components"]]
         for component in self.components:
             if component not in experiment_components:
                 raise ValueError(f"ERROR: Analysis script '{self.name}' requests postprocessing component '{component}' but is not one of these available components: {experiment_components}. Please add the component or turn the analysis script off.")
@@ -52,12 +57,12 @@ class AnalysisScript:
         ]
 
         # Parse the rest of the 'workflow' config items
-        self.product = config["workflow"]["product"]
-        self.script_type = config["workflow"]["script_type"]
-        self.chunk = duration_parser.parse(config["workflow"]["chunk_size"])
+        self.product = config["flavor_config"]["product"]
+        self.script_type = config["when_to_run"]
+        self.chunk = duration_parser.parse(config["chunk_size"])
 
         # Retrieve other config
-        self.data_frequency = config["required"]["data_frequency"]
+        self.data_frequency = config["flavor_config"]["data_frequency"]
 
         # check for needed pp prerequisites
         if self.product not in ['av', 'ts']:
@@ -69,7 +74,7 @@ class AnalysisScript:
         else:
             # Loop through the components and look for the ones specified by the analysis script
             # For each component to check, confirm that its climatology section contains the requested climo chunk
-            for ana_comp in config["workflow"]["components"]:
+            for ana_comp in config["flavor_config"]["components"]:
                 found_needed_inputs_for_component = False
                 for exp_comp in yaml["postprocess"]["components"]:
                     if exp_comp["type"] == ana_comp:
@@ -81,27 +86,23 @@ class AnalysisScript:
                     raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
                                      f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
 
-        # Parse the new analysis config items
-        if 'legacy' in config:
-            self.is_legacy = True
-            # the first word of command will be the script, but there could be more command-line args
-            stuff = config["legacy"]["script"].split()
-            if len(stuff) > 1:
-                self.legacy_script = stuff.pop(0)
-                self.legacy_script_args = ' '.join(stuff)
-            else:
-                self.legacy_script = stuff.pop(0)
-                self.legacy_script_args = ""
+        # Parse the script filepath
+        # the first word of command will be the script, but there could be more command-line args
+        stuff = config["script"].split()
+        if len(stuff) > 1:
+            self.legacy_script = stuff.pop(0)
+            self.legacy_script_args = ' '.join(stuff)
         else:
-            self.is_legacy = False
+            self.legacy_script = stuff.pop(0)
+            self.legacy_script_args = ""
 
         # if dates are years, convert to string or else ISO conversion will fail
-        if isinstance(config["required"]["date_range"][0], int):
-            one = "{:04d}".format(config["required"]["date_range"][0])
-            two = "{:04d}".format(config["required"]["date_range"][1])
+        if isinstance(config["date_range"][0], int):
+            one = "{:04d}".format(config["date_range"][0])
+            two = "{:04d}".format(config["date_range"][1])
         else:
-            one = config["required"]["date_range"][0]
-            two = config["required"]["date_range"][1]
+            one = config["date_range"][0]
+            two = config["date_range"][1]
         self.date_range = [
             time_parser.parse(one),
             time_parser.parse(two)
@@ -513,7 +514,7 @@ fre analysis install \
 
 
 def task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
-    for script_name, script_params in yaml_["analysis"].items():
+    for script_name, script_params in yaml_["final-step-user-scripts"].items():
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop, pp_chunks, yaml_)
