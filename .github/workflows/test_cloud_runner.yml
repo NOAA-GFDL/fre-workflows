@@ -7,7 +7,7 @@ on:
         required: false
         type: string
       fre-workflows-branch:
-        description: 'IF ON FORK: Input fre-workflows branch to check out.'
+        description: 'IF ON FORK: Input fre-workflows branch to check out. Leave empty if not using a fork.'
         required: false
         default: 'main'
         type: string
