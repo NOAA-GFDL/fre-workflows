@@ -21,8 +21,6 @@ postprocess:
   switches:
     clean_work:              True
     do_atmos_plevel_masking: True
-    do_analysis:             False
-    do_analysis_only:        False
   preanalysis:
     vitals:
       script: "/work/d4s/test_cloud_runner_history_refined/preanalysis_script/gfdlvitals_refineDiag_om5.latest.csh"

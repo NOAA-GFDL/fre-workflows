@@ -17,8 +17,6 @@ postprocess:
   switches:
     clean_work:              True
     do_atmos_plevel_masking: True
-    do_analysis:             False
-    do_analysis_only:        False
 
   # to be first-step-user-scripts
   preanalysis:

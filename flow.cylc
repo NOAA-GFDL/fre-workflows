@@ -291,6 +291,10 @@
 {% endif %}
 
 [runtime]
+    [[root]]
+        [[[environment]]]
+            fre_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
+
     [[pp-starter]]
         inherit = PP-STARTER
         # NOTE! script must appear *before* [[[enviroment]]] or else
@@ -698,7 +702,6 @@
 
     [[REMAP-PP-COMPONENTS]]
         [[[environment]]]
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
             components = $CYLC_TASK_PARAM_component
 
     [[REMAP-PP-COMPONENTS-TS]]
@@ -713,7 +716,7 @@
                                 --ts-workaround \
                                 --pp-component=$components \
                                 --copy-tool=$COPY_TOOL \
-                                --yaml-config=$yaml_config \
+                                --yaml-config=$fre_yaml \
                                 --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
@@ -742,7 +745,7 @@
                                 --product=$product \
                                 --pp-component=$components \
                                 --copy-tool=$COPY_TOOL \
-                                --yaml-config=$yaml_config \
+                                --yaml-config=$fre_yaml \
                                 --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
@@ -771,7 +774,7 @@
                                 --product=$product \
                                 --pp-component=$components \
                                 --copy-tool=$COPY_TOOL \
-                                --yaml-config=$yaml_config \
+                                --yaml-config=$fre_yaml \
                                 --ens-mem=${ens_mem:-""}
         """
         [[[environment]]]
@@ -857,7 +860,7 @@
             mkdir -p $outputDir $remapDir
 
             fre -vv app regrid \
-                --yamlfile=$yaml_config \
+                --yamlfile=$fre_yaml \
                 --input_dir=$inputDir \
                 --output_dir=$outputDir \
                 --work_dir=$workDir \
@@ -869,7 +872,6 @@
         # there may be a race condition that causes the fast jobs to fail
         execution retry delays = PT1M
         [[[environment]]]
-            yaml_config = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
             inputDir    = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/native
             outputDir   = $CYLC_WORKFLOW_SHARE_DIR/cycle/$CYLC_TASK_CYCLE_POINT/history/regrid-xy
             remapDir    = $CYLC_WORKFLOW_SHARE_DIR/fregrid-remap-files
