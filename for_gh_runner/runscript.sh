@@ -22,6 +22,9 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+## not nice workaround we need for hsmput
+sed -i "28s/csh/sh/" /app/cylc-flow-tools/bin/../mk/hsmput.mk
+
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
