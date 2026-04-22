@@ -522,6 +522,7 @@
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
             fi
+            echo "we're at hsmput all right ...."
             hsmput -v -t -s tar -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
                 -w $TMPDIR/history_refineDiag $hsmdate
         """
