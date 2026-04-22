@@ -25,11 +25,6 @@ on:
     branches:
       - main  # triggers pipeline on push to main
 
-# cancel running jobs if theres a newer push
-#concurrency:
-#  group: ${{ github.workflow }}-${{ github.ref }}
-#  cancel-in-progress: true
-
 jobs:
   test-cloud:
     runs-on: self-hosted
@@ -43,13 +38,21 @@ jobs:
       - name: Checkout fre-workflows repository if no fork specified
         if: ${{ github.event.inputs.fre-workflows-repo == ''}}
         uses: actions/checkout@v4
-      - name: Checkout fre-cli
+      - name: Checkout fre-cli fork if specified
+        if: ${{ github.event.inputs.fre-cli-repo != ''}}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.fre-cli-repo }}
+          ref: ${{ github.event.inputs.fre-cli-branch }}
+      - name: Checkout fre-cli repository if no fork specified
+        if: ${{ github.event.inputs.fre-cli-repo == ''}}
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.fre-cli-repo }}
           ref: ${{ github.event.inputs.fre-cli-branch }}
           path: './fre-cli'
           submodules: true
+ 
       - name: Display fre-workflow and fre-cli repos and branches
         run: |
           # fre-workflows repo and branch
