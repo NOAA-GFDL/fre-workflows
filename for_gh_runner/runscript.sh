@@ -26,9 +26,9 @@ conda activate /app/cylc-flow-tools
 # there was a shell discrepancy: Makefile running in csh shell but command
 # that was causing the error had bash syntax
 # solution: change the csh shell line to sh
-sed -i "28s/csh/sh/" /app/cylc-flow-tools/bin/../mk/hsmput.mk
+sed -i "28s/csh/sh/" /app/cylc-flow-tools/mk/hsmput.mk
 #print the line to make sure
-sed -n '28p' /app/cylc-flow-tools/bin/../mk/hsmput.mk
+sed -n '28p' /app/cylc-flow-tools/mk/hsmput.mk
 
 # update fre-cli env with specific branch development
 cd fre-cli
