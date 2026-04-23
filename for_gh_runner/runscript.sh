@@ -26,6 +26,8 @@ conda activate /app/cylc-flow-tools
 # there was a shell discrepancy: Makefile running in csh shell but command
 # that was causing the error had bash syntax
 # solution: change the csh shell line to sh
+# this might be better in the DOckerfile?
+chmod -R 775 /app/cylc-flow-tools/mk/
 sed -i "28s/csh/sh/" /app/cylc-flow-tools/mk/hsmput.mk
 #print the line to make sure
 sed -n '28p' /app/cylc-flow-tools/mk/hsmput.mk
