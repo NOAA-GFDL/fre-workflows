@@ -23,7 +23,12 @@ conda deactivate
 conda activate /app/cylc-flow-tools
 
 ## not nice workaround we need for hsmput
+# there was a shell discrepancy: Makefile running in csh shell but command
+# that was causing the error had bash syntax
+# solution: change the csh shell line to sh
 sed -i "28s/csh/sh/" /app/cylc-flow-tools/bin/../mk/hsmput.mk
+#print the line to make sure
+sed -n '28p' /app/cylc-flow-tools/bin/../mk/hsmput.mk
 
 # update fre-cli env with specific branch development
 cd fre-cli
