@@ -75,7 +75,7 @@ jobs:
                       --bind /contrib-efs/container-test/c96_grid/${gridspec_file}:/mnt/${gridspec_file}:ro"
 
           ## TO-DO: figure out pulling container instead
-          container_path=/contrib-efs/container-test/fre-2025.04-new.sif
+          container_path=/contrib-efs/container-test/fre-2025.04.sif
           runscript_path=${cwd}/for_gh_runner/runscript.sh
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
