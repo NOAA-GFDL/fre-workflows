@@ -11,6 +11,7 @@ echo "    input dir: $inputDir"
 echo "    output dir: $outputDir"
 echo Utilities:
 type cdo
+type ncatted
 
 # Verify input directory exists and is a directory
 if [[ ! -d $inputDir ]]; then
@@ -28,16 +29,21 @@ cd $inputDir
 
 for comp in $(ls); do
     pushd $comp/P0Y/P0Y || continue
-
     mkdir -p $outputDir/$comp
-    cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
 
-#   #check
-#    if [ -z "$( ls $outputDir/$comp)" ]; then
-#        echo "empty"
-#    else
-#        echo "$(ls $outputDir/$comp)"
-#    fi
+    # Remove the coordinates attribute (https://github.com/NOAA-GFDL/FMS/issues/1859)
+    for file in *.nc; do
+        ncatted -a coordinates,,d,, $file
+    done
+
+    # Tiled and non-tiled output
+    if ls *.tile1.nc; then
+        for tile in tile1 tile2 tile3 tile4 tile5 tile6; do
+            cdo -O merge *.$tile.nc $outputDir/$comp/$comp.static.$tile.nc
+        done
+    else
+        cdo -O merge *.nc $outputDir/$comp/$comp.static.nc
+    fi
 
     popd
 done
