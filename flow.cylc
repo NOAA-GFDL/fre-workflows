@@ -465,6 +465,7 @@
             env
             set -x
             mkdir -p $work $tempCache $refineDiagDir
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
             ls
         """
@@ -500,7 +501,11 @@
             fi
             if [[ $refinedCount > 0 ]]; then
                 for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                    # list the variables names in the netcdf file
+                    ncdump -h $file |
+                    grep -E "float|double" |
+                    awk '{print $2}' |
+                    cut -d '(' -f1 |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do

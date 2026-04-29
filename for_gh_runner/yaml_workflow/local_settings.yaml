@@ -1,8 +1,10 @@
 directories:
 ## to test staging data from archive, use the below
 #  history_dir:        "/archive/inl/test_cloud_runner_history_files"
+#
 # to have a faster turn-around (does not test archive data staging), use the below
-  history_dir:        "/work/inl/test_cloud_runner_history_files"
+  history_dir:         "/work/inl/test_cloud_runner_history_files"
+  refined_history_dir: "/work/d4s/fre-wf-local-testing/refined_history"
   pp_dir:             !join [/work/$USER/test_cloud_runner_scratch_dir/, *FRE_STEM, /, pp]
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:           "/xtmp/$USER/ptmp"
@@ -19,3 +21,16 @@ postprocess:
   switches:
     clean_work:              True
     do_atmos_plevel_masking: True
+
+  # to be first-step-user-script
+  preanalysis:
+    vitals:
+      script: "/work/d4s/fre-wf-local-testing/dummy_preanalysis.csh"
+      inputs: ['atmos_month', 'aerosol_month'] # not used currently
+      do_preanalysis: True
+  refinediag:
+    ocean:
+      script: "/work/d4s/fre-wf-local-testing/dummy_refinediag.csh"
+      inputs: ['ocean_monthly', 'ocean_bgc'] # not used currently
+      outputs: ['ocean_refined']             # not used currently
+      do_refinediag: True

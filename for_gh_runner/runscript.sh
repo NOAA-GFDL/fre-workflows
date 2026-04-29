@@ -22,6 +22,14 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
+## not nice workaround we need for hsmput
+# there was a shell discrepancy: Makefile running in csh shell but command
+# that was causing the error had bash syntax
+# solution: change the csh shell line to sh
+# this might be better in the DOckerfile?
+#print the line to make sure it was changed in the build
+sed -n '28p' /app/cylc-flow-tools/mk/hsmput.mk
+
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
@@ -94,13 +102,13 @@ fre_pp_steps () {
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
 
-    ## Configure the rose-suite and rose-app files for the workflow
-    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite/app config files ..."
+    ## Configure the rose-suite file for the workflow
+    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite config file ..."
     fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
     ## Validate the configuration files
-    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
+    echo -e "\nRunning fre pp validate, validating rose-suite config file ..."
     fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "VALIDATE"
 

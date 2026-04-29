@@ -1,9 +1,10 @@
 # directories shared across tools
 directories:
-  history_dir:        "/mnt/history"
-  pp_dir:             "/mnt/pp"
+  history_dir:         "/mnt/history"
+  refined_history_dir: "/mnt/refined_history" 
+  pp_dir:              "/mnt/pp"
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
-  ptmp_dir:           "/mnt/ptmp"
+  ptmp_dir:            "/mnt/ptmp"
 
 postprocess:
   settings:
@@ -16,3 +17,20 @@ postprocess:
   switches:
     clean_work:              True
     do_atmos_plevel_masking: True
+
+  # to be first-step-user-scripts
+  preanalysis:
+    vitals:
+      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_preanalysis.csh"
+      inputs: ['atmos_month', 'aerosol_month'] #not used currently
+      # to be user-script_on
+      do_preanalysis: True
+
+  # to be refinediag-user-scripts
+  refinediag:
+    ocean:
+      script: "/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_refinediag.csh"
+      inputs: ['ocean_monthly', 'ocean_bgc'] # not used currently
+      outputs: ['ocean_refined']             # not used currently
+      # to be user_script_on
+      do_refinediag: True
