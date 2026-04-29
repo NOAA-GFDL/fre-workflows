@@ -2,8 +2,6 @@
 directories:
   history_dir:         "/mnt/history"
   refined_history_dir: "/mnt/refined_history" 
-#"/contrib-efs/container-test/refined_history"
-# "/mnt2/refined_history"
   pp_dir:              "/mnt/pp"
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
   ptmp_dir:            "/mnt/ptmp"
