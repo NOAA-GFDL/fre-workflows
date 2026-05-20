@@ -12,8 +12,8 @@ directories:
 postprocess:
   settings:
     history_segment:         "P1Y"
-#    site:                    "ppan"
-    site:                    "ppan_test"
+    site:                    "ppan"
+#    site:                    "ppan_test"
     pp_chunks:               [*PP_CHUNK96]
     pp_start:                *EXP_AMIP_START
     pp_stop:                 *EXP_AMIP_END

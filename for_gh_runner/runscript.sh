@@ -83,12 +83,19 @@ check_exit_status () {
 fre_pp_steps () {
     set -x
 
+    ## Clean previous experiment
     echo "experiment cleaning, if it was previously installed"
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Removing ${name}..."
         cylc clean ${name}
     fi
+
+    ## More cleaning neede for refineDiag output
+    if [ -d /mnt/$USER/refined_history ] && [ -n "$(ls -A /mnt/$USER/refined_history)" ]; then
+        echo -e "Refine Diag scripts previously run"
+        rm -rf /mnt/$USER/refined_history
+    fi 
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ..."

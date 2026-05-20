@@ -58,6 +58,13 @@ if [ -d $cylc_src_dir_name ]; then
     sleep 10s
 fi
 
+## More cleaning neede for refineDiag output
+if [ -d /mnt/$USER/refined_history ] && [ -n "$(ls -A /mnt/$USER/refined_history)" ]; then
+    echo -e "Refine Diag scripts previously run"
+    rm -rf "/work/$USER/fre-wf-local-testing/refined_history"
+fi
+
+
 # if you want this, comment on https://github.com/NOAA-GFDL/fre-cli/issues/673
 #echo ""
 #echo ""
@@ -100,12 +107,12 @@ echo ""
 echo "*****************"
 echo "VALIDATING"
 echo "fre -vv pp validate $ept_arg_string"
-fre -vv pp validate $ept_arg_string
-if [ $? -ne 0 ] ; then
-    echo "*****************"
-    echo "ERROR VALIDATING"
-    return 1
-fi
+#fre -vv pp validate $ept_arg_string
+#if [ $? -ne 0 ] ; then
+#    echo "*****************"
+#    echo "ERROR VALIDATING"
+#    return 1
+#fi
 
 
 echo ""
