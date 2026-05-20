@@ -59,8 +59,8 @@ if [ -d $cylc_src_dir_name ]; then
 fi
 
 ## More cleaning neede for refineDiag output
-if [ -d /mnt/$USER/refined_history ] && [ -n "$(ls -A /mnt/$USER/refined_history)" ]; then
-    echo -e "Refine Diag scripts previously run"
+if [ -d /work/$USER/fre-wf-local-testing/refined_history ]; then
+    echo -e "Refine Diag scripts previously run, removing ..."
     rm -rf "/work/$USER/fre-wf-local-testing/refined_history"
 fi
 
