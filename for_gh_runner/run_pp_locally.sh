@@ -107,12 +107,12 @@ echo ""
 echo "*****************"
 echo "VALIDATING"
 echo "fre -vv pp validate $ept_arg_string"
-#fre -vv pp validate $ept_arg_string
-#if [ $? -ne 0 ] ; then
-#    echo "*****************"
-#    echo "ERROR VALIDATING"
-#    return 1
-#fi
+fre -vv pp validate $ept_arg_string
+if [ $? -ne 0 ] ; then
+    echo "*****************"
+    echo "ERROR VALIDATING"
+    return 1
+fi
 
 
 echo ""
