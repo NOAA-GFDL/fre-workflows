@@ -465,6 +465,7 @@
             env
             set -x
             mkdir -p $work $tempCache $refineDiagDir
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
             ls
         """
@@ -500,19 +501,23 @@
             fi
             if [[ $refinedCount > 0 ]]; then
                 for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                    # list the variables names in the netcdf file
+                    ncdump -h $file |
+                    grep -E "float|double" |
+                    awk '{print $2}' |
+                    cut -d '(' -f1 |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
                 exit 1
             fi
             if [[ -f {{ REFINED_HISTORY_DIR }}/$oname.nc.tar ]]; then
+                hsmget -v -t -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
+                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} is..."
                 ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}
                 echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc is..."
                 ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc
-                hsmget -v -t -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
-                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
