@@ -22,14 +22,6 @@ source /opt/conda/etc/profile.d/conda.sh
 conda deactivate
 conda activate /app/cylc-flow-tools
 
-## not nice workaround we need for hsmput
-# there was a shell discrepancy: Makefile running in csh shell but command
-# that was causing the error had bash syntax
-# solution: change the csh shell line to sh
-# this might be better in the DOckerfile?
-#print the line to make sure it was changed in the build
-sed -n '28p' /app/cylc-flow-tools/mk/hsmput.mk
-
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
