@@ -2,7 +2,7 @@
     [[root]]
         init-script = """
             # stock fre-cli
-            #module load fre/{{ FRE_VERSION }}
+            module load fre/{{ FRE_VERSION }}
 
             # custom user fre-cli
             #module load conda
@@ -11,8 +11,6 @@
             #which fre
             module load gcp/2.3
             module list
-
-            export PATH=/home/$USER/conda/envs/fre-cli/bin:$PATH
         """
         {# retries don't make sense yet while testing as they will just delay the failures #}
         {# execution retry delays = PT1M, PT5M, PT10M                                      #}

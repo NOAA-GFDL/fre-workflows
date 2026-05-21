@@ -91,7 +91,7 @@ fre_pp_steps () {
         cylc clean ${name}
     fi
 
-    ## More cleaning neede for refineDiag output
+    ## More cleaning needed for refineDiag output
     if [ -d /mnt/$USER/refined_history ]; then
         echo -e "Refine Diag scripts previously run, removing ..."
         rm -rf /mnt/$USER/refined_history
