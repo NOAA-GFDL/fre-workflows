@@ -1,4 +1,16 @@
+{# see https://cylc.github.io/cylc-doc/stable/html/user-guide/writing-workflows/scheduler.html#scheduler-configuration #}
+[scheduler]
+    [[events]]
+        startup handlers = """
+            mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/share \
+            && mkdir -p /xtmp/$USER/work/cylc-run/%(workflow)s/work
+        """
+        shutdown handlers = """
+            mkdir -p /xtmp/$USER/cleandir/$$/%(workflow)s \
+            && mv /xtmp/$USER/work/cylc-run/%(workflow)s/* /xtmp/$USER/cleandir/$$/%(workflow)s
+        """
 
+[runtime]
     [[root]]
         init-script = """
             # stock fre-cli
@@ -8,7 +20,7 @@
             #module load conda
             #conda activate user-fre-cli
 
-            #which fre
+            which fre
             module load gcp/2.3
             module list
         """
@@ -33,9 +45,7 @@
             env
             set -x
             module load hsm/1.4.0
-            module load gcp
-            # needed only for list_ncvars.
-            module load fre-nctools/2024.05.01
+            module load gcp/2.3
             mkdir -p $work $tempCache $refineDiagDir
             hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
@@ -63,5 +73,5 @@
 
 {% if DO_REGRID_STATIC or DO_NATIVE_STATIC %}
     [[combine-statics]]
-        pre-script = module load cdo
+        pre-script = module load cdo nco
 {% endif %}
