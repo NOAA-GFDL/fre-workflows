@@ -9,7 +9,7 @@ from legacy_date_conversions import convert_iso_duration_to_bronx_chunk
 # set up logging
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Global variables just set to reduce typing a little.
 duration_parser = DurationParser()
@@ -25,7 +25,7 @@ class AnalysisScript:
         Args:
             name: String name of the analysis.
             config: Dictionary of analysis script configuration options.
-            experiment_components: List of string experiment component names.
+            experiment_components: List of available postprocess component names.
             experiment_starting_date: Starting date for the experiment.
             experiment_stopping_date: Stopping date for the experiment.
             pp_chunks: List of ISO8601 durations used by the workflow.
@@ -35,35 +35,34 @@ class AnalysisScript:
         logger.debug(f"{name}: initializing AnalysisScript instance")
 
         # Skip if configuration wants to skip it
-        # analysis_on is an optional key that is True (by default)
+        # user_script_on is an optional key that is True (by default)
         # if not defined in the YAML
-        if "analysis_on" in config["workflow"]:
-            self.switch = config["workflow"]["analysis_on"]
+        if "user_script_on" in config:
+            self.switch = config["user_script_on"]
         else:
             self.switch = True
     
         if self.switch is False:
             return
 
-        # Skip if the components are not available
+        # Only legacy csh plugins are supported now
+        if config["install"]["method"] != "legacy":
+            raise ValueError(f"ERROR: Only legacy analysis scripts supported so far")
+
+        # Skip if the requested components are not available
         self.components = [x.strip() for x in config["workflow"]["components"]]
         for component in self.components:
             if component not in experiment_components:
-                raise ValueError(f"ERROR: Analysis script '{self.name}' requests postprocessing component '{component}' but is not one of these available components: {experiment_components}. Please add the component or turn the analysis script off.")
-
-        # Parse the pp date range
-        self.experiment_date_range = [
-            experiment_starting_date,
-            experiment_stopping_date
-        ]
+                raise ValueError(f"ERROR: User script '{self.name}' requests postprocessing component '{component}' but is not one of the available components {experiment_components}. Please add the component or turn the script off.")
 
         # Parse the rest of the 'workflow' config items
-        self.product = config["workflow"]["product"]
-        self.script_type = config["workflow"]["script_type"]
-        self.chunk = duration_parser.parse(config["workflow"]["chunk_size"])
+        self.product = config["data"]["type"]
+        self.script_type = config["install"]["method"]
+        self.when_to_run = config["workflow"]["when_to_run"]
+        self.chunk = duration_parser.parse(config["workflow"]["interval"])
 
         # Retrieve other config
-        self.data_frequency = config["required"]["data_frequency"]
+        self.data_frequency = config["data"]["frequency"]
 
         # check for needed pp prerequisites
         if self.product not in ['av', 'ts']:
@@ -87,31 +86,11 @@ class AnalysisScript:
                     raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
                                      f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
 
-        # Parse the new analysis config items
-        if 'legacy' in config:
-            self.is_legacy = True
-            # the first word of command will be the script, but there could be more command-line args
-            stuff = config["legacy"]["script"].split()
-            if len(stuff) > 1:
-                self.legacy_script = stuff.pop(0)
-                self.legacy_script_args = ' '.join(stuff)
-            else:
-                self.legacy_script = stuff.pop(0)
-                self.legacy_script_args = ""
-        else:
-            self.is_legacy = False
+        # YAGNI? do scripts really want to specify their own start/stop dates?
+        self.date_range = [experiment_starting_date, experiment_stopping_date]
 
-        # if dates are years, convert to string or else ISO conversion will fail
-        if isinstance(config["required"]["date_range"][0], int):
-            one = "{:04d}".format(config["required"]["date_range"][0])
-            two = "{:04d}".format(config["required"]["date_range"][1])
-        else:
-            one = config["required"]["date_range"][0]
-            two = config["required"]["date_range"][1]
-        self.date_range = [
-            time_parser.parse(one),
-            time_parser.parse(two)
-        ]
+        # this only works for legacy scripts
+        self.legacy_script = config["install"]["path"]
 
         logger.debug(f"{name}: initialized instance")
 
@@ -135,7 +114,7 @@ class AnalysisScript:
 
         date0, date1 = self.date_range
 
-        if self.script_type == "independent":
+        if self.when_to_run == "independent":
             # Run every chunk (not cumulative)
             suffix = f"{self.chunk}"
             graph += f'{self.chunk} = """\n'
@@ -150,11 +129,11 @@ class AnalysisScript:
 
                 graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
 
-            if not self.is_legacy:
+            if not self.script_type == "legacy":
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
 
             graph += f'"""\n'
-        elif self.script_type == "cumulative":
+        elif self.when_to_run == "cumulative":
             # Run every chunk (cumulative)
             deps = []
             d = date0
@@ -172,12 +151,12 @@ class AnalysisScript:
 
                     graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
-                if not self.is_legacy:
+                if not self.script_type == "legacy":
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{d.year:04}\n"
 
                 graph += '"""\n'
                 d += self.chunk
-        elif self.script_type == "one-shot":
+        elif self.when_to_run == "one-shot":
             # Run the analysis once, over a custom date range
             suffix = f"{date0.year:04}_{date1.year:04}"
             graph += f'R1/{date0} = """\n'
@@ -196,14 +175,14 @@ class AnalysisScript:
 
                 graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
-            if not self.is_legacy:
+            if not self.script_type == "legacy":
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{date0.year:04}_{date1.year:04}"
 
             graph += '"""\n'
         else:
             raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
-        if not self.is_legacy:
+        if not self.script_type == "legacy":
             graph += f'R1 = """install-analysis-{self.name}"""\n'
 
         return graph
@@ -252,7 +231,7 @@ set -o posix
 vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z])
         '''
 
-        if self.is_legacy:
+        if self.script_type == "legacy":
             script_basename = Path(self.legacy_script).name
             legacy_analysis_str += f"""
 # WORKDIR is the exception to include
@@ -282,7 +261,7 @@ rm sed-script
 
 # Then, run the script
 chmod +x $scriptOut
-$scriptOut {self.legacy_script_args}
+$scriptOut
         '''
         [[[environment]]]
             # some analysis scripts expect a trailing slash
@@ -319,15 +298,16 @@ fre analysis install \
         '''
         """
 
-        if self.script_type == "independent":
+        if self.when_to_run == "independent":
             # to make the task run, we will create a corresponding task graph below
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
             logger.debug(f"{self.name}: Will run every chunk {self.chunk}")
-            if self.is_legacy:
+            if self.script_type == "legacy":
                 definitions += legacy_analysis_str
             else:
+                raise NotImpelementedError("Only legacy plugins supported so far")
                 definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
@@ -368,13 +348,13 @@ fre analysis install \
                 """
 
             # create the install script
-            if not self.is_legacy:
+            if not self.script_type == "legacy":
                 definitions += install_str
 
             logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
 
-        if self.script_type == "cumulative":
+        if self.when_to_run == "cumulative":
             # Case 2: run the analysis every chunk, but depend on all previous chunks too.
             # To make the task run, we will create a task family for
             # each chunk/interval, starting from the beginning of pp data
@@ -390,7 +370,7 @@ fre analysis install \
         inherit = ANALYSIS-{self.chunk}-{date_str}, analysis-{self.name}
                 """
 
-                if self.is_legacy:
+                if self.script_type:
                     definitions += legacy_analysis_str
                 else:
                     definitions += new_analysis_str
@@ -441,12 +421,12 @@ fre analysis install \
                 date += self.chunk
 
             # create the install script
-            if not self.is_legacy:
+            if not self.script_type == "legacy":
                 definitions += install_str
 
             return definitions
 
-        if self.script_type == "one-shot":
+        if self.when_to_run == "one-shot":
             # Locate the nearest enclosing chunks.
             d1 = self.experiment_date_range[0]
             while d1 <= self.date_range[0] - self.chunk:
@@ -508,18 +488,19 @@ fre analysis install \
             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
 
-            if self.is_legacy:
+            if self.script_type == "legacy":
                 definitions += legacy_analysis_str
             else:
                 definitions += install_str
                 definitions += new_analysis_str
 
             return definitions
+
         raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
 
 def task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
-    for script_name, script_params in yaml_["analysis"].items():
+    for script_name, script_params in yaml_["final-step-user-scripts"].items():
         # Retrieve information about the script
         script_info = AnalysisScript(script_name, script_params, experiment_components,
                                      experiment_start, experiment_stop, pp_chunks, yaml_)
