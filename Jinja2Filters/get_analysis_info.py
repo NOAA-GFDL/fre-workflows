@@ -137,8 +137,7 @@ class AnalysisScript:
         elif self.when_to_run == "cumulative":
             # Run every chunk (cumulative)
             deps = []
-            interval_years_minus_one = self.chunk - one_year
-            d = date0 + interval_years_minus_one
+            d = date0
             while d <= date1:
                 suffix = f"{self.chunk}-{d.year:04}"
                 graph += f'R1/{d} = """\n'
@@ -363,7 +362,7 @@ fre analysis install \
             # then we create an analysis script task for each of these task families.
             logger.debug(f"{self.name}: Will run each chunk {self.chunk} from beginning {self.experiment_date_range[0]}")
             interval_years_minus_one = self.chunk - one_year
-            date = self.experiment_date_range[0] + interval_years_minus_one
+            date = self.experiment_date_range[0]
             while date <= self.experiment_date_range[1]:
                 date_str = f"{date.year:04}"
 
@@ -380,7 +379,7 @@ fre analysis install \
 
                 # Add the task definition family for each ending time.
                 year1 = f"{self.experiment_date_range[0].year:04}"
-                year2 = f"{date.year:04}"
+                year2 = f"{(date + interval_years_minus_one).year:04}"
                 definitions += f"""
                     [[data-catalog-{self.chunk}-{date_str}]]
                         inherit = DATA-CATALOG
