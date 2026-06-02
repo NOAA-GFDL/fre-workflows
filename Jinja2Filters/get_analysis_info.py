@@ -45,9 +45,8 @@ class AnalysisScript:
         if self.switch is False:
             return
 
-        # Only cshell plugins are supported now
-        if config["install"]["method"] != "cshell":
-            raise ValueError(f"ERROR: Only cshell analysis scripts supported so far")
+        if config["install"]["method"] not in ("cshell", "pip"):
+            raise ValueError(f"ERROR: install method must be 'cshell' or 'pip'")
 
         # Skip if the requested components are not available
         self.components = [x.strip() for x in config["workflow"]["components"]]
@@ -56,42 +55,46 @@ class AnalysisScript:
                 raise ValueError(f"ERROR: User script '{self.name}' requests postprocessing component '{component}' but is not one of the available components {experiment_components}. Please add the component or turn the script off.")
 
         # Parse the rest of the 'workflow' config items
-        self.product = config["data"]["type"]
         self.script_type = config["install"]["method"]
         self.when_to_run = config["workflow"]["when_to_run"]
         self.chunk = duration_parser.parse(config["workflow"]["interval"])
 
-        # Retrieve other config
-        self.data_frequency = config["data"]["frequency"]
+        if self.script_type == "cshell":
+            self.product = config["data"]["type"]
+            self.data_frequency = config["data"]["frequency"]
+        elif self.script_type == "pip":
+            self.product = config.get("data", {}).get("type", "ts")
 
-        # check for needed pp prerequisites
-        if self.product not in ['av', 'ts']:
-            raise ValueError("ERROR: product type must be 'ts' or 'av'")
-        if self.product == "ts":
-            if self.chunk not in pp_chunks:
-                raise ValueError(f"ERROR: Analysis script '{self.name}' requests timeseries chunk size '{self.chunk}', but " +
-                                 "this chunk size is not declared in 'pp_chunks'")
-        else:
-            # Loop through the components and look for the ones specified by the analysis script
-            # For each component to check, confirm that its climatology section contains the requested climo chunk
-            for ana_comp in config["workflow"]["components"]:
-                found_needed_inputs_for_component = False
-                for exp_comp in yaml["postprocess"]["components"]:
-                    if exp_comp["type"] == ana_comp:
-                        if 'climatology' in exp_comp:
-                            for climo_request in exp_comp["climatology"]:
-                                if climo_request["frequency"] == self.data_frequency and climo_request["interval_years"] == self.chunk.years:
-                                    found_needed_inputs_for_component = True
-                if not found_needed_inputs_for_component:
-                    raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
-                                     f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
+            # check for needed pp prerequisites
+            if self.product not in ['av', 'ts']:
+                raise ValueError("ERROR: product type must be 'ts' or 'av'")
+            if self.product == "ts":
+                if self.chunk not in pp_chunks:
+                    raise ValueError(f"ERROR: Analysis script '{self.name}' requests timeseries chunk size '{self.chunk}', but " +
+                                     "this chunk size is not declared in 'pp_chunks'")
+            else:
+                # Confirm the requested climatology chunk exists for each component
+                for ana_comp in config["workflow"]["components"]:
+                    found_needed_inputs_for_component = False
+                    for exp_comp in yaml["postprocess"]["components"]:
+                        if exp_comp["type"] == ana_comp:
+                            if 'climatology' in exp_comp:
+                                for climo_request in exp_comp["climatology"]:
+                                    if climo_request["frequency"] == self.data_frequency and climo_request["interval_years"] == self.chunk.years:
+                                        found_needed_inputs_for_component = True
+                    if not found_needed_inputs_for_component:
+                        raise ValueError(f"ERROR: Analysis script '{self.name}' requests climatology chunk size '{self.chunk}', but " +
+                                         f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
 
         # YAGNI? do scripts really want to specify their own start/stop dates?
         self.date_range            = [experiment_starting_date, experiment_stopping_date]
         self.experiment_date_range = [experiment_starting_date, experiment_stopping_date]
 
-        # this only works for cshell scripts
-        self.cshell_script = config["install"]["path"]
+        if self.script_type == "cshell":
+            self.cshell_script = config["install"]["path"]
+        elif self.script_type == "pip":
+            self.pip_package = config["install"]["package"]
+            self.pip_entry_point = config["install"]["entry_point"]
 
         logger.debug(f"{name}: initialized instance")
 
@@ -179,44 +182,33 @@ class AnalysisScript:
             "3hr": "3hr",
             "6hr": "6hr",
         }
-        frequency = cmip_to_bronx[self.data_frequency]
-        bronx_chunk = convert_iso_duration_to_bronx_chunk(self.chunk)
+        if self.script_type == "cshell":
+            frequency = cmip_to_bronx[self.data_frequency]
+            bronx_chunk = convert_iso_duration_to_bronx_chunk(self.chunk)
+            if self.product == "ts":
+                in_data_dir = Path(pp_dir) / self.components[0] / self.product / frequency / bronx_chunk
+            else:
+                in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
 
-        # ts and av distinction
-        if self.product == "ts":
-            in_data_dir = Path(pp_dir) / self.components[0] / self.product / frequency / bronx_chunk
-        else:
-            in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
-
-        cshell_analysis_str = f"""
+            script_basename = Path(self.cshell_script).name
+            cshell_analysis_str = f"""
     [[analysis-{self.name}]]
         script = '''
-# First, sed-replace the template vars and create a runnable analysis script from the template.
-# actually, just sed-replace the undercase environment variables
-# need posix mode to output variables in a simple list (not json)
+# sed-replace lowercase environment variables into the cshell script template
 set -o posix
-        """
-
-        # quoting madness!
-        cshell_analysis_str += '''
-vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z])
-        '''
-
-        if self.script_type == "cshell":
-            script_basename = Path(self.cshell_script).name
-            cshell_analysis_str += f"""
+vars=$(set | awk -F '=' '{{ print $1 }}' | grep [a-z])
 # WORKDIR is the exception to include
 vars="$vars WORKDIR"
 
 # create the sed script
 for var in $vars; do
-    eval var2=\$$var
+    eval var2=\\$$var
     if [[ -n $var2 ]]; then
-        echo "s|set $var\s*$|set $var = $var2|" >> sed-script
-        echo "s|^\s*$var=\s*$|$var='$var2'|"    >> sed-script
+        echo "s|set $var\\s*$|set $var = $var2|" >> sed-script
+        echo "s|^\\s*$var=\\s*$|$var='$var2'|"    >> sed-script
     fi
 done
-echo "s|\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|" >> sed-script
+echo "s|\\$FRE_ANALYSIS_HOME|$FRE_ANALYSIS_HOME|" >> sed-script
 
 # write the filled-in script
 if [[ $yr1 == $yr2 ]]; then
@@ -243,29 +235,17 @@ $scriptOut
             datachunk = {self.chunk.years}
             """
 
-        new_analysis_str = f"""
+        if self.script_type == "pip":
+            pip_analysis_str = f"""
     [[analysis-{self.name}]]
         script = '''
-fre analysis run
-    --name              freanalysis_{self.name}
-    --catalog           $catalog
-    --output-directory  $out_dir/{self.name}
-    --output-yaml       $out_dir/{self.name}/output.yaml
-    --experiment-yaml   $experiment_yaml
-    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
+{self.pip_entry_point} $case_yaml $settings_yaml $output_dir
         '''
-        # retry 10 times (due to mysterious intake-esm issue)
-        execution retry delays = 10*PT1M
         """
-
-        install_str = f"""
+            pip_install_str = f"""
     [[install-analysis-{self.name}]]
-        inherit = BUILD-ANALYSIS
         script = '''
-fre analysis install \
-    --url               $ANALYSIS_URL \
-    --name              freanalysis_{self.name} \
-    --library-directory $CYLC_WORKFLOW_SHARE_DIR/analysis-envs/freanalysis_{self.name}
+pip install {self.pip_package}
         '''
         """
 
@@ -277,9 +257,8 @@ fre analysis install \
             logger.debug(f"{self.name}: Will run every chunk {self.chunk}")
             if self.script_type == "cshell":
                 definitions += cshell_analysis_str
-            else:
-                raise NotImpelementedError("Only cshell plugins supported so far")
-                definitions += new_analysis_str
+            elif self.script_type == "pip":
+                definitions += pip_analysis_str
 
             # create the task family for all every-interval analysis scripts
             interval_years_minus_one = self.chunk - one_year
@@ -302,8 +281,8 @@ fre analysis install \
         inherit = ANALYSIS-{self.chunk}
             """
 
-            # For time averages, set the in_data_file variable
-            if self.product == "av":
+            # For time averages, set the in_data_file variable (cshell only)
+            if self.script_type == "cshell" and self.product == "av":
                 if self.data_frequency == "mon":
                     times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                 else:
@@ -318,9 +297,8 @@ fre analysis install \
             in_data_file = {self.components[0]}.{years}.{times}.nc
                 """
 
-            # create the install script
-            if not self.script_type == "cshell":
-                definitions += install_str
+            if self.script_type == "pip":
+                definitions += pip_install_str
 
             logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
@@ -344,10 +322,10 @@ fre analysis install \
         inherit = ANALYSIS-{self.chunk}-{date_str}, analysis-{self.name}
                 """
 
-                if self.script_type:
+                if self.script_type == "cshell":
                     definitions += cshell_analysis_str
-                else:
-                    definitions += new_analysis_str
+                elif self.script_type == "pip":
+                    definitions += pip_analysis_str
 
                 # Add the task definition family for each ending time.
                 definitions += f"""
@@ -362,8 +340,8 @@ fre analysis install \
                             dataendyr = $yr2
                 """
 
-                # Add the time average in_data_file
-                if self.product == "av":
+                # Add the time average in_data_file (cshell only)
+                if self.script_type == "cshell" and self.product == "av":
                     if self.data_frequency == "mon":
                         times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
                     else:
@@ -392,9 +370,8 @@ fre analysis install \
                     """
                 date += self.chunk
 
-            # create the install script
-            if not self.script_type == "cshell":
-                definitions += install_str
+            if self.script_type == "pip":
+                definitions += pip_install_str
 
             return definitions
 
