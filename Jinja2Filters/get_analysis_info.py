@@ -45,9 +45,9 @@ class AnalysisScript:
         if self.switch is False:
             return
 
-        # Only legacy csh plugins are supported now
-        if config["install"]["method"] != "legacy":
-            raise ValueError(f"ERROR: Only legacy analysis scripts supported so far")
+        # Only cshell plugins are supported now
+        if config["install"]["method"] != "cshell":
+            raise ValueError(f"ERROR: Only cshell analysis scripts supported so far")
 
         # Skip if the requested components are not available
         self.components = [x.strip() for x in config["workflow"]["components"]]
@@ -90,8 +90,8 @@ class AnalysisScript:
         self.date_range            = [experiment_starting_date, experiment_stopping_date]
         self.experiment_date_range = [experiment_starting_date, experiment_stopping_date]
 
-        # this only works for legacy scripts
-        self.legacy_script = config["install"]["path"]
+        # this only works for cshell scripts
+        self.cshell_script = config["install"]["path"]
 
         logger.debug(f"{name}: initialized instance")
 
@@ -124,7 +124,7 @@ class AnalysisScript:
 
             graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
 
-            if not self.script_type == "legacy":
+            if not self.script_type == "cshell":
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
 
             graph += f'"""\n'
@@ -145,7 +145,7 @@ class AnalysisScript:
 
                 graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
-                if not self.script_type == "legacy":
+                if not self.script_type == "cshell":
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{year_start}_{year_end}\n"
 
                 graph += '"""\n'
@@ -153,7 +153,7 @@ class AnalysisScript:
         else:
             raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
-        if not self.script_type == "legacy":
+        if not self.script_type == "cshell":
             graph += f'R1 = """install-analysis-{self.name}"""\n'
 
         return graph
@@ -188,7 +188,7 @@ class AnalysisScript:
         else:
             in_data_dir = Path(pp_dir) / self.components[0] / self.product / f"{frequency}_{bronx_chunk}"
 
-        legacy_analysis_str = f"""
+        cshell_analysis_str = f"""
     [[analysis-{self.name}]]
         script = '''
 # First, sed-replace the template vars and create a runnable analysis script from the template.
@@ -198,13 +198,13 @@ set -o posix
         """
 
         # quoting madness!
-        legacy_analysis_str += '''
+        cshell_analysis_str += '''
 vars=$(set | awk -F '=' '{ print $1 }' | grep [a-z])
         '''
 
-        if self.script_type == "legacy":
-            script_basename = Path(self.legacy_script).name
-            legacy_analysis_str += f"""
+        if self.script_type == "cshell":
+            script_basename = Path(self.cshell_script).name
+            cshell_analysis_str += f"""
 # WORKDIR is the exception to include
 vars="$vars WORKDIR"
 
@@ -225,7 +225,7 @@ else
     scriptOut=$outputDir/{script_basename}.$yr1-$yr2
 fi
 mkdir -p $outputDir
-sed -f sed-script {self.legacy_script} > $scriptOut
+sed -f sed-script {self.cshell_script} > $scriptOut
 echo "Saved script '$scriptOut'"
 ls -l $scriptOut
 rm sed-script
@@ -275,10 +275,10 @@ fre analysis install \
             # Then, the analysis script will inherit from that family, to enable
             # both the task triggering and the yr1 and datachunk template vars.
             logger.debug(f"{self.name}: Will run every chunk {self.chunk}")
-            if self.script_type == "legacy":
-                definitions += legacy_analysis_str
+            if self.script_type == "cshell":
+                definitions += cshell_analysis_str
             else:
-                raise NotImpelementedError("Only legacy plugins supported so far")
+                raise NotImpelementedError("Only cshell plugins supported so far")
                 definitions += new_analysis_str
 
             # create the task family for all every-interval analysis scripts
@@ -319,7 +319,7 @@ fre analysis install \
                 """
 
             # create the install script
-            if not self.script_type == "legacy":
+            if not self.script_type == "cshell":
                 definitions += install_str
 
             logger.debug(f"{self.name}: Finished determining scripting")
@@ -345,7 +345,7 @@ fre analysis install \
                 """
 
                 if self.script_type:
-                    definitions += legacy_analysis_str
+                    definitions += cshell_analysis_str
                 else:
                     definitions += new_analysis_str
 
@@ -393,7 +393,7 @@ fre analysis install \
                 date += self.chunk
 
             # create the install script
-            if not self.script_type == "legacy":
+            if not self.script_type == "cshell":
                 definitions += install_str
 
             return definitions
