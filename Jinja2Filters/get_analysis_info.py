@@ -95,11 +95,8 @@ class AnalysisScript:
 
         logger.debug(f"{name}: initialized instance")
 
-    def graph(self, analysis_only):
+    def graph(self):
         """Generate the cylc task graph string for the analysis script.
-
-        Args:
-            analysis_only: Boolean; can we assume pp files are already there?
 
         Returns:
             String cylc task graph for the analysis.
@@ -120,15 +117,12 @@ class AnalysisScript:
             suffix = f"{self.chunk}"
             graph += f'{self.chunk} = """\n'
 
-            if analysis_only:
-                graph += f"ANALYSIS-{suffix}?\n"
+            if self.product == "av":
+                dep = f"COMBINE-TIMEAVGS-{self.chunk}:succeed-all"
             else:
-                if self.product == "av":
-                    dep = f"COMBINE-TIMEAVGS-{self.chunk}:succeed-all"
-                else:
-                    dep = f"REMAP-PP-COMPONENTS-TS-{self.chunk}:succeed-all"
+                dep = f"REMAP-PP-COMPONENTS-TS-{self.chunk}:succeed-all"
 
-                graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
+            graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
 
             if not self.script_type == "legacy":
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
@@ -144,15 +138,12 @@ class AnalysisScript:
                 suffix = f"{self.chunk}-{year_start}_{year_end}"
                 graph += f'R1/{d} = """\n'
 
-                if analysis_only:
-                    graph += f"ANALYSIS-{suffix}\n"
+                if self.product == "av":
+                    deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
                 else:
-                    if self.product == "av":
-                        deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
-                    else:
-                        deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
+                    deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
 
-                    graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
+                graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
                 if not self.script_type == "legacy":
                     graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{year_start}_{year_end}\n"
@@ -164,19 +155,16 @@ class AnalysisScript:
             suffix = f"{date0.year:04}_{date1.year:04}"
             graph += f'R1/{date0} = """\n'
 
-            if analysis_only:
-                graph += f"ANALYSIS-{suffix}\n"
-            else:
-                deps = []
-                d = date0
-                while d <= date1:
-                    if self.product == "av":
-                        deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
-                    else:
-                        deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
-                    d += self.chunk
+            deps = []
+            d = date0
+            while d <= date1:
+                if self.product == "av":
+                    deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
+                else:
+                    deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
+                d += self.chunk
 
-                graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
+            graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
             if not self.script_type == "legacy":
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{date0.year:04}_{date1.year:04}"
@@ -536,7 +524,7 @@ def task_definitions(yaml_, experiment_components, experiment_start, experiment_
     return definitions
 
 
-def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks, analysis_only):
+def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
     """Return the task graphs for all user-defined analysis scripts.
 
     Args:
@@ -545,19 +533,18 @@ def task_graph(yaml_, experiment_components, experiment_start, experiment_stop, 
         experiment_start: Date that the experiment starts at.
         experiment_stop: Date that the experiment stops at.
         pp_chunks: List of ISO8601 durations used by the workflow.
-        analysis_only: Optional boolean to not depend on remap tasks (assume pp files already exist)
 
     Returns:
         String containing the task graphs.
     """
     graph = ""
     for script_info in task_generator(yaml_, experiment_components, experiment_start, experiment_stop, pp_chunks):
-        graph += script_info.graph(analysis_only)
+        graph += script_info.graph()
     return graph
 
 
 def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
-                           experiment_start, experiment_stop, pp_chunks, analysis_only=False):
+                           experiment_start, experiment_stop, pp_chunks):
     """Return requested analysis-related information from app/analysis/rose-app.conf
 
     Args:
@@ -571,7 +558,6 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
                                         For cumulative scripts, use for yr1
         pp_stop_str (str):              last cycle point to process
         pp_chunks: List of ISO8601 durations used by the workflow.
-        analysis_only (bool): make task graphs not depend on REMAP-PP-COMPONENTS
     """
     logger.debug("get_analysis_info: starting")
     # Convert strings to date objects.
@@ -587,7 +573,7 @@ def get_analysis_info(experiment_yaml, info_type, experiment_components, pp_dir,
         if info_type == "task-graph":
             logger.debug("get_analysis_info: about to return graph")
             return task_graph(yaml_, experiment_components, experiment_start,
-                              experiment_stop, pp_chunks, analysis_only)
+                              experiment_stop, pp_chunks)
         if info_type == "task-definitions":
             logger.debug("get_analysis_info: about to return definitions")
             return task_definitions(yaml_, experiment_components, experiment_start,
