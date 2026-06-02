@@ -87,7 +87,8 @@ class AnalysisScript:
                                      f"no suitable climatology sections were found in postprocess component '{ana_comp}'")
 
         # YAGNI? do scripts really want to specify their own start/stop dates?
-        self.date_range = [experiment_starting_date, experiment_stopping_date]
+        self.date_range            = [experiment_starting_date, experiment_stopping_date]
+        self.experiment_date_range = [experiment_starting_date, experiment_stopping_date]
 
         # this only works for legacy scripts
         self.legacy_script = config["install"]["path"]
@@ -136,7 +137,8 @@ class AnalysisScript:
         elif self.when_to_run == "cumulative":
             # Run every chunk (cumulative)
             deps = []
-            d = date0
+            interval_years_minus_one = self.chunk - one_year
+            d = date0 + interval_years_minus_one
             while d <= date1:
                 suffix = f"{self.chunk}-{d.year:04}"
                 graph += f'R1/{d} = """\n'
@@ -360,7 +362,8 @@ fre analysis install \
             # each chunk/interval, starting from the beginning of pp data
             # then we create an analysis script task for each of these task families.
             logger.debug(f"{self.name}: Will run each chunk {self.chunk} from beginning {self.experiment_date_range[0]}")
-            date = self.experiment_date_range[0]
+            interval_years_minus_one = self.chunk - one_year
+            date = self.experiment_date_range[0] + interval_years_minus_one
             while date <= self.experiment_date_range[1]:
                 date_str = f"{date.year:04}"
 
