@@ -139,7 +139,9 @@ class AnalysisScript:
             deps = []
             d = date0
             while d <= date1:
-                suffix = f"{self.chunk}-{d.year:04}"
+                year_start = f"{date0.year:04}"
+                year_end = f"{(d + self.chunk - one_year).year:04}"
+                suffix = f"{self.chunk}-{year_start}_{year_end}"
                 graph += f'R1/{d} = """\n'
 
                 if analysis_only:
@@ -153,7 +155,7 @@ class AnalysisScript:
                     graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
 
                 if not self.script_type == "legacy":
-                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{d.year:04}\n"
+                    graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{year_start}_{year_end}\n"
 
                 graph += '"""\n'
                 d += self.chunk
@@ -364,7 +366,9 @@ fre analysis install \
             interval_years_minus_one = self.chunk - one_year
             date = self.experiment_date_range[0]
             while date <= self.experiment_date_range[1]:
-                date_str = f"{date.year:04}"
+                year1 = f"{self.experiment_date_range[0].year:04}"
+                year2 = f"{(date + interval_years_minus_one).year:04}"
+                date_str = f"{year1}_{year2}"
 
                 # Add the task definition for each ending time.
                 definitions += f"""
@@ -378,8 +382,6 @@ fre analysis install \
                     definitions += new_analysis_str
 
                 # Add the task definition family for each ending time.
-                year1 = f"{self.experiment_date_range[0].year:04}"
-                year2 = f"{(date + interval_years_minus_one).year:04}"
                 definitions += f"""
                     [[data-catalog-{self.chunk}-{date_str}]]
                         inherit = DATA-CATALOG
