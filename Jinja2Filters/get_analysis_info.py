@@ -150,26 +150,6 @@ class AnalysisScript:
 
                 graph += '"""\n'
                 d += self.chunk
-        elif self.when_to_run == "one-shot":
-            # Run the analysis once, over a custom date range
-            suffix = f"{date0.year:04}_{date1.year:04}"
-            graph += f'R1/{date0} = """\n'
-
-            deps = []
-            d = date0
-            while d <= date1:
-                if self.product == "av":
-                    deps.append(f"COMBINE-TIMEAVGS-{self.chunk}[{d}]:succeed-all")
-                else:
-                    deps.append(f"REMAP-PP-COMPONENTS-TS-{self.chunk}[{d}]:succeed-all")
-                d += self.chunk
-
-            graph += " & ".join(deps) + f" => data-catalog-{suffix} => ANALYSIS-{suffix}\n"
-
-            if not self.script_type == "legacy":
-                graph += f"install-analysis-{self.name}[^] => analysis-{self.name}-{date0.year:04}_{date1.year:04}"
-
-            graph += '"""\n'
         else:
             raise NotImplementedError(f"Non-supported analysis script configuration: {self.name}")
 
@@ -415,76 +395,6 @@ fre analysis install \
             # create the install script
             if not self.script_type == "legacy":
                 definitions += install_str
-
-            return definitions
-
-        if self.when_to_run == "one-shot":
-            # Locate the nearest enclosing chunks.
-            d1 = self.experiment_date_range[0]
-            while d1 <= self.date_range[0] - self.chunk:
-                d1 += self.chunk
-            d2 = self.experiment_date_range[1]
-            while d2 >= self.date_range[1] + self.chunk:
-                d2 -= self.chunk
-            d1_str = f"{d1.year:04}"
-            d2_str = f"{d2.year:04}"
-            logger.debug(f"{self.name}: Will run once for time period {self.date_range[0]} to {self.date_range[1]} (chunks {d1_str} to {d2_str})")
-            date1_str = f"{self.date_range[0].year:04}"
-            date2_str = f"{self.date_range[1].year:04}"
-
-            # Set the task definition above to inherit from the task family below
-            definitions += f"""
-    [[analysis-{self.name}-{date1_str}_{date2_str}]]
-        inherit = ANALYSIS-{date1_str}_{date2_str}, analysis-{self.name}
-            """
-
-            # Set time-varying stuff
-            definitions += f"""
-                [[data-catalog-{date1_str}_{date2_str}]]
-                    inherit = DATA-CATALOG
-                [[ANALYSIS-{date1_str}_{date2_str}]]
-                    inherit = ANALYSIS
-                    [[[environment]]]
-                        yr1 = {date1_str}
-                        yr2 = {date2_str}
-                        databegyr = $yr1
-                        dataendyr = $yr2
-            """
-
-            # now set the in_data_file for av's
-            if self.product == "av":
-                if self.data_frequency == "mon":
-                    times = '{01,02,03,04,05,06,07,08,09,10,11,12}'
-                else:
-                    times = 'ann'
-                if date1_str == date2_str:
-                    years = date1_str
-                else:
-                    # loop thru and determine the timeaverage filenames
-                    years = ""
-                    dd = d1
-                    while dd <= d2:
-                        y1 = f"{dd.year:04}"
-                        y2 = f"{(dd + self.chunk - one_year).year:04}"
-                        if len(years) > 0:
-                            years += ','
-                        if y1 == y2:
-                            years += f"{y1}"
-                        else:
-                            years += f"{y1}-{y2}"
-                        dd += self.chunk
-                years = "{" + str(years) + "}"
-                definitions += f"""
-    [[analysis-{self.name}]]
-        [[[environment]]]
-            in_data_file = {self.components[0]}.{years}.{times}.nc
-                """
-
-            if self.script_type == "legacy":
-                definitions += legacy_analysis_str
-            else:
-                definitions += install_str
-                definitions += new_analysis_str
 
             return definitions
 
