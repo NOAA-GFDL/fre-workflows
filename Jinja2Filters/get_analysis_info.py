@@ -45,8 +45,8 @@ class AnalysisScript:
         if self.switch is False:
             return
 
-        if config["install"]["method"] not in ("cshell", "pip"):
-            raise ValueError(f"ERROR: install method must be 'cshell' or 'pip'")
+        if config["install"]["method"] not in ("cshell", "pip", "conda"):
+            raise ValueError(f"ERROR: install method must be 'cshell', 'pip', or 'conda'")
 
         # Skip if the requested components are not available
         self.components = [x.strip() for x in config["workflow"]["components"]]
@@ -62,7 +62,7 @@ class AnalysisScript:
         if self.script_type == "cshell":
             self.product = config["data"]["type"]
             self.data_frequency = config["data"]["frequency"]
-        elif self.script_type == "pip":
+        elif self.script_type in ("pip", "conda"):
             self.product = config.get("data", {}).get("type", "ts")
 
             # check for needed pp prerequisites
@@ -103,6 +103,12 @@ class AnalysisScript:
             self.pip_package = package
             self.pip_entry_point = config["install"]["entry_point"]
             self.pip_python = config["install"]["python"]
+        elif self.script_type == "conda":
+            self.conda_package = config["install"]["package"]
+            self.conda_branch = config["install"].get("branch", None)
+            self.conda_environment_file = config["install"].get("environment_file", "environment.yaml")
+            self.conda_entry_point = config["install"]["entry_point"]
+            self.conda_executable = config["install"]["conda_executable"]
 
         logger.debug(f"{name}: initialized instance")
 
@@ -264,6 +270,28 @@ $venv_dir/bin/pip install {self.pip_package}
             venv_dir = $CYLC_WORKFLOW_SHARE_DIR/analysis-venvs/{self.name}
         """
 
+        if self.script_type == "conda":
+            branch_arg = f"--branch {self.conda_branch} " if self.conda_branch else ""
+            conda_analysis_str = f"""
+    [[analysis-{self.name}]]
+        script = '''
+{self.conda_executable} run --prefix $env_prefix --no-capture-output {self.conda_entry_point} $case_yaml $settings_yaml $output_dir
+        '''
+        [[[environment]]]
+            env_prefix = $CYLC_WORKFLOW_SHARE_DIR/analysis-conda-envs/{self.name}
+        """
+            conda_install_str = f"""
+    [[install-analysis-{self.name}]]
+        script = '''
+clone_dir=$CYLC_WORKFLOW_SHARE_DIR/analysis-conda-clones/{self.name}
+rm -rf $clone_dir $env_prefix
+git clone {branch_arg}{self.conda_package} $clone_dir
+{self.conda_executable} env create -f $clone_dir/{self.conda_environment_file} --prefix $env_prefix
+        '''
+        [[[environment]]]
+            env_prefix = $CYLC_WORKFLOW_SHARE_DIR/analysis-conda-envs/{self.name}
+        """
+
         if self.when_to_run == "independent":
             # to make the task run, we will create a corresponding task graph below
             # corresponding to the interval (chunk), e.g. ANALYSIS-P1Y.
@@ -274,6 +302,8 @@ $venv_dir/bin/pip install {self.pip_package}
                 definitions += cshell_analysis_str
             elif self.script_type == "pip":
                 definitions += pip_analysis_str
+            elif self.script_type == "conda":
+                definitions += conda_analysis_str
 
             # create the task family for all every-interval analysis scripts
             interval_years_minus_one = self.chunk - one_year
@@ -314,6 +344,8 @@ $venv_dir/bin/pip install {self.pip_package}
 
             if self.script_type == "pip":
                 definitions += pip_install_str
+            elif self.script_type == "conda":
+                definitions += conda_install_str
 
             logger.debug(f"{self.name}: Finished determining scripting")
             return definitions
@@ -341,6 +373,8 @@ $venv_dir/bin/pip install {self.pip_package}
                     definitions += cshell_analysis_str
                 elif self.script_type == "pip":
                     definitions += pip_analysis_str
+                elif self.script_type == "conda":
+                    definitions += conda_analysis_str
 
                 # Add the task definition family for each ending time.
                 definitions += f"""
@@ -387,6 +421,8 @@ $venv_dir/bin/pip install {self.pip_package}
 
             if self.script_type == "pip":
                 definitions += pip_install_str
+            elif self.script_type == "conda":
+                definitions += conda_install_str
 
             return definitions
 
