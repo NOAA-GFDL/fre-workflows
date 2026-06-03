@@ -93,8 +93,16 @@ class AnalysisScript:
         if self.script_type == "cshell":
             self.cshell_script = config["install"]["path"]
         elif self.script_type == "pip":
-            self.pip_package = config["install"]["package"]
+            package = config["install"]["package"]
+            # Convert SCP-style SSH URL (git@host:user/repo.git) to pip VCS format
+            if package.startswith("git@") and ":" in package:
+                host, path = package.split(":", 1)
+                package = f"git+ssh://{host}/{path}"
+            if "branch" in config["install"]:
+                package = f"{package}@{config['install']['branch']}"
+            self.pip_package = package
             self.pip_entry_point = config["install"]["entry_point"]
+            self.pip_python = config["install"]["python"]
 
         logger.debug(f"{name}: initialized instance")
 
@@ -239,14 +247,21 @@ $scriptOut
             pip_analysis_str = f"""
     [[analysis-{self.name}]]
         script = '''
+source $venv_dir/bin/activate
 {self.pip_entry_point} $case_yaml $settings_yaml $output_dir
         '''
+        [[[environment]]]
+            venv_dir = $CYLC_WORKFLOW_SHARE_DIR/analysis-venvs/{self.name}
         """
             pip_install_str = f"""
     [[install-analysis-{self.name}]]
         script = '''
-pip install {self.pip_package}
+{self.pip_python} -m venv $venv_dir
+$venv_dir/bin/pip install --upgrade pip setuptools wheel
+$venv_dir/bin/pip install {self.pip_package}
         '''
+        [[[environment]]]
+            venv_dir = $CYLC_WORKFLOW_SHARE_DIR/analysis-venvs/{self.name}
         """
 
         if self.when_to_run == "independent":
