@@ -75,3 +75,6 @@
     [[combine-statics]]
         pre-script = module load cdo nco
 {% endif %}
+
+    [[BUILD-ANALYSIS]]
+        pre-script = module load conda

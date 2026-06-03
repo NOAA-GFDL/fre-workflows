@@ -282,6 +282,7 @@ $venv_dir/bin/pip install {self.pip_package}
         """
             conda_install_str = f"""
     [[install-analysis-{self.name}]]
+        inherit = BUILD-ANALYSIS
         script = '''
 clone_dir=$CYLC_WORKFLOW_SHARE_DIR/analysis-conda-clones/{self.name}
 rm -rf $clone_dir $env_prefix
