@@ -106,14 +106,11 @@
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
-    # max number of active cycle points (default 5)
-    # this should be something sensible assuming tasks with required outputs
-    # (i.e. not marked as "ok to fail") such as analysis scripts.
-    # But until the analysis scripts can be marked optional then a workaround
-    # is to set this to be very high, ~100 cycle points.
-    # However, the cost of keeping many cycle points active at once are starting
-    # stage-history tasks first, possibly filling /xtmp before the clean tasks run.
-    runahead limit = P20
+    # Runahead limit specifies the number of cycle points that will spawn ahead of the oldest incomplete task.
+    # We don't need it because we specify the final cycle point, and it decreases robustness
+    # as it prevents future tasks from running due to a previous failed task.
+    # As runahead limit is required, we will set it to 99999.
+    runahead limit = P99999
     [[queues]]
         # Limit the entire workflow to 100 active tasks. Only allow a single cleaning
         # or data-catalog task to run at once, as they can fail if run in parallel.
