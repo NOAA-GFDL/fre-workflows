@@ -143,6 +143,11 @@ jobs:
           TASK_NAME: "stage-history"
         run: *task_check 
 
+      - name: Print  mask-atmos-plevel successes or failures
+        env:
+          TASK_NAME: "mask-atmos-plevel*"
+        run: *task_check
+
       - name: Print regrid-xy successes or failures
         env:
           TASK_NAME: "regrid-xy*"
@@ -151,12 +156,7 @@ jobs:
       - name: Print data-catalog-final (FAILURE-GUARDED)
         continue-on-error: true
         env:
-          TASK_NAME: "data-catalogi-final"
-        run: *task_check
-
-      - name: Print  mask-atmos-plevel successes or failures
-        env:
-          TASK_NAME: "mask-atmos-plevel*"
+          TASK_NAME: "data-catalog-final"
         run: *task_check
 
       - name: Print remap-pp-components successes or failures
