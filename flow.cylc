@@ -1,7 +1,7 @@
 #!jinja2
 
 {# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = "2026.01.alpha2" %}
+{% set FRE_VERSION = "2026.01.beta1" %}
 
 {# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
 
@@ -20,6 +20,12 @@
 {# In this pipeline, the stall timeout will be 0 in order for the workflow to immediately abort is stalled #}
 {% if STALL_TIMEOUT is not defined %}
     {% set STALL_TIMEOUT = "P1W" %}
+{% endif %}
+
+{# Set default retries unless it is already set by the test pipeline #}
+{# Retry all tasks twice- once after an hour, second after two hours #}
+{% if DEFAULT_RETRIES is not defined %}
+    {% set DEFAULT_RETRIES = "PT1H, PT2H" %}
 {% endif %}
 
 {# Set ANALYSIS_START and ANALYSIS_STOP if they do not exist #}
@@ -106,14 +112,11 @@
 [scheduling]
     initial cycle point = {{ PP_START }}
     final cycle point = {{ PP_STOP }}
-    # max number of active cycle points (default 5)
-    # this should be something sensible assuming tasks with required outputs
-    # (i.e. not marked as "ok to fail") such as analysis scripts.
-    # But until the analysis scripts can be marked optional then a workaround
-    # is to set this to be very high, ~100 cycle points.
-    # However, the cost of keeping many cycle points active at once are starting
-    # stage-history tasks first, possibly filling /xtmp before the clean tasks run.
-    runahead limit = P20
+    # Runahead limit specifies the number of cycle points that will spawn ahead of the oldest incomplete task.
+    # We don't need it because we specify the final cycle point, and it decreases robustness
+    # as it prevents future tasks from running due to a previous failed task.
+    # As runahead limit is required, we will set it to 999.
+    runahead limit = P999
     [[queues]]
         # Limit the entire workflow to 100 active tasks. Only allow a single cleaning
         # or data-catalog task to run at once, as they can fail if run in parallel.
@@ -292,11 +295,15 @@
 
 [runtime]
     [[root]]
+        execution retry delays = {{ DEFAULT_RETRIES }}
         [[[environment]]]
             fre_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ YAML }}
 
     [[pp-starter]]
         inherit = PP-STARTER
+        # Note: pp-starter is a fake task and should be rephrased as a proper trigger.
+        # No task retries for this fake task.
+        execution retry delays =
         # NOTE! script must appear *before* [[[enviroment]]] or else
         # the job scripts will have quoting issues
         script = """
@@ -465,6 +472,7 @@
             env
             set -x
             mkdir -p $work $tempCache $refineDiagDir
+            hsmget -v -t -a $histDir -p {{ PTMP_DIR }}/$histDir -w $work $hsmdate/\*
             cd $work/$hsmdate
             ls
         """
@@ -500,19 +508,23 @@
             fi
             if [[ $refinedCount > 0 ]]; then
                 for file in $(ls -1 *nc); do
-                    list_ncvars.csh -st01234 $file |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
+                    # list the variables names in the netcdf file
+                    ncdump -h $file |
+                    grep -E "float|double" |
+                    awk '{print $2}' |
+                    cut -d '(' -f1 |& tee $CYLC_WORKFLOW_SHARE_DIR/refineDiag.log
                 done
             else
                 echo ERROR: RefineDiag script did not create any NetCDF files as it was expected to do
                 exit 1
             fi
             if [[ -f {{ REFINED_HISTORY_DIR }}/$oname.nc.tar ]]; then
+                hsmget -v -t -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
+                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} is..."
                 ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}
                 echo "the contents of {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc is..."
                 ls {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }}/$oname.nc
-                hsmget -v -t -a {{ REFINED_HISTORY_DIR }} -p {{ PTMP_DIR }}/{{ REFINED_HISTORY_DIR }} \
-                    -w $TMPDIR/modify_refineDiag $hsmdate/\*
                 mv -f * $TMPDIR/modify_refineDiag
                 mv -f $TMPDIR/modify_refineDiag/* .
                 rm -rf $TMPDIR/modify_refineDiag
