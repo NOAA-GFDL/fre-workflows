@@ -168,14 +168,14 @@ def task_generator(yaml_):
     # Retrieve the pp components
     components = []
     for component in yaml_["postprocess"]["components"]:
-        if component["postprocess_on"] is True:
+        if component.get("postprocess_on", True):
             components.append(component["type"])
 
     # determine pp chunk to use. require the timeaverage interval to be a multiple of pp chunk
     pp_chunks = yaml_["postprocess"]["settings"]["pp_chunks"]
 
     for component in yaml_["postprocess"]["components"]:
-        if not component['postprocess_on']:
+        if not component.get('postprocess_on', True):
             continue
         if 'climatology' in component:
             for item in component['climatology']:
