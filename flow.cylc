@@ -129,9 +129,6 @@
             limit = 1
             members = DATA-CATALOG
     [[graph]]
-{% if DO_ANALYSIS_ONLY %}
-    {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, DO_ANALYSIS_ONLY) }}
-{% else %}
         #
         # Every history-file segment: Stage, refineDiag, regrid, split
         #
@@ -288,10 +285,8 @@
         # Analysis task graph
         #
     {% if DO_ANALYSIS %}
-        {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, DO_ANALYSIS_ONLY) }}
+        {{ YAML | get_analysis_info('task-graph', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS) }}
     {% endif %}
-
-{% endif %}
 
 [runtime]
     [[root]]
@@ -920,7 +915,7 @@
         execution time limit = PT24H
         [[[environment]]]
             # internally-used vars
-            outputDir = $CYLC_WORKFLOW_SHARE_DIR/legacy-analysis-scripts
+            outputDir = $CYLC_WORKFLOW_SHARE_DIR/cshell-analysis-scripts
             # accepted FRE environment variables
             FRE_ANALYSIS_HOME = /home/fms/local/opt/fre-analysis/test
             FRE_ANALYSIS_GIT_URL = file:///home/fms/local/opt/fre-analysis/git
@@ -935,7 +930,7 @@
             # new template vars
             catalog = {{ PP_DIR }}/catalog.json
             experiment_yaml = $CYLC_WORKFLOW_RUN_DIR/{{ EXPERIMENT }}.yaml
-    {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS, False ) }}
+    {{ YAML | get_analysis_info('task-definitions', PP_COMPONENTS, PP_DIR, PP_START, PP_STOP, PP_CHUNKS) }}
 {% endif %}
 
     [[CLEAN]]
