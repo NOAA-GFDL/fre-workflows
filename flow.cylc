@@ -55,7 +55,7 @@
     allow implicit tasks = false
 
     {# Configure the directories and files to be included in the remote file installation #}
-    install = app/*, bin/*, etc/*, lib/*
+    install = app/, bin/, etc/, lib/
     UTC mode = True
 
     [[events]]
