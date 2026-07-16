@@ -2,7 +2,9 @@
 omit =
     Jinja2Filters/tests/*
     lib/python/tests/*
-    app/*
+    app/make-timeseries/tests/*
+    app/analysis/*
+    app/combine-statics/tests/*
     bin/*
     etc/refineDiag/*
     for_gh_runner/*
