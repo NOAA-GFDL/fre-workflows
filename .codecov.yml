@@ -4,17 +4,11 @@ coverage:
       default:
         # Require overall coverage to remain the same or increase
         target: auto
-        threshold: 1% 
+        threshold: 1%
+        if_ci_failed: error
     patch:
       default:
         # Require new code in PRs to be well-tested (e.g., at least 80% covered)
         target: 80%
+        if_ci_failed: error
 
-# Tell Codecov where the source files are located to help with path mapping
-fixes:
-  - "lib/python/::lib/python/"
-  - "Jinja2Filters/::Jinja2Filters/"
-
-ignore:
-  - "tests/**/*"       # Exclude the tests themselves from coverage
-  - ".github/**/*"
