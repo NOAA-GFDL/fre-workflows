@@ -1,0 +1,17 @@
+netcdf atmos_cubedsphere_1.tile6 {
+dimensions:
+        grid_xt = 2 ;
+        grid_yt = 2 ;
+variables:
+        float orog(grid_yt, grid_xt) ;
+                orog:long_name = "surface geopotential height" ;
+                orog:units = "m" ;
+                orog:missing_value = 1.e+20f ;
+                orog:_FillValue = 1.e+20f ;
+        float grid_xt(grid_xt) ;
+        float grid_yt(grid_yt) ;
+data:
+  grid_xt = 0, 1 ;
+  grid_yt = 0, 1 ;
+  orog = 21, 22, 23, 24 ;
+}

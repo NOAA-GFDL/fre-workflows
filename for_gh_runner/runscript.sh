@@ -75,12 +75,19 @@ check_exit_status () {
 fre_pp_steps () {
     set -x
 
+    ## Clean previous experiment
     echo "experiment cleaning, if it was previously installed"
     if [ -d /mnt/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Removing ${name}..."
         cylc clean ${name}
     fi
+
+    ## More cleaning needed for refineDiag output
+    if [ -d /mnt/$USER/refined_history ]; then
+        echo -e "Refine Diag scripts previously run, removing ..."
+        rm -rf /mnt/$USER/refined_history
+    fi 
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ..."
@@ -94,13 +101,13 @@ fre_pp_steps () {
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
     #export CYLC_CONF_PATH=/mnt/cylc-src/${name}/generic-global-config/
 
-    ## Configure the rose-suite and rose-app files for the workflow
-    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite/app config files ..."
+    ## Configure the rose-suite file for the workflow
+    echo -e "\nRunning fre pp configure-yaml, combining separate yaml configs into one, then writing rose-suite config file ..."
     fre -vv pp configure-yaml -e ${expname} -p ${plat} -t ${targ} -y ${yamlfile}
     check_exit_status "CONFIGURE-YAML"
 
     ## Validate the configuration files
-    echo -e "\nRunning fre pp validate, validating rose-suite/app config files ..."
+    echo -e "\nRunning fre pp validate, validating rose-suite config file ..."
     fre -vv pp validate -e ${expname} -p ${plat} -t ${targ}
     check_exit_status "VALIDATE"
 
@@ -111,7 +118,8 @@ fre_pp_steps () {
 
     ## RUN
     echo -e "\nRunning the workflow with cylc play ..."
-    cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' ${name}
+    # set these two jinja variables to disable task retries and set the stall timer to zero
+    cylc play --no-detach --debug -s 'STALL_TIMEOUT="PT0S"' -s 'DEFAULT_RETRIES=""' ${name}
     #check_exit_status "PLAY" # if cylc play fails and this is not commented, log uploading does not work
 
     ## SUMMARY

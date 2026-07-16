@@ -58,6 +58,13 @@ if [ -d $cylc_src_dir_name ]; then
     sleep 10s
 fi
 
+## More cleaning neede for refineDiag output
+if [ -d /work/$USER/fre-wf-local-testing/refined_history ]; then
+    echo -e "Refine Diag scripts previously run, removing ..."
+    rm -rf "/work/$USER/fre-wf-local-testing/refined_history"
+fi
+
+
 # if you want this, comment on https://github.com/NOAA-GFDL/fre-cli/issues/673
 #echo ""
 #echo ""

@@ -27,6 +27,11 @@ STATIC_DATA_NCFILE  = ["atmos_static_scalar_1.bk.nc",
                        "atmos_static_scalar_2.ak.nc",
                        "atmos_static_scalar_3.ck.nc"]
 
+# Tiled (cubed-sphere) component
+TILED_COMP_NAME = "atmos_cubedsphere"
+TILED_CDLFILES = [f"atmos_cubedsphere_1.tile{t}.cdl" for t in range(1, 7)]
+TILED_NCFILES  = [f"atmos_cubedsphere_1.tile{t}.nc"  for t in range(1, 7)]
+
 # Input/Output directories
 # OutDir for generating netcdf files; used as input for combine-statics task
 NCGEN_OUT = f"{TEST_DIR}/test-output/ncgen-output"
@@ -195,6 +200,71 @@ def test_combine_statics_output_data(load_ncfile):
         val = nc_varlist[f'{v}'].values
         assert (val == expected_data).all()
         #print(f"{v} has values: {val}")
+
+#### TILED (CUBED-SPHERE) TEST CASE ####
+# NOTE: The tiled component directory is created inside test_ncgen_tiled_nc_files
+# rather than at module level. An empty component directory would cause
+# `cdo merge *.nc` to fail when the non-tiled test_combine_statics runs first.
+
+def test_tiled_cdl_files_exist():
+    """
+    Test for the existence of tiled CDL test files (one per cube face)
+    """
+    assert all(Path(f"{DATA_DIR}/{f}").exists() for f in TILED_CDLFILES)
+
+def test_ncgen_tiled_nc_files():
+    """
+    Generate tiled netCDF files from CDL files; test they exist in the
+    correct input location for combine-statics
+    """
+    Path(f"{NCGEN_OUT}/{TILED_COMP_NAME}/P0Y/P0Y").mkdir(parents=True, exist_ok=True)
+    for cdl, nc in zip(TILED_CDLFILES, TILED_NCFILES):
+        output = f"{NCGEN_OUT}/{TILED_COMP_NAME}/P0Y/P0Y/{nc}"
+        ex = ["ncgen", "-k", "64-bit offset",
+              "-o", output,
+              f"{DATA_DIR}/{cdl}"]
+        sp = subprocess.run(ex, check=True)
+        assert all([sp.returncode == 0,
+                    Path(output).exists()])
+
+def test_combine_statics_tiled(monkeypatch):
+    """
+    Test that combine-statics produces one output file per tile for a
+    tiled (cubed-sphere) component
+    """
+    monkeypatch.setenv("inputDir", NCGEN_OUT)
+    monkeypatch.setenv("outputDir", COMBINE_STATICS_OUT)
+
+    script = f"{COMBINE_STATICS_DIR}/bin/combine-statics"
+    sp = subprocess.run(script, check=True)
+
+    assert sp.returncode == 0
+    for t in range(1, 7):
+        assert Path(f"{COMBINE_STATICS_OUT}/{TILED_COMP_NAME}/{TILED_COMP_NAME}.static.tile{t}.nc").is_file()
+
+@pytest.fixture(name="load_tiled_ncfile")
+def load_tiled_dataset():
+    """
+    Load tile1 output file using xarray for content validation
+    """
+    outfile = f"{TILED_COMP_NAME}.static.tile1.nc"
+    sf = xr.open_dataset(f"{COMBINE_STATICS_OUT}/{TILED_COMP_NAME}/{outfile}")
+    yield sf
+    sf.close()
+
+def test_combine_statics_tiled_output_variables(load_tiled_ncfile):
+    """
+    Test that tiled output file contains the expected variable
+    """
+    assert "orog" in load_tiled_ncfile.data_vars
+
+def test_combine_statics_tiled_output_data(load_tiled_ncfile):
+    """
+    Test that tile1 output contains the expected data values
+    """
+    expected = np.array([[1, 2], [3, 4]], dtype=np.float32)
+    assert (load_tiled_ncfile["orog"].values == expected).all()
+
 
 #####assert only one lat and lon exists...........
 # TO-DO: Having issues trying to generate an expected failure when
