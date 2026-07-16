@@ -58,7 +58,7 @@ jobs:
 
       - name: Jinja2filter pytest
         run: |
-          pytest -vv -rx --cov=Jinja2Filters/tests --cov-report=xml:Jinja2Filters_coverage.xml ./Jinja2Filters/tests
+          pytest -vv -rx --cov=Jinja2Filters --cov-config=coveragerc --cov-report=xml:Jinja2Filters_coverage.xml ./Jinja2Filters/tests
 
       - name: Jinja2filter pylint
         run: |
@@ -66,7 +66,7 @@ jobs:
 
       - name: lib/python pytest
         run: |
-          pytest -vv -rx --cov=lib/python --cov-report=xml:lib_python_coverage.xml ./lib/python/tests
+          pytest -vv -rx --cov=lib/python --cov-config=coveragerc --cov-report=xml:lib_python_coverage.xml ./lib/python/tests
 
       - name: lib/python pylint
         run: |
@@ -74,7 +74,7 @@ jobs:
 
       - name: make-timeseries pytest
         run: |
-          pytest -vv -rx --cov=app/make-timeseries --cov-report=xml:make_timeseries_coverage.xml ./app/make-timeseries/tests
+          pytest -vv -rx --cov=app/make-timeseries --cov-config=coveragerc --cov-report=xml:make_timeseries_coverage.xml ./app/make-timeseries/tests
 
       - name: make-timeseries pylint
         run: |
@@ -82,7 +82,7 @@ jobs:
 
       - name: combine-statics pytest
         run: |
-          pytest -vv -rx --cov=app/combine-statics --cov-report=xml:combine_statics_coverage.xml ./app/combine-statics/tests
+          pytest -vv -rx --cov=app/combine-statics --cov-config=coveragerc --cov-report=xml:combine_statics_coverage.xml ./app/combine-statics/tests
  
       - name: combine-statics pylint
         run: |
@@ -93,7 +93,7 @@ jobs:
         run: |
           echo "i have no tests yet"
           pytest -vv -rx app/analysis/tests
-          # pytest -vv -rx --cov=app/analysis --cov-report=xml:analysis_coverage.xml app/analysis/tests
+          # pytest -vv -rx --cov=app/analysis --cov-config=coveragerc --cov-report=xml:analysis_coverage.xml app/analysis/tests
 
       - name: analysis pylint (STEP CONTINUES ON FAILURE)
         continue-on-error: true
