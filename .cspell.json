@@ -17,7 +17,7 @@
         // "software-words"
     ],
     "ignorePaths": [
-        "cspell.json",
+        ".cspell.json",
         "*.cdl",
         "build",
     ]
