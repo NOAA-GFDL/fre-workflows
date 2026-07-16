@@ -1,0 +1,36 @@
+name: 'Check spelling'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  pull_request:
+    branches:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: streetsidesoftware/cspell-action@v7
+        continue-on-error: true
+        with:
+          files: ''
+          check_dot_files: explicit
+          root: '.'
+          inline: warning
+          treat_flagged_words_as_errors: false
+          suggestions: false
+          strict: true
+          incremental_files_only: false
+          config: './.cspell.json'
+          verbose: false
+          use_cspell_files: false
+          report: all
