@@ -77,15 +77,16 @@ It serves as a common input argument to many functions, helping uniquely identif
 
 In `cylc`, a platform is usually about selecting a specific set of global configuration values. In `fre-workflows`, it also
 determines which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
-platform values are `ppan` and `ppan_test`, corresponding to the template files `site/ppan.cylc` and `site/ppan_test.cylc`
-respectively. The platform is chosen based on a `site` configuration value within a `fre` settings `yaml`.
+platform values are `ppan_noepmt` and `ppan_epmt`, corresponding to the template files `site/ppan_noepmt.cylc` and `site/ppan_epmt.cylc`
+respectively. `ppan_epmt` is the default; select `ppan_noepmt` to disable `epmt`. The platform is chosen based on a
+`site` configuration value within a `fre` settings `yaml`.
 
 
-#### `ppan` v. `ppan_test` <a name="sitevaluespecifics"></a>
+#### `ppan_noepmt` v. `ppan_epmt` <a name="sitevaluespecifics"></a>
 
-These two platforms differ in one key field: the `job runner handler`. `site/ppan.cylc` specifies that `cylc`'s default
-`Slurm` job runner handler will be used. `site/ppan_test.cylc` uses a custom version of the `Slurm` job
-runner handler that parses the job script and tags certain operations for tracking via `epmt`. Additionally, `ppan_test`
+These two platforms differ in one key field: the `job runner handler`. `site/ppan_noepmt.cylc` specifies that `cylc`'s default
+`Slurm` job runner handler will be used. `site/ppan_epmt.cylc` uses a custom version of the `Slurm` job
+runner handler that parses the job script and tags certain operations for tracking via `epmt`. Additionally, `ppan_epmt`
 contains `Jinja2` lines that are parsed and ultimately render to a string of annotations that help `epmt` track
 workflow functionality across different workflow settings.
 
@@ -213,7 +214,7 @@ which fre
 module load cylc
 ```
 
-Now, open `site/ppan_test.cylc` with your preferred text editor (or `site/ppan.cylc` to test without `epmt`
+Now, open `site/ppan_epmt.cylc` with your preferred text editor (or `site/ppan_noepmt.cylc` to test without `epmt`
 annotations/tagging), and under `[runtime]`, within the `root` task-family's `init-script`, find the following:
 ```
 [runtime]
@@ -249,12 +250,12 @@ configuration and edit it to comply with system restrictions and enable proper f
 in your `PATH`.
 
 Next, open the `global.cylc` file and confirm the field `use login shell` is set to `true`, then find the `ssh command`
-field and change it to `ssh`. Do this for both the `ppan` and `ppan_test` platform definitions.
+field and change it to `ssh`. Do this for both the `ppan_noepmt` and `ppan_epmt` platform definitions.
 
 You will need to remove the default `cylc` from your `PATH` and include a path to the exact `cylc` within
 your conda environment. To accomplish this, follow the instructions in the previous section [here](#ppanspecifics).
 
-Next, just like in the [previous section](#withcondaandcylc), edit either `ppan.cylc` or `ppan_test.cylc`
+Next, just like in the [previous section](#withcondaandcylc), edit either `ppan_noepmt.cylc` or `ppan_epmt.cylc`
 in `site/` to add your `fre-cli` environment executables to `PATH` for your submitted workflow tasks. This should be the
 last bit of editing you need to do.
 
@@ -317,11 +318,11 @@ Other useful CLI commands for monitoring your workflow progress:
 ## Testing and Verifying `epmt` Functionality <a name="epmttesting"></a>
 
 The `site` variable in `for_gh_runner/yaml_workflow/local_settings.yaml` controls which site configuration is loaded.
-Setting `site='ppan'` runs without `epmt` integration. Setting `site='ppan_test'` enables `epmt` functionality. Namely,
+Setting `site='ppan_noepmt'` runs without `epmt` integration. Setting `site='ppan_epmt'` enables `epmt` functionality. Namely,
 these are per-task metadata annotations, and `papiex` tag insertion for shell calls and processes. The way these two
 functionalities work is slightly different.
 
-The metadata annotations are generated via Jinja2 within `site/ppan_test.cylc`, using available environment variables
+The metadata annotations are generated via Jinja2 within `site/ppan_epmt.cylc`, using available environment variables
 and/or Jinja2 variables to pull and render the tag at runtime. The `papiex` tag insertion is more complex, requiring 
 the use of a custom Slurm `job_runner_handler`. `job_runner_handler`s in `cylc` are classes that manage submission of
 workflow tasks to a batch workload system. See
@@ -338,8 +339,8 @@ the docstrings and comments within the code.
 
 ### Verifying `epmt` Annotations and `papiex` Tags <a name="verifyingepmt"></a>
 
-Running workflows with `epmt` enabled follows the same procedures described in section [4](#configrunppanworkflows), 
-using `ppan_test` instead of `ppan`. After a workflow has at least partially completed, verify that `epmt` data was 
+Running workflows with `epmt` enabled follows the same procedures described in section [4](#configrunppanworkflows),
+using `ppan_epmt` instead of `ppan_noepmt`. After a workflow has at least partially completed, verify that `epmt` data was
 captured. Job success is irrelevant- `epmt` should retrieve the data successfully for near any degree of success/failure. 
 From a workstation, do `module load epmt`, then `epmt python` to open a python shell with `epmt`. You can query job 
 information below by replacing `your_user_here` with your username:
@@ -415,7 +416,7 @@ to the bottom of the workflow template.
 
 **If you are trying to make changes to a workflow template, first consider where the changes should live**, given the
 hierarchy described above. For example, if your changes are so specific to PPAN that the workflow will break everywhere
-else, then those changes belong in both `site/ppan.cylc` and `site/ppan_test.cylc`. If the changes were specific to 
+else, then those changes belong in both `site/ppan_noepmt.cylc` and `site/ppan_epmt.cylc`. If the changes were specific to
 Gaea, they would go in `site/gaea.cylc`, etc. If the changes are truly platform independent, and must be propagated
 to all sites, then the changes should go in `flow.cylc`.
 
@@ -456,7 +457,5 @@ workflow must successfully build an environment and run all unit tests within th
 a manual run of the `test_cloud_runner` workflow is required, as it tests the postprocessing workflow in a fully integrated,
 end-to-end manner. The success of the `test_cloud_runner` workflow must be unconditionally improved from the current version
 of the `main` branch.
-
-
 
 
