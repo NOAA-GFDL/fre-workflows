@@ -15,13 +15,6 @@ export HOME=/mnt
 #Not sure if needed
 #export CYLC_CONF_PATH=/mnt
 
-#### WHAT IS NEEDED ON THE CLOUD VS NOT for conda set-up
-## Initializations for conda environment in container
-#conda init --all
-#source /opt/conda/etc/profile.d/conda.sh
-#conda deactivate
-#conda activate /app/cylc-flow-tools
-
 # update fre-cli env with specific branch development
 cd fre-cli
 pip install .
