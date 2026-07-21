@@ -1,0 +1,19 @@
+coverage:
+  status:
+    project:
+      default:
+        # Require overall coverage to remain the same or increase
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+
+    patch:
+      default:
+        # Require new code in PRs to be well-tested (e.g., at least 80% covered)
+        target: 80%
+        if_ci_failed: error
+
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: false
