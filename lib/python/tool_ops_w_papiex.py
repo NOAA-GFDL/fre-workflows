@@ -279,7 +279,7 @@ def annotate_metadata():
     accomplished by adding lines, that call `epmt annotate EPMT_JOB_TAGS=<dict>`, and
     parsing the job script for metadata of interest.
 
-    not yet implemented, challenging for a questionable amount of benefit. the Jinja2 calls in site/ppan_test.cylc
+    not yet implemented, challenging for a questionable amount of benefit. the Jinja2 calls in site/ppan_epmt.cylc
     are completely adequate for now
     '''
     raise NotImplementedError()

@@ -67,8 +67,8 @@ s1[**gfdl-ws.cylc**:
 s2[**gaea.cylc**: 
     - uses platform = localhost
     - loads FRE_VERSION]
-s3[**ppan.cylc**:
-    - uses platform = ppan
+s3[**ppan_epmt.cylc** / **ppan_noepmt.cylc**:
+    - use platform = ppan_epmt / ppan_noepmt
     - includes gfdl/ppan specific tools
     - loads FRE_VERSION]
 end
@@ -82,7 +82,7 @@ end
 G["***global.cylc***:
     - located in ***~/.cylc/flow/***
     - includes information for each platform used in the site configs
-    - platforms include: **localhost (jobs run in background), ppan (jobs run on slurm)**
+    - platforms include: **localhost (jobs run in background), ppan_epmt / ppan_noepmt (jobs run on slurm)**
     - defines platform groups: ppan_background nodes
     - includes install directories for symlink locations: share, work"]
 
