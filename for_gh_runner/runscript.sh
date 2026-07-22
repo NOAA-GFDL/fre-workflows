@@ -48,6 +48,7 @@ create_dirs () {
 
     for p in ${paths[@]}; do
         if [ -d $p ]; then
+            readlink $p
             echo -e "Path $p previously created. Removing..."
             rm -rf $p
             echo -e "   Creating new $p\n"
