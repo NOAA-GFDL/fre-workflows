@@ -43,18 +43,24 @@ get_user_input () {
 }
 
 create_dirs () {
+    
+
     echo "Creating necessary paths used in workflow"
     paths=("${HOME}/pp" "${HOME}/ptmp" "${HOME}/temp")
 
-    for p in ${paths[@]}; do
-        if [ -d $p ]; then
+    ## check if path exists or if there are any broken symlinks
+    ## in refinediag task, there is a point in which symlinks are being made, 
+    ## which caused an issue when re-running and copying files to locations
+    ## that existed already (from the broken symlinks)
+    for p in "${paths[@]}"; do
+        if [ -e "$p" ] || [ -L "$p" ]; then
             readlink $p
             echo -e "Path $p previously created. Removing..."
-            rm -rf $p
+            rm -rf "$p"
             echo -e "   Creating new $p\n"
-            mkdir -p $p
+            mkdir -p "$p"
         else
-            mkdir -p $p
+            mkdir -p "$p"
         fi
     done
 }
