@@ -59,7 +59,7 @@ jobs:
           cd -
 
       # We don't want this blurb to run yet, hence we set if: false
-      - name: Define reusable script
+      - name: Define reusable script (does not need to run)
         if: ${{ false }}
         run: &task_check |
           set +e
