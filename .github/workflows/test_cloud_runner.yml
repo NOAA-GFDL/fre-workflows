@@ -103,12 +103,12 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
-      - name: Upload workflow-run log files
-        uses: actions/upload-artifact@v4
-        with:
-          name: fre-workflow-logs
-          path: /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
-          if-no-files-found: error
+#      - name: Upload workflow-run log files
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: fre-workflow-logs
+#          path: /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+#          if-no-files-found: error
 
       - name: Print workflow summary
         continue-on-error: true
