@@ -96,7 +96,7 @@ jobs:
         ## This is to retain clean workspace on cloud and to not waste
         ## allocation
       - name: Clean up output folder
-        run: rm -rf /contrib-efs/container-test/ppp-setup #/cylc-run/test_pp__ptest__ttest
+        run: rm -rf /contrib-efs/container-test/ppp-setup/cylc-run #/test_pp__ptest__ttest
 
       - name: Run ppp-container
         run: |
@@ -251,7 +251,7 @@ jobs:
         ## This is to retain clean workspace on cloud and to not waste
         ## allocation
       - name: Clean up output folder
-        run: rm -rf /contrib-efs/container-test/ppp-setup #/cylc-run/test_pp__ptest__ttest
+        run: rm -rf /contrib-efs/container-test/ppp-setup/cylc-run #/test_pp__ptest__ttest
 
 ## Keep in here for now as a just in case reference ##
 #      - name: Print any succeeded tasks
