@@ -24,7 +24,7 @@ postprocess:
       script: "/contrib-efs/fre-workflows-runners/dana-actions-runner/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_preanalysis.csh" #"/contrib-efs/fre-workflows-runners/actions-runner-1/_work/fre-workflows/fre-workflows/for_gh_runner/dummy_preanalysis.csh"
       inputs: ['atmos_month', 'aerosol_month'] #not used currently
       # to be user-script_on
-      do_preanalysis: False
+      do_preanalysis: True
 
   # to be refinediag-user-scripts
   refinediag:
@@ -33,4 +33,4 @@ postprocess:
       inputs: ['ocean_monthly', 'ocean_bgc'] # not used currently
       outputs: ['ocean_refined']             # not used currently
       # to be user_script_on
-      do_refinediag: False
+      do_refinediag: True
