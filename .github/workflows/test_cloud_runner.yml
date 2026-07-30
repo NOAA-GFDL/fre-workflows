@@ -157,15 +157,15 @@ jobs:
           TASK_NAME: "refineDiag-*"
         run: *task_check
 
-      - name: Print  mask-atmos-plevel successes or failures
-        env:
-          TASK_NAME: "mask-atmos-plevel*"
-        run: *task_check
-
       - name: Print stage-history-refined successes or failures (FAILURE-GUARDED)
         continue-on-error: true
         env:
           TASK_NAME: "stage-history-refined"
+        run: *task_check
+
+      - name: Print  mask-atmos-plevel successes or failures
+        env:
+          TASK_NAME: "mask-atmos-plevel*"
         run: *task_check
 
       - name: Print pre-analysis successes or failures (FAILURE-GUARDED)
