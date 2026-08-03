@@ -150,13 +150,15 @@ jobs:
       - name: Variable check
         id: var_check
         run: |
-            if [ grep 'do_preanalysis: true' /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml ]; then
+            yml="/contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml"
+
+            if grep -q 'do_preanalysis: true' "$yml"; then
                 echo "preanalysis=true" >> "$GITHUB_OUTPUT"
             else
                 echo "preanalysis=false" >> "$GITHUB_OUTPUT"
             fi 
 
-            if [ grep 'do_refinediag: true' /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml ]; then 
+            if grep -q 'do_refinediag: true' "$yml"; then 
                 echo "refinediag=true" >> "$GITHUB_OUTPUT"
             else
                 echo "refinediag=false" >> "$GITHUB_OUTPUT"
