@@ -9,8 +9,8 @@
 
 # Initialize ppp-setup
 # Set environment variables 
-export TMPDIR=/mnt/temp
-export HOME=/mnt
+export TMPDIR=/mnt/container_out/temp
+export HOME=/mnt/container_out
 
 #Not sure if needed
 #export CYLC_CONF_PATH=/mnt
@@ -77,25 +77,25 @@ fre_pp_steps () {
 
     ## Clean previous experiment
     echo "experiment cleaning, if it was previously installed"
-    if [ -d /mnt/cylc-run/${name} ]; then
+    if [ -d ${HOME}/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Removing ${name}..."
         cylc clean ${name}
     fi
 
     ## More cleaning needed for refineDiag output
-    if [ -d /mnt/$USER/refined_history ]; then
+    if [ -d ${HOME}/$USER/refined_history ]; then
         echo -e "Refine Diag scripts previously run, removing ..."
-        rm -rf /mnt/$USER/refined_history
+        rm -rf ${HOME}/$USER/refined_history
     fi 
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ..."
-    rm -rf /mnt/cylc-src/${name}
-    mkdir -p /mnt/cylc-src/${name}
+    rm -rf ${HOME}/cylc-src/${name}
+    mkdir -p ${HOME}/cylc-src/${name}
 
     echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ..."
-    cp -r ./* /mnt/cylc-src/${name}
+    cp -r ./* ${HOME}/cylc-src/${name}
     check_exit_status "MOCK CHECKOUT (cp)"
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...

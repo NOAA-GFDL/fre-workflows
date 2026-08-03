@@ -1,10 +1,10 @@
 # directories shared across tools
 directories:
   history_dir:         "/mnt/history"
-  refined_history_dir: "mnt/$USER/refined_history" 
-  pp_dir:              "/mnt/pp"
+  refined_history_dir: "mnt/container_out/$USER/refined_history" 
+  pp_dir:              "/mnt/container_out/pp"
 #  analysis_dir:       !join [/nbhome/$USER/, *FRE_STEM, /, *name]
-  ptmp_dir:            "/mnt/ptmp"
+  ptmp_dir:            "/mnt/container_out/ptmp"
 
 postprocess:
   settings:
