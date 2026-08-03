@@ -409,7 +409,7 @@
             ptmpDir = {{ PTMP_DIR }}
 
 
-{% if REFINED_HISTORY_DIR is defined %}
+ {% if DO_REFINEDIAG and REFINED_HISTORY_DIR is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         post-script = """
