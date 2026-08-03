@@ -147,6 +147,21 @@ jobs:
           cat /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
           echo ""
 
+      - name: Variable check
+        id: var_check
+        run: |
+            if [ grep 'do_preanalysis: true' /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml ]; then
+                echo "preanalysis=true" >> "$GITHUB_OUTPUT"
+            else
+                echo "preanalysis=false" >> "$GITHUB_OUTPUT"
+            fi 
+
+            if [ grep 'do_refinediag: true' /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml ]; then 
+                echo "refinediag=true" >> "$GITHUB_OUTPUT"
+            else
+                echo "refinediag=false" >> "$GITHUB_OUTPUT"
+            fi
+
       - name: Print pp-starter successes or failures
         env: 
           TASK_NAME: "pp-starter"
@@ -158,7 +173,7 @@ jobs:
         run: *task_check 
 
       - name: Print refine-diag successes or failures (FAILURE-GUARDED)
-        id: refine_diag_task
+        if: steps.var_check.outputs.refinediag == 'true'
         continue-on-error: true
         env:
           TASK_NAME: "refineDiag-*"
@@ -166,7 +181,8 @@ jobs:
 
         # This step will only run/check for success and failure if the refine_diag step ran 
       - name: Print stage-history-refined successes or failures (FAILURE-GUARDED)
-        if: always() && (steps.refine_diag_step.outcome == 'success' || steps.refine_diag_step.outcome == 'failure')
+        #if: always() && (steps.refine_diag_step.outcome == 'success' || steps.refine_diag_step.outcome == 'failure')
+        if: steps.var_check.outputs.refinediag == 'true'
         continue-on-error: true
         env:
           TASK_NAME: "stage-history-refined"
@@ -178,6 +194,7 @@ jobs:
         run: *task_check
 
       - name: Print pre-analysis successes or failures (FAILURE-GUARDED)
+        if: steps.var_check.outputs.preanalysis == 'true'
         continue-on-error: true
         run: |
           set +e
