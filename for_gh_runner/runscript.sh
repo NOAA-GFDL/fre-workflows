@@ -9,8 +9,8 @@
 
 # Initialize ppp-setup
 # Set environment variables 
-export TMPDIR=/mnt/container_out/temp
-export HOME=/mnt/container_out
+export TMPDIR=/mnt/temp
+export HOME=/mnt
 
 #Not sure if needed
 #export CYLC_CONF_PATH=/mnt
