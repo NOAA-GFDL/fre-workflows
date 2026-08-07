@@ -92,9 +92,9 @@ jobs:
 
         ###CLEAN HERE TOO TO START
         ## I think this will work (without cylc clean) because the
-        ## OUTPUT_DIR is bind mounted from the host
+        ## output directory is mounted from the host.
         ## This is to retain clean workspace on cloud and to not waste
-        ## allocation
+        ## allocation, and to start with a clean space. 
       - name: Clean up output folder
         run: rm -rf /contrib-efs/container-test/ppp-setup/cylc-run #/test_pp__ptest__ttest
 
@@ -121,12 +121,12 @@ jobs:
 
           singularity exec --writable-tmpfs ${bind_paths} ${container_path} ${runscript_path}
 
-#      - name: Upload workflow-run log files
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: fre-workflow-logs
-#          path: /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
-#          if-no-files-found: error
+      - name: Upload workflow-run log files
+        uses: actions/upload-artifact@v4
+        with:
+          name: fre-workflow-logs
+          path: /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log
+          if-no-files-found: error
 
       - name: Print workflow summary
         continue-on-error: true
@@ -147,7 +147,7 @@ jobs:
           cat /contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/log/config/*rose-suite.conf
           echo ""
 
-      - name: Variable check
+      - name: Variable check (for refineDiag and preanalysis specific keys)
         id: var_check
         run: |
             yml="/contrib-efs/container-test/ppp-setup/cylc-run/test_pp__ptest__ttest/test_pp.yaml"
@@ -174,16 +174,15 @@ jobs:
           TASK_NAME: "stage-history"
         run: *task_check 
 
-      - name: Print refine-diag successes or failures (FAILURE-GUARDED)
+        # This step will only run/check for success and failure if do_refinediag is found in the yaml
+      - name: Print refine-diag successes or failures
         if: steps.var_check.outputs.refinediag == 'true'
-        continue-on-error: true
         env:
           TASK_NAME: "refineDiag-*"
         run: *task_check
 
-        # This step will only run/check for success and failure if the refine_diag step ran 
-      - name: Print stage-history-refined successes or failures (FAILURE-GUARDED)
-        #if: always() && (steps.refine_diag_step.outcome == 'success' || steps.refine_diag_step.outcome == 'failure')
+        # This step will only run/check for success and failure if do_refinediag is found in the yaml
+      - name: Print stage-history-refined successes or failures
         if: steps.var_check.outputs.refinediag == 'true'
         continue-on-error: true
         env:
@@ -195,7 +194,8 @@ jobs:
           TASK_NAME: "mask-atmos-plevel*"
         run: *task_check
 
-      - name: Print pre-analysis successes or failures (FAILURE-GUARDED)
+        # This step will only run/check for success and failure if do_preanalysis is found in the yaml
+      - name: Print pre-analysis successes or failures
         if: steps.var_check.outputs.preanalysis == 'true'
         continue-on-error: true
         run: |
