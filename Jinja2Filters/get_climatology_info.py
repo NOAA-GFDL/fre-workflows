@@ -4,6 +4,7 @@ import metomi.isodatetime.parsers
 from yaml import safe_load
 
 from legacy_date_conversions import *
+from iter_chunks import iter_chunks
 
 # set up logging
 logging.basicConfig()
@@ -33,7 +34,7 @@ def lookup_source_for_component(yaml_, component):
     return sources
 
 class Climatology:
-    def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid):
+    def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid, pp_start, pp_stop):
         """Initialize the climatology object
 
         Args:
@@ -43,6 +44,8 @@ class Climatology:
             pp_chunk: ISO8601 duration available in timeseries to be used as input
             sources: List of history files
             grid: 'native' or 'regrid-xy/lat_lon.conserve_orderX'
+            pp_start: Postprocessing start date (string, e.g. '0001')
+            pp_stop: Postprocessing stop date (string, e.g. '0020')
         """
         logger.debug(f"Initializing climatology for component '{component}'")
 
@@ -52,11 +55,23 @@ class Climatology:
         self.pp_chunk = pp_chunk
         self.sources = sources
         self.grid = grid
+        self.pp_start = pp_start
+        self.pp_stop = pp_stop
 
         logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}', pp_chunk='{pp_chunk}', sources={sources}, grid='{grid}'")
 
     def graph(self, history_segment, clean_work):
         """Generate the cylc task graph string for the climatology.
+
+        The climatology's own cycle point is anchored at the start of
+        the LAST contributing pp_chunk (not the start of the whole
+        interval), so that every dependency on an earlier chunk can be
+        expressed with a backward (negative) cycle point offset.
+        Unsigned/forward offsets are unsafe here: cylc resolves the
+        inverse relationship (which climatology instance a given chunk
+        feeds) by subtracting the raw offset from the chunk's own cycle
+        point, which goes out of bounds for chunks near the start of
+        the workflow when the interval spans more than one pp_chunk.
         """
 
         if self.grid == 'native':
@@ -66,30 +81,26 @@ class Climatology:
 
         graph = ""
 
-        # first, make the climo graphs themselves
-        graph += f"P{self.interval_years}Y = \"\"\"\n"
-
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
+        chunks_per_interval = int(chunks_per_interval)
+        lead_years = (chunks_per_interval - 1) * self.pp_chunk.years
+
+        # first, make the climo graphs themselves
+        graph += f"+P{lead_years}Y/P{self.interval_years}Y = \"\"\"\n"
+
         for source in self.sources:
-            count = 0
-            while count < chunks_per_interval:
-                if count == 0:
-                    connector = ""
+            for count in range(chunks_per_interval):
+                connector = "" if count == 0 else " & "
+                lookback = lead_years - count * self.pp_chunk.years
+                if self.pp_chunk == history_segment:
+                    task = f"split-netcdf-{grid}_{source}"
                 else:
-                    connector = " & "
-                if count == 0:
-                    if self.pp_chunk == history_segment:
-                        graph += f"{connector}split-netcdf-{grid}_{source}"
-                    else:
-                        graph += f"{connector}make-timeseries-{grid}-{self.pp_chunk}_{source}"
+                    task = f"make-timeseries-{grid}-{self.pp_chunk}_{source}"
+                if lookback == 0:
+                    graph += f"{connector}{task}"
                 else:
-                    offset = count * self.pp_chunk
-                    if self.pp_chunk == history_segment:
-                        graph += f" & split-netcdf-{grid}_{source}[{offset}]"
-                    else:
-                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
-                count += 1
+                    graph += f"{connector}{task}[-P{lookback}Y]"
             graph += "\n"
             graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
             graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
@@ -97,14 +108,46 @@ class Climatology:
             if clean_work:
                 graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
                 graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
+
+            # The last chunk of every window shares its cycle point with
+            # climo itself, so it can safely reuse the same recurring,
+            # offset-free rule.
+            if clean_work:
+                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+
         graph += f"\"\"\"\n"
 
-        # then, create the cleaning tasks
-        if clean_work:
-            for count in range(int(chunks_per_interval)):
-                graph += f"+P{count}Y/P{self.interval_years}Y = \"\"\"\n"
-                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}[-P{count}Y] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-                graph += f"\"\"\"\n"
+        if clean_work and chunks_per_interval > 1:
+            # The earlier chunks of each window are consumed by a climo
+            # instance that occurs LATER than they do, so a relative
+            # offset can't express the dependency safely: cylc sanity
+            # checks every taskdef at the workflow's initial cycle
+            # point regardless of whether that point is really valid
+            # for it, and subtracting/adding an offset that large from
+            # a cycle point near the start of the workflow goes out of
+            # bounds. Absolute cycle points sidestep that arithmetic
+            # entirely, so enumerate the actual chunk boundaries here
+            # instead of using a generic recurring rule.
+            chunk_points = [
+                chunk['cycle_point']
+                for chunk in iter_chunks(
+                    [str(self.pp_chunk)], str(history_segment),
+                    self.pp_start, self.pp_stop
+                )
+            ]
+            for window_start in range(0, len(chunk_points), chunks_per_interval):
+                window = chunk_points[window_start:window_start + chunks_per_interval]
+                if len(window) < chunks_per_interval:
+                    # Partial trailing window: no climo instance for it.
+                    continue
+                climo_point = window[-1]
+                for chunk_point in window[:-1]:
+                    graph += f"R1/{chunk_point} = \"\"\"\n"
+                    graph += (
+                        f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}"
+                        f"[{climo_point}] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                    )
+                    graph += f"\"\"\"\n"
 
         return graph
 
@@ -126,7 +169,18 @@ class Climatology:
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/{self.grid}
         """
 
-        offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
+        # The climatology's cycle point is anchored at the start of the
+        # last contributing pp_chunk (see graph(), above), so the data
+        # window spans backward by (chunks_per_interval - 1) chunks and
+        # forward through the end of that final chunk.
+        chunks_per_interval = int(self.interval_years / self.pp_chunk.years)
+        lead_years = (chunks_per_interval - 1) * self.pp_chunk.years
+        end_offset = self.pp_chunk - one_year
+
+        if lead_years == 0:
+            begin = "$(cylc cycle-point)"
+        else:
+            begin = f"$(cylc cycle-point --offset=-P{lead_years}Y)"
 
         definitions += f"""
     [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
@@ -134,8 +188,8 @@ class Climatology:
         [[[environment]]]
             components = {self.component}
             currentChunk = P{self.interval_years}Y
-            begin = $(cylc cycle-point)
-            end = $(cylc cycle-point --print-year --offset={offset})
+            begin = {begin}
+            end = $(cylc cycle-point --print-year --offset={end_offset})
         """
 
         definitions += f"""
@@ -145,7 +199,7 @@ class Climatology:
             component = {self.component}
             frequency = {self.frequency}
             interval = P{self.interval_years}Y
-            end = $(cylc cycle-point --print-year --offset={offset})
+            end = $(cylc cycle-point --print-year --offset={end_offset})
     [[COMBINE-TIMEAVGS-P{self.interval_years}Y]]
         inherit = COMBINE-TIMEAVGS
         """
@@ -173,6 +227,8 @@ def task_generator(yaml_):
 
     # determine pp chunk to use. require the timeaverage interval to be a multiple of pp chunk
     pp_chunks = yaml_["postprocess"]["settings"]["pp_chunks"]
+    pp_start = yaml_["postprocess"]["settings"]["pp_start"]
+    pp_stop = yaml_["postprocess"]["settings"]["pp_stop"]
 
     for component in yaml_["postprocess"]["components"]:
         if not component.get('postprocess_on', True):
@@ -203,7 +259,9 @@ def task_generator(yaml_):
                     interval_years=interval_years,
                     pp_chunk=pp_chunk,
                     sources=lookup_source_for_component(yaml_, component["type"]),
-                    grid=grid
+                    grid=grid,
+                    pp_start=pp_start,
+                    pp_stop=pp_stop
                 )
                 yield climatology_info
 
