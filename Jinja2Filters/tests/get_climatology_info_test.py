@@ -1,3 +1,4 @@
+import pathlib
 import shutil
 import subprocess
 import textwrap
@@ -57,6 +58,60 @@ def test_postprocess_on_omitted_defaults_to_on_graph(sample_yaml):
     assert 'climo-mon-P2Y_comp3' not in result
 
 
+def _build_climatology_workflow(tmp_path, pp_chunks, interval_years, pp_start,
+                                 pp_stop, clean_work, runahead_limit='P999'):
+    """Render a minimal, self-contained cylc workflow around a single
+    climatology component, for tests that need to hand the generated
+    graph/definitions to a real cylc install."""
+    config = {
+        'postprocess': {
+            'components': [{
+                'type': 'comp1',
+                'sources': [{'history_file': 'comp1_month'}],
+                'climatology': [{'frequency': 'yr', 'interval_years': interval_years}],
+            }],
+            'settings': {'pp_chunks': pp_chunks,
+                         'history_segment': 'P1Y',
+                         'pp_start': pp_start,
+                         'pp_stop': pp_stop},
+            'switches': {'clean_work': clean_work},
+        }
+    }
+    yaml_file = tmp_path / 'config.yaml'
+    with open(yaml_file, 'w') as file_:
+        yaml.dump(config, file_)
+
+    graph = get_climatology_info.get_climatology_info(yaml_file, 'task-graph')
+    definitions = get_climatology_info.get_climatology_info(yaml_file, 'task-definitions')
+
+    flow_cylc = tmp_path / 'flow.cylc'
+    flow_cylc.write_text(
+        "[scheduler]\n"
+        "    allow implicit tasks = True\n"
+        "[scheduling]\n"
+        f"    initial cycle point = {pp_start}\n"
+        f"    final cycle point = {pp_stop}\n"
+        f"    runahead limit = {runahead_limit}\n"
+        "    [[graph]]\n"
+        + textwrap.indent(graph, ' ' * 8) + "\n"
+        "[runtime]\n"
+        "    [[MAKE-TIMEAVGS]]\n"
+        "        script = true\n"
+        "    [[REMAP-PP-COMPONENTS-AV]]\n"
+        "        script = true\n"
+        "    [[COMBINE-TIMEAVGS]]\n"
+        "        script = true\n"
+        "    [[CLEAN]]\n"
+        "        script = true\n"
+        "    [[CLEAN-SHARDS-AV]]\n"
+        "        inherit = CLEAN\n"
+        "    [[CLEAN-PP-TIMEAVGS]]\n"
+        "        inherit = CLEAN\n"
+        + textwrap.indent(definitions, ' ' * 4)
+    )
+    return flow_cylc
+
+
 @pytest.mark.skipif(shutil.which('cylc') is None, reason='cylc is not installed')
 @pytest.mark.parametrize('interval_years,clean_work', [(1, False), (1, True),
                                                          (4, False), (4, True)])
@@ -75,54 +130,83 @@ def test_multi_chunk_climatology_is_a_valid_cylc_graph(tmp_path, interval_years,
     == pp_chunk size always worked, which is why the bug went
     unnoticed for single-chunk climatologies).
     """
-    config = {
-        'postprocess': {
-            'components': [{
-                'type': 'comp1',
-                'sources': [{'history_file': 'comp1_month'}],
-                'climatology': [{'frequency': 'yr', 'interval_years': interval_years}],
-            }],
-            'settings': {'pp_chunks': ['P1Y'],
-                         'history_segment': 'P1Y',
-                         'pp_start': '0001',
-                         'pp_stop': '0004'},
-            'switches': {'clean_work': clean_work},
-        }
-    }
-    yaml_file = tmp_path / 'config.yaml'
-    with open(yaml_file, 'w') as file_:
-        yaml.dump(config, file_)
-
-    graph = get_climatology_info.get_climatology_info(yaml_file, 'task-graph')
-    definitions = get_climatology_info.get_climatology_info(yaml_file, 'task-definitions')
-
-    flow_cylc = tmp_path / 'flow.cylc'
-    flow_cylc.write_text(
-        "[scheduler]\n"
-        "    allow implicit tasks = True\n"
-        "[scheduling]\n"
-        "    initial cycle point = 0001\n"
-        "    final cycle point = 0004\n"
-        "    [[graph]]\n"
-        + textwrap.indent(graph, ' ' * 8) + "\n"
-        "[runtime]\n"
-        "    [[MAKE-TIMEAVGS]]\n"
-        "        script = true\n"
-        "    [[REMAP-PP-COMPONENTS-AV]]\n"
-        "        script = true\n"
-        "    [[COMBINE-TIMEAVGS]]\n"
-        "        script = true\n"
-        "    [[CLEAN]]\n"
-        "        script = true\n"
-        "    [[CLEAN-SHARDS-AV]]\n"
-        "        inherit = CLEAN\n"
-        "    [[CLEAN-PP-TIMEAVGS]]\n"
-        "        inherit = CLEAN\n"
-        + textwrap.indent(definitions, ' ' * 4)
+    flow_cylc = _build_climatology_workflow(
+        tmp_path, pp_chunks=['P1Y'], interval_years=interval_years,
+        pp_start='0001', pp_stop='0004', clean_work=clean_work,
     )
 
     result = subprocess.run(
-        ['cylc', 'validate', str(tmp_path)],
+        ['cylc', 'validate', str(flow_cylc.parent)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.skipif(shutil.which('cylc') is None, reason='cylc is not installed')
+def test_multi_chunk_climatology_runahead_does_not_overflow(tmp_path):
+    """A *valid* graph is not enough on its own: `cylc play` separately
+    walks every cycling sequence up to the configured runahead limit
+    (a raw cycle count when `runahead limit` is given as `Pn`, e.g.
+    the `P999` used in production) to work out how far ahead it is
+    safe to run. The climatology recurrence header used to be written
+    as an open-ended "+P{offset}Y/P{interval}Y" (offset/period, with
+    no explicit end or repetition count), which per ISO8601 recurs
+    forever -- it does not stop at the workflow's own final cycle
+    point. For a large enough climatology period (e.g. 20 years) that
+    walk overflows the 4-digit TimePoint year before the runahead
+    count limit is reached, crashing `cylc play` at startup with
+    "Cannot dump TimePoint year: N not in bounds 0 to 9999" -- even
+    though `cylc validate` on the same workflow passes cleanly, since
+    validate never walks sequences this far.
+
+    This reproduces the real-world scale (5-year pp_chunks, a 20-year
+    climatology, runahead limit = P999) that triggered it in
+    production, and replicates cylc's own runahead walk directly
+    against the rendered workflow's config.
+
+    The check runs as a subprocess using whichever Python interpreter
+    the `cylc` command itself is installed against (resolved via
+    `cylc version --long`, since `cylc` may be a site wrapper script
+    rather than the real executable), rather than importing cylc.flow
+    into this test process directly -- the two are not guaranteed to
+    be the same interpreter/environment.
+    """
+    flow_cylc = _build_climatology_workflow(
+        tmp_path, pp_chunks=['P5Y'], interval_years=20,
+        pp_start='0001', pp_stop='0020', clean_work=True,
+        runahead_limit='P999',
+    )
+
+    version_info = subprocess.run(
+        ['cylc', 'version', '--long'],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
+    ).stdout
+    # First line looks like "8.6.1 (/usr/local/cylc/cylc-8.6/bin/cylc)"
+    cylc_bin = version_info.splitlines()[0].split('(')[1].rstrip(')')
+    interpreter = str(pathlib.Path(cylc_bin).parent / 'python3')
+
+    check_script = f"""
+from cylc.flow.config import WorkflowConfig
+from cylc.flow.scripts.validate import get_option_parser
+from cylc.flow.templatevars import get_template_vars
+
+parser = get_option_parser()
+opts, _ = parser.parse_args([{str(flow_cylc.parent)!r}])
+cfg = WorkflowConfig('test', {str(flow_cylc)!r}, opts, get_template_vars(opts))
+
+ilimit = int(cfg.runahead_limit)
+for sequence in cfg.sequences:
+    seq_point = sequence.get_first_point(cfg.start_point)
+    count = 1
+    while seq_point is not None and count <= 1 + ilimit:
+        count += 1
+        # This is where cylc play crashed: get_next_point() on an
+        # unbounded sequence eventually produces a TimePoint whose
+        # year cannot be represented.
+        seq_point = sequence.get_next_point(seq_point)
+"""
+    result = subprocess.run(
+        [interpreter, '-c', check_script],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr

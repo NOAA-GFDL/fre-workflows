@@ -86,8 +86,29 @@ class Climatology:
         chunks_per_interval = int(chunks_per_interval)
         lead_years = (chunks_per_interval - 1) * self.pp_chunk.years
 
+        # Enumerate the actual pp_chunk boundaries within [pp_start,
+        # pp_stop] so the climo recurrence can be given an explicit
+        # repetition count. "+P{lead_years}Y/P{interval}Y" (offset/period,
+        # with no third "/end" component) is, per ISO8601, an unbounded
+        # recurrence -- ignoring the workflow's own final cycle point --
+        # and cylc's runahead computation walks every sequence up to its
+        # configured cycle-count limit regardless. With a large enough
+        # period (e.g. a 20-year climatology and a generous runahead
+        # limit) that walk overflows the 4-digit TimePoint year before
+        # the workflow's own final cycle point ever comes into it. Giving
+        # the recurrence an explicit "Rn/" repetition count makes it
+        # naturally finite, independent of the runahead limit.
+        chunk_points = [
+            chunk['cycle_point']
+            for chunk in iter_chunks(
+                [str(self.pp_chunk)], str(history_segment),
+                self.pp_start, self.pp_stop
+            )
+        ]
+        n_windows = len(chunk_points) // chunks_per_interval
+
         # first, make the climo graphs themselves
-        graph += f"+P{lead_years}Y/P{self.interval_years}Y = \"\"\"\n"
+        graph += f"R{n_windows}/+P{lead_years}Y/P{self.interval_years}Y = \"\"\"\n"
 
         for source in self.sources:
             for count in range(chunks_per_interval):
@@ -126,15 +147,7 @@ class Climatology:
             # for it, and subtracting/adding an offset that large from
             # a cycle point near the start of the workflow goes out of
             # bounds. Absolute cycle points sidestep that arithmetic
-            # entirely, so enumerate the actual chunk boundaries here
-            # instead of using a generic recurring rule.
-            chunk_points = [
-                chunk['cycle_point']
-                for chunk in iter_chunks(
-                    [str(self.pp_chunk)], str(history_segment),
-                    self.pp_start, self.pp_stop
-                )
-            ]
+            # entirely.
             for window_start in range(0, len(chunk_points), chunks_per_interval):
                 window = chunk_points[window_start:window_start + chunks_per_interval]
                 if len(window) < chunks_per_interval:
