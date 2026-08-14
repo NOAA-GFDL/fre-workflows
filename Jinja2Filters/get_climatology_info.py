@@ -63,15 +63,35 @@ class Climatology:
     def graph(self, history_segment, clean_work):
         """Generate the cylc task graph string for the climatology.
 
-        The climatology's own cycle point is anchored at the start of
-        the LAST contributing pp_chunk (not the start of the whole
-        interval), so that every dependency on an earlier chunk can be
-        expressed with a backward (negative) cycle point offset.
-        Unsigned/forward offsets are unsafe here: cylc resolves the
-        inverse relationship (which climatology instance a given chunk
-        feeds) by subtracting the raw offset from the chunk's own cycle
-        point, which goes out of bounds for chunks near the start of
-        the workflow when the interval spans more than one pp_chunk.
+        Each climatology window gets its own explicit "R1/<point>"
+        graph section, anchored at the window's FIRST contributing
+        chunk -- so e.g. a 20-year climatology covering years 1-20 is
+        scheduled at cycle point 1, matching how climatologies are
+        conventionally labeled by their start year, not their end.
+
+        References to the window's LATER chunks use absolute cycle
+        points rather than relative offsets. Two problems motivate
+        that:
+
+        1. Relative offsets require subtraction arithmetic
+           (TaskTrigger.get_child_point) to work out which downstream
+           task a given chunk feeds. cylc validate sanity-checks every
+           taskdef at the workflow's initial cycle point regardless of
+           whether that's a real occurrence for the relationship being
+           tested, and that arithmetic underflows a 4-digit TimePoint
+           year for large offsets near the start of the workflow.
+        2. A generic recurring section (e.g. "+P{offset}Y/P{n}Y", or
+           even a plain "P{n}Y") is, per ISO8601, unbounded -- it does
+           not stop at the workflow's own final cycle point. cylc
+           play's runahead computation walks every such sequence up to
+           the configured runahead limit (a raw cycle count for
+           "runahead limit = Pn"-style config), and for a large enough
+           period that walk can overflow the 4-digit TimePoint year
+           before the count limit is reached, crashing at startup.
+
+        Absolute cycle points avoid the first problem (no arithmetic
+        involved at all), and per-window "R1/<point>" sections avoid
+        the second (a single-point sequence is trivially bounded).
         """
 
         if self.grid == 'native':
@@ -84,20 +104,7 @@ class Climatology:
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
         chunks_per_interval = int(chunks_per_interval)
-        lead_years = (chunks_per_interval - 1) * self.pp_chunk.years
 
-        # Enumerate the actual pp_chunk boundaries within [pp_start,
-        # pp_stop] so the climo recurrence can be given an explicit
-        # repetition count. "+P{lead_years}Y/P{interval}Y" (offset/period,
-        # with no third "/end" component) is, per ISO8601, an unbounded
-        # recurrence -- ignoring the workflow's own final cycle point --
-        # and cylc's runahead computation walks every sequence up to its
-        # configured cycle-count limit regardless. With a large enough
-        # period (e.g. a 20-year climatology and a generous runahead
-        # limit) that walk overflows the 4-digit TimePoint year before
-        # the workflow's own final cycle point ever comes into it. Giving
-        # the recurrence an explicit "Rn/" repetition count makes it
-        # naturally finite, independent of the runahead limit.
         chunk_points = [
             chunk['cycle_point']
             for chunk in iter_chunks(
@@ -105,62 +112,53 @@ class Climatology:
                 self.pp_start, self.pp_stop
             )
         ]
-        n_windows = len(chunk_points) // chunks_per_interval
 
-        # first, make the climo graphs themselves
-        graph += f"R{n_windows}/+P{lead_years}Y/P{self.interval_years}Y = \"\"\"\n"
+        for window_start in range(0, len(chunk_points), chunks_per_interval):
+            window = chunk_points[window_start:window_start + chunks_per_interval]
+            if len(window) < chunks_per_interval:
+                # Partial trailing window: not enough chunks for a climo instance.
+                continue
+            climo_point = window[0]
 
-        for source in self.sources:
-            for count in range(chunks_per_interval):
-                connector = "" if count == 0 else " & "
-                lookback = lead_years - count * self.pp_chunk.years
-                if self.pp_chunk == history_segment:
-                    task = f"split-netcdf-{grid}_{source}"
-                else:
-                    task = f"make-timeseries-{grid}-{self.pp_chunk}_{source}"
-                if lookback == 0:
-                    graph += f"{connector}{task}"
-                else:
-                    graph += f"{connector}{task}[-P{lookback}Y]"
-            graph += "\n"
-            graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+            graph += f"R1/{climo_point} = \"\"\"\n"
+            for source in self.sources:
+                terms = []
+                for chunk_point in window:
+                    if self.pp_chunk == history_segment:
+                        task = f"split-netcdf-{grid}_{source}"
+                    else:
+                        task = f"make-timeseries-{grid}-{self.pp_chunk}_{source}"
+                    if chunk_point == climo_point:
+                        terms.append(task)
+                    else:
+                        terms.append(f"{task}[{chunk_point}]")
+                graph += " & ".join(terms) + "\n"
+                graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                if clean_work:
+                    graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
+                    graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
+
+                # The first chunk of the window shares its cycle point
+                # with climo itself, so it can safely reuse this same,
+                # offset-free section.
+                if clean_work:
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+            graph += "\"\"\"\n"
+
             if clean_work:
-                graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
-                graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
-
-            # The last chunk of every window shares its cycle point with
-            # climo itself, so it can safely reuse the same recurring,
-            # offset-free rule.
-            if clean_work:
-                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-
-        graph += f"\"\"\"\n"
-
-        if clean_work and chunks_per_interval > 1:
-            # The earlier chunks of each window are consumed by a climo
-            # instance that occurs LATER than they do, so a relative
-            # offset can't express the dependency safely: cylc sanity
-            # checks every taskdef at the workflow's initial cycle
-            # point regardless of whether that point is really valid
-            # for it, and subtracting/adding an offset that large from
-            # a cycle point near the start of the workflow goes out of
-            # bounds. Absolute cycle points sidestep that arithmetic
-            # entirely.
-            for window_start in range(0, len(chunk_points), chunks_per_interval):
-                window = chunk_points[window_start:window_start + chunks_per_interval]
-                if len(window) < chunks_per_interval:
-                    # Partial trailing window: no climo instance for it.
-                    continue
-                climo_point = window[-1]
-                for chunk_point in window[:-1]:
+                # The later chunks in the window are consumed by climo
+                # before their shards can be cleaned up, so each needs
+                # its own section, anchored at its own (earlier) cycle
+                # point, cross-referencing climo's (later) point.
+                for chunk_point in window[1:]:
                     graph += f"R1/{chunk_point} = \"\"\"\n"
                     graph += (
                         f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}"
                         f"[{climo_point}] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
                     )
-                    graph += f"\"\"\"\n"
+                    graph += "\"\"\"\n"
 
         return graph
 
@@ -183,17 +181,9 @@ class Climatology:
         """
 
         # The climatology's cycle point is anchored at the start of the
-        # last contributing pp_chunk (see graph(), above), so the data
-        # window spans backward by (chunks_per_interval - 1) chunks and
-        # forward through the end of that final chunk.
-        chunks_per_interval = int(self.interval_years / self.pp_chunk.years)
-        lead_years = (chunks_per_interval - 1) * self.pp_chunk.years
-        end_offset = self.pp_chunk - one_year
-
-        if lead_years == 0:
-            begin = "$(cylc cycle-point)"
-        else:
-            begin = f"$(cylc cycle-point --offset=-P{lead_years}Y)"
+        # window (see graph(), above), so the data window runs forward
+        # from that point through interval_years - 1 more years.
+        end_offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
 
         definitions += f"""
     [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
@@ -201,7 +191,7 @@ class Climatology:
         [[[environment]]]
             components = {self.component}
             currentChunk = P{self.interval_years}Y
-            begin = {begin}
+            begin = $(cylc cycle-point)
             end = $(cylc cycle-point --print-year --offset={end_offset})
         """
 
