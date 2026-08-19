@@ -421,6 +421,8 @@
 {% endif %}
 
     [[MAKE-TIMEAVGS]]
+        # fre-nctools is needed for the time-averaging for the Julian calendar.
+        # CDO should work OK for non-Julian uses but until we can distinguish let's use fre-nctools.
         script = """
             fre -vv app gen-time-averages-wrapper \
                 --cycle-point     $CYLC_TASK_CYCLE_POINT \
@@ -429,7 +431,8 @@
                 --output-interval $output_interval \
                 --input-interval  $input_interval \
                 --grid            $grid \
-                --frequency       $frequency
+                --frequency       $frequency \
+                --pkg             fre-nctools
         """
     {% if DO_NATIVE %}
     [[MAKE-TIMEAVGS-NATIVE]]
