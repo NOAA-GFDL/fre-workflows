@@ -22,8 +22,8 @@ export PATH=/mnt/.local/bin:$PATH
 cd -
 
 ## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
-conda install noaa-gfdl::hsm=1.4.0
-conda install noaa-gfdl::fre-nctools=2022.02.01
+micromamba install noaa-gfdl::hsm=1.4.0
+micromamba install noaa-gfdl::fre-nctools=2022.02.01
 
 get_user_input () {
     echo Please Enter Experiment Name:
