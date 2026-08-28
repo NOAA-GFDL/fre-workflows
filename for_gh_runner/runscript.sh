@@ -14,7 +14,7 @@ env_setup () {
 
     # update fre-cli env with specific branch development
     cd fre-cli
-    pip install .
+    pip install --no-cache-dir .
 #    export PATH=/mnt/.local/bin:$PATH
     export PATH=~/.local/bin:$PATH
     cd -
