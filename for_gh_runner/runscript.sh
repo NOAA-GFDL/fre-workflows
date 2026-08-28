@@ -10,6 +10,7 @@
 env_setup () {
     ## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
     micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::hsm=1.4.0
+    micromamba clean --all -y
     micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::fre-nctools=2022.02.01
     micromamba clean --all -y
     # update fre-cli env with specific branch development
