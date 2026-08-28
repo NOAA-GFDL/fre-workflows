@@ -12,18 +12,17 @@
 export TMPDIR=/mnt/temp
 export HOME=/mnt
 
-#Not sure if needed
-#export CYLC_CONF_PATH=/mnt
+env_setup () {
+    ## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
+    micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::hsm=1.4.0
+    micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::fre-nctools=2022.02.01
 
-## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
-micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::hsm=1.4.0
-micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::fre-nctools=2022.02.01
-
-# update fre-cli env with specific branch development
-cd fre-cli
-pip install .
-export PATH=/mnt/.local/bin:$PATH
-cd -
+    # update fre-cli env with specific branch development
+    cd fre-cli
+    pip install .
+    export PATH=/mnt/.local/bin:$PATH
+    cd -
+}
 
 get_user_input () {
     echo Please Enter Experiment Name:
@@ -139,7 +138,7 @@ main () {
 
     #Create directories needed for post-processing
     create_dirs
-
+    env_setup 
     # Run the post-processing steps
     fre_pp_steps
 }
