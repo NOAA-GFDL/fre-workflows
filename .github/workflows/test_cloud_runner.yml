@@ -96,7 +96,11 @@ jobs:
         ## This is to retain clean workspace on cloud and to not waste
         ## allocation, and to start with a clean space. 
       - name: Clean up output folder
-        run: rm -rf /contrib-efs/container-test/ppp-setup/* #cylc-run/test_pp__ptest__ttest
+        run: |
+          rm -rf /contrib-efs/container-test/ppp-setup/* #cylc-run/test_pp__ptest__ttest
+          # delete hidden files that could be cached 
+          find /contrib-efs/container-test/ppp-setup/ -maxdepth 1 -type f -name ".*" -delete
+
 
         #### THOUGHT: we can remove the bind to a specific location for the history and
         # gridspec files. They would then just be mounted to the same location
