@@ -7,11 +7,6 @@
 ##    - automate rebuilding container when there is an update in fre-cli
 ##    - checks for the status of the workflow (before installation step)
 
-# Initialize ppp-setup
-# Set environment variables 
-export TMPDIR=/mnt/temp
-export HOME=/mnt
-
 env_setup () {
     ## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
     micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::hsm=1.4.0
@@ -20,7 +15,8 @@ env_setup () {
     # update fre-cli env with specific branch development
     cd fre-cli
     pip install .
-    export PATH=/mnt/.local/bin:$PATH
+#    export PATH=/mnt/.local/bin:$PATH
+    export PATH=~/.local/bin:$PATH
     cd -
 }
 
@@ -47,6 +43,10 @@ get_user_input () {
 
 create_dirs () {
     
+    # Initialize ppp-setup
+    # Set environment variables 
+    export TMPDIR=/mnt/temp
+    export HOME=/mnt
 
     echo "Creating necessary paths used in workflow"
     paths=("${HOME}/pp" "${HOME}/ptmp" "${HOME}/temp")
@@ -136,9 +136,11 @@ main () {
     # Set user-input
     get_user_input
 
+    env_setup
+
     #Create directories needed for post-processing
     create_dirs
-    env_setup 
+
     # Run the post-processing steps
     fre_pp_steps
 }
