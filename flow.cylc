@@ -55,7 +55,7 @@
     allow implicit tasks = false
 
     {# Configure the directories and files to be included in the remote file installation #}
-    install = app/*, bin/*, etc/*, lib/*
+    install = app/, bin/, etc/, lib/
     UTC mode = True
 
     [[events]]
@@ -161,7 +161,7 @@
         {% endif %}
     {% endif %}
 
-    {% if REFINED_HISTORY_DIR is defined %}
+    {% if DO_REFINEDIAG and REFINED_HISTORY_DIR is defined %}
         {% if DO_REGRID %}
             stage-history-refined => regrid-xy<regrid>
         {% endif %}
@@ -204,7 +204,7 @@
             split-netcdf-regrid<regrid_static> => remap-pp-components-static<component> => combine-statics
     {% endif %}
 
-    {% if REFINED_HISTORY_DIR is defined %}
+    {% if DO_REFINEDIAG and REFINED_HISTORY_DIR is defined %}
         {% if DO_REGRID_STATIC %}
             stage-history-refined => regrid-xy<regrid_static>
         {% endif %}
@@ -409,7 +409,7 @@
             ptmpDir = {{ PTMP_DIR }}
 
 
-{% if REFINED_HISTORY_DIR is defined %}
+{% if DO_REFINEDIAG and REFINED_HISTORY_DIR is defined %}
     [[stage-history-refined]]
         inherit = STAGE-HISTORY
         post-script = """

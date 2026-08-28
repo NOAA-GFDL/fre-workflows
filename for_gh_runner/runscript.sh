@@ -7,26 +7,19 @@
 ##    - automate rebuilding container when there is an update in fre-cli
 ##    - checks for the status of the workflow (before installation step)
 
-# Initialize ppp-setup
-# Set environment variables 
-export TMPDIR=/mnt/temp
-export HOME=/mnt
-
-#Not sure if needed
-#export CYLC_CONF_PATH=/mnt
-
-### WHAT IS NEEDED ON THE CLOUD VS NOT for conda set-up
-# Initializations for conda environment in container
-conda init --all
-source /opt/conda/etc/profile.d/conda.sh
-conda deactivate
-conda activate /app/cylc-flow-tools
-
-# update fre-cli env with specific branch development
-cd fre-cli
-pip install .
-export PATH=/mnt/.local/bin:$PATH
-cd -
+env_setup () {
+    ## Since these packages are pp workflow specific, install them here to keep the fre-cli environment in the container non-GFDL specific
+    micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::hsm=1.4.0
+    micromamba clean --all -y
+    micromamba install -p /app/cylc-flow-tools/env noaa-gfdl::fre-nctools=2022.02.01
+    micromamba clean --all -y
+    # update fre-cli env with specific branch development
+    cd fre-cli
+    pip install --no-cache-dir .
+#    export PATH=/mnt/.local/bin:$PATH
+    export PATH=~/.local/bin:$PATH
+    cd -
+}
 
 get_user_input () {
     echo Please Enter Experiment Name:
@@ -50,17 +43,28 @@ get_user_input () {
 }
 
 create_dirs () {
+    
+    # Initialize ppp-setup
+    # Set environment variables 
+    export TMPDIR=/mnt/temp
+    export HOME=/mnt
+
     echo "Creating necessary paths used in workflow"
     paths=("${HOME}/pp" "${HOME}/ptmp" "${HOME}/temp")
 
-    for p in ${paths[@]}; do
-        if [ -d $p ]; then
+    ## check if path exists or if there are any broken symlinks
+    ## in refinediag task, there is a point in which symlinks are being made, 
+    ## which caused an issue when re-running and copying files to locations
+    ## that existed already (from the broken symlinks)
+    for p in "${paths[@]}"; do
+        if [ -e "$p" ] || [ -L "$p" ]; then
+            readlink $p
             echo -e "Path $p previously created. Removing..."
-            rm -rf $p
+            rm -rf "$p"
             echo -e "   Creating new $p\n"
-            mkdir -p $p
+            mkdir -p "$p"
         else
-            mkdir -p $p
+            mkdir -p "$p"
         fi
     done
 }
@@ -77,25 +81,25 @@ fre_pp_steps () {
 
     ## Clean previous experiment
     echo "experiment cleaning, if it was previously installed"
-    if [ -d /mnt/cylc-run/${name} ]; then
+    if [ -d ${HOME}/cylc-run/${name} ]; then
         echo -e "\n${name} previously installed"
         echo "   Removing ${name}..."
         cylc clean ${name}
     fi
 
     ## More cleaning needed for refineDiag output
-    if [ -d /mnt/$USER/refined_history ]; then
+    if [ -d ${HOME}/$USER/refined_history ]; then
         echo -e "Refine Diag scripts previously run, removing ..."
-        rm -rf /mnt/$USER/refined_history
+        rm -rf ${HOME}/$USER/refined_history
     fi 
 
     ## Checkout
     echo -e "\nCreating $name directory in ${HOME}/cylc-src/${name} ..."
-    rm -rf /mnt/cylc-src/${name}
-    mkdir -p /mnt/cylc-src/${name}
+    rm -rf ${HOME}/cylc-src/${name}
+    mkdir -p ${HOME}/cylc-src/${name}
 
     echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ..."
-    cp -r ./* /mnt/cylc-src/${name}
+    cp -r ./* ${HOME}/cylc-src/${name}
     check_exit_status "MOCK CHECKOUT (cp)"
 
     #Not sure if needed because if no global.cylc found, cylc uses default, which utilizes background jobs anyway ...
@@ -132,6 +136,8 @@ main () {
 
     # Set user-input
     get_user_input
+
+    env_setup
 
     #Create directories needed for post-processing
     create_dirs
