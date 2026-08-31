@@ -2,8 +2,8 @@
 
 ### see markdown instructions on usage in for-developers.md
 
-if [ $(basename $PWD) != 'fre-workflows' ]; then
-    echo "ERROR: source me from a fre-workflows directory or i won't work"
+if [ $(basename $PWD) != 'fre-postprocess-workflow' ]; then
+    echo "ERROR: source me from a fre-postprocess-workflow directory or i won't work"
     return 1
 fi
 
