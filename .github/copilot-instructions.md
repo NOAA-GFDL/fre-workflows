@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions for `fre-workflows`
+# GitHub Copilot Instructions for `fre-postprocess-workflow`
 
 ## Project Context
 - This repository holds GFDL's next-generation FRE (FMS Runtime Environment) workflow configuration templates.
