@@ -58,6 +58,39 @@ def test_postprocess_on_omitted_defaults_to_on_graph(sample_yaml):
     assert 'climo-mon-P2Y_comp3' not in result
 
 
+def test_two_frequencies_for_one_component(tmp_path):
+    """A single component defining climatologies for both 'mon' and 'yr'
+    frequencies should produce independent tasks for each frequency in
+    both the task graph and the task definitions, rather than one
+    overwriting the other."""
+    config = {
+        'postprocess': {
+            'components': [{
+                'type': 'comp1',
+                'sources': [{'history_file': 'comp1_month'}],
+                'climatology': [{'frequency': 'mon', 'interval_years': 2},
+                                 {'frequency': 'yr', 'interval_years': 2}],
+            }],
+            'settings': {'pp_chunks': ['P1Y'],
+                         'history_segment': 'P1Y',
+                         'pp_start': '0001',
+                         'pp_stop': '0002'},
+            'switches': {'clean_work': False},
+        }
+    }
+    yaml_file = tmp_path / 'config.yaml'
+    with open(yaml_file, 'w') as file_:
+        yaml.dump(config, file_)
+
+    definitions = get_climatology_info.get_climatology_info(yaml_file, 'task-definitions')
+    graph = get_climatology_info.get_climatology_info(yaml_file, 'task-graph')
+
+    assert 'climo-mon-P2Y_comp1' in definitions
+    assert 'climo-yr-P2Y_comp1' in definitions
+    assert 'climo-mon-P2Y_comp1' in graph
+    assert 'climo-yr-P2Y_comp1' in graph
+
+
 def _build_climatology_workflow(tmp_path, pp_chunks, interval_years, pp_start,
                                  pp_stop, clean_work, runahead_limit='P999'):
     """Render a minimal, self-contained cylc workflow around a single
