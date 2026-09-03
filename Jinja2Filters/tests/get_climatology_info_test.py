@@ -1,4 +1,3 @@
-import pathlib
 import shutil
 import subprocess
 import textwrap
@@ -195,51 +194,31 @@ def test_multi_chunk_climatology_runahead_does_not_overflow(tmp_path):
     This reproduces the real-world scale (5-year pp_chunks, a 20-year
     climatology, runahead limit = P999) that triggered it in
     production, and replicates cylc's own runahead walk directly
-    against the rendered workflow's config.
-
-    The check runs as a subprocess using whichever Python interpreter
-    the `cylc` command itself is installed against (resolved via
-    `cylc version --long`, since `cylc` may be a site wrapper script
-    rather than the real executable), rather than importing cylc.flow
-    into this test process directly -- the two are not guaranteed to
-    be the same interpreter/environment.
+    against the rendered workflow's config, in-process against the
+    cylc.flow installed alongside pytest (the `cylc` skip guard above
+    and this import share one environment in this repo's tooling).
     """
+    from cylc.flow.config import WorkflowConfig
+    from cylc.flow.scripts.validate import get_option_parser
+    from cylc.flow.templatevars import get_template_vars
+
     flow_cylc = _build_climatology_workflow(
         tmp_path, pp_chunks=['P5Y'], interval_years=20,
         pp_start='0001', pp_stop='0020', clean_work=True,
         runahead_limit='P999',
     )
 
-    version_info = subprocess.run(
-        ['cylc', 'version', '--long'],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
-    ).stdout
-    # First line looks like "8.6.1 (/usr/local/cylc/cylc-8.6/bin/cylc)"
-    cylc_bin = version_info.splitlines()[0].split('(')[1].rstrip(')')
-    interpreter = str(pathlib.Path(cylc_bin).parent / 'python3')
+    parser = get_option_parser()
+    opts, _ = parser.parse_args([str(flow_cylc.parent)])
+    cfg = WorkflowConfig('test', str(flow_cylc), opts, get_template_vars(opts))
 
-    check_script = f"""
-from cylc.flow.config import WorkflowConfig
-from cylc.flow.scripts.validate import get_option_parser
-from cylc.flow.templatevars import get_template_vars
-
-parser = get_option_parser()
-opts, _ = parser.parse_args([{str(flow_cylc.parent)!r}])
-cfg = WorkflowConfig('test', {str(flow_cylc)!r}, opts, get_template_vars(opts))
-
-ilimit = int(cfg.runahead_limit)
-for sequence in cfg.sequences:
-    seq_point = sequence.get_first_point(cfg.start_point)
-    count = 1
-    while seq_point is not None and count <= 1 + ilimit:
-        count += 1
-        # This is where cylc play crashed: get_next_point() on an
-        # unbounded sequence eventually produces a TimePoint whose
-        # year cannot be represented.
-        seq_point = sequence.get_next_point(seq_point)
-"""
-    result = subprocess.run(
-        [interpreter, '-c', check_script],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
-    )
-    assert result.returncode == 0, result.stdout + result.stderr
+    ilimit = int(cfg.runahead_limit)
+    for sequence in cfg.sequences:
+        seq_point = sequence.get_first_point(cfg.start_point)
+        count = 1
+        while seq_point is not None and count <= 1 + ilimit:
+            count += 1
+            # This is where cylc play crashed: get_next_point() on an
+            # unbounded sequence eventually produces a TimePoint whose
+            # year cannot be represented.
+            seq_point = sequence.get_next_point(seq_point)
