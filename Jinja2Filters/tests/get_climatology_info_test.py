@@ -197,10 +197,19 @@ def test_multi_chunk_climatology_runahead_does_not_overflow(tmp_path):
     against the rendered workflow's config, in-process against the
     cylc.flow installed alongside pytest (the `cylc` skip guard above
     and this import share one environment in this repo's tooling).
+
+    get_next_point() raises metomi.isodatetime's
+    TimePointDumperBoundsError directly -- with the exact "Cannot dump
+    TimePoint year: N not in bounds 0 to 9999" message `cylc play`
+    crashed with -- once a walked point exceeds the 4-digit year
+    range, so that's caught explicitly here and turned into a
+    pytest.fail() naming the offending year, rather than letting an
+    unrelated-looking traceback speak for itself.
     """
     from cylc.flow.config import WorkflowConfig
     from cylc.flow.scripts.validate import get_option_parser
     from cylc.flow.templatevars import get_template_vars
+    from metomi.isodatetime.exceptions import TimePointDumperBoundsError
 
     flow_cylc = _build_climatology_workflow(
         tmp_path, pp_chunks=['P5Y'], interval_years=20,
@@ -218,7 +227,10 @@ def test_multi_chunk_climatology_runahead_does_not_overflow(tmp_path):
         count = 1
         while seq_point is not None and count <= 1 + ilimit:
             count += 1
-            # This is where cylc play crashed: get_next_point() on an
-            # unbounded sequence eventually produces a TimePoint whose
-            # year cannot be represented.
-            seq_point = sequence.get_next_point(seq_point)
+            try:
+                # This is where cylc play crashed: get_next_point() on
+                # an unbounded sequence eventually produces a
+                # TimePoint whose year cannot be represented.
+                seq_point = sequence.get_next_point(seq_point)
+            except TimePointDumperBoundsError as exc:
+                pytest.fail(f"cylc runahead walk went out of bounds: {exc}")
