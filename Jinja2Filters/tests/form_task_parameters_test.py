@@ -55,7 +55,7 @@ def test_retrieve_both_atmos_and_land(yaml_file):
 
 # This test does not work but Chris cannot figure out why.
 # It fails with the same error we're trying to check for:
-# E       FileNotFoundError: [Errno 2] No such file or directory: '/nbhome/c2b/git/fre-workflows/not-here'
+# E       FileNotFoundError: [Errno 2] No such file or directory: '/nbhome/c2b/git/fre-postprocess-workflow/not-here'
 # It looks good based on https://docs.pytest.org/en/stable/how-to/assert.html
 #def test_file_not_found():
 #    """Raise FileNotFoundError if yamlfile does not exist"""

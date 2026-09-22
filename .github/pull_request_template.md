@@ -27,14 +27,14 @@
 The `test_cloud_runner` pipeline is not automatically associated as a required check with the PR; it must be triggered to test changes in a full post-processing run.
 
 To trigger the manual pipeline:
-1. Follow the link to the `test_cloud_runner` actions tab [here](https://github.com/NOAA-GFDL/fre-workflows/actions/workflows/test_cloud_runner.yml)
+1. Follow the link to the `test_cloud_runner` actions tab [here](https://github.com/NOAA-GFDL/fre-postprocess-workflow/actions/workflows/test_cloud_runner.yml)
     - you should see "This workflow has a workflow_dispatch event trigger"
     
 3. Click the dropdown "Run workflow":
 
-    a. If trying to merge from a branch on fre-workflows: choose branch from the first drop down, leave the next 2 inputs blank, and choose the fre-cli branch to test
+    a. If trying to merge from a branch on fre-postprocess-workflow: choose branch from the first drop down, leave the next 2 inputs blank, and choose the fre-cli branch to test
 
-    b. If trying to merge from a fre-workflows fork: can skip first branch selection, input the fork name (ex: [user]/fre-workflows), input the fork's branch name, and choose the fre-cli branch to test
+    b. If trying to merge from a fre-postprocess-workflow fork: can skip first branch selection, input the fork name (ex: [user]/fre-postprocess-workflow), input the fork's branch name, and choose the fre-cli branch to test
 4. Click "Run workflow"
 
 Note: you may need to reload the page to see your running workflow. 
