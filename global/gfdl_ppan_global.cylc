@@ -98,7 +98,7 @@
         [[[selection]]]
             method = definition order
         [[[directives]]]
-    [[ppan]]
+    [[ppan_noepmt]]
         job runner = slurm
         hosts = localhost
         install target = localhost
@@ -133,7 +133,7 @@
         [[[selection]]]
             method = random
         [[[directives]]]
-    [[ppan_test]]
+    [[ppan_epmt]]
         job runner = ppan_handler
         hosts = localhost
         cylc path = /home/fms/local/opt/cylc/bin
