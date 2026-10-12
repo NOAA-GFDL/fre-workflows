@@ -6,7 +6,7 @@
 - Execution environments include bare-metal HPC systems (like PPAN and Gaea) via Slurm, as well as portable containerized setups (Podman/Apptainer) running locally or in the cloud.
 
 ## Workflow Configuration Rules
-- **Configuration Hierarchy:** Understand that Cylc configurations are hierarchical. `global.cylc` is loaded first, followed by the central `flow.cylc`, and finally site-specific configurations from the `site/` directory (e.g., `site/ppan.cylc`). 
+- **Configuration Hierarchy:** Understand that Cylc configurations are hierarchical. `global.cylc` is loaded first, followed by the central `flow.cylc`, and finally site-specific configurations from the `site/` directory (e.g., `site/ppan_epmt.cylc`).
 - **Platform-Specific vs. Independent:** 
   - Place platform-independent changes in `flow.cylc`. 
   - Place platform-specific changes (e.g., Slurm directives, HPC module loads) in the appropriate `site/*.cylc` files.
