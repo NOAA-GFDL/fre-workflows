@@ -138,17 +138,33 @@ class AnalysisScript:
         if self.script_type == "independent":
             # Run every chunk (not cumulative)
             suffix = f"{self.chunk}"
-            graph += f'{self.chunk} = """\n'
+            if self.product == "av":
+                # Climatologies are only made for complete chunks, so don't
+                # recur onto a trailing partial chunk (which only gets a timeseries).
+                experiment_start, experiment_stop = self.experiment_date_range
+                n_complete_chunks = 0
+                d = experiment_start
+                while d + self.chunk - one_year <= experiment_stop:
+                    n_complete_chunks += 1
+                    d += self.chunk
+                if n_complete_chunks == 0:
+                    return ""
+                graph += f'R{n_complete_chunks}/{experiment_start}/{self.chunk} = """\n'
+            else:
+                graph += f'{self.chunk} = """\n'
 
+            # Trigger this script's task rather than the ANALYSIS-{chunk} family:
+            # the family also holds the other product's scripts, which may not
+            # recur at the same cycle points (av scripts skip partial chunks).
             if analysis_only:
-                graph += f"ANALYSIS-{suffix}?\n"
+                graph += f"analysis-{self.name}?\n"
             else:
                 if self.product == "av":
                     dep = f"COMBINE-TIMEAVGS-{self.chunk}:succeed-all"
                 else:
                     dep = f"REMAP-PP-COMPONENTS-TS-{self.chunk}:succeed-all"
 
-                graph += f"{dep} => data-catalog-{suffix} => ANALYSIS-{suffix}?\n"
+                graph += f"{dep} => data-catalog-{suffix} => analysis-{self.name}?\n"
 
             if not self.is_legacy:
                 graph += f"install-analysis-{self.name}[^] => analysis-{self.name}"
