@@ -1,7 +1,11 @@
 #!jinja2
 
-{# fre version should be programatically set, not hard-coded. #}
-{% set FRE_VERSION = "2026.01" %}
+{# FRE_VERSION is set in rose-suite.conf by 'fre pp configure-yaml' to $(fre --version). #}
+{# Untagged development versions of fre-cli end in '-dev' and use the fre/test module.   #}
+{% if FRE_VERSION is not defined %}
+{{ raise("FRE_VERSION must be set in rose-suite.conf; 'fre pp configure-yaml' sets it to $(fre --version)") }}
+{% endif %}
+{% set FRE_MODULE = "fre/test" if FRE_VERSION.endswith("-dev") else "fre/" ~ FRE_VERSION %}
 
 {# global fre-specific verbosity setting here? -q for error only, default is up to warning, -v for info, -vv for debug #}
 
@@ -931,7 +935,7 @@
             # fre-analysis template vars
             out_dir = {{ ANALYSIS_DIR }}
             descriptor = {{ EXPERIMENT }}
-            fremodule = fre/{{ FRE_VERSION }}
+            fremodule = {{ FRE_MODULE }}
             WORKDIR = $TMPDIR/{{ EXPERIMENT }}/{{ PLATFORM }}-{{ TARGET }}/$CYLC_TASK_CYCLE_POINT
             hist_dir = {{ HISTORY_DIR }}
             gridspecfile = {{ PP_GRID_SPEC }}
