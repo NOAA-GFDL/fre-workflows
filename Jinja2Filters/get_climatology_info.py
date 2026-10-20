@@ -105,19 +105,21 @@ class Climatology:
         assert chunks_per_interval == int(chunks_per_interval)
         chunks_per_interval = int(chunks_per_interval)
 
-        chunk_points = [
-            chunk['cycle_point']
-            for chunk in iter_chunks(
-                [str(self.pp_chunk)], str(history_segment),
-                self.pp_start, self.pp_stop
-            )
-        ]
+        chunks = list(iter_chunks(
+            [str(self.pp_chunk)], str(history_segment),
+            self.pp_start, self.pp_stop
+        ))
 
-        for window_start in range(0, len(chunk_points), chunks_per_interval):
-            window = chunk_points[window_start:window_start + chunks_per_interval]
-            if len(window) < chunks_per_interval:
+        for window_start in range(0, len(chunks), chunks_per_interval):
+            window_chunks = chunks[window_start:window_start + chunks_per_interval]
+            if len(window_chunks) < chunks_per_interval:
                 # Partial trailing window: not enough chunks for a climo instance.
                 continue
+            if any(chunk['is_partial'] for chunk in window_chunks):
+                # A partial (remainder) chunk doesn't cover the full climo
+                # interval, so it gets a timeseries but no climatology.
+                continue
+            window = [chunk['cycle_point'] for chunk in window_chunks]
             climo_point = window[0]
 
             graph += f"R1/{climo_point} = \"\"\"\n"
