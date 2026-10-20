@@ -25,7 +25,7 @@
 [runtime]
     [[root]]
         init-script = """
-            module load fre/{{ FRE_VERSION }}
+            module load {{ FRE_MODULE }}
             module load epmt
             epmt check
 
@@ -47,7 +47,7 @@
         execution time limit = PT4H
         platform = ppan_test
         [[[directives]]]
-            --comment=xtmp,epmt,fre/{{ FRE_VERSION }}
+            --comment=xtmp,epmt,{{ FRE_MODULE }}
         [[[environment]]]
             COPY_TOOL=gcp
 
