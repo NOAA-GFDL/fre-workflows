@@ -42,15 +42,15 @@ jobs:
           conda update -y --all --override-channels -c conda-forge
           conda update -y --all --override-channels -c noaa-gfdl
 
-      - name: Create fre-workflows environment
+      - name: Create fre-postprocess-workflow environment
         run: |
           # create environment containing all dependencies
           # the env cannot be explicitly activated in github CI/CD
-          conda env create -f environment.yml --name fre-workflows
-          conda list -n fre-workflows
+          conda env create -f environment.yml --name fre-postprocess-workflow
+          conda list -n fre-postprocess-workflow
 
           # add conda env's executables to github's PATH equiv.
-          echo $CONDA/envs/fre-workflows/bin >> $GITHUB_PATH
+          echo $CONDA/envs/fre-postprocess-workflow/bin >> $GITHUB_PATH
 
       - name: cylc lint workflow files
         run: |

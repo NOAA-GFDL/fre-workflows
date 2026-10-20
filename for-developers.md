@@ -1,8 +1,8 @@
-# PPAN `fre-workflows` Developer Guide
+# PPAN `fre-postprocess-workflow` Developer Guide
 
-`fre-workflows` can be used across multiple different platforms, but historically has been developed and tested on PPAN.
+`fre-postprocess-workflow` can be used across multiple different platforms, but historically has been developed and tested on PPAN.
 The following are guidelines for developing/testing on **PPAN**, but still contains some generally-applicable advice
-to using `fre-workflows` elsewhere.
+to using `fre-postprocess-workflow` elsewhere.
 
 
 
@@ -46,7 +46,7 @@ This section covers the basics of configuring `cylc` and other PPAN-specific con
 
 ### `cylc` Documentation <a name="cylcdoc"></a>
 
-`fre-workflows` developers should be intimately familiar with the
+`fre-postprocess-workflow` developers should be intimately familiar with the
 [`cylc` documentation](https://cylc.github.io/cylc-doc/stable/html/index.html).
 
 
@@ -75,7 +75,7 @@ In `fre`, a platform typically refers to a specific environment of a specific sy
 tracking which compilers and hardware are used, what settings are required to make models run, and where they were run.
 It serves as a common input argument to many functions, helping uniquely identify workflow configurations.
 
-In `cylc`, a platform is usually about selecting a specific set of global configuration values. In `fre-workflows`, it also
+In `cylc`, a platform is usually about selecting a specific set of global configuration values. In `fre-postprocess-workflow`, it also
 determines which file in `site/` will be included in the primary `flow.cylc` via `Jinja2`. For PPAN, the two relevant
 platform values are `ppan` and `ppan_test`, corresponding to the template files `site/ppan.cylc` and `site/ppan_test.cylc`
 respectively. The platform is chosen based on a `site` configuration value within a `fre` settings `yaml`.
@@ -153,7 +153,7 @@ least to most complex. They are also, equivalently, from the developer standpoin
 **All cases below make the following assumptions**:
 - you have access to PPAN and have logged in
 - you have adequate disk space for what you're trying to do
-- you begin from a terminal with `$CWD` pointing to a clone of `fre-workflows` not under `cylc-src` or `cylc-run`
+- you begin from a terminal with `$CWD` pointing to a clone of `fre-postprocess-workflow` not under `cylc-src` or `cylc-run`
 - you are making changes to the aforementioned clone, and now you need to test them
 - you want to use the workflow defined in `for_gh_runner/yaml_workflow` and are OK with "mocking" the checkout step
 
@@ -258,7 +258,7 @@ Next, just like in the [previous section](#withcondaandcylc), edit either `ppan.
 in `site/` to add your `fre-cli` environment executables to `PATH` for your submitted workflow tasks. This should be the
 last bit of editing you need to do.
 
-Finally, log out and log back in to PPAN to ensure the new login configuration is applied, then from the `fre-workflows`
+Finally, log out and log back in to PPAN to ensure the new login configuration is applied, then from the `fre-postprocess-workflow`
 directory, run:
 ```
 module load miniforge
@@ -328,7 +328,7 @@ workflow tasks to a batch workload system. See
 [here](https://cylc.github.io/cylc-doc/stable/html/user-guide/task-implementation/job-submission.html#supported-job-submission-methods) 
 for more information on this concept.
 
-The custom `handler` for `fre-workflows` is called `PPANHandler`, and the code for it is in `lib/python/ppan_handler.py`.
+The custom `handler` for `fre-postprocess-workflow` is called `PPANHandler`, and the code for it is in `lib/python/ppan_handler.py`.
 At job-submission time, `PPANHandler` inserts tags into the batch job script by calling `lib/python/tag_ops_w_papiex.py`, 
 which parses the script line-by-line right before submission. It also saves a copy of the un-tagged job script for 
 debugging purposes. The code for `PPANHandler` is thoroughly documented and commented. For more information, please see 
@@ -379,7 +379,7 @@ all workflow tasks regardless of success or failure, as `epmt` captures data in 
 
 Each Slurm job that `cylc` submits runs from a bare environment. For example, if you submitted the workflow from a local
 conda environment, that environment will not be automatically available, or activated, within the workflow tasks.
-Therefore, if you want to invoke `fre-cli` (or any) tools from within `fre-workflows` tasks, you need to add `fre-cli`
+Therefore, if you want to invoke `fre-cli` (or any) tools from within `fre-postprocess-workflow` tasks, you need to add `fre-cli`
 to the batch task environment.
 
 `cylc` provides several ways to specify the requirements of your tasks. One way is to set up environments and tools within
@@ -435,7 +435,7 @@ directly.
 **Technically yes, but we do not recommend this**. This goes against the "spirit" of what `cylc-src` is for within `fre`.
 Code under `cylc-src` is supposed to be code which was checked out by `fre`, under a specific tag and/or branch on NOAA-GFDL
 github repositories. Furthermore, the local test workflow defined `for_gh_runner/run_pp_locally.sh` assumes you are NOT 
-editing the copy under `cylc-src`, and instead assumes you are developing a local clone of `fre-workflows`, with your
+editing the copy under `cylc-src`, and instead assumes you are developing a local clone of `fre-postprocess-workflow`, with your
 `$PWD` being the repository folder. 
 
 This will ultimately mean you have three copies of the code lying around, with one being your local development copy, 

@@ -1,4 +1,4 @@
-# Claude Instructions for `fre-workflows`
+# Claude Instructions for `fre-postprocess-workflow`
 
 ## Project Context
 - This repository holds GFDL's next-generation FRE (FMS Runtime Environment) workflow configuration templates.

@@ -108,7 +108,7 @@ fre_pp_steps () {
     rm -rf ${HOME}/cylc-src/${name}
     mkdir -p ${HOME}/cylc-src/${name}
 
-    echo -e "\nCopying fre-workflows directory in ${HOME}/cylc-src/${name} ..."
+    echo -e "\nCopying fre-postprocess-workflow directory in ${HOME}/cylc-src/${name} ..."
     cp -r ./* ${HOME}/cylc-src/${name}
     check_exit_status "MOCK CHECKOUT (cp)"
 

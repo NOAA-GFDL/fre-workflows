@@ -2,12 +2,12 @@ name: test_cloud_runner
 on:
   workflow_dispatch:
     inputs:
-      fre-workflows-repo:
-        description: "IF ON FORK: Input fre-workflows fork name (example: singhd789/fre-workflows). Leave empty if not using a fork."
+      workflow-repo:
+        description: "IF ON FORK: Input fre-postprocess-workflow fork name (example: singhd789/fre-postprocess-workflow). Leave empty if not using a fork."
         required: false
         type: string
-      fre-workflows-branch:
-        description: 'IF ON FORK: Input fre-workflows branch to check out. Leave empty if not using a fork.'
+      workflow-branch:
+        description: 'IF ON FORK: Input fre-postprocess-workflow branch to check out. Leave empty if not using a fork.'
         required: false
         default: 'main'
         type: string
@@ -29,14 +29,14 @@ jobs:
   test-cloud:
     runs-on: self-hosted
     steps:
-      - name: Checkout fre-workflows fork if specified
-        if: ${{ github.event.inputs.fre-workflows-repo != ''}}
+      - name: Checkout workflow fork if specified
+        if: ${{ github.event.inputs.workflow-repo != ''}}
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.inputs.fre-workflows-repo }}
-          ref: ${{ github.event.inputs.fre-workflows-branch }}
-      - name: Checkout fre-workflows repository if no fork specified
-        if: ${{ github.event.inputs.fre-workflows-repo == ''}}
+          repository: ${{ github.event.inputs.workflow-repo }}
+          ref: ${{ github.event.inputs.workflow-branch }}
+      - name: Checkout workflow repository if no fork specified
+        if: ${{ github.event.inputs.workflow-repo == ''}}
         uses: actions/checkout@v4
       - name: Checkout fre-cli
         uses: actions/checkout@v4
@@ -48,9 +48,9 @@ jobs:
  
       - name: Display fre-workflow and fre-cli repos and branches
         run: |
-          # fre-workflows repo and branch
-          echo "fre-workflows repo: $(git remote -v)"
-          echo "fre-workflows branch: $(git branch)"
+          # fre-postprocess-workflow repo and branch
+          echo "fre-postprocess-workflow repo: $(git remote -v)"
+          echo "fre-postprocess-workflow branch: $(git branch)"
 
           # fre-cli repo and branch
           cd fre-cli

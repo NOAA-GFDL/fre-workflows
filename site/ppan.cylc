@@ -54,7 +54,7 @@
 {% endif %}
 
     [[MAKE-TIMEAVGS]]
-        pre-script = module load cdo
+        pre-script = module load cdo fre-nctools/2026.01
 
     [[MAKE-TIMESERIES]]
         pre-script = module load cdo
@@ -66,7 +66,7 @@
     [[REGRID-XY]]
         execution time limit = P1D
         pre-script = """
-            module load fre-nctools/2024.05.01
+            module load fre-nctools/2026.01
             which fregrid
         """
 {% endif %}

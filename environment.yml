@@ -1,4 +1,4 @@
-name: fre-workflows
+name: fre-postprocess-workflow
 channels:
   - conda-forge
   - noaa-gfdl

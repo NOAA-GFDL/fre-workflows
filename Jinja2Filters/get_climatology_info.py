@@ -4,6 +4,7 @@ import metomi.isodatetime.parsers
 from yaml import safe_load
 
 from legacy_date_conversions import *
+from iter_chunks import iter_chunks
 
 # set up logging
 logging.basicConfig()
@@ -33,7 +34,7 @@ def lookup_source_for_component(yaml_, component):
     return sources
 
 class Climatology:
-    def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid):
+    def __init__(self, component, frequency, interval_years, pp_chunk, sources, grid, pp_start, pp_stop):
         """Initialize the climatology object
 
         Args:
@@ -43,6 +44,8 @@ class Climatology:
             pp_chunk: ISO8601 duration available in timeseries to be used as input
             sources: List of history files
             grid: 'native' or 'regrid-xy/lat_lon.conserve_orderX'
+            pp_start: Postprocessing start date (string, e.g. '0001')
+            pp_stop: Postprocessing stop date (string, e.g. '0020')
         """
         logger.debug(f"Initializing climatology for component '{component}'")
 
@@ -52,11 +55,43 @@ class Climatology:
         self.pp_chunk = pp_chunk
         self.sources = sources
         self.grid = grid
+        self.pp_start = pp_start
+        self.pp_stop = pp_stop
 
         logger.debug(f"component='{component}', frequency='{frequency}', interval_years='{interval_years}', pp_chunk='{pp_chunk}', sources={sources}, grid='{grid}'")
 
     def graph(self, history_segment, clean_work):
         """Generate the cylc task graph string for the climatology.
+
+        Each climatology window gets its own explicit "R1/<point>"
+        graph section, anchored at the window's FIRST contributing
+        chunk -- so e.g. a 20-year climatology covering years 1-20 is
+        scheduled at cycle point 1, matching how climatologies are
+        conventionally labeled by their start year, not their end.
+
+        References to the window's LATER chunks use absolute cycle
+        points rather than relative offsets. Two problems motivate
+        that:
+
+        1. Relative offsets require subtraction arithmetic
+           (TaskTrigger.get_child_point) to work out which downstream
+           task a given chunk feeds. cylc validate sanity-checks every
+           taskdef at the workflow's initial cycle point regardless of
+           whether that's a real occurrence for the relationship being
+           tested, and that arithmetic underflows a 4-digit TimePoint
+           year for large offsets near the start of the workflow.
+        2. A generic recurring section (e.g. "+P{offset}Y/P{n}Y", or
+           even a plain "P{n}Y") is, per ISO8601, unbounded -- it does
+           not stop at the workflow's own final cycle point. cylc
+           play's runahead computation walks every such sequence up to
+           the configured runahead limit (a raw cycle count for
+           "runahead limit = Pn"-style config), and for a large enough
+           period that walk can overflow the 4-digit TimePoint year
+           before the count limit is reached, crashing at startup.
+
+        Absolute cycle points avoid the first problem (no arithmetic
+        involved at all), and per-window "R1/<point>" sections avoid
+        the second (a single-point sequence is trivially bounded).
         """
 
         if self.grid == 'native':
@@ -66,45 +101,64 @@ class Climatology:
 
         graph = ""
 
-        # first, make the climo graphs themselves
-        graph += f"P{self.interval_years}Y = \"\"\"\n"
-
         chunks_per_interval = self.interval_years / self.pp_chunk.years
         assert chunks_per_interval == int(chunks_per_interval)
-        for source in self.sources:
-            count = 0
-            while count < chunks_per_interval:
-                if count == 0:
-                    connector = ""
-                else:
-                    connector = " & "
-                if count == 0:
-                    if self.pp_chunk == history_segment:
-                        graph += f"{connector}split-netcdf-{grid}_{source}"
-                    else:
-                        graph += f"{connector}make-timeseries-{grid}-{self.pp_chunk}_{source}"
-                else:
-                    offset = count * self.pp_chunk
-                    if self.pp_chunk == history_segment:
-                        graph += f" & split-netcdf-{grid}_{source}[{offset}]"
-                    else:
-                        graph += f" & make-timeseries-{grid}-{self.pp_chunk}_{source}[{offset}]"
-                count += 1
-            graph += "\n"
-            graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
-            if clean_work:
-                graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
-                graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
-        graph += f"\"\"\"\n"
+        chunks_per_interval = int(chunks_per_interval)
 
-        # then, create the cleaning tasks
-        if clean_work:
-            for count in range(int(chunks_per_interval)):
-                graph += f"+P{count}Y/P{self.interval_years}Y = \"\"\"\n"
-                graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}[-P{count}Y] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
-                graph += f"\"\"\"\n"
+        chunk_points = [
+            chunk['cycle_point']
+            for chunk in iter_chunks(
+                [str(self.pp_chunk)], str(history_segment),
+                self.pp_start, self.pp_stop
+            )
+        ]
+
+        for window_start in range(0, len(chunk_points), chunks_per_interval):
+            window = chunk_points[window_start:window_start + chunks_per_interval]
+            if len(window) < chunks_per_interval:
+                # Partial trailing window: not enough chunks for a climo instance.
+                continue
+            climo_point = window[0]
+
+            graph += f"R1/{climo_point} = \"\"\"\n"
+            for source in self.sources:
+                terms = []
+                for chunk_point in window:
+                    if self.pp_chunk == history_segment:
+                        task = f"split-netcdf-{grid}_{source}"
+                    else:
+                        task = f"make-timeseries-{grid}-{self.pp_chunk}_{source}"
+                    if chunk_point == climo_point:
+                        terms.append(task)
+                    else:
+                        terms.append(f"{task}[{chunk_point}]")
+                graph += " & ".join(terms) + "\n"
+                graph += f" => climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                graph += f" => remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                graph += f" => combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component}\n"
+                if clean_work:
+                    graph += f"remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-av-P{self.interval_years}Y\n"
+                    graph += f"combine-climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-pp-timeavgs-P{self.interval_years}Y\n"
+
+                # The first chunk of the window shares its cycle point
+                # with climo itself, so it can safely reuse this same,
+                # offset-free section.
+                if clean_work:
+                    graph += f"climo-{self.frequency}-P{self.interval_years}Y_{self.component} => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+            graph += "\"\"\"\n"
+
+            if clean_work:
+                # The later chunks in the window are consumed by climo
+                # before their shards can be cleaned up, so each needs
+                # its own section, anchored at its own (earlier) cycle
+                # point, cross-referencing climo's (later) point.
+                for chunk_point in window[1:]:
+                    graph += f"R1/{chunk_point} = \"\"\"\n"
+                    graph += (
+                        f"climo-{self.frequency}-P{self.interval_years}Y_{self.component}"
+                        f"[{climo_point}] => clean-shards-ts-P{self.pp_chunk.years}Y\n"
+                    )
+                    graph += "\"\"\"\n"
 
         return graph
 
@@ -126,7 +180,10 @@ class Climatology:
             outputDir = $CYLC_WORKFLOW_SHARE_DIR/shards/av/{self.grid}
         """
 
-        offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
+        # The climatology's cycle point is anchored at the start of the
+        # window (see graph(), above), so the data window runs forward
+        # from that point through interval_years - 1 more years.
+        end_offset = duration_parser.parse(f"P{self.interval_years}Y") - one_year
 
         definitions += f"""
     [[remap-climo-{self.frequency}-P{self.interval_years}Y_{self.component}]]
@@ -135,7 +192,7 @@ class Climatology:
             components = {self.component}
             currentChunk = P{self.interval_years}Y
             begin = $(cylc cycle-point)
-            end = $(cylc cycle-point --print-year --offset={offset})
+            end = $(cylc cycle-point --print-year --offset={end_offset})
         """
 
         definitions += f"""
@@ -145,7 +202,7 @@ class Climatology:
             component = {self.component}
             frequency = {self.frequency}
             interval = P{self.interval_years}Y
-            end = $(cylc cycle-point --print-year --offset={offset})
+            end = $(cylc cycle-point --print-year --offset={end_offset})
     [[COMBINE-TIMEAVGS-P{self.interval_years}Y]]
         inherit = COMBINE-TIMEAVGS
         """
@@ -173,6 +230,8 @@ def task_generator(yaml_):
 
     # determine pp chunk to use. require the timeaverage interval to be a multiple of pp chunk
     pp_chunks = yaml_["postprocess"]["settings"]["pp_chunks"]
+    pp_start = yaml_["postprocess"]["settings"]["pp_start"]
+    pp_stop = yaml_["postprocess"]["settings"]["pp_stop"]
 
     for component in yaml_["postprocess"]["components"]:
         if not component.get('postprocess_on', True):
@@ -203,7 +262,9 @@ def task_generator(yaml_):
                     interval_years=interval_years,
                     pp_chunk=pp_chunk,
                     sources=lookup_source_for_component(yaml_, component["type"]),
-                    grid=grid
+                    grid=grid,
+                    pp_start=pp_start,
+                    pp_stop=pp_stop
                 )
                 yield climatology_info
 
